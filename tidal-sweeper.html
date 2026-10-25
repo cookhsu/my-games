@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>潮間帶排雷 Tidal Sweeper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sea:#0E3B43; --sea-2:#14505A; --foam:#E8F4F2; --sand:#D9C48F; --sand-edge:#B39B63;
+    --wet:#F6EEDC; --coral:#FF7F6B; --coral-dark:#C9503E; --ink:#17343A; --muted:#8FB5B8;
+    --shadow:rgba(3,20,24,.5);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; min-height:100%; background:var(--sea); color:var(--foam); font-family:'Noto Sans TC',system-ui,sans-serif; }
+  body{ display:flex; flex-direction:column; align-items:center; padding:28px 16px 56px; background:radial-gradient(ellipse at 50% -10%, rgba(255,127,107,.14), transparent 55%), var(--sea); }
+  .marquee{ text-align:center; margin-bottom:18px; }
+  .marquee h1{ margin:0 0 8px; font-weight:900; font-size:clamp(26px,6.5vw,38px); color:var(--foam); letter-spacing:1px; }
+  .marquee p{ margin:0; color:var(--muted); font-size:14px; max-width:420px; line-height:1.7; }
+  .board{ width:100%; max-width:420px; background:var(--sea-2); border-radius:22px; padding:16px; box-shadow:0 20px 45px var(--shadow); }
+  .hud{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:2px 6px 12px; }
+  .stat .label{ display:block; font-size:11px; letter-spacing:1px; color:var(--muted); margin-bottom:2px; }
+  .stat .value{ font-weight:900; font-size:24px; font-variant-numeric:tabular-nums; }
+  .stat.right{ text-align:right; }
+  .tools{ display:flex; gap:8px; }
+  .icon-btn{ width:42px; height:42px; border-radius:50%; border:1px solid rgba(255,255,255,.18); background:var(--sea); color:var(--foam); font-size:18px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .icon-btn[aria-pressed="true"]{ background:var(--coral); color:var(--ink); border-color:var(--coral); }
+  .icon-btn:focus-visible, .btn:focus-visible, .cell:focus-visible{ outline:3px solid var(--coral); outline-offset:2px; }
+  .frame{ position:relative; background:var(--sea); border-radius:14px; padding:8px; }
+  .grid{ display:grid; grid-template-columns:repeat(9,1fr); gap:3px; touch-action:manipulation; }
+  .cell{ aspect-ratio:1/1; padding:0; border:none; border-radius:6px; background:var(--sand); border-bottom:3px solid var(--sand-edge); font:900 clamp(14px,4.6vw,20px) 'Noto Sans TC',sans-serif; color:var(--ink); display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
+  .cell:active{ filter:brightness(.95); }
+  .cell.open{ background:var(--wet); border-bottom:none; cursor:default; }
+  .cell.boom{ background:#FFD2C9; }
+  .cell svg{ width:70%; height:70%; pointer-events:none; }
+  .n1{color:#1D5FA8}.n2{color:#2E7D32}.n3{color:#C62828}.n4{color:#4A2C8F}.n5{color:#8E3B00}.n6{color:#00796B}.n7{color:#222}.n8{color:#555}
+  .overlay{ position:absolute; inset:8px; border-radius:10px; background:rgba(14,59,67,.93); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; padding:22px; }
+  .overlay.hidden{ display:none; }
+  .overlay h2{ margin:0; font-weight:900; font-size:clamp(22px,6vw,30px); color:var(--coral); }
+  .overlay p{ margin:0; font-size:14px; line-height:1.8; max-width:290px; }
+  .btn{ font:900 16px 'Noto Sans TC',sans-serif; color:var(--ink); background:var(--coral); border:none; padding:12px 28px; border-radius:24px; cursor:pointer; box-shadow:0 4px 0 var(--coral-dark); }
+  .btn:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--coral-dark); }
+  .hint{ margin-top:16px; max-width:420px; text-align:center; font-size:12px; line-height:1.8; color:var(--muted); }
+  @media (prefers-reduced-motion:reduce){ .btn{ transition:none; } }
+</style>
+</head>
+<body>
+  <div class="marquee">
+    <h1>潮間帶排雷</h1>
+    <p>退潮的沙灘上藏著 10 隻海膽，用數字推理出牠們的位置，安全地走完整片沙灘。</p>
+  </div>
+
+  <div class="board">
+    <div class="hud">
+      <div class="stat"><span class="label">剩餘海膽</span><span class="value" id="left">10</span></div>
+      <div class="tools">
+        <button class="icon-btn" id="flagBtn" aria-label="插旗模式" aria-pressed="false" title="插旗模式">🚩</button>
+        <button class="icon-btn" id="musicBtn" aria-label="切換背景音樂" aria-pressed="true">🔊</button>
+      </div>
+      <div class="stat right"><span class="label">時間</span><span class="value" id="time">0</span></div>
+    </div>
+
+    <div class="frame">
+      <div class="grid" id="grid" role="grid" aria-label="排雷棋盤"></div>
+
+      <div class="overlay" id="startOverlay">
+        <h2>準備踏沙</h2>
+        <p>點一下翻開沙地，數字代表周圍八格有幾隻海膽。電腦可以按右鍵插旗，手機長按或打開上方的旗子模式。</p>
+        <button class="btn" id="startBtn">開始遊戲</button>
+      </div>
+
+      <div class="overlay hidden" id="endOverlay">
+        <h2 id="endTitle"></h2>
+        <p id="endText"></p>
+        <button class="btn" id="restartBtn">再走一次</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">第一下一定安全。點已翻開的數字，若周圍旗子數剛好等於數字，會一次翻開其餘格子。</p>
+
+<script>
+(function(){
+  "use strict";
+  var ROWS = 9, COLS = 9, MINES = 10;
+  var gridEl = document.getElementById('grid');
+  var leftEl = document.getElementById('left');
+  var timeEl = document.getElementById('time');
+  var flagBtn = document.getElementById('flagBtn');
+  var musicBtn = document.getElementById('musicBtn');
+  var startOverlay = document.getElementById('startOverlay');
+  var endOverlay = document.getElementById('endOverlay');
+  var endTitle = document.getElementById('endTitle');
+  var endText = document.getElementById('endText');
+  var startBtn = document.getElementById('startBtn');
+  var restartBtn = document.getElementById('restartBtn');
+
+  var URCHIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><g stroke="#17343A" stroke-width="2" stroke-linecap="round"><path d="M12 2v5M12 17v5M2 12h5M17 12h5M5 5l3.5 3.5M15.5 15.5L19 19M19 5l-3.5 3.5M8.5 15.5L5 19"/></g><circle cx="12" cy="12" r="5.5" fill="#17343A"/></svg>';
+  var FLAG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v18" stroke="#17343A" stroke-width="2" stroke-linecap="round"/><path d="M7 4l12 4.5L7 13z" fill="#FF7F6B" stroke="#C9503E" stroke-width="1" stroke-linejoin="round"/></svg>';
+
+  var cells = [], active, started, over, flagMode, revealedCount, flagCount, seconds, timer, longPressFired, pressTimer;
+
+  var best = 0;
+  try { var sv = localStorage.getItem('tidalsweeper_best'); if (sv) best = parseInt(sv, 10) || 0; } catch (e) { /* ignore */ }
+
+  var musicOn = true;
+  try { var mv = localStorage.getItem('tidalsweeper_music'); if (mv !== null) musicOn = (mv === '1'); } catch (e) { /* ignore */ }
+
+  var ac = null;
+  function getAc(){
+    try {
+      if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+      if (ac.state === 'suspended') ac.resume();
+    } catch (e) { ac = null; }
+    return ac;
+  }
+  function tone(freq, dur, type, vol, delay){
+    var a = getAc(); if (!a) return;
+    try {
+      var o = a.createOscillator(), g = a.createGain(), t = a.currentTime + (delay || 0);
+      o.type = type; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(vol, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(a.destination);
+      o.start(t); o.stop(t + dur + 0.03);
+    } catch (e) { /* ignore */ }
+  }
+  var music = {
+    timer: null, step: 0,
+    notes: [261.63, 329.63, 392.00, 329.63, 293.66, 392.00, 440.00, 392.00],
+    start: function(){ this.stop(); if (!musicOn) return; this.step = 0; var self = this; this.play(); this.timer = setInterval(function(){ self.play(); }, 620); },
+    play: function(){ tone(this.notes[this.step % this.notes.length], 0.9, 'sine', 0.03); if (this.step % 4 === 0) tone(130.81, 1.4, 'sine', 0.04); this.step++; },
+    stop: function(){ if (this.timer){ clearInterval(this.timer); this.timer = null; } }
+  };
+
+  function idx(r, c){ return r * COLS + c; }
+  function neighbors(r, c){
+    var list = [];
+    for (var dr = -1; dr <= 1; dr++) for (var dc = -1; dc <= 1; dc++){
+      if (!dr && !dc) continue;
+      var nr = r + dr, nc = c + dc;
+      if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) list.push(cells[idx(nr, nc)]);
+    }
+    return list;
+  }
+
+  function buildGrid(){
+    gridEl.innerHTML = '';
+    cells = [];
+    for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++){
+      var el = document.createElement('button');
+      el.className = 'cell';
+      el.type = 'button';
+      el.setAttribute('role', 'gridcell');
+      el.dataset.r = r; el.dataset.c = c;
+      el.setAttribute('aria-label', '第' + (r + 1) + '列第' + (c + 1) + '行，未翻開');
+      gridEl.appendChild(el);
+      cells.push({ r: r, c: c, mine: false, adj: 0, open: false, flag: false, el: el });
+    }
+  }
+
+  function placeMines(sr, sc){
+    var pool = cells.filter(function(x){ return Math.abs(x.r - sr) > 1 || Math.abs(x.c - sc) > 1; });
+    for (var i = pool.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+    for (var k = 0; k < MINES; k++) pool[k].mine = true;
+    cells.forEach(function(x){ x.adj = neighbors(x.r, x.c).filter(function(n){ return n.mine; }).length; });
+  }
+
+  function paint(x){
+    var el = x.el;
+    el.className = 'cell';
+    el.innerHTML = '';
+    if (x.open){
+      el.classList.add('open');
+      if (x.mine){ el.innerHTML = URCHIN; }
+      else if (x.adj > 0){ el.textContent = x.adj; el.classList.add('n' + x.adj); }
+      el.setAttribute('aria-label', x.mine ? '海膽' : (x.adj ? '周圍有 ' + x.adj + ' 隻海膽' : '空白'));
+    } else if (x.flag){
+      el.innerHTML = FLAG;
+      el.setAttribute('aria-label', '已插旗');
+    } else {
+      el.setAttribute('aria-label', '第' + (x.r + 1) + '列第' + (x.c + 1) + '行，未翻開');
+    }
+  }
+
+  function updateLeft(){ leftEl.textContent = MINES - flagCount; }
+
+  function startTimer(){
+    clearInterval(timer);
+    timer = setInterval(function(){ seconds++; timeEl.textContent = seconds; }, 1000);
+  }
+
+  function lose(hit){
+    over = true; clearInterval(timer); music.stop();
+    cells.forEach(function(x){
+      if (x.mine && !x.flag){ x.open = true; paint(x); }
+      if (!x.mine && x.flag){ x.el.classList.add('boom'); }
+    });
+    hit.el.classList.add('boom');
+    tone(110, 0.5, 'sawtooth', 0.08);
+    setTimeout(function(){
+      endTitle.textContent = '踩到海膽了';
+      endText.textContent = '這一次走了 ' + seconds + ' 秒。再試一次，把數字多看幾遍。';
+      endOverlay.classList.remove('hidden');
+    }, 900);
+  }
+
+  function win(){
+    over = true; clearInterval(timer); music.stop();
+    cells.forEach(function(x){ if (x.mine && !x.flag){ x.flag = true; paint(x); } });
+    flagCount = MINES; updateLeft();
+    var isBest = !best || seconds < best;
+    if (isBest){ best = seconds; try { localStorage.setItem('tidalsweeper_best', String(best)); } catch (e) { /* ignore */ } }
+    [523.25, 659.25, 783.99, 1046.5].forEach(function(f, i){ tone(f, 0.25, 'triangle', 0.07, i * 0.1); });
+    endTitle.textContent = '全部排除！';
+    endText.textContent = '用時 ' + seconds + ' 秒' + (isBest ? '，刷新了你的最快紀錄！' : '，最快紀錄是 ' + best + ' 秒。');
+    endOverlay.classList.remove('hidden');
+  }
+
+  function reveal(x){
+    if (over || x.open || x.flag) return;
+    if (!started){
+      started = true; placeMines(x.r, x.c); startTimer();
+    }
+    if (x.mine){ x.open = true; paint(x); lose(x); return; }
+    var stack = [x];
+    while (stack.length){
+      var cur = stack.pop();
+      if (cur.open || cur.flag) continue;
+      cur.open = true; revealedCount++; paint(cur);
+      if (cur.adj === 0) neighbors(cur.r, cur.c).forEach(function(n){ if (!n.open && !n.flag && !n.mine) stack.push(n); });
+    }
+    tone(520, 0.06, 'sine', 0.04);
+    if (revealedCount === ROWS * COLS - MINES) win();
+  }
+
+  function toggleFlag(x){
+    if (over || x.open) return;
+    if (!x.flag && flagCount >= MINES) return;
+    x.flag = !x.flag;
+    flagCount += x.flag ? 1 : -1;
+    paint(x); updateLeft();
+    tone(x.flag ? 700 : 400, 0.06, 'triangle', 0.04);
+  }
+
+  function chord(x){
+    if (over || !x.open || x.adj === 0) return;
+    var around = neighbors(x.r, x.c);
+    var f = around.filter(function(n){ return n.flag; }).length;
+    if (f !== x.adj) return;
+    around.forEach(function(n){ if (!n.open && !n.flag) reveal(n); });
+  }
+
+  function cellFromEvent(e){
+    var t = e.target.closest ? e.target.closest('.cell') : null;
+    return t ? cells[idx(+t.dataset.r, +t.dataset.c)] : null;
+  }
+
+  gridEl.addEventListener('click', function(e){
+    if (longPressFired){ longPressFired = false; return; }
+    var x = cellFromEvent(e); if (!x) return;
+    if (flagMode && !x.open) toggleFlag(x);
+    else if (x.open) chord(x);
+    else reveal(x);
+  });
+  gridEl.addEventListener('contextmenu', function(e){
+    e.preventDefault();
+    if (longPressFired) return;
+    var x = cellFromEvent(e); if (x) toggleFlag(x);
+  });
+  gridEl.addEventListener('pointerdown', function(e){
+    if (e.pointerType === 'mouse') return;
+    var x = cellFromEvent(e); if (!x || x.open) return;
+    longPressFired = false;
+    clearTimeout(pressTimer);
+    pressTimer = setTimeout(function(){ longPressFired = true; toggleFlag(x); if (navigator.vibrate) navigator.vibrate(20); }, 450);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(function(n){
+    gridEl.addEventListener(n, function(){ clearTimeout(pressTimer); });
+  });
+
+  flagBtn.addEventListener('click', function(){
+    flagMode = !flagMode;
+    flagBtn.setAttribute('aria-pressed', String(flagMode));
+  });
+  function refreshMusicBtn(){
+    musicBtn.textContent = musicOn ? '🔊' : '🔇';
+    musicBtn.setAttribute('aria-pressed', 'false');
+    musicBtn.setAttribute('aria-label', musicOn ? '關閉背景音樂' : '開啟背景音樂');
+  }
+  musicBtn.addEventListener('click', function(){
+    musicOn = !musicOn;
+    try { localStorage.setItem('tidalsweeper_music', musicOn ? '1' : '0'); } catch (e) { /* ignore */ }
+    if (musicOn && active && !over) music.start(); else music.stop();
+    refreshMusicBtn();
+  });
+
+  function newGame(){
+    clearInterval(timer);
+    buildGrid();
+    active = false; started = false; over = false; flagMode = false; revealedCount = 0; flagCount = 0; seconds = 0; longPressFired = false;
+    flagBtn.setAttribute('aria-pressed', 'false');
+    timeEl.textContent = '0';
+    updateLeft();
+  }
+  function startGame(){
+    getAc();
+    startOverlay.classList.add('hidden');
+    endOverlay.classList.add('hidden');
+    newGame();
+    active = true;
+    music.start();
+  }
+
+  startBtn.addEventListener('click', startGame);
+  restartBtn.addEventListener('click', startGame);
+  refreshMusicBtn();
+  newGame();
+})();
+</script>
+</body>
+</html>
