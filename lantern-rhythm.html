@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>燈籠節拍 Lantern Rhythm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#0C1B1E; --night-2:#12292D; --panel:#17343A; --edge:#25505A;
+    --cream:#F5EBD8; --muted:#9FB6B8; --amber:#FFC145; --amber-dark:#C98E1E;
+    --shadow:rgba(2,10,12,0.6);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:var(--night); color:var(--cream); font-family:'Noto Sans TC',system-ui,sans-serif; min-height:100%; }
+  body{ display:flex; flex-direction:column; align-items:center; padding:28px 16px 56px; background:radial-gradient(ellipse at 50% -10%, rgba(255,193,69,0.12), transparent 55%), var(--night); }
+  .marquee{ text-align:center; margin-bottom:18px; }
+  .marquee h1{ font-family:'Noto Serif TC',serif; font-weight:900; font-size:clamp(26px,6.5vw,40px); margin:0 0 8px; color:var(--amber); letter-spacing:2px; }
+  .marquee p{ margin:0; color:var(--muted); font-size:14px; max-width:420px; }
+  .board{ background:linear-gradient(180deg,var(--panel),var(--night-2)); border:1px solid var(--edge); border-radius:20px; padding:16px; box-shadow:0 20px 50px var(--shadow); width:100%; max-width:400px; }
+  .hud{ display:flex; justify-content:space-between; align-items:center; padding:2px 8px 12px; }
+  .hud .stat{ text-align:left; } .hud .stat.right{ text-align:right; }
+  .hud .label{ display:block; font-size:11px; letter-spacing:2px; color:var(--muted); margin-bottom:2px; }
+  .hud .value{ font-family:'Noto Serif TC',serif; font-weight:900; font-size:22px; color:var(--cream); }
+  .music-btn{ width:40px; height:40px; border-radius:50%; background:var(--night-2); border:1px solid var(--edge); color:var(--amber); font-size:18px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+  .music-btn:active{ background:var(--edge); }
+  .music-btn:focus-visible, .btn:focus-visible{ outline:3px solid var(--amber); outline-offset:2px; }
+  .screen-frame{ position:relative; border-radius:12px; padding:6px; background:var(--night); border:1px solid var(--edge); }
+  canvas{ display:block; width:100%; height:auto; border-radius:8px; touch-action:none; cursor:pointer; background:#0A1517; }
+  .overlay{ position:absolute; inset:6px; border-radius:8px; background:rgba(8,20,22,0.9); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; gap:14px; }
+  .overlay.hidden{ display:none; }
+  .overlay h2{ font-family:'Noto Serif TC',serif; font-weight:900; font-size:clamp(22px,6vw,30px); color:var(--amber); margin:0; }
+  .overlay p{ margin:0; color:var(--cream); font-size:14px; line-height:1.7; max-width:280px; }
+  .grade{ font-family:'Noto Serif TC',serif; font-weight:900; font-size:72px; line-height:1; color:var(--amber); }
+  .btn{ font-family:'Noto Serif TC',serif; font-weight:900; font-size:16px; color:var(--night); background:var(--amber); border:none; padding:12px 28px; border-radius:24px; cursor:pointer; box-shadow:0 4px 0 var(--amber-dark); }
+  .btn:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--amber-dark); }
+  .hint{ margin-top:16px; font-size:12px; color:var(--muted); text-align:center; max-width:420px; line-height:1.7; }
+  .hint kbd{ font-family:'Noto Serif TC',serif; font-weight:900; font-size:11px; background:var(--panel); border:1px solid var(--edge); border-radius:4px; padding:2px 8px; color:var(--amber); }
+  @media (prefers-reduced-motion:reduce){ .btn{ transition:none; } }
+</style>
+</head>
+<body>
+  <div class="marquee">
+    <h1>燈籠節拍</h1>
+    <p>燈籠順著節奏落下，在它碰到光圈的那一刻點下去，就能彈出屬於你的旋律。</p>
+  </div>
+
+  <div class="board">
+    <div class="hud">
+      <div class="stat"><span class="label">分數</span><span class="value" id="score">0</span></div>
+      <button class="music-btn" id="musicBtn" aria-label="切換背景伴奏" aria-pressed="true">🔊</button>
+      <div class="stat right"><span class="label">最高</span><span class="value" id="best">0</span></div>
+    </div>
+
+    <div class="screen-frame">
+      <canvas id="game" width="360" height="540" aria-label="燈籠節拍遊戲畫面"></canvas>
+
+      <div class="overlay" id="startOverlay">
+        <h2>準備開演</h2>
+        <p>四條軌道對應 D F J K 四個鍵，手機請直接點該軌道。燈籠落到光圈時按下，越準分數越高，連擊還有加成。</p>
+        <button class="btn" id="startBtn">開始演奏</button>
+      </div>
+
+      <div class="overlay hidden" id="endOverlay">
+        <div class="grade" id="grade">S</div>
+        <p id="endStats"></p>
+        <button class="btn" id="restartBtn">再奏一次</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">電腦請按 <kbd>D</kbd> <kbd>F</kbd> <kbd>J</kbd> <kbd>K</kbd>，手機直接點對應軌道（支援多指同時點）。<br>你的每一次命中都會彈出旋律，伴奏會自動播放。</p>
+
+<script>
+(function(){
+  "use strict";
+
+  var canvas = document.getElementById('game');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  var LANES = 4, LANE_W = W / LANES, HIT_Y = 440, FALL = 1.5;
+  var PERFECT_WIN = 0.07, GOOD_WIN = 0.14;
+  var BPM = 112, BEAT = 60 / BPM, STEP = BEAT / 2;
+  var LEAD_IN = 2.4;
+  var COLORS = ['#FF8A5B', '#FFC145', '#7ED3B2', '#B79CED'];
+  var KEYS = ['d', 'f', 'j', 'k'];
+  var SCALE = [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25];
+  var ROOTS = [130.81, 174.61, 196.00, 130.81];
+  var PH = {
+    A: [0,-1,2,3,-1,4,3,2],
+    B: [4,-1,5,4,3,-1,2,0],
+    C: [2,3,4,-1,5,6,5,-1],
+    D: [7,-1,5,4,5,-1,3,2]
+  };
+  var LANE_MAP = [0, 1, 0, 1, 2, 3, 2, 3];
+  var SEQ = 'AABACCDBABCDBBACDCBDACBA'.split('');
+  var TOTAL_STEPS = SEQ.length * 8;
+
+  var scoreEl = document.getElementById('score');
+  var bestEl = document.getElementById('best');
+  var startOverlay = document.getElementById('startOverlay');
+  var endOverlay = document.getElementById('endOverlay');
+  var gradeEl = document.getElementById('grade');
+  var endStatsEl = document.getElementById('endStats');
+  var startBtn = document.getElementById('startBtn');
+  var restartBtn = document.getElementById('restartBtn');
+  var musicBtn = document.getElementById('musicBtn');
+
+  var best = 0;
+  try { var sv = localStorage.getItem('lanternrhythm_best'); if (sv) best = parseInt(sv, 10) || 0; } catch (e) { /* ignore */ }
+  bestEl.textContent = best;
+
+  var musicOn = true;
+  try { var mv = localStorage.getItem('lanternrhythm_music'); if (mv !== null) musicOn = (mv === '1'); } catch (e) { /* ignore */ }
+
+  var ac = null, master = null, backGain = null;
+  function getAudio(){
+    try {
+      if (!ac){
+        ac = new (window.AudioContext || window.webkitAudioContext)();
+        master = ac.createGain(); master.gain.value = 1; master.connect(ac.destination);
+        backGain = ac.createGain(); backGain.gain.value = musicOn ? 1 : 0; backGain.connect(master);
+      }
+      if (ac.state === 'suspended') ac.resume();
+    } catch (e) { ac = null; }
+    return ac;
+  }
+  function tone(freq, dur, type, vol, when, dest){
+    if (!ac) return;
+    try {
+      var o = ac.createOscillator(), g = ac.createGain();
+      o.type = type; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, when);
+      g.gain.linearRampToValueAtTime(vol, when + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+      o.connect(g); g.connect(dest || master);
+      o.start(when); o.stop(when + dur + 0.02);
+    } catch (e) { /* ignore */ }
+  }
+  function kick(when){
+    if (!ac) return;
+    try {
+      var o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(140, when);
+      o.frequency.exponentialRampToValueAtTime(45, when + 0.12);
+      g.gain.setValueAtTime(0.2, when);
+      g.gain.exponentialRampToValueAtTime(0.001, when + 0.16);
+      o.connect(g); g.connect(backGain);
+      o.start(when); o.stop(when + 0.2);
+    } catch (e) { /* ignore */ }
+  }
+  function scheduleStep(i, when){
+    var bar = Math.floor(i / 8), slot = i % 8;
+    if (slot % 2 === 0) tone(ROOTS[bar % 4], 0.45, 'sine', 0.1, when, backGain);
+    if (slot === 0 || slot === 4) kick(when);
+    if (slot % 2 === 1) tone(5200, 0.03, 'square', 0.012, when, backGain);
+    if (slot === 0) tone(ROOTS[bar % 4] * 2.5, 0.9, 'triangle', 0.035, when, backGain);
+  }
+
+  var notes, t0, running, score, combo, maxCombo, counts, judge, flash, nextStep, schedTimer, rafId, total, lastTime;
+
+  function buildNotes(){
+    var list = [];
+    for (var b = 0; b < SEQ.length; b++){
+      var ph = PH[SEQ[b]];
+      for (var s = 0; s < 8; s++){
+        var idx = ph[s];
+        if (idx < 0) continue;
+        list.push({ time: (b * 8 + s) * STEP, lane: LANE_MAP[idx], freq: SCALE[idx], state: 0 });
+      }
+    }
+    return list;
+  }
+
+  function songTime(){ return ac.currentTime - t0; }
+
+  function setJudge(text, color){ judge = { text: text, color: color, until: performance.now() + 450 }; }
+
+  function pressLane(l){
+    if (!running || !ac) return;
+    var now = songTime();
+    flash[l] = performance.now() + 120;
+    var target = null, bestDelta = 9;
+    for (var i = 0; i < notes.length; i++){
+      var n = notes[i];
+      if (n.state !== 0 || n.lane !== l) continue;
+      var d = Math.abs(n.time - now);
+      if (d <= GOOD_WIN && d < bestDelta){ target = n; bestDelta = d; }
+      if (n.time - now > GOOD_WIN) break;
+    }
+    if (!target) return;
+    target.state = 1;
+    var perfect = bestDelta <= PERFECT_WIN;
+    var base = perfect ? 100 : 60;
+    score += Math.round(base * (1 + Math.min(Math.floor(combo / 10), 5) * 0.1));
+    combo += 1;
+    if (combo > maxCombo) maxCombo = combo;
+    if (perfect){ counts.perfect++; setJudge('完美', '#FFC145'); } else { counts.good++; setJudge('不錯', '#7ED3B2'); }
+    tone(target.freq, 0.4, 'triangle', 0.16, ac.currentTime, master);
+    scoreEl.textContent = score;
+  }
+
+  function update(){
+    var now = songTime();
+    for (var i = 0; i < notes.length; i++){
+      var n = notes[i];
+      if (n.state === 0 && now > n.time + GOOD_WIN){
+        n.state = 2; counts.miss++; combo = 0; setJudge('漏掉', '#FF8A5B');
+      }
+    }
+    if (now > notes[notes.length - 1].time + 1.6) finish();
+  }
+
+  function roundRect(x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function drawLantern(cx, y, color, alpha){
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = '#F5EBD8'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx, y - 24); ctx.lineTo(cx, y - 18); ctx.stroke();
+    ctx.fillStyle = '#3B2A1A'; roundRect(cx - 12, y - 19, 24, 6, 2); ctx.fill();
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.ellipse(cx, y, 28, 20, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(12,27,30,0.35)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.ellipse(cx, y, 14, 20, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, y - 20); ctx.lineTo(cx, y + 20); ctx.stroke();
+    ctx.fillStyle = '#3B2A1A'; roundRect(cx - 12, y + 14, 24, 6, 2); ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx, y + 20); ctx.lineTo(cx, y + 28); ctx.stroke();
+    ctx.restore();
+  }
+
+  function draw(){
+    var now = ac ? songTime() : -LEAD_IN;
+    var tms = performance.now();
+    ctx.fillStyle = '#0A1517'; ctx.fillRect(0, 0, W, H);
+    for (var l = 0; l < LANES; l++){
+      ctx.fillStyle = l % 2 === 0 ? 'rgba(255,255,255,0.025)' : 'rgba(255,255,255,0.05)';
+      ctx.fillRect(l * LANE_W, 0, LANE_W, H);
+      if (flash[l] > tms){
+        ctx.fillStyle = COLORS[l]; ctx.globalAlpha = 0.18;
+        ctx.fillRect(l * LANE_W, 0, LANE_W, H); ctx.globalAlpha = 1;
+      }
+    }
+    ctx.strokeStyle = 'rgba(245,235,216,0.1)'; ctx.lineWidth = 1;
+    for (var s = 1; s < LANES; s++){ ctx.beginPath(); ctx.moveTo(s * LANE_W, 0); ctx.lineTo(s * LANE_W, H); ctx.stroke(); }
+    ctx.strokeStyle = 'rgba(245,235,216,0.35)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, HIT_Y); ctx.lineTo(W, HIT_Y); ctx.stroke();
+
+    for (var k = 0; k < LANES; k++){
+      var cx = k * LANE_W + LANE_W / 2;
+      ctx.strokeStyle = COLORS[k]; ctx.lineWidth = 3; ctx.globalAlpha = 0.8;
+      ctx.beginPath(); ctx.arc(cx, HIT_Y, 30, 0, Math.PI * 2); ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = '#F5EBD8'; ctx.font = "700 16px 'Noto Serif TC', serif"; ctx.textAlign = 'center';
+      ctx.fillText(KEYS[k].toUpperCase(), cx, HIT_Y + 66);
+    }
+
+    if (notes){
+      for (var i = 0; i < notes.length; i++){
+        var n = notes[i];
+        if (n.state === 1) continue;
+        var y = HIT_Y * (1 - (n.time - now) / FALL);
+        if (y < -40 || y > H + 40) continue;
+        drawLantern(n.lane * LANE_W + LANE_W / 2, y, COLORS[n.lane], n.state === 2 ? 0.3 : 1);
+      }
+    }
+
+    ctx.textAlign = 'center';
+    if (now < 0){
+      ctx.fillStyle = '#FFC145'; ctx.font = "900 64px 'Noto Serif TC', serif";
+      ctx.fillText(String(Math.ceil(-now)), W / 2, 230);
+    } else {
+      if (combo >= 2){
+        ctx.fillStyle = 'rgba(245,235,216,0.9)'; ctx.font = "900 44px 'Noto Serif TC', serif";
+        ctx.fillText(String(combo), W / 2, 110);
+        ctx.font = "500 12px 'Noto Sans TC', sans-serif"; ctx.fillStyle = '#9FB6B8';
+        ctx.fillText('連擊', W / 2, 132);
+      }
+      if (judge && judge.until > tms){
+        ctx.fillStyle = judge.color; ctx.font = "900 26px 'Noto Serif TC', serif";
+        ctx.fillText(judge.text, W / 2, HIT_Y - 90);
+      }
+    }
+  }
+
+  function loop(){
+    if (!running) return;
+    var now = songTime();
+    while (nextStep < TOTAL_STEPS && t0 + nextStep * STEP < ac.currentTime + 0.3){
+      var when = t0 + nextStep * STEP;
+      if (when >= ac.currentTime - 0.05) scheduleStep(nextStep, when);
+      nextStep++;
+    }
+    update();
+    if (!running) return;
+    draw();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function finish(){
+    running = false;
+    cancelAnimationFrame(rafId);
+    var acc = (counts.perfect + counts.good * 0.6) / total;
+    var grade = acc >= 0.95 ? 'S' : acc >= 0.85 ? 'A' : acc >= 0.7 ? 'B' : 'C';
+    if (score > best){
+      best = score; bestEl.textContent = best;
+      try { localStorage.setItem('lanternrhythm_best', String(best)); } catch (e) { /* ignore */ }
+    }
+    gradeEl.textContent = grade;
+    endStatsEl.innerHTML = '分數 ' + score + '　最高連擊 ' + maxCombo + '<br>完美 ' + counts.perfect + '　不錯 ' + counts.good + '　漏掉 ' + counts.miss;
+    endOverlay.classList.remove('hidden');
+  }
+
+  function startGame(){
+    getAudio();
+    if (!ac) return;
+    startOverlay.classList.add('hidden');
+    endOverlay.classList.add('hidden');
+    notes = buildNotes();
+    total = notes.length;
+    score = 0; combo = 0; maxCombo = 0;
+    counts = { perfect: 0, good: 0, miss: 0 };
+    judge = null; flash = [0, 0, 0, 0];
+    scoreEl.textContent = '0';
+    t0 = ac.currentTime + LEAD_IN;
+    nextStep = 0;
+    running = true;
+    rafId = requestAnimationFrame(loop);
+  }
+
+  document.addEventListener('keydown', function(e){
+    if (e.repeat) return;
+    var i = KEYS.indexOf(e.key.toLowerCase());
+    if (i >= 0){ e.preventDefault(); pressLane(i); }
+  });
+  function laneFromX(clientX){
+    var r = canvas.getBoundingClientRect();
+    return Math.max(0, Math.min(3, Math.floor((clientX - r.left) / r.width * LANES)));
+  }
+  canvas.addEventListener('mousedown', function(e){ pressLane(laneFromX(e.clientX)); });
+  canvas.addEventListener('touchstart', function(e){
+    e.preventDefault();
+    for (var i = 0; i < e.changedTouches.length; i++) pressLane(laneFromX(e.changedTouches[i].clientX));
+  }, { passive: false });
+
+  startBtn.addEventListener('click', startGame);
+  restartBtn.addEventListener('click', startGame);
+
+  function refreshMusicBtn(){
+    musicBtn.textContent = musicOn ? '🔊' : '🔇';
+    musicBtn.setAttribute('aria-pressed', String(musicOn));
+  }
+  musicBtn.addEventListener('click', function(){
+    musicOn = !musicOn;
+    try { localStorage.setItem('lanternrhythm_music', musicOn ? '1' : '0'); } catch (e) { /* ignore */ }
+    if (backGain) backGain.gain.value = musicOn ? 1 : 0;
+    refreshMusicBtn();
+  });
+  refreshMusicBtn();
+
+  flash = [0, 0, 0, 0];
+  draw();
+})();
+</script>
+</body>
+</html>
