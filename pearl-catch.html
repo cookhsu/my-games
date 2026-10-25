@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>珍珠接接樂 Pearl Catch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --mint:#CFEFE3; --mint-2:#B5E3D3; --brown:#3A2418; --brown-soft:#6F5242; --tea:#E88F3D; --tea-dark:#B8691F;
+    --card:#F7FCF9; --shadow:rgba(40,70,60,.28);
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; min-height:100%; background:var(--mint); color:var(--brown); font-family:'Noto Sans TC',system-ui,sans-serif; }
+  body{ display:flex; flex-direction:column; align-items:center; padding:28px 16px 56px; background:linear-gradient(180deg,var(--mint-2),var(--mint) 45%); }
+  .marquee{ text-align:center; margin-bottom:18px; }
+  .marquee h1{ margin:0 0 8px; font-weight:900; font-size:clamp(26px,6.5vw,38px); letter-spacing:1px; }
+  .marquee p{ margin:0; color:var(--brown-soft); font-size:14px; max-width:420px; line-height:1.7; }
+  .board{ width:100%; max-width:400px; background:var(--card); border-radius:22px; padding:14px; box-shadow:0 20px 45px var(--shadow); }
+  .hud{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:2px 8px 10px; }
+  .stat .label{ display:block; font-size:11px; letter-spacing:1px; color:var(--brown-soft); margin-bottom:2px; }
+  .stat .value{ font-weight:900; font-size:22px; font-variant-numeric:tabular-nums; }
+  .stat.right{ text-align:right; }
+  .lives{ font-size:20px; letter-spacing:2px; color:#E5484D; min-width:72px; text-align:center; }
+  .music-btn{ width:40px; height:40px; border-radius:50%; border:1px solid #CBE3DA; background:#fff; color:var(--brown); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .music-btn:focus-visible, .btn:focus-visible{ outline:3px solid var(--tea); outline-offset:2px; }
+  .frame{ position:relative; border-radius:14px; overflow:hidden; }
+  canvas{ display:block; width:100%; height:auto; touch-action:none; cursor:ew-resize; }
+  .overlay{ position:absolute; inset:0; background:rgba(58,36,24,.86); color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; padding:22px; }
+  .overlay.hidden{ display:none; }
+  .overlay h2{ margin:0; font-weight:900; font-size:clamp(24px,6.5vw,32px); color:#FFC987; }
+  .overlay p{ margin:0; font-size:14px; line-height:1.8; max-width:290px; }
+  .btn{ font:900 16px 'Noto Sans TC',sans-serif; color:var(--brown); background:#FFC987; border:none; padding:12px 28px; border-radius:24px; cursor:pointer; box-shadow:0 4px 0 var(--tea-dark); }
+  .btn:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--tea-dark); }
+  .hint{ margin-top:14px; max-width:400px; text-align:center; font-size:12px; line-height:1.8; color:var(--brown-soft); }
+</style>
+</head>
+<body>
+  <div class="marquee">
+    <h1>珍珠接接樂</h1>
+    <p>珍珠、布丁從天而降，把它們接進杯子裡！小心冰塊，撞到會讓這杯變淡。</p>
+  </div>
+
+  <div class="board">
+    <div class="hud">
+      <div class="stat"><span class="label">分數</span><span class="value" id="score">0</span></div>
+      <div class="lives" id="lives" aria-label="剩餘生命">♥♥♥</div>
+      <button class="music-btn" id="musicBtn" aria-label="切換背景音樂" aria-pressed="true">🔊</button>
+      <div class="stat right"><span class="label">最高</span><span class="value" id="best">0</span></div>
+    </div>
+
+    <div class="frame">
+      <canvas id="cv" width="360" height="520" aria-label="珍珠接接樂遊戲畫面"></canvas>
+
+      <div class="overlay" id="startOverlay">
+        <h2>開張囉！</h2>
+        <p>滑鼠移動、手指拖曳或按 ← → 移動杯子。黑色珍珠 1 分、黃色布丁 3 分，連續接住會有連擊加成，冰塊會扣一條命。</p>
+        <button class="btn" id="startBtn">開始接料</button>
+      </div>
+
+      <div class="overlay hidden" id="endOverlay">
+        <h2>這杯淡掉了</h2>
+        <p id="endText"></p>
+        <button class="btn" id="againBtn">再喝一杯</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">接料不用急著追，預判落點再移動，連擊越高分數越多。</p>
+
+<script>
+(function(){
+  "use strict";
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  var W = cv.width, H = cv.height;
+  var scoreEl = document.getElementById('score'), bestEl = document.getElementById('best');
+  var livesEl = document.getElementById('lives'), musicBtn = document.getElementById('musicBtn');
+  var startOverlay = document.getElementById('startOverlay'), endOverlay = document.getElementById('endOverlay');
+  var endText = document.getElementById('endText');
+
+  var CUP_W = 78, CUP_H = 96, CUP_Y = H - CUP_H - 14, CATCH_W = 70;
+  var cupX, items, floats, score, lives, combo, maxCombo, elapsed, spawnT, running, last, raf, shake, keys = { l: false, r: false };
+
+  var best = 0;
+  try { var sv = localStorage.getItem('pearlcatch_best'); if (sv) best = parseInt(sv, 10) || 0; } catch (e) { /* ignore */ }
+  bestEl.textContent = best;
+  var musicOn = true;
+  try { var mv = localStorage.getItem('pearlcatch_music'); if (mv !== null) musicOn = (mv === '1'); } catch (e) { /* ignore */ }
+
+  var ac = null;
+  function getAc(){
+    try { if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (e) { ac = null; }
+    return ac;
+  }
+  function tone(f, d, type, v, delay){
+    var a = getAc(); if (!a) return;
+    try {
+      var o = a.createOscillator(), g = a.createGain(), t = a.currentTime + (delay || 0);
+      o.type = type; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(v, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + d + 0.03);
+    } catch (e) { /* ignore */ }
+  }
+  var music = {
+    timer: null, step: 0,
+    mel: [392, 440, 523.25, 440, 392, 329.63, 392, 0, 440, 523.25, 587.33, 523.25, 440, 392, 329.63, 0],
+    bass: [130.81, 0, 196, 0, 174.61, 0, 196, 0],
+    start: function(){ this.stop(); if (!musicOn) return; this.step = 0; var s = this; this.timer = setInterval(function(){ s.play(); }, 240); },
+    play: function(){
+      var m = this.mel[this.step % 16], b = this.bass[this.step % 8];
+      if (m) tone(m, 0.22, 'triangle', 0.045);
+      if (b) tone(b, 0.4, 'sine', 0.05);
+      this.step++;
+    },
+    stop: function(){ if (this.timer){ clearInterval(this.timer); this.timer = null; } }
+  };
+
+  function rnd(a, b){ return a + Math.random() * (b - a); }
+
+  function spawn(){
+    var iceP = Math.min(0.34, 0.2 + elapsed * 0.002);
+    var roll = Math.random(), type = roll < iceP ? 'ice' : roll < iceP + 0.12 ? 'pudding' : 'pearl';
+    var speed = Math.min(340, 150 + elapsed * 3.2) * rnd(0.9, 1.15);
+    items.push({ type: type, x: rnd(24, W - 24), y: -24, v: speed, r: type === 'pearl' ? 11 : 15, rot: rnd(0, 6) });
+  }
+
+  function setLives(){
+    var s = ''; for (var i = 0; i < 3; i++) s += i < lives ? '♥' : '♡';
+    livesEl.textContent = s;
+  }
+  function addFloat(x, y, text, color){ floats.push({ x: x, y: y, text: text, color: color, life: 0.7 }); }
+
+  function update(dt){
+    elapsed += dt;
+    if (keys.l) cupX -= 440 * dt;
+    if (keys.r) cupX += 440 * dt;
+    cupX = Math.max(CUP_W / 2, Math.min(W - CUP_W / 2, cupX));
+    spawnT -= dt;
+    if (spawnT <= 0){ spawn(); spawnT = Math.max(0.34, 0.85 - elapsed * 0.008) * rnd(0.8, 1.2); }
+    for (var i = items.length - 1; i >= 0; i--){
+      var it = items[i];
+      it.y += it.v * dt; it.rot += dt * 2;
+      var inX = Math.abs(it.x - cupX) < CATCH_W / 2 + it.r * 0.4;
+      if (inX && it.y + it.r >= CUP_Y + 6 && it.y - it.r <= CUP_Y + 40){
+        items.splice(i, 1);
+        if (it.type === 'ice'){
+          lives--; combo = 0; shake = 0.25; setLives(); tone(110, 0.3, 'sawtooth', 0.09);
+          addFloat(it.x, CUP_Y, '冰塊！', '#4AA3D9');
+          if (lives <= 0){ finish(); return; }
+        } else {
+          combo++; if (combo > maxCombo) maxCombo = combo;
+          var base = it.type === 'pudding' ? 3 : 1;
+          var gain = Math.round(base * (1 + Math.floor(combo / 10) * 0.5));
+          score += gain; scoreEl.textContent = score;
+          tone(it.type === 'pudding' ? 784 : 520 + Math.min(combo, 20) * 18, 0.1, 'triangle', 0.09);
+          addFloat(it.x, CUP_Y - 6, '+' + gain, it.type === 'pudding' ? '#E0A100' : '#3A2418');
+        }
+      } else if (it.y - it.r > H){
+        items.splice(i, 1);
+        if (it.type !== 'ice') combo = 0;
+      }
+    }
+    for (var j = floats.length - 1; j >= 0; j--){
+      floats[j].life -= dt; floats[j].y -= 40 * dt;
+      if (floats[j].life <= 0) floats.splice(j, 1);
+    }
+    if (shake > 0) shake -= dt;
+  }
+
+  function rr(x, y, w, h, r){
+    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+
+  function drawItem(it){
+    ctx.save(); ctx.translate(it.x, it.y);
+    if (it.type === 'pearl'){
+      ctx.fillStyle = '#3A2418'; ctx.beginPath(); ctx.arc(0, 0, it.r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.4)'; ctx.beginPath(); ctx.arc(-3.5, -4, 3.2, 0, Math.PI * 2); ctx.fill();
+    } else if (it.type === 'pudding'){
+      ctx.rotate(Math.sin(it.rot) * 0.15);
+      ctx.fillStyle = '#FFD25C'; rr(-14, -12, 28, 24, 6); ctx.fill();
+      ctx.fillStyle = '#9A5B25'; rr(-14, -12, 28, 8, 4); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.fillRect(-9, -1, 4, 8);
+    } else {
+      ctx.rotate(it.rot * 0.6);
+      ctx.fillStyle = '#BFE6FA'; rr(-14, -14, 28, 28, 6); ctx.fill();
+      ctx.strokeStyle = '#6DB7DE'; ctx.lineWidth = 2; rr(-14, -14, 28, 28, 6); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.fillRect(-9, -9, 8, 4);
+    }
+    ctx.restore();
+  }
+
+  function drawCup(){
+    var x = cupX, top = CUP_Y, bot = CUP_Y + CUP_H;
+    ctx.save();
+    if (shake > 0) ctx.translate(Math.sin(elapsed * 90) * 3, 0);
+    ctx.strokeStyle = '#E5484D'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x + 12, top + 6); ctx.lineTo(x + 24, top - 34); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - CUP_W / 2, top); ctx.lineTo(x + CUP_W / 2, top); ctx.lineTo(x + CUP_W / 2 - 12, bot); ctx.lineTo(x - CUP_W / 2 + 12, bot); ctx.closePath();
+    ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fill();
+    var level = Math.min(0.78, 0.35 + score / 400);
+    var ty = bot - CUP_H * level;
+    ctx.save(); ctx.clip();
+    ctx.fillStyle = '#D9A066'; ctx.fillRect(x - CUP_W, ty, CUP_W * 2, bot - ty);
+    ctx.fillStyle = '#3A2418';
+    var n = Math.min(26, 6 + Math.floor(score / 6));
+    for (var i = 0; i < n; i++){
+      var px = x - 24 + (i * 37 % 48), py = bot - 7 - Math.floor(i / 6) * 9 - (i % 2) * 2;
+      ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+    ctx.strokeStyle = '#3A2418'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(x - CUP_W / 2, top); ctx.lineTo(x + CUP_W / 2, top); ctx.lineTo(x + CUP_W / 2 - 12, bot); ctx.lineTo(x - CUP_W / 2 + 12, bot); ctx.closePath(); ctx.stroke();
+    ctx.fillStyle = '#E88F3D'; rr(x - CUP_W / 2 - 4, top - 8, CUP_W + 8, 10, 4); ctx.fill();
+    ctx.restore();
+  }
+
+  function draw(){
+    var g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#DFF5EC'); g.addColorStop(1, '#BFE6D6');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(255,255,255,.55)';
+    for (var i = 0; i < 6; i++){ ctx.beginPath(); ctx.arc(30 + i * 62, 50 + (i % 3) * 38, 16 + (i % 2) * 8, 0, Math.PI * 2); ctx.fill(); }
+    items.forEach(drawItem);
+    drawCup();
+    ctx.textAlign = 'center'; ctx.font = "900 16px 'Noto Sans TC', sans-serif";
+    floats.forEach(function(f){ ctx.globalAlpha = Math.max(0, f.life / 0.7); ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, f.y); });
+    ctx.globalAlpha = 1;
+    if (combo >= 3){
+      ctx.fillStyle = 'rgba(58,36,24,.75)'; ctx.font = "900 18px 'Noto Sans TC', sans-serif";
+      ctx.fillText(combo + ' 連擊', W / 2, 30);
+    }
+  }
+
+  function loop(ts){
+    if (!running) return;
+    if (!last) last = ts;
+    var dt = Math.min(0.033, (ts - last) / 1000); last = ts;
+    update(dt);
+    if (!running) return;
+    draw();
+    raf = requestAnimationFrame(loop);
+  }
+
+  function finish(){
+    running = false; cancelAnimationFrame(raf); music.stop(); draw();
+    var isBest = score > best;
+    if (isBest){ best = score; bestEl.textContent = best; try { localStorage.setItem('pearlcatch_best', String(best)); } catch (e) { /* ignore */ } }
+    endText.innerHTML = '本局 ' + score + ' 分，最高連擊 ' + maxCombo + (isBest ? '<br>刷新最高分了！' : '');
+    setTimeout(function(){ endOverlay.classList.remove('hidden'); }, 350);
+  }
+
+  function startGame(){
+    getAc();
+    startOverlay.classList.add('hidden'); endOverlay.classList.add('hidden');
+    cupX = W / 2; items = []; floats = []; score = 0; lives = 3; combo = 0; maxCombo = 0; elapsed = 0; spawnT = 0.6; shake = 0; last = 0;
+    scoreEl.textContent = '0'; setLives();
+    running = true; music.start(); raf = requestAnimationFrame(loop);
+  }
+
+  function setFromClient(x){
+    var r = cv.getBoundingClientRect();
+    cupX = Math.max(CUP_W / 2, Math.min(W - CUP_W / 2, (x - r.left) / r.width * W));
+  }
+  cv.addEventListener('mousemove', function(e){ if (running) setFromClient(e.clientX); });
+  cv.addEventListener('touchstart', function(e){ if (running){ setFromClient(e.touches[0].clientX); } e.preventDefault(); }, { passive: false });
+  cv.addEventListener('touchmove', function(e){ if (running){ setFromClient(e.touches[0].clientX); } e.preventDefault(); }, { passive: false });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A'){ keys.l = true; e.preventDefault(); }
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D'){ keys.r = true; e.preventDefault(); }
+  });
+  document.addEventListener('keyup', function(e){
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.l = false;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.r = false;
+  });
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('againBtn').addEventListener('click', startGame);
+  function refreshMusicBtn(){ musicBtn.textContent = musicOn ? '🔊' : '🔇'; musicBtn.setAttribute('aria-pressed', String(musicOn)); }
+  musicBtn.addEventListener('click', function(){
+    musicOn = !musicOn;
+    try { localStorage.setItem('pearlcatch_music', musicOn ? '1' : '0'); } catch (e) { /* ignore */ }
+    if (musicOn && running) music.start(); else music.stop();
+    refreshMusicBtn();
+  });
+
+  cupX = W / 2; items = []; floats = []; score = 0; lives = 3; combo = 0; elapsed = 0; shake = 0;
+  refreshMusicBtn(); setLives(); draw();
+})();
+</script>
+</body>
+</html>
