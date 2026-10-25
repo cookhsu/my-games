@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>花磚打磚塊 Tile Breaker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@600;700;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --wood: #8B5E34;
+    --wood-dark: #6B4423;
+    --grout: #F4EDE4;
+    --grout-dark: #E3D8C6;
+    --ink: #3B2A20;
+    --ink-soft: #7A6552;
+    --indigo: #2C4A7C;
+    --teal: #2A9D8F;
+    --mustard: #E9B44C;
+    --terracotta: #E07A5F;
+    --marble: #FBF7F0;
+    --shadow: rgba(40,25,10,0.35);
+  }
+  :root:not([data-theme="light"]){
+    --wood: #8B5E34;
+    --wood-dark: #6B4423;
+  }
+  :root[data-theme="dark"]{
+    --wood: #6B4423;
+    --wood-dark: #4E3218;
+  }
+
+  *{ box-sizing: border-box; }
+  html, body{
+    margin:0; padding:0;
+    background: #EFE3CB;
+    color: var(--ink);
+    font-family: 'Nunito', system-ui, sans-serif;
+    min-height: 100%;
+  }
+
+  body{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding: 28px 16px 60px;
+    background:
+      radial-gradient(ellipse at 50% -10%, rgba(224,122,95,0.14), transparent 55%),
+      #EFE3CB;
+  }
+
+  .marquee{
+    text-align:center;
+    margin-bottom: 20px;
+  }
+  .marquee h1{
+    font-family:'Rubik', sans-serif;
+    font-weight: 900;
+    font-size: clamp(22px, 6vw, 34px);
+    color: var(--ink);
+    margin: 0 0 8px;
+    letter-spacing: 0.5px;
+  }
+  .marquee p{
+    margin:0;
+    color: var(--ink-soft);
+    font-size: 14px;
+    max-width: 420px;
+  }
+
+  .board{
+    background: linear-gradient(180deg, var(--wood), var(--wood-dark));
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: 0 20px 45px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.08);
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .hud{
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 8px 14px;
+  }
+  .hud .stat{ text-align:left; }
+  .hud .stat.right{ text-align:right; }
+  .hud .label{
+    font-family:'Rubik', sans-serif;
+    font-weight:700;
+    font-size: 10px;
+    color: var(--grout);
+    letter-spacing: 0.5px;
+    display:block;
+    margin-bottom: 2px;
+    opacity: 0.8;
+  }
+  .hud .value{
+    font-family:'Rubik', sans-serif;
+    font-weight: 900;
+    font-size: 20px;
+    color: var(--marble);
+  }
+  .music-btn{
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--marble);
+    border: none;
+    color: var(--ink);
+    font-size: 18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    flex-shrink:0;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.2);
+  }
+  .music-btn:active{ transform: translateY(1px); box-shadow:none; }
+  .music-btn:focus-visible{
+    outline: 3px solid var(--mustard);
+    outline-offset: 2px;
+  }
+
+  .screen-frame{
+    position:relative;
+    border-radius: 10px;
+    padding: 6px;
+    background: var(--wood-dark);
+  }
+
+  canvas{
+    display:block;
+    width:100%;
+    height:auto;
+    border-radius: 6px;
+    background: var(--grout);
+    touch-action: none;
+    cursor: pointer;
+  }
+
+  .overlay{
+    position:absolute;
+    inset: 6px;
+    border-radius: 6px;
+    background: rgba(59,42,32,0.85);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding: 20px;
+    gap: 14px;
+  }
+  .overlay.hidden{ display:none; }
+  .overlay h2{
+    font-family:'Rubik', sans-serif;
+    font-weight: 900;
+    font-size: clamp(18px, 5vw, 26px);
+    color: var(--marble);
+    margin:0;
+  }
+  .overlay p{
+    margin:0;
+    color: #E9DCC9;
+    font-size: 13px;
+    line-height:1.6;
+    max-width: 260px;
+  }
+  .btn{
+    font-family:'Rubik', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--mustard);
+    border: none;
+    padding: 12px 26px;
+    border-radius: 10px;
+    cursor:pointer;
+    box-shadow: 0 4px 0 #B8862F;
+    transition: transform 0.08s ease;
+  }
+  .btn:active{
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 #B8862F;
+  }
+  .btn:focus-visible{
+    outline: 3px solid var(--marble);
+    outline-offset: 2px;
+  }
+
+  .hint{
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align:center;
+    max-width: 420px;
+  }
+  .hint kbd{
+    font-family:'Rubik', sans-serif;
+    font-weight:700;
+    font-size: 11px;
+    background: var(--marble);
+    border-radius: 4px;
+    padding: 3px 8px;
+    color: var(--ink);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .btn, .music-btn{ transition: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="marquee">
+    <h1>花磚打磚塊</h1>
+    <p>移動木槳接住彈珠，把整面花磚牆敲個粉碎！</p>
+  </div>
+
+  <div class="board">
+    <div class="hud">
+      <div class="stat">
+        <span class="label">分數 SCORE</span>
+        <span class="value" id="score">0</span>
+      </div>
+      <button class="music-btn" id="musicBtn" aria-label="切換背景音樂" aria-pressed="true">🔊</button>
+      <div class="stat right">
+        <span class="label">最佳 BEST</span>
+        <span class="value" id="best">0</span>
+      </div>
+    </div>
+
+    <div class="screen-frame">
+      <canvas id="game" width="360" height="520" aria-label="打磚塊遊戲畫面"></canvas>
+
+      <div class="overlay" id="startOverlay">
+        <h2>準備開工！</h2>
+        <p>滑鼠移動或手指拖曳來控制木槳，點一下畫面或按空白鍵發射彈珠，把花磚都打破吧</p>
+        <button class="btn" id="startBtn">開始遊戲</button>
+      </div>
+
+      <div class="overlay hidden" id="overOverlay">
+        <h2>彈珠掉光了</h2>
+        <p id="finalScore">本局分數：0</p>
+        <button class="btn" id="restartBtn">再玩一次</button>
+      </div>
+
+      <div class="overlay hidden" id="winOverlay">
+        <h2>全部打破！🎉</h2>
+        <p id="winScore">本局分數：0</p>
+        <button class="btn" id="winBtn">挑戰下一面牆</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">桌機請移動滑鼠或按 <kbd>← →</kbd>　手機請用手指拖曳畫面來移動木槳，點一下發射彈珠</p>
+
+<script>
+(function(){
+  "use strict";
+
+  var canvas = document.getElementById('game');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+
+  var scoreEl = document.getElementById('score');
+  var bestEl = document.getElementById('best');
+  var startOverlay = document.getElementById('startOverlay');
+  var overOverlay = document.getElementById('overOverlay');
+  var winOverlay = document.getElementById('winOverlay');
+  var finalScoreEl = document.getElementById('finalScore');
+  var winScoreEl = document.getElementById('winScore');
+  var startBtn = document.getElementById('startBtn');
+  var restartBtn = document.getElementById('restartBtn');
+  var winBtn = document.getElementById('winBtn');
+
+  var TILE_COLORS = ['#2C4A7C', '#2A9D8F', '#E9B44C', '#E07A5F'];
+  var GROUT = '#E3D8C6';
+
+  var best = 0;
+  try {
+    var stored = localStorage.getItem('tilebreaker_best');
+    if (stored) best = parseInt(stored, 10) || 0;
+  } catch (e) { /* storage unavailable */ }
+  bestEl.textContent = best;
+
+  var ROWS = 6, COLS = 8;
+  var MARGIN = 10, GAP = 4;
+  var BRICK_W = (W - MARGIN*2 - GAP*(COLS-1)) / COLS;
+  var BRICK_H = 18;
+  var TOP_OFFSET = 44;
+
+  var PADDLE_W = 64, PADDLE_H = 12, PADDLE_Y = H - 30;
+  var BALL_R = 7;
+  var BASE_SPEED = 260;
+  var MAX_BOUNCE_VX = 280;
+
+  var paddleX, ballX, ballY, ballVX, ballVY, launched, bricks, score, lives, running, lastTime, rafId;
+  var keys = { left:false, right:false };
+
+  function buildBricks(){
+    bricks = [];
+    for (var r=0; r<ROWS; r++){
+      for (var c=0; c<COLS; c++){
+        bricks.push({
+          x: MARGIN + c*(BRICK_W+GAP),
+          y: TOP_OFFSET + r*(BRICK_H+GAP),
+          w: BRICK_W, h: BRICK_H,
+          hp: r < 2 ? 2 : 1,
+          maxHp: r < 2 ? 2 : 1,
+          color: TILE_COLORS[r % TILE_COLORS.length],
+          alive: true
+        });
+      }
+    }
+  }
+
+  function resetBall(){
+    launched = false;
+    ballX = paddleX;
+    ballY = PADDLE_Y - BALL_R - 1;
+    ballVX = 0;
+    ballVY = 0;
+  }
+
+  function resetState(){
+    paddleX = W/2;
+    score = 0;
+    lives = 3;
+    scoreEl.textContent = '0';
+    buildBricks();
+    resetBall();
+  }
+
+  function clampPaddle(){
+    var half = PADDLE_W/2;
+    if (paddleX < half) paddleX = half;
+    if (paddleX > W - half) paddleX = W - half;
+  }
+
+  function launchBall(){
+    launched = true;
+    var dir = (Math.random() < 0.5 ? -1 : 1) * (0.25 + Math.random()*0.25);
+    ballVX = BASE_SPEED * dir;
+    ballVY = -Math.sqrt(Math.max(0, BASE_SPEED*BASE_SPEED - ballVX*ballVX));
+  }
+
+  function roundRectPath(x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+
+  function drawBrick(b){
+    roundRectPath(b.x, b.y, b.w, b.h, 3);
+    ctx.fillStyle = b.color;
+    ctx.fill();
+    if (b.hp < b.maxHp){
+      // 裂痕：碎過一次的花磚
+      ctx.strokeStyle = 'rgba(59,42,32,0.5)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(b.x+6, b.y+3);
+      ctx.lineTo(b.x+b.w*0.5, b.y+b.h-4);
+      ctx.lineTo(b.x+b.w-6, b.y+5);
+      ctx.stroke();
+    } else {
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 1;
+      roundRectPath(b.x+3, b.y+3, b.w-6, b.h-6, 2);
+      ctx.stroke();
+    }
+  }
+
+  function drawPaddle(){
+    roundRectPath(paddleX - PADDLE_W/2, PADDLE_Y, PADDLE_W, PADDLE_H, 6);
+    var grad = ctx.createLinearGradient(0, PADDLE_Y, 0, PADDLE_Y+PADDLE_H);
+    grad.addColorStop(0, '#A9764A');
+    grad.addColorStop(1, '#8B5E34');
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+
+  function drawBall(){
+    var grad = ctx.createRadialGradient(ballX-2, ballY-2, 1, ballX, ballY, BALL_R);
+    grad.addColorStop(0, '#FFFFFF');
+    grad.addColorStop(1, '#D8CDBE');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(ballX, ballY, BALL_R, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  function drawLives(){
+    for (var i=0; i<lives; i++){
+      ctx.fillStyle = '#D8CDBE';
+      ctx.beginPath();
+      ctx.arc(16 + i*18, 18, 6, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  function draw(){
+    ctx.fillStyle = GROUT;
+    ctx.fillRect(0, 0, W, H);
+    bricks.forEach(function(b){ if (b.alive) drawBrick(b); });
+    drawPaddle();
+    drawBall();
+    drawLives();
+  }
+
+  var audioCtx = null;
+  function getAudioCtx(){
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    } catch (e) { audioCtx = null; }
+    return audioCtx;
+  }
+  function sfx(freq, dur, type, vol){
+    var ac = getAudioCtx();
+    if (!ac) return;
+    try {
+      var o = ac.createOscillator();
+      var g = ac.createGain();
+      o.type = type || 'square';
+      o.frequency.value = freq;
+      g.gain.value = 0;
+      o.connect(g); g.connect(ac.destination);
+      var t = ac.currentTime;
+      o.start(t);
+      g.gain.linearRampToValueAtTime(vol || 0.06, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.stop(t + dur + 0.02);
+    } catch (e) { /* ignore */ }
+  }
+  function paddleSfx(){ sfx(300, 0.08, 'triangle', 0.05); }
+  function brickSfx(hp){ sfx(hp > 0 ? 500 : 720, 0.1, 'square', 0.055); }
+  function wallSfx(){ sfx(220, 0.05, 'triangle', 0.03); }
+  function loseLifeSfx(){ sfx(150, 0.3, 'sawtooth', 0.06); }
+  function winSfx(){
+    [523.25, 659.25, 783.99, 1046.5].forEach(function(f, i){
+      setTimeout(function(){ sfx(f, 0.2, 'triangle', 0.06); }, i*110);
+    });
+  }
+
+  var music = {
+    enabled: true,
+    timer: null,
+    step: 0,
+    tempo: 230,
+    melody: [392.00, 440.00, 493.88, 587.33, 493.88, 440.00, 392.00, 329.63],
+    bass:   [98.00,  null,   130.81, null,   98.00,  null,   123.47, null],
+    loadPref: function(){
+      try {
+        var v = localStorage.getItem('tilebreaker_music');
+        if (v !== null) this.enabled = (v === '1');
+      } catch (e) { /* ignore */ }
+    },
+    savePref: function(){
+      try { localStorage.setItem('tilebreaker_music', this.enabled ? '1' : '0'); } catch (e) { /* ignore */ }
+    },
+    tone: function(freq, dur, type, vol){
+      var ac = getAudioCtx();
+      if (!ac || !freq) return;
+      try {
+        var o = ac.createOscillator();
+        var g = ac.createGain();
+        o.type = type;
+        o.frequency.value = freq;
+        g.gain.value = 0;
+        o.connect(g); g.connect(ac.destination);
+        var t = ac.currentTime;
+        o.start(t);
+        g.gain.linearRampToValueAtTime(vol, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.stop(t + dur + 0.03);
+      } catch (e) { /* ignore */ }
+    },
+    playStep: function(){
+      var m = this.melody[this.step % this.melody.length];
+      var b = this.bass[this.step % this.bass.length];
+      this.tone(m, 0.26, 'triangle', 0.045);
+      if (b) this.tone(b, 0.5, 'sine', 0.05);
+      this.step++;
+    },
+    start: function(){
+      this.stop();
+      if (!this.enabled) return;
+      getAudioCtx();
+      this.step = 0;
+      this.playStep();
+      var self = this;
+      this.timer = setInterval(function(){ self.playStep(); }, this.tempo);
+    },
+    stop: function(){
+      if (this.timer){ clearInterval(this.timer); this.timer = null; }
+    },
+    toggle: function(){
+      this.enabled = !this.enabled;
+      this.savePref();
+      if (this.enabled && running) this.start();
+      else this.stop();
+      return this.enabled;
+    }
+  };
+  music.loadPref();
+
+  function updateScore(delta){
+    score += delta;
+    scoreEl.textContent = score;
+  }
+
+  function checkBrickCollisions(){
+    for (var i=0; i<bricks.length; i++){
+      var b = bricks[i];
+      if (!b.alive) continue;
+      var closestX = Math.max(b.x, Math.min(ballX, b.x + b.w));
+      var closestY = Math.max(b.y, Math.min(ballY, b.y + b.h));
+      var dx = ballX - closestX, dy = ballY - closestY;
+      if (dx*dx + dy*dy <= BALL_R*BALL_R){
+        var overlapX = Math.min(ballX - b.x, b.x + b.w - ballX);
+        var overlapY = Math.min(ballY - b.y, b.y + b.h - ballY);
+        if (overlapX < overlapY){ ballVX = -ballVX; } else { ballVY = -ballVY; }
+        b.hp -= 1;
+        if (b.hp <= 0){
+          b.alive = false;
+          updateScore(10 * b.maxHp);
+          brickSfx(0);
+        } else {
+          updateScore(5);
+          brickSfx(1);
+        }
+        return;
+      }
+    }
+  }
+
+  function allBricksCleared(){
+    return bricks.every(function(b){ return !b.alive; });
+  }
+
+  function update(dt){
+    var PADDLE_SPEED = 420;
+    if (keys.left) paddleX -= PADDLE_SPEED * dt;
+    if (keys.right) paddleX += PADDLE_SPEED * dt;
+    clampPaddle();
+
+    if (!launched){
+      ballX = paddleX;
+      return;
+    }
+
+    ballX += ballVX * dt;
+    ballY += ballVY * dt;
+
+    if (ballX - BALL_R < 0){ ballX = BALL_R; ballVX = -ballVX; wallSfx(); }
+    if (ballX + BALL_R > W){ ballX = W - BALL_R; ballVX = -ballVX; wallSfx(); }
+    if (ballY - BALL_R < 0){ ballY = BALL_R; ballVY = -ballVY; wallSfx(); }
+
+    if (ballVY > 0 && ballY + BALL_R >= PADDLE_Y && ballY + BALL_R <= PADDLE_Y + PADDLE_H + 10 &&
+        ballX > paddleX - PADDLE_W/2 - BALL_R && ballX < paddleX + PADDLE_W/2 + BALL_R){
+      var hitPos = (ballX - paddleX) / (PADDLE_W/2);
+      hitPos = Math.max(-1, Math.min(1, hitPos));
+      ballVX = hitPos * MAX_BOUNCE_VX;
+      var speed = Math.sqrt(ballVX*ballVX + ballVY*ballVY) || BASE_SPEED;
+      ballVY = -Math.sqrt(Math.max(0, speed*speed - ballVX*ballVX));
+      ballY = PADDLE_Y - BALL_R;
+      paddleSfx();
+    }
+
+    checkBrickCollisions();
+
+    if (ballY - BALL_R > H){
+      lives -= 1;
+      if (lives <= 0){
+        gameOver();
+        return;
+      }
+      loseLifeSfx();
+      resetBall();
+    }
+
+    if (allBricksCleared()){
+      winGame();
+    }
+  }
+
+  function loop(ts){
+    if (!running) return;
+    if (!lastTime) lastTime = ts;
+    var dt = Math.min(0.033, (ts - lastTime) / 1000);
+    lastTime = ts;
+    update(dt);
+    if (!running) return;
+    draw();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function gameOver(){
+    running = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    music.stop();
+    loseLifeSfx();
+    if (score > best){
+      best = score;
+      bestEl.textContent = best;
+      try { localStorage.setItem('tilebreaker_best', String(best)); } catch (e) { /* ignore */ }
+    }
+    finalScoreEl.textContent = '本局分數：' + score;
+    overOverlay.classList.remove('hidden');
+  }
+
+  function winGame(){
+    running = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    music.stop();
+    winSfx();
+    if (score > best){
+      best = score;
+      bestEl.textContent = best;
+      try { localStorage.setItem('tilebreaker_best', String(best)); } catch (e) { /* ignore */ }
+    }
+    winScoreEl.textContent = '本局分數：' + score;
+    winOverlay.classList.remove('hidden');
+  }
+
+  function startGame(){
+    startOverlay.classList.add('hidden');
+    overOverlay.classList.add('hidden');
+    winOverlay.classList.add('hidden');
+    resetState();
+    draw();
+    running = true;
+    lastTime = 0;
+    rafId = requestAnimationFrame(loop);
+    music.start();
+  }
+
+  function pointerToCanvasX(clientX){
+    var rect = canvas.getBoundingClientRect();
+    var scale = W / rect.width;
+    return (clientX - rect.left) * scale;
+  }
+
+  canvas.addEventListener('mousemove', function(e){
+    if (!running) return;
+    paddleX = pointerToCanvasX(e.clientX);
+    clampPaddle();
+  });
+  canvas.addEventListener('touchmove', function(e){
+    if (!running) return;
+    var t = e.touches[0];
+    paddleX = pointerToCanvasX(t.clientX);
+    clampPaddle();
+    e.preventDefault();
+  }, {passive:false});
+  canvas.addEventListener('click', function(){
+    if (running && !launched) launchBall();
+  });
+  canvas.addEventListener('touchstart', function(e){
+    if (running && !launched) launchBall();
+  }, {passive:true});
+
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A'){ keys.left = true; e.preventDefault(); }
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D'){ keys.right = true; e.preventDefault(); }
+    if (e.code === 'Space'){
+      e.preventDefault();
+      if (running && !launched) launchBall();
+    }
+  });
+  document.addEventListener('keyup', function(e){
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A'){ keys.left = false; }
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D'){ keys.right = false; }
+  });
+
+  startBtn.addEventListener('click', startGame);
+  restartBtn.addEventListener('click', startGame);
+  winBtn.addEventListener('click', startGame);
+
+  var musicBtn = document.getElementById('musicBtn');
+  function refreshMusicBtn(){
+    musicBtn.textContent = music.enabled ? '🔊' : '🔇';
+    musicBtn.setAttribute('aria-pressed', String(music.enabled));
+  }
+  musicBtn.addEventListener('click', function(){
+    music.toggle();
+    refreshMusicBtn();
+  });
+  refreshMusicBtn();
+
+  resetState();
+  draw();
+})();
+</script>
+</body>
+</html>

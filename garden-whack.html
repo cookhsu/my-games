@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>菜園保衛戰</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky: #8ED1E0;
+    --sky-light: #C7EAF0;
+    --grass: #6FAE4C;
+    --grass-dark: #4E8536;
+    --soil: #7A5230;
+    --soil-dark: #5C3C22;
+    --sun: #F4C542;
+    --sun-dark: #D9A61E;
+    --ink: #2E3B1F;
+    --ink-soft: #5C6B4A;
+    --cream: #FFFBF0;
+    --shadow: rgba(30,50,20,0.35);
+  }
+
+  *{ box-sizing: border-box; }
+  html, body{
+    margin:0; padding:0;
+    background: var(--sky-light);
+    color: var(--ink);
+    font-family: 'Nunito', system-ui, sans-serif;
+    min-height: 100%;
+  }
+
+  body{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding: 28px 16px 60px;
+    background: linear-gradient(180deg, var(--sky) 0%, var(--sky-light) 40%);
+  }
+
+  .marquee{
+    text-align:center;
+    margin-bottom: 18px;
+  }
+  .marquee h1{
+    font-family:'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: clamp(22px, 6vw, 34px);
+    color: var(--grass-dark);
+    margin: 0 0 8px;
+  }
+  .marquee p{
+    margin:0;
+    color: var(--ink-soft);
+    font-size: 14px;
+    max-width: 420px;
+  }
+
+  .board{
+    background: linear-gradient(180deg, var(--grass), var(--grass-dark));
+    border-radius: 20px;
+    padding: 18px;
+    box-shadow: 0 20px 45px var(--shadow);
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .hud{
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 8px 10px;
+  }
+  .hud .stat{ text-align:left; }
+  .hud .stat.right{ text-align:right; }
+  .hud .label{
+    font-family:'Baloo 2', sans-serif;
+    font-weight: 600;
+    font-size: 10px;
+    color: var(--cream);
+    opacity: 0.85;
+    display:block;
+    margin-bottom: 2px;
+  }
+  .hud .value{
+    font-family:'Baloo 2', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--cream);
+  }
+  .music-btn{
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--cream);
+    border: none;
+    color: var(--ink);
+    font-size: 17px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    flex-shrink:0;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.15);
+  }
+  .music-btn:active{ transform: translateY(1px); box-shadow:none; }
+  .music-btn:focus-visible{
+    outline: 3px solid var(--sun);
+    outline-offset: 2px;
+  }
+
+  .timer-bar{
+    height: 10px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.25);
+    margin: 0 8px 14px;
+    overflow: hidden;
+  }
+  .timer-fill{
+    height: 100%;
+    background: var(--sun);
+    width: 100%;
+    transition: width 0.2s linear;
+  }
+
+  .field-frame{
+    position:relative;
+    border-radius: 14px;
+    padding: 8px;
+    background: var(--soil-dark);
+  }
+
+  .field{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .hole{
+    position:relative;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 40%, var(--soil), var(--soil-dark));
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: inset 0 6px 10px rgba(0,0,0,0.4);
+  }
+  .critter{
+    position:absolute;
+    left: 50%;
+    bottom: -100%;
+    width: 68%;
+    height: 82%;
+    transform: translate(-50%, 0);
+    transition: bottom 0.14s cubic-bezier(.3,1.4,.6,1);
+  }
+  .hole.active .critter{
+    bottom: 4%;
+  }
+  .critter svg{
+    width: 100%;
+    height: 100%;
+    display:block;
+    overflow: visible;
+  }
+  .critter .body{ fill: #E8825A; }
+  .hole.golden .critter .body{ fill: var(--sun); }
+  .critter .leaf{ fill: #6FAE4C; }
+  .critter .mask{ fill: #2E3B1F; }
+  .critter .eye-white{ fill: #FFFBF0; }
+  .critter .pupil{ fill: #2E3B1F; }
+  .critter .blush{ fill: #FFB6A3; opacity: 0.65; }
+  .critter .mouth{ fill: #6B2E1F; }
+  .critter .tooth{ fill: #FFFBF0; }
+
+  .hole.hit .critter{
+    animation: hit-pop 0.25s ease forwards;
+  }
+  @keyframes hit-pop{
+    0%{ transform: translate(-50%,0) scale(1); opacity:1; }
+    100%{ transform: translate(-50%,-40%) scale(0.5); opacity:0; }
+  }
+
+  .overlay{
+    position:absolute;
+    inset: 8px;
+    border-radius: 10px;
+    background: rgba(46,59,31,0.88);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding: 20px;
+    gap: 14px;
+    z-index: 5;
+  }
+  .overlay.hidden{ display:none; }
+  .overlay h2{
+    font-family:'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: clamp(18px, 5vw, 26px);
+    color: var(--sun);
+    margin:0;
+  }
+  .overlay p{
+    margin:0;
+    color: var(--cream);
+    font-size: 13px;
+    line-height:1.6;
+    max-width: 260px;
+  }
+  .btn{
+    font-family:'Baloo 2', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--sun);
+    border: none;
+    padding: 12px 26px;
+    border-radius: 24px;
+    cursor:pointer;
+    box-shadow: 0 4px 0 var(--sun-dark);
+    transition: transform 0.08s ease;
+  }
+  .btn:active{
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--sun-dark);
+  }
+  .btn:focus-visible{
+    outline: 3px solid var(--cream);
+    outline-offset: 2px;
+  }
+
+  .hint{
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align:center;
+    max-width: 420px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .btn, .music-btn, .critter{ transition: none; animation: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="marquee">
+    <h1>菜園保衛戰</h1>
+    <p>小偷從土裡冒出來要偷菜了，眼明手快點下去把牠們趕跑！</p>
+  </div>
+
+  <div class="board">
+    <div class="hud">
+      <div class="stat">
+        <span class="label">分數 SCORE</span>
+        <span class="value" id="score">0</span>
+      </div>
+      <button class="music-btn" id="musicBtn" aria-label="切換背景音樂" aria-pressed="true">🔊</button>
+      <div class="stat right">
+        <span class="label">最佳 BEST</span>
+        <span class="value" id="best">0</span>
+      </div>
+    </div>
+
+    <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
+
+    <div class="field-frame">
+      <div class="field" id="field"></div>
+
+      <div class="overlay" id="startOverlay">
+        <h2>準備巡田！</h2>
+        <p>限時 30 秒，土堆裡冒出頭的小偷點下去就能趕跑，金色的小偷分數加倍！</p>
+        <button class="btn" id="startBtn">開始遊戲</button>
+      </div>
+
+      <div class="overlay hidden" id="overOverlay">
+        <h2>時間到！</h2>
+        <p id="finalScore">本局分數：0</p>
+        <button class="btn" id="restartBtn">再巡一輪</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">桌機用滑鼠點擊、手機直接輕點，越到後面小偷冒出來的速度越快</p>
+
+<script>
+(function(){
+  "use strict";
+
+  var HOLE_COUNT = 12;
+  var GAME_DURATION = 30;
+
+  var fieldEl = document.getElementById('field');
+  var scoreEl = document.getElementById('score');
+  var bestEl = document.getElementById('best');
+  var timerFill = document.getElementById('timerFill');
+  var startOverlay = document.getElementById('startOverlay');
+  var overOverlay = document.getElementById('overOverlay');
+  var finalScoreEl = document.getElementById('finalScore');
+  var startBtn = document.getElementById('startBtn');
+  var restartBtn = document.getElementById('restartBtn');
+
+  var best = 0;
+  try {
+    var stored = localStorage.getItem('gardenwhack_best');
+    if (stored) best = parseInt(stored, 10) || 0;
+  } catch (e) { /* storage unavailable */ }
+  bestEl.textContent = best;
+
+  var CRITTER_SVG =
+    '<svg viewBox="0 0 100 100">' +
+      '<path class="leaf" d="M40,20 C29,6 17,11 23,24 C29,17 37,17 40,20 Z"/>' +
+      '<path class="leaf" d="M60,20 C71,6 83,11 77,24 C71,17 63,17 60,20 Z"/>' +
+      '<path class="body" d="M50,20 C74,20 84,44 79,64 C74,84 60,93 50,93 C40,93 26,84 21,64 C16,44 26,20 50,20 Z"/>' +
+      '<ellipse class="body" cx="12" cy="68" rx="9" ry="6.5" transform="rotate(-25 12 68)"/>' +
+      '<ellipse class="body" cx="88" cy="68" rx="9" ry="6.5" transform="rotate(25 88 68)"/>' +
+      '<rect class="mask" x="17" y="41" width="66" height="17" rx="8.5"/>' +
+      '<circle class="eye-white" cx="37" cy="49.5" r="7"/>' +
+      '<circle class="eye-white" cx="63" cy="49.5" r="7"/>' +
+      '<circle class="pupil" cx="39" cy="50.5" r="3.2"/>' +
+      '<circle class="pupil" cx="65" cy="50.5" r="3.2"/>' +
+      '<circle class="blush" cx="26" cy="65" r="6"/>' +
+      '<circle class="blush" cx="74" cy="65" r="6"/>' +
+      '<path class="mouth" d="M36,70 Q50,86 64,70 Q50,79 36,70 Z"/>' +
+      '<path class="tooth" d="M45,75 L48,75 L47,80 Z"/>' +
+      '<path class="tooth" d="M52,75 L55,75 L53,80 Z"/>' +
+    '</svg>';
+
+  var holes = [];
+  for (var i=0; i<HOLE_COUNT; i++){
+    var hole = document.createElement('div');
+    hole.className = 'hole';
+    var critter = document.createElement('div');
+    critter.className = 'critter';
+    critter.innerHTML = CRITTER_SVG;
+    hole.appendChild(critter);
+    fieldEl.appendChild(hole);
+    holes.push({ el: hole, active: false, golden: false, hideTimer: null, index: i });
+    hole.addEventListener('click', (function(h){ return function(){ onHit(h); }; })(holes[i]));
+  }
+
+  var score, running, timeLeft, spawnTimer, tickTimer;
+
+  var audioCtx = null;
+  function getAudioCtx(){
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    } catch (e) { audioCtx = null; }
+    return audioCtx;
+  }
+  function sfx(freq, dur, type, vol){
+    var ac = getAudioCtx();
+    if (!ac) return;
+    try {
+      var o = ac.createOscillator();
+      var g = ac.createGain();
+      o.type = type || 'sine';
+      o.frequency.value = freq;
+      g.gain.value = 0;
+      o.connect(g); g.connect(ac.destination);
+      var t = ac.currentTime;
+      o.start(t);
+      g.gain.linearRampToValueAtTime(vol || 0.05, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.stop(t + dur + 0.02);
+    } catch (e) { /* ignore */ }
+  }
+  function popSfx(){ sfx(260, 0.06, 'sine', 0.03); }
+  function hitSfx(){ sfx(660, 0.1, 'triangle', 0.06); }
+  function goldenHitSfx(){
+    [660, 990].forEach(function(f, i){
+      setTimeout(function(){ sfx(f, 0.12, 'triangle', 0.06); }, i*70);
+    });
+  }
+  function endSfx(){
+    [392, 494, 587].forEach(function(f, i){
+      setTimeout(function(){ sfx(f, 0.2, 'triangle', 0.05); }, i*90);
+    });
+  }
+
+  var music = {
+    enabled: true,
+    timer: null,
+    step: 0,
+    tempo: 220,
+    melody: [392.00, 440.00, 523.25, 440.00, 392.00, 349.23, 392.00, 440.00],
+    bass:   [196.00, null,   261.63, null,   196.00, null,   174.61, null],
+    loadPref: function(){
+      try {
+        var v = localStorage.getItem('gardenwhack_music');
+        if (v !== null) this.enabled = (v === '1');
+      } catch (e) { /* ignore */ }
+    },
+    savePref: function(){
+      try { localStorage.setItem('gardenwhack_music', this.enabled ? '1' : '0'); } catch (e) { /* ignore */ }
+    },
+    tone: function(freq, dur, type, vol){
+      var ac = getAudioCtx();
+      if (!ac || !freq) return;
+      try {
+        var o = ac.createOscillator();
+        var g = ac.createGain();
+        o.type = type;
+        o.frequency.value = freq;
+        g.gain.value = 0;
+        o.connect(g); g.connect(ac.destination);
+        var t = ac.currentTime;
+        o.start(t);
+        g.gain.linearRampToValueAtTime(vol, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.stop(t + dur + 0.03);
+      } catch (e) { /* ignore */ }
+    },
+    playStep: function(){
+      var m = this.melody[this.step % this.melody.length];
+      var b = this.bass[this.step % this.bass.length];
+      this.tone(m, 0.22, 'square', 0.03);
+      if (b) this.tone(b, 0.4, 'sine', 0.045);
+      this.step++;
+    },
+    start: function(){
+      this.stop();
+      if (!this.enabled) return;
+      getAudioCtx();
+      this.step = 0;
+      this.playStep();
+      var self = this;
+      this.timer = setInterval(function(){ self.playStep(); }, this.tempo);
+    },
+    stop: function(){
+      if (this.timer){ clearInterval(this.timer); this.timer = null; }
+    },
+    toggle: function(){
+      this.enabled = !this.enabled;
+      this.savePref();
+      if (this.enabled && running) this.start();
+      else this.stop();
+      return this.enabled;
+    }
+  };
+  music.loadPref();
+
+  function randomEmptyHole(){
+    var empties = holes.filter(function(h){ return !h.active; });
+    if (!empties.length) return null;
+    return empties[Math.floor(Math.random() * empties.length)];
+  }
+
+  function activateHole(h){
+    var elapsedFrac = 1 - (timeLeft / GAME_DURATION);
+    var duration = Math.max(500, 950 - elapsedFrac * 500);
+    h.active = true;
+    h.golden = Math.random() < 0.15;
+    h.el.classList.add('active');
+    h.el.classList.toggle('golden', h.golden);
+    popSfx();
+    h.hideTimer = setTimeout(function(){ deactivateHole(h); }, duration);
+  }
+
+  function deactivateHole(h){
+    h.active = false;
+    h.el.classList.remove('active', 'golden');
+    if (h.hideTimer){ clearTimeout(h.hideTimer); h.hideTimer = null; }
+  }
+
+  function onHit(h){
+    if (!running || !h.active) return;
+    var points = h.golden ? 3 : 1;
+    score += points;
+    scoreEl.textContent = score;
+    if (h.golden) goldenHitSfx(); else hitSfx();
+    h.el.classList.add('hit');
+    deactivateHole(h);
+    setTimeout(function(){ h.el.classList.remove('hit'); }, 260);
+  }
+
+  function scheduleSpawn(){
+    if (!running) return;
+    var elapsedFrac = 1 - (timeLeft / GAME_DURATION);
+    var minGap = Math.max(280, 750 - elapsedFrac * 450);
+    var maxGap = Math.max(450, 1100 - elapsedFrac * 500);
+    var gap = minGap + Math.random() * (maxGap - minGap);
+    spawnTimer = setTimeout(function(){
+      var h = randomEmptyHole();
+      if (h) activateHole(h);
+      scheduleSpawn();
+    }, gap);
+  }
+
+  function tick(){
+    timeLeft -= 0.1;
+    if (timeLeft <= 0){
+      timeLeft = 0;
+      timerFill.style.width = '0%';
+      endGame();
+      return;
+    }
+    timerFill.style.width = (timeLeft / GAME_DURATION * 100) + '%';
+  }
+
+  function endGame(){
+    running = false;
+    clearTimeout(spawnTimer);
+    clearInterval(tickTimer);
+    holes.forEach(deactivateHole);
+    music.stop();
+    endSfx();
+    if (score > best){
+      best = score;
+      bestEl.textContent = best;
+      try { localStorage.setItem('gardenwhack_best', String(best)); } catch (e) { /* ignore */ }
+    }
+    finalScoreEl.textContent = '本局分數：' + score;
+    overOverlay.classList.remove('hidden');
+  }
+
+  function startGame(){
+    startOverlay.classList.add('hidden');
+    overOverlay.classList.add('hidden');
+    holes.forEach(deactivateHole);
+    score = 0;
+    scoreEl.textContent = '0';
+    timeLeft = GAME_DURATION;
+    timerFill.style.width = '100%';
+    running = true;
+    tickTimer = setInterval(tick, 100);
+    scheduleSpawn();
+    music.start();
+  }
+
+  startBtn.addEventListener('click', startGame);
+  restartBtn.addEventListener('click', startGame);
+
+  var musicBtn = document.getElementById('musicBtn');
+  function refreshMusicBtn(){
+    musicBtn.textContent = music.enabled ? '🔊' : '🔇';
+    musicBtn.setAttribute('aria-pressed', String(music.enabled));
+  }
+  musicBtn.addEventListener('click', function(){
+    music.toggle();
+    refreshMusicBtn();
+  });
+  refreshMusicBtn();
+})();
+</script>
+</body>
+</html>

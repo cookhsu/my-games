@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>蒸籠疊疊樂 Steamer Stack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --wall: #7A2323;
+    --wall-dark: #5C1919;
+    --lattice: rgba(244,213,141,0.10);
+    --panel: #F4E3C1;
+    --panel-dark: #E3CB9C;
+    --gold: #E8B84B;
+    --gold-dark: #B8862F;
+    --ink: #3B1F1A;
+    --ink-soft: #8A6B5C;
+    --cream: #FBF3E4;
+    --shadow: rgba(30,10,10,0.45);
+  }
+
+  *{ box-sizing: border-box; }
+  html, body{
+    margin:0; padding:0;
+    background: var(--wall-dark);
+    color: var(--cream);
+    font-family: 'Nunito', system-ui, sans-serif;
+    min-height: 100%;
+  }
+
+  body{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding: 28px 16px 60px;
+    background: radial-gradient(ellipse at 50% -10%, rgba(232,184,75,0.15), transparent 55%), var(--wall-dark);
+  }
+
+  .marquee{
+    text-align:center;
+    margin-bottom: 18px;
+  }
+  .marquee h1{
+    font-family:'Noto Serif TC', serif;
+    font-weight: 900;
+    font-size: clamp(24px, 6vw, 36px);
+    color: var(--gold);
+    margin: 0 0 8px;
+    letter-spacing: 1px;
+  }
+  .marquee p{
+    margin:0;
+    color: #E7CBB8;
+    font-size: 14px;
+    max-width: 420px;
+  }
+
+  .board{
+    background: linear-gradient(180deg, var(--panel), var(--panel-dark));
+    border-radius: 18px;
+    padding: 16px;
+    box-shadow: 0 20px 45px var(--shadow);
+    width: 100%;
+    max-width: 400px;
+    border: 3px solid var(--gold-dark);
+  }
+
+  .hud{
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 8px 12px;
+  }
+  .hud .stat{ text-align:left; }
+  .hud .stat.right{ text-align:right; }
+  .hud .label{
+    font-family:'Noto Serif TC', serif;
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--ink-soft);
+    display:block;
+    margin-bottom: 2px;
+  }
+  .hud .value{
+    font-family:'Noto Serif TC', serif;
+    font-weight: 900;
+    font-size: 22px;
+    color: var(--ink);
+  }
+  .music-btn{
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--cream);
+    border: 1px solid var(--gold-dark);
+    color: var(--ink);
+    font-size: 18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .music-btn:active{ background: var(--panel-dark); }
+  .music-btn:focus-visible{
+    outline: 3px solid var(--gold-dark);
+    outline-offset: 2px;
+  }
+
+  .screen-frame{
+    position:relative;
+    border-radius: 10px;
+    padding: 6px;
+    background: var(--wall-dark);
+  }
+
+  canvas{
+    display:block;
+    width:100%;
+    height:auto;
+    border-radius: 6px;
+    touch-action: none;
+    cursor: pointer;
+  }
+
+  .overlay{
+    position:absolute;
+    inset: 6px;
+    border-radius: 6px;
+    background: rgba(59,31,26,0.88);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding: 20px;
+    gap: 14px;
+  }
+  .overlay.hidden{ display:none; }
+  .overlay h2{
+    font-family:'Noto Serif TC', serif;
+    font-weight: 900;
+    font-size: clamp(18px, 5vw, 26px);
+    color: var(--gold);
+    margin:0;
+  }
+  .overlay p{
+    margin:0;
+    color: #F1DFC9;
+    font-size: 13px;
+    line-height:1.6;
+    max-width: 260px;
+  }
+  .btn{
+    font-family:'Noto Serif TC', serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--gold);
+    border: none;
+    padding: 11px 26px;
+    border-radius: 10px;
+    cursor:pointer;
+    box-shadow: 0 4px 0 var(--gold-dark);
+    transition: transform 0.08s ease;
+  }
+  .btn:active{
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--gold-dark);
+  }
+  .btn:focus-visible{
+    outline: 3px solid var(--cream);
+    outline-offset: 2px;
+  }
+
+  .hint{
+    margin-top: 16px;
+    font-size: 12px;
+    color: #E7CBB8;
+    text-align:center;
+    max-width: 420px;
+  }
+  .hint kbd{
+    font-family:'Noto Serif TC', serif;
+    font-weight:700;
+    font-size: 11px;
+    background: var(--cream);
+    border-radius: 4px;
+    padding: 3px 8px;
+    color: var(--ink);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .btn, .music-btn{ transition: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="marquee">
+    <h1>蒸籠疊疊樂</h1>
+    <p>抓準時機放下蒸籠，疊得越準、疊得越高！</p>
+  </div>
+
+  <div class="board">
+    <div class="hud">
+      <div class="stat">
+        <span class="label">層數 HEIGHT</span>
+        <span class="value" id="score">0</span>
+      </div>
+      <button class="music-btn" id="musicBtn" aria-label="切換背景音樂" aria-pressed="true">🔊</button>
+      <div class="stat right">
+        <span class="label">最高 BEST</span>
+        <span class="value" id="best">0</span>
+      </div>
+    </div>
+
+    <div class="screen-frame">
+      <canvas id="game" width="360" height="540" aria-label="蒸籠疊疊樂遊戲畫面"></canvas>
+
+      <div class="overlay" id="startOverlay">
+        <h2>開始疊蒸籠</h2>
+        <p>點畫面、按空白鍵或 ↑ 放下移動中的蒸籠，跟下方對齊越準，蒸籠塔就疊得越穩越高</p>
+        <button class="btn" id="startBtn">開始遊戲</button>
+      </div>
+
+      <div class="overlay hidden" id="overOverlay">
+        <h2>蒸籠塔倒了！</h2>
+        <p id="finalScore">疊了 0 層</p>
+        <button class="btn" id="restartBtn">再疊一次</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">桌機請點畫面、按 <kbd>空白鍵</kbd> 或 <kbd>↑</kbd>　手機請直接輕點畫面來放下蒸籠</p>
+
+<script>
+(function(){
+  "use strict";
+
+  var canvas = document.getElementById('game');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+
+  var scoreEl = document.getElementById('score');
+  var bestEl = document.getElementById('best');
+  var startOverlay = document.getElementById('startOverlay');
+  var overOverlay = document.getElementById('overOverlay');
+  var finalScoreEl = document.getElementById('finalScore');
+  var startBtn = document.getElementById('startBtn');
+  var restartBtn = document.getElementById('restartBtn');
+
+  var PALETTE = ['#C1272D', '#D9B382', '#3C6E58', '#E8B84B', '#8B5E34'];
+  var BLOCK_H = 32;
+  var BASE_W = 220;
+  var BASE_Y = H - 70;
+  var TOP_LIMIT = 170;
+  var BASE_SPEED = 130;
+  var PERFECT_MARGIN = 6;
+  var MIN_SURVIVE_W = 6;
+
+  var stack, current, debris, score, best, running, lastTime, rafId, scrollOffset, perfectToast;
+
+  best = 0;
+  try {
+    var stored = localStorage.getItem('steamerstack_best');
+    if (stored) best = parseInt(stored, 10) || 0;
+  } catch (e) { /* storage unavailable */ }
+  bestEl.textContent = best;
+
+  function colorFor(i){ return PALETTE[i % PALETTE.length]; }
+
+  function spawnCurrent(){
+    var below = stack[stack.length - 1];
+    current = {
+      x: 0,
+      w: below.w,
+      row: stack.length,
+      dir: 1,
+      color: colorFor(stack.length)
+    };
+  }
+
+  function resetState(){
+    stack = [{ x: (W - BASE_W)/2, w: BASE_W, row: 0, color: colorFor(0) }];
+    debris = [];
+    score = 0;
+    scoreEl.textContent = '0';
+    scrollOffset = 0;
+    perfectToast = 0;
+    spawnCurrent();
+  }
+
+  function rowToScreenY(row){
+    return BASE_Y - row * BLOCK_H + scrollOffset;
+  }
+
+  function roundRectPath(x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+
+  function drawBasket(x, y, w, color){
+    var h = BLOCK_H - 4;
+    roundRectPath(x, y, w, h, 4);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(59,31,26,0.35)';
+    ctx.lineWidth = 1;
+    var lines = 3;
+    for (var i=1; i<=lines; i++){
+      var ly = y + (h/(lines+1))*i;
+      ctx.beginPath();
+      ctx.moveTo(x+3, ly);
+      ctx.lineTo(x+w-3, ly);
+      ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.fillRect(x, y, w, 3);
+  }
+
+  function drawBackground(){
+    ctx.fillStyle = '#7A2323';
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(244,213,141,0.08)';
+    ctx.lineWidth = 1;
+    var step = 40;
+    for (var x = -H; x < W + H; x += step){
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + H, H); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x - H, H); ctx.stroke();
+    }
+  }
+
+  function draw(){
+    drawBackground();
+
+    stack.forEach(function(b){
+      var y = rowToScreenY(b.row);
+      if (y > -BLOCK_H && y < H + BLOCK_H){
+        drawBasket(b.x, y, b.w, b.color);
+      }
+    });
+
+    debris.forEach(function(d){
+      drawBasket(d.x, d.y, d.w, d.color);
+    });
+
+    var curY = rowToScreenY(current.row);
+    drawBasket(current.x, curY, current.w, current.color);
+
+    if (perfectToast > 0){
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, perfectToast * 2);
+      ctx.fillStyle = '#FBF3E4';
+      ctx.font = "bold 20px 'Noto Serif TC', serif";
+      ctx.textAlign = 'center';
+      ctx.fillText('完美！', W/2, curY - 16);
+      ctx.restore();
+    }
+  }
+
+  var audioCtx = null;
+  function getAudioCtx(){
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    } catch (e) { audioCtx = null; }
+    return audioCtx;
+  }
+  function sfx(freq, dur, type, vol){
+    var ac = getAudioCtx();
+    if (!ac) return;
+    try {
+      var o = ac.createOscillator();
+      var g = ac.createGain();
+      o.type = type || 'square';
+      o.frequency.value = freq;
+      g.gain.value = 0;
+      o.connect(g); g.connect(ac.destination);
+      var t = ac.currentTime;
+      o.start(t);
+      g.gain.linearRampToValueAtTime(vol || 0.06, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.stop(t + dur + 0.02);
+    } catch (e) { /* ignore */ }
+  }
+  function dropSfx(){ sfx(360, 0.08, 'square', 0.05); }
+  function perfectSfx(){
+    [660, 880].forEach(function(f, i){
+      setTimeout(function(){ sfx(f, 0.14, 'triangle', 0.06); }, i*70);
+    });
+  }
+  function fallSfx(){ sfx(140, 0.35, 'sawtooth', 0.06); }
+
+  var music = {
+    enabled: true,
+    timer: null,
+    step: 0,
+    tempo: 260,
+    melody: [349.23, 415.30, 493.88, 415.30, 349.23, 293.66, 349.23, 415.30],
+    bass:   [87.31,  null,   123.47, null,   87.31,  null,   73.42,  null],
+    loadPref: function(){
+      try {
+        var v = localStorage.getItem('steamerstack_music');
+        if (v !== null) this.enabled = (v === '1');
+      } catch (e) { /* ignore */ }
+    },
+    savePref: function(){
+      try { localStorage.setItem('steamerstack_music', this.enabled ? '1' : '0'); } catch (e) { /* ignore */ }
+    },
+    tone: function(freq, dur, type, vol){
+      var ac = getAudioCtx();
+      if (!ac || !freq) return;
+      try {
+        var o = ac.createOscillator();
+        var g = ac.createGain();
+        o.type = type;
+        o.frequency.value = freq;
+        g.gain.value = 0;
+        o.connect(g); g.connect(ac.destination);
+        var t = ac.currentTime;
+        o.start(t);
+        g.gain.linearRampToValueAtTime(vol, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.stop(t + dur + 0.03);
+      } catch (e) { /* ignore */ }
+    },
+    playStep: function(){
+      var m = this.melody[this.step % this.melody.length];
+      var b = this.bass[this.step % this.bass.length];
+      this.tone(m, 0.28, 'triangle', 0.045);
+      if (b) this.tone(b, 0.5, 'sine', 0.05);
+      this.step++;
+    },
+    start: function(){
+      this.stop();
+      if (!this.enabled) return;
+      getAudioCtx();
+      this.step = 0;
+      this.playStep();
+      var self = this;
+      this.timer = setInterval(function(){ self.playStep(); }, this.tempo);
+    },
+    stop: function(){
+      if (this.timer){ clearInterval(this.timer); this.timer = null; }
+    },
+    toggle: function(){
+      this.enabled = !this.enabled;
+      this.savePref();
+      if (this.enabled && running) this.start();
+      else this.stop();
+      return this.enabled;
+    }
+  };
+  music.loadPref();
+
+  function dropCurrent(){
+    if (!running) return;
+    var below = stack[stack.length - 1];
+    var overlapLeft = Math.max(current.x, below.x);
+    var overlapRight = Math.min(current.x + current.w, below.x + below.w);
+    var overlapW = overlapRight - overlapLeft;
+
+    if (overlapW <= MIN_SURVIVE_W){
+      fallSfx();
+      gameOver();
+      return;
+    }
+
+    var perfect = Math.abs(current.w - overlapW) <= PERFECT_MARGIN &&
+                  Math.abs(current.x - below.x) <= PERFECT_MARGIN;
+
+    if (perfect){
+      overlapLeft = below.x;
+      overlapW = below.w;
+      perfectToast = 0.6;
+      perfectSfx();
+      score += 2;
+    } else {
+      dropSfx();
+      score += 1;
+      if (current.x < overlapLeft){
+        debris.push({
+          x: current.x, y: rowToScreenY(current.row), w: overlapLeft - current.x,
+          color: current.color, vy: 40
+        });
+      }
+      if (current.x + current.w > overlapRight){
+        debris.push({
+          x: overlapRight, y: rowToScreenY(current.row), w: (current.x+current.w) - overlapRight,
+          color: current.color, vy: 40
+        });
+      }
+    }
+
+    scoreEl.textContent = score;
+    if (score > best){
+      best = score;
+      bestEl.textContent = best;
+      try { localStorage.setItem('steamerstack_best', String(best)); } catch (e) { /* ignore */ }
+    }
+
+    stack.push({ x: overlapLeft, w: overlapW, row: current.row, color: current.color });
+    spawnCurrent();
+  }
+
+  function update(dt){
+    var speed = Math.min(320, BASE_SPEED + score * 3);
+    current.x += current.dir * speed * dt;
+    if (current.x <= 0){ current.x = 0; current.dir = 1; }
+    if (current.x + current.w >= W){ current.x = W - current.w; current.dir = -1; }
+
+    var neededTopY = BASE_Y - current.row * BLOCK_H;
+    scrollOffset = neededTopY < TOP_LIMIT ? (TOP_LIMIT - neededTopY) : 0;
+
+    for (var i = debris.length - 1; i >= 0; i--){
+      var d = debris[i];
+      d.vy += 900 * dt;
+      d.y += d.vy * dt;
+      if (d.y > H + 40) debris.splice(i, 1);
+    }
+
+    if (perfectToast > 0) perfectToast -= dt;
+  }
+
+  function loop(ts){
+    if (!running) return;
+    if (!lastTime) lastTime = ts;
+    var dt = Math.min(0.033, (ts - lastTime) / 1000);
+    lastTime = ts;
+    update(dt);
+    if (!running) return;
+    draw();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function gameOver(){
+    running = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    music.stop();
+    finalScoreEl.textContent = '疊了 ' + score + ' 層';
+    overOverlay.classList.remove('hidden');
+  }
+
+  function startGame(){
+    startOverlay.classList.add('hidden');
+    overOverlay.classList.add('hidden');
+    resetState();
+    draw();
+    running = true;
+    lastTime = 0;
+    rafId = requestAnimationFrame(loop);
+    music.start();
+  }
+
+  document.addEventListener('keydown', function(e){
+    if (e.code === 'Space' || e.key === 'ArrowUp'){
+      e.preventDefault();
+      if (running) dropCurrent();
+    }
+  });
+  canvas.addEventListener('mousedown', function(){ if (running) dropCurrent(); });
+  canvas.addEventListener('touchstart', function(e){ if (running) dropCurrent(); e.preventDefault(); }, {passive:false});
+
+  startBtn.addEventListener('click', startGame);
+  restartBtn.addEventListener('click', startGame);
+
+  var musicBtn = document.getElementById('musicBtn');
+  function refreshMusicBtn(){
+    musicBtn.textContent = music.enabled ? '🔊' : '🔇';
+    musicBtn.setAttribute('aria-pressed', String(music.enabled));
+  }
+  musicBtn.addEventListener('click', function(){
+    music.toggle();
+    refreshMusicBtn();
+  });
+  refreshMusicBtn();
+
+  resetState();
+  draw();
+})();
+</script>
+</body>
+</html>

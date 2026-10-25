@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>遊戲大廳</title>
+<style>
+  :root{ --bg:#F6F1E7; --ink:#2B2620; --soft:#6E655A; --card:#FFFFFF; }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#1D1A17; --ink:#F3ECE0; --soft:#B3A99B; --card:#2A2622; }
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,"Noto Sans TC","PingFang TC",sans-serif; }
+  header{ padding:56px 24px 24px; text-align:center; }
+  h1{ margin:0 0 10px; font-size:clamp(30px,6vw,46px); font-weight:900; }
+  header p{ margin:0; color:var(--soft); font-size:16px; }
+  main{ max-width:960px; margin:0 auto; padding:24px 24px 72px; display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:20px; }
+  a.card{ display:flex; flex-direction:column; gap:8px; background:var(--card); color:inherit; text-decoration:none; border-radius:20px; padding:24px; border-top:8px solid var(--c); box-shadow:0 6px 20px rgba(0,0,0,.08); transition:transform .12s ease; }
+  a.card:hover{ transform:translateY(-3px); }
+  a.card:focus-visible{ outline:3px solid var(--c); outline-offset:3px; }
+  .tag{ font-size:13px; font-weight:700; color:var(--soft); }
+  h2{ margin:0; font-size:22px; }
+  .card p{ margin:0; font-size:15px; line-height:1.6; color:var(--soft); }
+  .go{ margin-top:auto; padding-top:8px; font-weight:700; color:var(--ink); }
+  @media (prefers-reduced-motion: reduce){ a.card{ transition:none; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>遊戲大廳</h1>
+  <p>七款風格各異的小遊戲，選一款開始玩吧</p>
+</header>
+<main>
+  <a class="card" style="--c:#7C5CBF" href="game.html"><span class="tag">即時操作</span><h2>夜蔓 貪食蛇</h2><p>在暗夜花園裡引路，吃下果實，別咬到自己的尾巴。</p><span class="go">開始玩 →</span></a>
+  <a class="card" style="--c:#3F6D5B" href="paper-glider.html"><span class="tag">飛行躲避</span><h2>紙飛機大冒險</h2><p>讓紙飛機穿過桌上林立的鉛筆縫隙。</p><span class="go">開始玩 →</span></a>
+  <a class="card" style="--c:#C1502E" href="tile-breaker.html"><span class="tag">打磚塊</span><h2>花磚打磚塊</h2><p>用木槳接住彈珠，敲碎整面馬賽克花磚牆。</p><span class="go">開始玩 →</span></a>
+  <a class="card" style="--c:#E8749A" href="macaron2048.html"><span class="tag">滑動合併</span><h2>馬卡龍 2048</h2><p>把相同口味的馬卡龍疊在一起，疊出最大的一顆。</p><span class="go">開始玩 →</span></a>
+  <a class="card" style="--c:#2A3768" href="star-match.html"><span class="tag">記憶配對</span><h2>星圖配對</h2><p>翻開夜空卡片，用最少步數找出所有星座對子。</p><span class="go">開始玩 →</span></a>
+  <a class="card" style="--c:#7A2323" href="steamer-stack.html"><span class="tag">抓時機</span><h2>蒸籠疊疊樂</h2><p>抓準時機放下蒸籠，疊得越準越高。</p><span class="go">開始玩 →</span></a>
+  <a class="card" style="--c:#6FAE4C" href="garden-whack.html"><span class="tag">反應力</span><h2>菜園保衛戰</h2><p>限時 30 秒，把冒出土堆的小偷趕跑。</p><span class="go">開始玩 →</span></a>
+</main>
+</body>
+</html>

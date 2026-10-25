@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>夜蔓 NIGHT VINE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #2B1B33;
+    --bg-deep: #1E1226;
+    --panel: #3A2545;
+    --panel-edge: #4E3159;
+    --gold: #F4A623;
+    --gold-dim: #B67C1C;
+    --teal: #2DD4BF;
+    --teal-dim: #1F9B8B;
+    --cream: #FDF6EC;
+    --cream-dim: #C9BDD6;
+    --danger: #F45B5B;
+    --shadow: rgba(10,4,14,0.55);
+  }
+  :root:not([data-theme="light"]){
+    /* This design keeps its cabinet-night palette regardless of system scheme */
+    --bg: #2B1B33;
+    --bg-deep: #1E1226;
+  }
+  :root[data-theme="dark"]{
+    --bg: #2B1B33;
+    --bg-deep: #1E1226;
+  }
+
+  *{ box-sizing: border-box; }
+  html, body{
+    margin:0; padding:0;
+    background: var(--bg-deep);
+    color: var(--cream);
+    font-family: 'Nunito', system-ui, sans-serif;
+    min-height:100%;
+  }
+
+  body{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding: 28px 16px 60px;
+    background:
+      radial-gradient(ellipse at 50% -10%, rgba(244,166,35,0.10), transparent 55%),
+      var(--bg-deep);
+  }
+
+  .marquee{
+    text-align:center;
+    margin-bottom: 22px;
+  }
+  .marquee h1{
+    font-family:'Press Start 2P', monospace;
+    font-size: clamp(20px, 5.5vw, 34px);
+    color: var(--gold);
+    letter-spacing: 2px;
+    margin: 0 0 8px;
+    text-shadow: 0 3px 0 var(--gold-dim), 0 8px 18px rgba(244,166,35,0.25);
+  }
+  .marquee p{
+    margin:0;
+    color: var(--cream-dim);
+    font-size: 14px;
+    max-width: 420px;
+  }
+
+  .cabinet{
+    background: linear-gradient(180deg, var(--panel), var(--bg));
+    border: 3px solid var(--panel-edge);
+    border-radius: 22px;
+    padding: 18px;
+    box-shadow: 0 20px 50px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.05);
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .hud{
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 6px 16px;
+  }
+  .hud .stat{
+    text-align:left;
+  }
+  .hud .stat.right{ text-align:right; }
+  .hud .label{
+    font-family:'Press Start 2P', monospace;
+    font-size: 9px;
+    color: var(--teal);
+    letter-spacing: 1px;
+    display:block;
+    margin-bottom: 4px;
+  }
+  .hud .value{
+    font-family:'Press Start 2P', monospace;
+    font-size: 18px;
+    color: var(--cream);
+  }
+  .music-btn{
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    color: var(--gold);
+    font-size: 18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .music-btn:active{ background: var(--gold-dim); }
+  .music-btn:focus-visible{
+    outline: 3px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  .screen-frame{
+    position:relative;
+    border-radius: 12px;
+    padding: 10px;
+    background: var(--bg-deep);
+    border: 2px solid var(--panel-edge);
+  }
+
+  canvas{
+    display:block;
+    width:100%;
+    height:auto;
+    border-radius: 6px;
+    background: #150C1C;
+    touch-action: none;
+  }
+
+  .overlay{
+    position:absolute;
+    inset: 10px;
+    border-radius: 6px;
+    background: rgba(21,12,28,0.88);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding: 20px;
+    gap: 14px;
+  }
+  .overlay.hidden{ display:none; }
+  .overlay h2{
+    font-family:'Press Start 2P', monospace;
+    font-size: clamp(16px, 4.5vw, 22px);
+    color: var(--gold);
+    margin:0;
+  }
+  .overlay p{
+    margin:0;
+    color: var(--cream-dim);
+    font-size: 13px;
+    line-height:1.6;
+  }
+  .btn{
+    font-family:'Press Start 2P', monospace;
+    font-size: 12px;
+    color: var(--bg-deep);
+    background: var(--teal);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor:pointer;
+    box-shadow: 0 4px 0 var(--teal-dim);
+    transition: transform 0.08s ease;
+  }
+  .btn:active{
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--teal-dim);
+  }
+  .btn:focus-visible{
+    outline: 3px solid var(--gold);
+    outline-offset: 2px;
+  }
+  .btn.secondary{
+    background: transparent;
+    color: var(--cream-dim);
+    box-shadow: none;
+    border: 2px solid var(--panel-edge);
+  }
+
+  .controls{
+    margin-top: 18px;
+    display:flex;
+    justify-content:center;
+  }
+  .dpad{
+    display:grid;
+    grid-template-columns: repeat(3, 56px);
+    grid-template-rows: repeat(3, 56px);
+    gap: 6px;
+  }
+  .dpad button{
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 10px;
+    color: var(--cream);
+    font-size: 20px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+  }
+  .dpad button:active{ background: var(--gold-dim); }
+  .dpad .up{ grid-column:2; grid-row:1; }
+  .dpad .left{ grid-column:1; grid-row:2; }
+  .dpad .right{ grid-column:3; grid-row:2; }
+  .dpad .down{ grid-column:2; grid-row:3; }
+  .dpad .mid{ grid-column:2; grid-row:2; visibility:hidden; }
+
+  .hint{
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--cream-dim);
+    text-align:center;
+    max-width: 420px;
+  }
+  .hint kbd{
+    font-family:'Press Start 2P', monospace;
+    font-size: 9px;
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 4px;
+    padding: 3px 6px;
+    color: var(--teal);
+  }
+
+  @media (min-width: 640px){
+    .controls{ display:none; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .btn, .dpad button{ transition: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="marquee">
+    <h1>夜蔓 NIGHT VINE</h1>
+    <p>在暗夜花園裡引路，吃下發光的果實，別讓藤蔓咬到自己的尾巴。</p>
+  </div>
+
+  <div class="cabinet">
+    <div class="hud">
+      <div class="stat">
+        <span class="label">分數 SCORE</span>
+        <span class="value" id="score">0</span>
+      </div>
+      <button class="music-btn" id="musicBtn" aria-label="切換背景音樂" aria-pressed="true">🔊</button>
+      <div class="stat right">
+        <span class="label">最高 BEST</span>
+        <span class="value" id="best">0</span>
+      </div>
+    </div>
+
+    <div class="screen-frame">
+      <canvas id="game" width="400" height="400" aria-label="貪食蛇遊戲畫面"></canvas>
+
+      <div class="overlay" id="startOverlay">
+        <h2>準備好了嗎？</h2>
+        <p>方向鍵 / WASD / 滑動螢幕來移動<br>吃到果實會變長，撞到自己就結束</p>
+        <button class="btn" id="startBtn">開始遊戲</button>
+      </div>
+
+      <div class="overlay hidden" id="overOverlay">
+        <h2>遊戲結束</h2>
+        <p id="finalScore">本局分數：0</p>
+        <button class="btn" id="restartBtn">再玩一次</button>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="dpad" role="group" aria-label="方向控制">
+        <button class="up" aria-label="上">▲</button>
+        <button class="left" aria-label="左">◀</button>
+        <div class="mid"></div>
+        <button class="right" aria-label="右">▶</button>
+        <button class="down" aria-label="下">▼</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">桌機請用 <kbd>← ↑ → ↓</kbd> 或 <kbd>W A S D</kbd>　手機請用畫面上的方向鈕或直接在畫面上滑動</p>
+
+<script>
+(function(){
+  "use strict";
+
+  var canvas = document.getElementById('game');
+  var ctx = canvas.getContext('2d');
+  var GRID = 20;
+  var cell = canvas.width / GRID;
+
+  var scoreEl = document.getElementById('score');
+  var bestEl = document.getElementById('best');
+  var startOverlay = document.getElementById('startOverlay');
+  var overOverlay = document.getElementById('overOverlay');
+  var finalScoreEl = document.getElementById('finalScore');
+  var startBtn = document.getElementById('startBtn');
+  var restartBtn = document.getElementById('restartBtn');
+
+  var COLORS = {
+    bgA: '#150C1C',
+    bgB: '#1B1024',
+    snakeHead: '#F4A623',
+    snakeBody: '#2DD4BF',
+    food: '#F45B5B',
+    grid: 'rgba(253,246,236,0.03)'
+  };
+
+  var best = 0;
+  try {
+    var stored = localStorage.getItem('nightvine_best');
+    if (stored) best = parseInt(stored, 10) || 0;
+  } catch (e) { /* storage unavailable, ignore */ }
+  bestEl.textContent = best;
+
+  var snake, dir, nextDir, food, score, running, loopId, speed;
+
+  function resetState(){
+    snake = [
+      {x: 9, y: 10},
+      {x: 8, y: 10},
+      {x: 7, y: 10}
+    ];
+    dir = {x: 1, y: 0};
+    nextDir = {x: 1, y: 0};
+    score = 0;
+    speed = 140;
+    scoreEl.textContent = '0';
+    placeFood();
+  }
+
+  function placeFood(){
+    var ok = false;
+    var pos;
+    while (!ok){
+      pos = { x: Math.floor(Math.random()*GRID), y: Math.floor(Math.random()*GRID) };
+      ok = !snake.some(function(s){ return s.x === pos.x && s.y === pos.y; });
+    }
+    food = pos;
+  }
+
+  function draw(){
+    for (var y=0; y<GRID; y++){
+      for (var x=0; x<GRID; x++){
+        ctx.fillStyle = (x+y)%2===0 ? COLORS.bgA : COLORS.bgB;
+        ctx.fillRect(x*cell, y*cell, cell, cell);
+      }
+    }
+
+    ctx.fillStyle = COLORS.food;
+    var fr = cell*0.35;
+    ctx.beginPath();
+    ctx.arc(food.x*cell+cell/2, food.y*cell+cell/2, fr, 0, Math.PI*2);
+    ctx.fill();
+
+    snake.forEach(function(seg, i){
+      ctx.fillStyle = i===0 ? COLORS.snakeHead : COLORS.snakeBody;
+      var pad = i===0 ? 1 : 2;
+      var r = 5;
+      roundRect(seg.x*cell+pad, seg.y*cell+pad, cell-pad*2, cell-pad*2, r);
+    });
+  }
+
+  function roundRect(x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  var audioCtx = null;
+  function getAudioCtx(){
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    } catch (e) { audioCtx = null; }
+    return audioCtx;
+  }
+  function beep(freq, dur){
+    var ac = getAudioCtx();
+    if (!ac) return;
+    try {
+      var o = ac.createOscillator();
+      var g = ac.createGain();
+      o.frequency.value = freq;
+      o.type = 'square';
+      g.gain.value = 0.05;
+      o.connect(g); g.connect(ac.destination);
+      o.start();
+      g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + dur);
+      o.stop(ac.currentTime + dur);
+    } catch (e) { /* audio unavailable, ignore */ }
+  }
+
+  // 背景音樂：用 Web Audio 即時合成的小段旋律迴圈，不需外部音樂檔，離線也能播放
+  var music = {
+    enabled: true,
+    timer: null,
+    step: 0,
+    tempo: 260,
+    melody: [220.00, 261.63, 293.66, 329.63, 293.66, 261.63, 220.00, 196.00],
+    bass:   [110.00, null,   146.83, null,   110.00, null,   98.00,  null],
+    loadPref: function(){
+      try {
+        var v = localStorage.getItem('nightvine_music');
+        if (v !== null) this.enabled = (v === '1');
+      } catch (e) { /* ignore */ }
+    },
+    savePref: function(){
+      try { localStorage.setItem('nightvine_music', this.enabled ? '1' : '0'); } catch (e) { /* ignore */ }
+    },
+    tone: function(freq, dur, type, vol){
+      var ac = getAudioCtx();
+      if (!ac || !freq) return;
+      try {
+        var o = ac.createOscillator();
+        var g = ac.createGain();
+        o.type = type;
+        o.frequency.value = freq;
+        g.gain.value = 0;
+        o.connect(g); g.connect(ac.destination);
+        var t = ac.currentTime;
+        o.start(t);
+        g.gain.linearRampToValueAtTime(vol, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.stop(t + dur + 0.03);
+      } catch (e) { /* ignore */ }
+    },
+    playStep: function(){
+      var m = this.melody[this.step % this.melody.length];
+      var b = this.bass[this.step % this.bass.length];
+      this.tone(m, 0.30, 'triangle', 0.05);
+      if (b) this.tone(b, 0.55, 'sine', 0.05);
+      this.step++;
+    },
+    start: function(){
+      this.stop();
+      if (!this.enabled) return;
+      getAudioCtx();
+      this.step = 0;
+      this.playStep();
+      var self = this;
+      this.timer = setInterval(function(){ self.playStep(); }, this.tempo);
+    },
+    stop: function(){
+      if (this.timer){ clearInterval(this.timer); this.timer = null; }
+    },
+    toggle: function(){
+      this.enabled = !this.enabled;
+      this.savePref();
+      if (this.enabled && running) this.start();
+      else this.stop();
+      return this.enabled;
+    }
+  };
+  music.loadPref();
+
+  function tick(){
+    dir = nextDir;
+    var head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+    if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID || snake.some(function(s){ return s.x===head.x && s.y===head.y; })){
+      gameOver();
+      return;
+    }
+
+    snake.unshift(head);
+
+    if (head.x === food.x && head.y === food.y){
+      score += 10;
+      scoreEl.textContent = score;
+      beep(660, 0.08);
+      placeFood();
+      speed = Math.max(70, speed - 3);
+      restartLoop();
+    } else {
+      snake.pop();
+    }
+
+    draw();
+  }
+
+  function restartLoop(){
+    clearInterval(loopId);
+    loopId = setInterval(tick, speed);
+  }
+
+  function gameOver(){
+    running = false;
+    clearInterval(loopId);
+    music.stop();
+    beep(140, 0.25);
+    if (score > best){
+      best = score;
+      bestEl.textContent = best;
+      try { localStorage.setItem('nightvine_best', String(best)); } catch(e) { /* ignore */ }
+    }
+    finalScoreEl.textContent = '本局分數：' + score;
+    overOverlay.classList.remove('hidden');
+  }
+
+  function startGame(){
+    startOverlay.classList.add('hidden');
+    overOverlay.classList.add('hidden');
+    resetState();
+    draw();
+    running = true;
+    restartLoop();
+    music.start();
+  }
+
+  function setDir(nx, ny){
+    if (!running) return;
+    if (nx === -dir.x && ny === -dir.y) return; // 不能反向直接撞自己
+    nextDir = {x: nx, y: ny};
+  }
+
+  document.addEventListener('keydown', function(e){
+    switch(e.key){
+      case 'ArrowUp': case 'w': case 'W': setDir(0,-1); e.preventDefault(); break;
+      case 'ArrowDown': case 's': case 'S': setDir(0,1); e.preventDefault(); break;
+      case 'ArrowLeft': case 'a': case 'A': setDir(-1,0); e.preventDefault(); break;
+      case 'ArrowRight': case 'd': case 'D': setDir(1,0); e.preventDefault(); break;
+    }
+  });
+
+  document.querySelector('.dpad .up').addEventListener('click', function(){ setDir(0,-1); });
+  document.querySelector('.dpad .down').addEventListener('click', function(){ setDir(0,1); });
+  document.querySelector('.dpad .left').addEventListener('click', function(){ setDir(-1,0); });
+  document.querySelector('.dpad .right').addEventListener('click', function(){ setDir(1,0); });
+
+  var touchStart = null;
+  canvas.addEventListener('touchstart', function(e){
+    var t = e.changedTouches[0];
+    touchStart = {x: t.clientX, y: t.clientY};
+  }, {passive:true});
+  canvas.addEventListener('touchend', function(e){
+    if (!touchStart) return;
+    var t = e.changedTouches[0];
+    var dx = t.clientX - touchStart.x;
+    var dy = t.clientY - touchStart.y;
+    if (Math.abs(dx) > Math.abs(dy)){
+      if (Math.abs(dx) > 20) setDir(dx>0?1:-1, 0);
+    } else {
+      if (Math.abs(dy) > 20) setDir(0, dy>0?1:-1);
+    }
+    touchStart = null;
+  }, {passive:true});
+
+  startBtn.addEventListener('click', startGame);
+  restartBtn.addEventListener('click', startGame);
+
+  var musicBtn = document.getElementById('musicBtn');
+  function refreshMusicBtn(){
+    musicBtn.textContent = music.enabled ? '🔊' : '🔇';
+    musicBtn.setAttribute('aria-pressed', String(music.enabled));
+  }
+  musicBtn.addEventListener('click', function(){
+    music.toggle();
+    refreshMusicBtn();
+  });
+  refreshMusicBtn();
+
+  resetState();
+  draw();
+})();
+</script>
+</body>
+</html>

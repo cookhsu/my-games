@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>星圖配對 Star Match</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night: #0F1730;
+    --night-deep: #0A0F22;
+    --panel: #182247;
+    --panel-edge: #2A3768;
+    --star: #F4D58D;
+    --star-dim: #C9A65D;
+    --silver: #C9D6F2;
+    --silver-dim: #7E8CB8;
+    --nebula: #A98BD8;
+    --card-back: #1F2B57;
+    --card-back-edge: #354283;
+    --shadow: rgba(4,7,20,0.55);
+  }
+
+  *{ box-sizing: border-box; }
+  html, body{
+    margin:0; padding:0;
+    background: var(--night-deep);
+    color: var(--silver);
+    font-family: 'Nunito', system-ui, sans-serif;
+    min-height: 100%;
+  }
+
+  body{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding: 28px 16px 60px;
+    background:
+      radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.5), transparent),
+      radial-gradient(1px 1px at 80% 10%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1.5px 1.5px at 60% 70%, rgba(255,255,255,0.5), transparent),
+      radial-gradient(1px 1px at 30% 85%, rgba(255,255,255,0.35), transparent),
+      radial-gradient(1.5px 1.5px at 90% 60%, rgba(255,255,255,0.4), transparent),
+      radial-gradient(1px 1px at 45% 40%, rgba(255,255,255,0.3), transparent),
+      radial-gradient(ellipse at 50% -10%, rgba(169,139,216,0.15), transparent 55%),
+      var(--night-deep);
+  }
+
+  .marquee{
+    text-align:center;
+    margin-bottom: 20px;
+  }
+  .marquee h1{
+    font-family:'Cormorant Garamond', serif;
+    font-weight: 700;
+    font-size: clamp(26px, 6.5vw, 40px);
+    color: var(--star);
+    margin: 0 0 8px;
+    letter-spacing: 1px;
+  }
+  .marquee p{
+    margin:0;
+    color: var(--silver-dim);
+    font-size: 14px;
+    max-width: 420px;
+  }
+
+  .board{
+    background: linear-gradient(180deg, var(--panel), var(--night));
+    border: 1px solid var(--panel-edge);
+    border-radius: 20px;
+    padding: 18px;
+    box-shadow: 0 20px 50px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.05);
+    width: 100%;
+    max-width: 440px;
+  }
+
+  .hud{
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 8px 16px;
+  }
+  .hud .stat{ text-align:left; }
+  .hud .stat.right{ text-align:right; }
+  .hud .label{
+    font-family:'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--nebula);
+    letter-spacing: 1px;
+    display:block;
+    margin-bottom: 2px;
+  }
+  .hud .value{
+    font-family:'Cormorant Garamond', serif;
+    font-weight: 700;
+    font-size: 24px;
+    color: var(--star);
+  }
+  .music-btn{
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--card-back);
+    border: 1px solid var(--panel-edge);
+    color: var(--star);
+    font-size: 18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .music-btn:active{ background: var(--panel-edge); }
+  .music-btn:focus-visible{
+    outline: 3px solid var(--star);
+    outline-offset: 2px;
+  }
+
+  .table-frame{
+    position:relative;
+    border-radius: 14px;
+    padding: 10px;
+    background: var(--night-deep);
+    border: 1px solid var(--panel-edge);
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .card{
+    position:relative;
+    aspect-ratio: 3 / 4;
+    perspective: 600px;
+    cursor: pointer;
+  }
+  .card-inner{
+    position:absolute;
+    inset:0;
+    transform-style: preserve-3d;
+    transition: transform 0.35s cubic-bezier(.4,.2,.2,1);
+  }
+  .card.flipped .card-inner{
+    transform: rotateY(180deg);
+  }
+  .card.matched .card-inner{
+    transform: rotateY(180deg);
+  }
+  .card-face{
+    position:absolute;
+    inset:0;
+    border-radius: 8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    backface-visibility: hidden;
+  }
+  .card-back-face{
+    background: linear-gradient(160deg, var(--card-back), var(--card-back-edge));
+    border: 1px solid var(--panel-edge);
+  }
+  .card-back-face::after{
+    content: '✦';
+    color: var(--nebula);
+    font-size: 18px;
+    opacity: 0.7;
+  }
+  .card-front-face{
+    background: linear-gradient(160deg, #232F5E, #17203F);
+    border: 1px solid var(--star-dim);
+    transform: rotateY(180deg);
+    font-size: clamp(20px, 5vw, 30px);
+  }
+  .card.matched .card-front-face{
+    box-shadow: 0 0 14px rgba(244,213,141,0.55);
+    border-color: var(--star);
+  }
+  .card.mismatch .card-inner{
+    animation: shake 0.35s ease;
+  }
+  @keyframes shake{
+    0%, 100%{ transform: rotateY(180deg) translateX(0); }
+    25%{ transform: rotateY(180deg) translateX(-4px); }
+    75%{ transform: rotateY(180deg) translateX(4px); }
+  }
+
+  .overlay{
+    position:absolute;
+    inset: 10px;
+    border-radius: 10px;
+    background: rgba(10,15,34,0.9);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding: 20px;
+    gap: 14px;
+    z-index: 5;
+  }
+  .overlay.hidden{ display:none; }
+  .overlay h2{
+    font-family:'Cormorant Garamond', serif;
+    font-weight: 700;
+    font-size: clamp(20px, 5.5vw, 28px);
+    color: var(--star);
+    margin:0;
+  }
+  .overlay p{
+    margin:0;
+    color: var(--silver);
+    font-size: 13px;
+    line-height:1.6;
+    max-width: 280px;
+  }
+  .btn{
+    font-family:'Cormorant Garamond', serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--night-deep);
+    background: var(--star);
+    border: none;
+    padding: 11px 26px;
+    border-radius: 22px;
+    cursor:pointer;
+    box-shadow: 0 4px 0 var(--star-dim);
+    transition: transform 0.08s ease;
+  }
+  .btn:active{
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--star-dim);
+  }
+  .btn:focus-visible{
+    outline: 3px solid var(--silver);
+    outline-offset: 2px;
+  }
+
+  .hint{
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--silver-dim);
+    text-align:center;
+    max-width: 420px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .btn, .music-btn, .card-inner{ transition: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="marquee">
+    <h1>星圖配對</h1>
+    <p>翻開夜空中的卡片，找出兩兩成對的星座符號，考驗你的記憶力。</p>
+  </div>
+
+  <div class="board">
+    <div class="hud">
+      <div class="stat">
+        <span class="label">步數 MOVES</span>
+        <span class="value" id="moves">0</span>
+      </div>
+      <button class="music-btn" id="musicBtn" aria-label="切換背景音樂" aria-pressed="true">🔊</button>
+      <div class="stat right">
+        <span class="label">最佳 BEST</span>
+        <span class="value" id="best">—</span>
+      </div>
+    </div>
+
+    <div class="table-frame">
+      <div class="grid" id="grid"></div>
+
+      <div class="overlay" id="startOverlay">
+        <h2>凝視星空</h2>
+        <p>點卡片翻開，兩張星座符號相同就會配對成功。用最少的步數找出所有配對吧</p>
+        <button class="btn" id="startBtn">開始遊戲</button>
+      </div>
+
+      <div class="overlay hidden" id="winOverlay">
+        <h2>全部配對成功！✨</h2>
+        <p id="winStats">步數：0</p>
+        <button class="btn" id="restartBtn">再玩一次</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">點卡片翻開，找出兩張一樣的星座符號；桌機、手機都可以直接點擊</p>
+
+<script>
+(function(){
+  "use strict";
+
+  var SYMBOLS = ['★','☾','☀','✦','♆','☄','♇','◈'];
+  var gridEl = document.getElementById('grid');
+  var movesEl = document.getElementById('moves');
+  var bestEl = document.getElementById('best');
+  var startOverlay = document.getElementById('startOverlay');
+  var winOverlay = document.getElementById('winOverlay');
+  var winStatsEl = document.getElementById('winStats');
+  var startBtn = document.getElementById('startBtn');
+  var restartBtn = document.getElementById('restartBtn');
+
+  var best = null;
+  try {
+    var stored = localStorage.getItem('starmatch_best');
+    if (stored) best = parseInt(stored, 10);
+  } catch (e) { /* storage unavailable */ }
+  bestEl.textContent = (best === null || isNaN(best)) ? '—' : best;
+
+  var cards, moves, matchedCount, lockBoard, firstCard, secondCard, running;
+
+  function shuffle(arr){
+    for (var i = arr.length - 1; i > 0; i--){
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+  }
+
+  function buildDeck(){
+    var deck = SYMBOLS.concat(SYMBOLS);
+    shuffle(deck);
+    return deck;
+  }
+
+  var audioCtx = null;
+  function getAudioCtx(){
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    } catch (e) { audioCtx = null; }
+    return audioCtx;
+  }
+  function sfx(freq, dur, type, vol){
+    var ac = getAudioCtx();
+    if (!ac) return;
+    try {
+      var o = ac.createOscillator();
+      var g = ac.createGain();
+      o.type = type || 'sine';
+      o.frequency.value = freq;
+      g.gain.value = 0;
+      o.connect(g); g.connect(ac.destination);
+      var t = ac.currentTime;
+      o.start(t);
+      g.gain.linearRampToValueAtTime(vol || 0.05, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.stop(t + dur + 0.02);
+    } catch (e) { /* ignore */ }
+  }
+  function flipSfx(){ sfx(420, 0.08, 'sine', 0.04); }
+  function matchSfx(){
+    [660, 880].forEach(function(f, i){
+      setTimeout(function(){ sfx(f, 0.15, 'triangle', 0.05); }, i*80);
+    });
+  }
+  function mismatchSfx(){ sfx(180, 0.18, 'sawtooth', 0.045); }
+  function winSfx(){
+    [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach(function(f, i){
+      setTimeout(function(){ sfx(f, 0.22, 'triangle', 0.06); }, i*100);
+    });
+  }
+
+  var music = {
+    enabled: true,
+    timer: null,
+    step: 0,
+    tempo: 420,
+    melody: [392.00, 466.16, 587.33, 466.16, 392.00, 349.23, 392.00, 466.16],
+    bass:   [98.00,  null,   146.83, null,   98.00,  null,   87.31,  null],
+    loadPref: function(){
+      try {
+        var v = localStorage.getItem('starmatch_music');
+        if (v !== null) this.enabled = (v === '1');
+      } catch (e) { /* ignore */ }
+    },
+    savePref: function(){
+      try { localStorage.setItem('starmatch_music', this.enabled ? '1' : '0'); } catch (e) { /* ignore */ }
+    },
+    tone: function(freq, dur, type, vol){
+      var ac = getAudioCtx();
+      if (!ac || !freq) return;
+      try {
+        var o = ac.createOscillator();
+        var g = ac.createGain();
+        o.type = type;
+        o.frequency.value = freq;
+        g.gain.value = 0;
+        o.connect(g); g.connect(ac.destination);
+        var t = ac.currentTime;
+        o.start(t);
+        g.gain.linearRampToValueAtTime(vol, t + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.stop(t + dur + 0.04);
+      } catch (e) { /* ignore */ }
+    },
+    playStep: function(){
+      var m = this.melody[this.step % this.melody.length];
+      var b = this.bass[this.step % this.bass.length];
+      this.tone(m, 0.4, 'sine', 0.035);
+      if (b) this.tone(b, 0.7, 'sine', 0.04);
+      this.step++;
+    },
+    start: function(){
+      this.stop();
+      if (!this.enabled) return;
+      getAudioCtx();
+      this.step = 0;
+      this.playStep();
+      var self = this;
+      this.timer = setInterval(function(){ self.playStep(); }, this.tempo);
+    },
+    stop: function(){
+      if (this.timer){ clearInterval(this.timer); this.timer = null; }
+    },
+    toggle: function(){
+      this.enabled = !this.enabled;
+      this.savePref();
+      if (this.enabled && running) this.start();
+      else this.stop();
+      return this.enabled;
+    }
+  };
+  music.loadPref();
+
+  function renderBoard(){
+    gridEl.innerHTML = '';
+    var deck = buildDeck();
+    cards = deck.map(function(symbol, index){
+      var card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.symbol = symbol;
+      card.dataset.index = index;
+
+      var inner = document.createElement('div');
+      inner.className = 'card-inner';
+
+      var back = document.createElement('div');
+      back.className = 'card-face card-back-face';
+
+      var front = document.createElement('div');
+      front.className = 'card-face card-front-face';
+      front.textContent = symbol;
+
+      inner.appendChild(back);
+      inner.appendChild(front);
+      card.appendChild(inner);
+      gridEl.appendChild(card);
+
+      card.addEventListener('click', function(){ onCardClick(card); });
+
+      return { el: card, symbol: symbol, matched: false, flipped: false };
+    });
+  }
+
+  function resetState(){
+    moves = 0;
+    matchedCount = 0;
+    lockBoard = false;
+    firstCard = null;
+    secondCard = null;
+    movesEl.textContent = '0';
+    renderBoard();
+  }
+
+  function onCardClick(cardEl){
+    if (!running || lockBoard) return;
+    var card = cards[parseInt(cardEl.dataset.index, 10)];
+    if (card.flipped || card.matched) return;
+
+    card.flipped = true;
+    cardEl.classList.add('flipped');
+    flipSfx();
+
+    if (!firstCard){
+      firstCard = card;
+      return;
+    }
+
+    secondCard = card;
+    lockBoard = true;
+    moves += 1;
+    movesEl.textContent = moves;
+
+    if (firstCard.symbol === secondCard.symbol){
+      setTimeout(function(){
+        firstCard.matched = true;
+        secondCard.matched = true;
+        firstCard.el.classList.add('matched');
+        secondCard.el.classList.add('matched');
+        matchedCount += 2;
+        matchSfx();
+        firstCard = null;
+        secondCard = null;
+        lockBoard = false;
+        if (matchedCount === cards.length){
+          finishGame();
+        }
+      }, 260);
+    } else {
+      firstCard.el.classList.add('mismatch');
+      secondCard.el.classList.add('mismatch');
+      mismatchSfx();
+      setTimeout(function(){
+        firstCard.flipped = false;
+        secondCard.flipped = false;
+        firstCard.el.classList.remove('flipped', 'mismatch');
+        secondCard.el.classList.remove('flipped', 'mismatch');
+        firstCard = null;
+        secondCard = null;
+        lockBoard = false;
+      }, 750);
+    }
+  }
+
+  function finishGame(){
+    running = false;
+    music.stop();
+    winSfx();
+    if (best === null || isNaN(best) || moves < best){
+      best = moves;
+      bestEl.textContent = best;
+      try { localStorage.setItem('starmatch_best', String(best)); } catch (e) { /* ignore */ }
+    }
+    winStatsEl.textContent = '步數：' + moves;
+    winOverlay.classList.remove('hidden');
+  }
+
+  function startGame(){
+    startOverlay.classList.add('hidden');
+    winOverlay.classList.add('hidden');
+    resetState();
+    running = true;
+    music.start();
+  }
+
+  startBtn.addEventListener('click', startGame);
+  restartBtn.addEventListener('click', startGame);
+
+  var musicBtn = document.getElementById('musicBtn');
+  function refreshMusicBtn(){
+    musicBtn.textContent = music.enabled ? '🔊' : '🔇';
+    musicBtn.setAttribute('aria-pressed', String(music.enabled));
+  }
+  musicBtn.addEventListener('click', function(){
+    music.toggle();
+    refreshMusicBtn();
+  });
+  refreshMusicBtn();
+
+  resetState();
+})();
+</script>
+</body>
+</html>
