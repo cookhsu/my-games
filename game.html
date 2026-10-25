@@ -141,12 +141,92 @@
       o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + d + 0.03);
     } catch (e) { /* ignore */ }
   }
+  // 背景音樂：以 AudioContext 時鐘預排的多聲部配樂（低音、琶音、旋律、鼓點），
+  // 會隨等級加快、加入更多聲部，吃到月光花時會放慢。
+  var CHORDS = [
+    { root: 110.00,  arp: [220.00, 261.63, 329.63], mel: [440.00,0,523.25,0,659.25,0,523.25,440.00] },
+    { root: 87.31,   arp: [174.61, 220.00, 261.63], mel: [523.25,0,440.00,0,523.25,587.33,523.25,0] },
+    { root: 130.81,  arp: [261.63, 329.63, 392.00], mel: [659.25,0,587.33,0,523.25,0,587.33,659.25] },
+    { root: 98.00,   arp: [196.00, 246.94, 293.66], mel: [587.33,0,523.25,0,440.00,0,392.00,0] }
+  ];
+  var ARP_PAT = [0, 1, 2, 1, 0, 1, 2, 1];
+  var noiseBuf = null;
   var music = {
-    timer: null, step: 0,
-    mel: [220.00, 261.63, 293.66, 329.63, 293.66, 261.63, 220.00, 196.00],
-    bass: [110.00, 0, 146.83, 0, 110.00, 0, 98.00, 0],
-    start: function(){ this.stop(); if (!musicOn) return; this.step = 0; var s = this; this.play(); this.timer = setInterval(function(){ s.play(); }, 260); },
-    play: function(){ tone(this.mel[this.step % 8], 0.3, 'triangle', 0.05); var b = this.bass[this.step % 8]; if (b) tone(b, 0.55, 'sine', 0.05); this.step++; },
+    timer: null, nextTime: 0, step: 0, master: null,
+    ensure: function(){
+      var a = getAc(); if (!a) return false;
+      if (!this.master){ this.master = a.createGain(); this.master.gain.value = 0.9; this.master.connect(a.destination); }
+      if (!noiseBuf){
+        noiseBuf = a.createBuffer(1, Math.floor(a.sampleRate * 0.2), a.sampleRate);
+        var d = noiseBuf.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      return true;
+    },
+    voice: function(f, when, dur, type, vol){
+      var a = ac; if (!a || !f) return;
+      try {
+        var o = a.createOscillator(), g = a.createGain();
+        o.type = type; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, when);
+        g.gain.linearRampToValueAtTime(vol, when + 0.015);
+        g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+        o.connect(g); g.connect(this.master); o.start(when); o.stop(when + dur + 0.03);
+      } catch (e) { /* ignore */ }
+    },
+    kick: function(when){
+      var a = ac; if (!a) return;
+      try {
+        var o = a.createOscillator(), g = a.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(130, when); o.frequency.exponentialRampToValueAtTime(42, when + 0.12);
+        g.gain.setValueAtTime(0.2, when); g.gain.exponentialRampToValueAtTime(0.001, when + 0.16);
+        o.connect(g); g.connect(this.master); o.start(when); o.stop(when + 0.2);
+      } catch (e) { /* ignore */ }
+    },
+    hat: function(when, vol, dur, hp){
+      var a = ac; if (!a || !noiseBuf) return;
+      try {
+        var src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+        src.buffer = noiseBuf; f.type = 'highpass'; f.frequency.value = hp;
+        g.gain.setValueAtTime(vol, when); g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+        src.connect(f); f.connect(g); g.connect(this.master); src.start(when); src.stop(when + dur + 0.02);
+      } catch (e) { /* ignore */ }
+    },
+    stepDur: function(){
+      var lv = typeof level === 'number' ? level : 1;
+      var bpm = Math.min(144, 106 + (lv - 1) * 4);
+      if (typeof gameTime === 'number' && gameTime < slowUntil) bpm *= 0.72;
+      return 60 / bpm / 2;
+    },
+    schedule: function(){
+      if (!ac) return;
+      var lv = typeof level === 'number' ? level : 1;
+      while (this.nextTime < ac.currentTime + 0.28){
+        var t = this.nextTime, sd = this.stepDur();
+        var bar = Math.floor(this.step / 8), s = this.step % 8, ch = CHORDS[bar % 4];
+        var loopN = Math.floor(bar / 4);
+        if (s === 0 || s === 4) this.voice(ch.root, t, sd * 3.6, 'sine', 0.13);
+        if (lv >= 3 && s === 6) this.voice(ch.root * 2, t, sd * 1.4, 'sine', 0.06);
+        this.voice(ch.arp[ARP_PAT[s]], t, sd * 1.1, 'triangle', 0.035);
+        var m = ch.mel[s];
+        if (m){
+          this.voice(m, t, sd * 1.6, 'triangle', 0.055);
+          if (loopN % 2 === 1 && lv >= 2) this.voice(m * 2, t, sd * 1.0, 'sine', 0.02);
+        }
+        if (lv >= 2){
+          if (s === 0 || s === 4) this.kick(t);
+          if (s % 2 === 1) this.hat(t, 0.05, 0.04, 6500);
+        }
+        if (lv >= 4 && (s === 2 || s === 6)) this.hat(t, 0.06, 0.09, 2500);
+        this.nextTime += sd; this.step++;
+      }
+    },
+    start: function(){
+      this.stop();
+      if (!musicOn || !this.ensure()) return;
+      this.step = 0; this.nextTime = ac.currentTime + 0.08;
+      var self = this; this.schedule();
+      this.timer = setInterval(function(){ self.schedule(); }, 60);
+    },
     stop: function(){ if (this.timer){ clearInterval(this.timer); this.timer = null; } }
   };
 
