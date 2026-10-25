@@ -8,38 +8,32 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;900&display=swap" rel="stylesheet">
 <style>
-  :root{ --ground:#0F0E0D; --ink:#EDE6DA; --muted:#A39A8D; --line:#26221E; --gold:#C9A66B; }
+  :root{ --ground:#0F0E0D; --ink:#EDE6DA; --muted:#A39A8D; --line:#2A2520; --gold:#C9A66B; --card:#1A1714; }
   *{ box-sizing:border-box; }
   body{ margin:0; background:var(--ground); color:var(--ink); font-family:'Noto Sans TC',system-ui,-apple-system,"PingFang TC",sans-serif; }
-  .wrap{ max-width:1040px; margin:0 auto; padding:72px 32px 56px; }
-  header{ display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:32px; padding-bottom:48px; }
+  .wrap{ max-width:1080px; margin:0 auto; padding:72px 28px 56px; }
+  header{ display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:28px; padding-bottom:44px; }
   .eyebrow{ display:block; font-size:12px; font-weight:500; letter-spacing:4px; color:var(--gold); margin-bottom:22px; }
   h1{ margin:0; font-family:'Noto Serif TC',serif; font-weight:900; font-size:clamp(52px,10vw,104px); line-height:1; letter-spacing:2px; }
   header p{ margin:0; max-width:300px; color:var(--muted); font-size:15px; line-height:1.9; }
   .count{ font-family:'Noto Serif TC',serif; color:var(--gold); font-size:15px; letter-spacing:2px; margin-top:14px; display:block; }
-  .list{ list-style:none; margin:0; padding:0; border-top:1px solid var(--line); }
-  .list li{ border-bottom:1px solid var(--line); }
-  a.row{ display:grid; grid-template-columns:64px 1fr 120px 56px 32px; align-items:center; gap:20px; padding:30px 12px; color:inherit; text-decoration:none; position:relative; transition:background .25s ease; }
-  a.row::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--c); transform:scaleY(0); transform-origin:center; transition:transform .25s ease; }
-  a.row:hover, a.row:focus-visible{ background:color-mix(in srgb, var(--c) 12%, transparent); }
-  a.row:hover::before, a.row:focus-visible::before{ transform:scaleY(1); }
-  a.row:focus-visible{ outline:2px solid var(--gold); outline-offset:-2px; }
-  .num{ font-family:'Noto Serif TC',serif; font-size:20px; color:var(--muted); letter-spacing:1px; }
-  .title h2{ margin:0 0 6px; font-family:'Noto Serif TC',serif; font-weight:600; font-size:clamp(22px,3.4vw,32px); line-height:1.25; transition:transform .25s ease; }
-  .title p{ margin:0; color:var(--muted); font-size:14px; line-height:1.7; }
-  .tag{ font-size:12px; letter-spacing:2px; color:var(--muted); text-align:right; }
-  .icon{ width:44px; height:44px; color:var(--c); opacity:.9; transition:transform .3s ease; }
-  .arrow{ font-size:22px; color:var(--muted); transition:transform .25s ease, color .25s ease; }
-  a.row:hover .title h2{ transform:translateX(6px); }
-  a.row:hover .icon{ transform:rotate(-8deg) scale(1.1); }
-  a.row:hover .arrow{ transform:translateX(6px); color:var(--ink); }
-  footer{ margin-top:40px; display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; color:var(--muted); font-size:13px; }
-  @media (max-width:720px){
-    .wrap{ padding:48px 20px 40px; }
-    a.row{ grid-template-columns:40px 1fr 40px; gap:14px; padding:24px 6px; }
-    .tag, .arrow{ display:none; }
-  }
-  @media (prefers-reduced-motion:reduce){ a.row,a.row::before,.title h2,.icon,.arrow{ transition:none; } a.row:hover .title h2,a.row:hover .icon,a.row:hover .arrow{ transform:none; } }
+  .deck{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:24px; }
+  a.card{ display:flex; flex-direction:column; background:var(--card); border:1px solid var(--line); border-radius:22px; padding:10px; color:inherit; text-decoration:none; transition:transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+  a.card:hover, a.card:focus-visible{ transform:translateY(-8px) rotate(-1deg); border-color:var(--c); box-shadow:0 22px 40px rgba(0,0,0,.55); }
+  a.card:focus-visible{ outline:2px solid var(--gold); outline-offset:4px; }
+  .art{ position:relative; aspect-ratio:1 / 1; border-radius:14px; background:var(--c); color:#14110F; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .art::after{ content:""; position:absolute; inset:8px; border:1.5px solid rgba(20,17,15,.28); border-radius:9px; pointer-events:none; }
+  .no{ position:absolute; left:18px; top:14px; font-family:'Noto Serif TC',serif; font-weight:900; font-size:15px; letter-spacing:1px; }
+  .icon{ width:46%; height:46%; transition:transform .3s ease; }
+  a.card:hover .icon{ transform:scale(1.12) rotate(-6deg); }
+  .info{ display:flex; flex-direction:column; gap:8px; padding:16px 10px 12px; flex:1; }
+  .tag{ align-self:flex-start; font-size:12px; letter-spacing:2px; color:var(--c); border:1px solid var(--c); border-radius:999px; padding:2px 10px; }
+  .info h2{ margin:4px 0 0; font-family:'Noto Serif TC',serif; font-weight:600; font-size:22px; line-height:1.3; }
+  .info p{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.7; }
+  .go{ margin-top:auto; padding-top:10px; font-size:14px; font-weight:700; color:var(--ink); }
+  footer{ margin-top:48px; padding-top:20px; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; color:var(--muted); font-size:13px; }
+  @media (max-width:520px){ .wrap{ padding:48px 18px 40px; } .deck{ grid-template-columns:repeat(2,1fr); gap:14px; } .info h2{ font-size:18px; } .info p{ font-size:12.5px; } }
+  @media (prefers-reduced-motion:reduce){ a.card,.icon{ transition:none; } a.card:hover,a.card:focus-visible,a.card:hover .icon{ transform:none; } }
 </style>
 </head>
 <body>
@@ -50,69 +44,45 @@
       <h1>遊戲大廳</h1>
     </div>
     <div>
-      <p>八款各有性格的小遊戲，沒有廣告，不必安裝，打開就能玩。</p>
+      <p>八款各有性格的小遊戲，像收藏卡牌一樣攤開，挑一張就開玩。</p>
       <span class="count">共 08 款</span>
     </div>
   </header>
 
-  <ul class="list">
-    <li><a class="row" style="--c:#9F85E0" href="game.html">
-      <span class="num">01</span>
-      <span class="title"><h2>夜蔓 貪食蛇</h2><p>在暗夜花園裡引路，吃下果實，別咬到自己的尾巴。</p></span>
-      <span class="tag">即時操作</span>
-      <svg class="icon" aria-hidden="true" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 80H40V50H68V22H88"/><circle cx="88" cy="22" r="5" fill="currentColor"/></svg>
-      <span class="arrow" aria-hidden="true">→</span>
-    </a></li>
-    <li><a class="row" style="--c:#6FB89B" href="paper-glider.html">
-      <span class="num">02</span>
-      <span class="title"><h2>紙飛機大冒險</h2><p>讓紙飛機穿過桌上林立的鉛筆縫隙。</p></span>
-      <span class="tag">飛行躲避</span>
-      <svg class="icon" aria-hidden="true" viewBox="0 0 100 100" fill="currentColor"><path d="M92 50L10 22L34 50L10 78Z"/><path d="M34 50L92 50L40 62Z" opacity=".5"/></svg>
-      <span class="arrow" aria-hidden="true">→</span>
-    </a></li>
-    <li><a class="row" style="--c:#E0805C" href="tile-breaker.html">
-      <span class="num">03</span>
-      <span class="title"><h2>花磚打磚塊</h2><p>用木槳接住彈珠，敲碎整面馬賽克花磚牆。</p></span>
-      <span class="tag">打磚塊</span>
-      <svg class="icon" aria-hidden="true" viewBox="0 0 100 100" fill="currentColor"><rect x="8" y="10" width="26" height="14" rx="3"/><rect x="38" y="10" width="26" height="14" rx="3"/><rect x="68" y="10" width="24" height="14" rx="3"/><rect x="8" y="28" width="26" height="14" rx="3" opacity=".5"/><rect x="68" y="28" width="24" height="14" rx="3" opacity=".5"/><circle cx="52" cy="68" r="6"/><rect x="30" y="86" width="44" height="8" rx="4"/></svg>
-      <span class="arrow" aria-hidden="true">→</span>
-    </a></li>
-    <li><a class="row" style="--c:#F08CAC" href="macaron2048.html">
-      <span class="num">04</span>
-      <span class="title"><h2>馬卡龍 2048</h2><p>把相同口味的馬卡龍疊在一起，疊出最大的一顆。</p></span>
-      <span class="tag">滑動合併</span>
-      <svg class="icon" aria-hidden="true" viewBox="0 0 100 100" fill="currentColor"><rect x="8" y="8" width="40" height="40" rx="10"/><rect x="52" y="8" width="40" height="40" rx="10" opacity=".5"/><rect x="8" y="52" width="40" height="40" rx="10" opacity=".5"/><rect x="52" y="52" width="40" height="40" rx="10"/></svg>
-      <span class="arrow" aria-hidden="true">→</span>
-    </a></li>
-    <li><a class="row" style="--c:#8DA2F0" href="star-match.html">
-      <span class="num">05</span>
-      <span class="title"><h2>星圖配對</h2><p>翻開夜空卡片，用最少步數找出所有星座對子。</p></span>
-      <span class="tag">記憶配對</span>
-      <svg class="icon" aria-hidden="true" viewBox="0 0 100 100" fill="currentColor"><rect x="8" y="14" width="40" height="72" rx="8" opacity=".5"/><rect x="52" y="14" width="40" height="72" rx="8"/><path d="M72 36l5 11 12 1-9 8 3 12-11-6-11 6 3-12-9-8 12-1z" fill="#0F0E0D"/></svg>
-      <span class="arrow" aria-hidden="true">→</span>
-    </a></li>
-    <li><a class="row" style="--c:#D9605A" href="steamer-stack.html">
-      <span class="num">06</span>
-      <span class="title"><h2>蒸籠疊疊樂</h2><p>抓準時機放下蒸籠，疊得越準越高。</p></span>
-      <span class="tag">抓時機</span>
-      <svg class="icon" aria-hidden="true" viewBox="0 0 100 100" fill="currentColor"><rect x="22" y="12" width="56" height="20" rx="6" opacity=".5"/><rect x="14" y="36" width="64" height="20" rx="6" opacity=".8"/><rect x="26" y="60" width="60" height="20" rx="6"/></svg>
-      <span class="arrow" aria-hidden="true">→</span>
-    </a></li>
-    <li><a class="row" style="--c:#8CCB66" href="garden-whack.html">
-      <span class="num">07</span>
-      <span class="title"><h2>菜園保衛戰</h2><p>限時 30 秒，把冒出土堆的小偷趕跑。</p></span>
-      <span class="tag">反應力</span>
-      <svg class="icon" aria-hidden="true" viewBox="0 0 100 100" fill="currentColor"><ellipse cx="22" cy="80" rx="16" ry="8" opacity=".5"/><ellipse cx="78" cy="80" rx="16" ry="8" opacity=".5"/><ellipse cx="50" cy="52" rx="16" ry="8" opacity=".5"/><circle cx="50" cy="38" r="12"/></svg>
-      <span class="arrow" aria-hidden="true">→</span>
-    </a></li>
-    <li><a class="row" style="--c:#FFB566" href="lantern-rhythm.html">
-      <span class="num">08</span>
-      <span class="title"><h2>燈籠節拍</h2><p>燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。</p></span>
-      <span class="tag">節奏點擊</span>
-      <svg class="icon" aria-hidden="true" viewBox="0 0 100 100" fill="currentColor"><ellipse cx="50" cy="48" rx="26" ry="20"/><rect x="38" y="24" width="24" height="6" rx="2"/><rect x="38" y="66" width="24" height="6" rx="2"/><rect x="48" y="72" width="4" height="14" rx="2"/></svg>
-      <span class="arrow" aria-hidden="true">→</span>
-    </a></li>
-  </ul>
+  <main class="deck">
+    <a class="card" style="--c:#9F85E0" href="game.html">
+      <div class="art"><span class="no">01</span><svg class="icon" aria-hidden="true" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 80H40V50H68V22H88"/><circle cx="88" cy="22" r="5" fill="currentColor"/></svg></div>
+      <div class="info"><span class="tag">即時操作</span><h2>夜蔓 貪食蛇</h2><p>在暗夜花園裡引路，吃下果實，別咬到自己的尾巴。</p><span class="go">開始玩 →</span></div>
+    </a>
+    <a class="card" style="--c:#6FB89B" href="paper-glider.html">
+      <div class="art"><span class="no">02</span><svg class="icon" aria-hidden="true" viewBox="0 0 100 100" fill="currentColor"><path d="M92 50L10 22L34 50L10 78Z"/><path d="M34 50L92 50L40 62Z" opacity=".5"/></svg></div>
+      <div class="info"><span class="tag">飛行躲避</span><h2>紙飛機大冒險</h2><p>讓紙飛機穿過桌上林立的鉛筆縫隙。</p><span class="go">開始玩 →</span></div>
+    </a>
+    <a class="card" style="--c:#E0805C" href="tile-breaker.html">
+      <div class="art"><span class="no">03</span><svg class="icon" aria-hidden="true" viewBox="0 0 100 100" fill="currentColor"><rect x="8" y="10" width="26" height="14" rx="3"/><rect x="38" y="10" width="26" height="14" rx="3"/><rect x="68" y="10" width="24" height="14" rx="3"/><rect x="8" y="28" width="26" height="14" rx="3" opacity=".5"/><rect x="68" y="28" width="24" height="14" rx="3" opacity=".5"/><circle cx="52" cy="68" r="6"/><rect x="30" y="86" width="44" height="8" rx="4"/></svg></div>
+      <div class="info"><span class="tag">打磚塊</span><h2>花磚打磚塊</h2><p>用木槳接住彈珠，敲碎整面馬賽克花磚牆。</p><span class="go">開始玩 →</span></div>
+    </a>
+    <a class="card" style="--c:#F08CAC" href="macaron2048.html">
+      <div class="art"><span class="no">04</span><svg class="icon" aria-hidden="true" viewBox="0 0 100 100" fill="currentColor"><rect x="8" y="8" width="40" height="40" rx="10"/><rect x="52" y="8" width="40" height="40" rx="10" opacity=".5"/><rect x="8" y="52" width="40" height="40" rx="10" opacity=".5"/><rect x="52" y="52" width="40" height="40" rx="10"/></svg></div>
+      <div class="info"><span class="tag">滑動合併</span><h2>馬卡龍 2048</h2><p>把相同口味的馬卡龍疊在一起，疊出最大的一顆。</p><span class="go">開始玩 →</span></div>
+    </a>
+    <a class="card" style="--c:#8DA2F0" href="star-match.html">
+      <div class="art"><span class="no">05</span><svg class="icon" aria-hidden="true" viewBox="0 0 100 100" fill="currentColor"><rect x="8" y="14" width="40" height="72" rx="8" opacity=".5"/><rect x="52" y="14" width="40" height="72" rx="8"/><path d="M72 36l5 11 12 1-9 8 3 12-11-6-11 6 3-12-9-8 12-1z" fill="#8DA2F0"/></svg></div>
+      <div class="info"><span class="tag">記憶配對</span><h2>星圖配對</h2><p>翻開夜空卡片，用最少步數找出所有星座對子。</p><span class="go">開始玩 →</span></div>
+    </a>
+    <a class="card" style="--c:#D9605A" href="steamer-stack.html">
+      <div class="art"><span class="no">06</span><svg class="icon" aria-hidden="true" viewBox="0 0 100 100" fill="currentColor"><rect x="22" y="12" width="56" height="20" rx="6" opacity=".5"/><rect x="14" y="36" width="64" height="20" rx="6" opacity=".8"/><rect x="26" y="60" width="60" height="20" rx="6"/></svg></div>
+      <div class="info"><span class="tag">抓時機</span><h2>蒸籠疊疊樂</h2><p>抓準時機放下蒸籠，疊得越準越高。</p><span class="go">開始玩 →</span></div>
+    </a>
+    <a class="card" style="--c:#8CCB66" href="garden-whack.html">
+      <div class="art"><span class="no">07</span><svg class="icon" aria-hidden="true" viewBox="0 0 100 100" fill="currentColor"><ellipse cx="22" cy="80" rx="16" ry="8" opacity=".5"/><ellipse cx="78" cy="80" rx="16" ry="8" opacity=".5"/><ellipse cx="50" cy="52" rx="16" ry="8" opacity=".5"/><circle cx="50" cy="38" r="12"/></svg></div>
+      <div class="info"><span class="tag">反應力</span><h2>菜園保衛戰</h2><p>限時 30 秒，把冒出土堆的小偷趕跑。</p><span class="go">開始玩 →</span></div>
+    </a>
+    <a class="card" style="--c:#FFB566" href="lantern-rhythm.html">
+      <div class="art"><span class="no">08</span><svg class="icon" aria-hidden="true" viewBox="0 0 100 100" fill="currentColor"><ellipse cx="50" cy="48" rx="26" ry="20"/><rect x="38" y="24" width="24" height="6" rx="2"/><rect x="38" y="66" width="24" height="6" rx="2"/><rect x="48" y="72" width="4" height="14" rx="2"/></svg></div>
+      <div class="info"><span class="tag">節奏點擊</span><h2>燈籠節拍</h2><p>燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。</p><span class="go">開始玩 →</span></div>
+    </a>
+  </main>
 
   <footer>
     <span>手機與電腦皆可遊玩</span>
