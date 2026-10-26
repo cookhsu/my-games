@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>水墨五子棋 Ink Gomoku</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ground:#1B1F1D; --panel:#242A27; --edge:#3A433F; --paper:#E9DDC0; --ink:#14110F;
+    --red:#C8372D; --red-dark:#8F2219; --cream:#F1EADB; --muted:#A9B2AC; --gold:#D9B45A;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; min-height:100%; background:var(--ground); color:var(--cream); font-family:'Noto Sans TC',system-ui,sans-serif; }
+  body{ display:flex; flex-direction:column; align-items:center; padding:28px 16px 56px; }
+  .marquee{ text-align:center; margin-bottom:18px; }
+  .marquee h1{ margin:0 0 8px; font-family:'Noto Serif TC',serif; font-weight:900; font-size:clamp(28px,7vw,42px); letter-spacing:4px; }
+  .marquee h1 span{ color:var(--red); }
+  .marquee p{ margin:0; color:var(--muted); font-size:14px; max-width:420px; line-height:1.7; }
+  .board{ width:100%; max-width:440px; background:var(--panel); border:1px solid var(--edge); border-radius:20px; padding:16px; box-shadow:0 20px 50px rgba(0,0,0,.5); }
+  .hud{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:2px 6px 12px; }
+  .stat .label{ display:block; font-size:11px; letter-spacing:2px; color:var(--muted); margin-bottom:2px; }
+  .stat .value{ font-family:'Noto Serif TC',serif; font-weight:900; font-size:20px; }
+  .stat.right{ text-align:right; }
+  .dot{ display:inline-block; width:14px; height:14px; border-radius:50%; vertical-align:-1px; margin-right:6px; }
+  .dot.ink{ background:#14110F; border:1px solid #6B6560; } .dot.red{ background:var(--red); }
+  .icon-btn{ width:42px; height:42px; border-radius:50%; border:1px solid var(--edge); background:var(--ground); color:var(--gold); font-size:18px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .icon-btn:focus-visible, .btn:focus-visible, .seg button:focus-visible{ outline:3px solid var(--gold); outline-offset:2px; }
+  .frame{ position:relative; border-radius:12px; padding:6px; background:var(--ground); }
+  canvas{ display:block; width:100%; height:auto; border-radius:8px; cursor:pointer; touch-action:manipulation; }
+  .overlay{ position:absolute; inset:6px; border-radius:8px; background:rgba(20,17,15,.9); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; padding:22px; }
+  .overlay.hidden{ display:none; }
+  .overlay h2{ margin:0; font-family:'Noto Serif TC',serif; font-weight:900; font-size:clamp(24px,6.5vw,32px); color:var(--gold); }
+  .overlay p{ margin:0; font-size:14px; line-height:1.8; max-width:290px; }
+  .btn{ font:900 15px 'Noto Serif TC',serif; color:#fff; background:var(--red); border:none; padding:11px 26px; border-radius:22px; cursor:pointer; box-shadow:0 4px 0 var(--red-dark); }
+  .btn:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--red-dark); }
+  .btn.ghost{ background:transparent; color:var(--cream); border:1px solid var(--edge); box-shadow:none; }
+  .controls{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-top:14px; }
+  .seg{ display:flex; border:1px solid var(--edge); border-radius:999px; overflow:hidden; }
+  .seg button{ font:500 14px 'Noto Sans TC',sans-serif; color:var(--muted); background:transparent; border:none; padding:8px 16px; cursor:pointer; }
+  .seg button[aria-pressed="true"]{ background:var(--cream); color:var(--ink); font-weight:700; }
+  .actions{ display:flex; gap:8px; }
+  .actions .btn{ font-size:14px; padding:8px 18px; }
+  .record{ margin-top:12px; text-align:center; font-size:13px; color:var(--muted); }
+  .hint{ margin-top:14px; max-width:420px; text-align:center; font-size:12px; line-height:1.8; color:var(--muted); }
+</style>
+</head>
+<body>
+  <div class="marquee">
+    <h1>水墨<span>五子棋</span></h1>
+    <p>你執墨黑先行，電腦執朱紅。橫、直、斜任一方向先連成五子者勝。</p>
+  </div>
+
+  <div class="board">
+    <div class="hud">
+      <div class="stat"><span class="label">現在輪到</span><span class="value" id="turn"><i class="dot ink"></i>你</span></div>
+      <button class="icon-btn" id="musicBtn" aria-label="切換背景音樂" aria-pressed="true">🔊</button>
+      <div class="stat right"><span class="label">手數</span><span class="value" id="moves">0</span></div>
+    </div>
+
+    <div class="frame">
+      <canvas id="cv" aria-label="五子棋棋盤，點擊交叉點落子"></canvas>
+
+      <div class="overlay" id="startOverlay">
+        <h2>落子無悔</h2>
+        <p>點棋盤上的交叉點落子。選好電腦的強度，就可以開始對弈。</p>
+        <button class="btn" id="startBtn">開始對弈</button>
+      </div>
+
+      <div class="overlay hidden" id="endOverlay">
+        <h2 id="endTitle"></h2>
+        <p id="endText"></p>
+        <button class="btn" id="againBtn">再下一局</button>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="seg" role="group" aria-label="電腦強度">
+        <button type="button" data-lv="easy" aria-pressed="false">簡單</button>
+        <button type="button" data-lv="normal" aria-pressed="true">普通</button>
+        <button type="button" data-lv="hard" aria-pressed="false">困難</button>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" id="undoBtn" type="button">悔棋</button>
+        <button class="btn" id="newBtn" type="button">新局</button>
+      </div>
+    </div>
+    <div class="record" id="record"></div>
+  </div>
+
+  <p class="hint">電腦版滑鼠移到交叉點會出現預覽。悔棋會同時收回你和電腦的上一手。</p>
+
+<script>
+(function(){
+  "use strict";
+  var N = 13, SIZE = 390, PAD = 24, GAP = (SIZE - PAD * 2) / (N - 1);
+  var DIRS = [[0,1],[1,0],[1,1],[1,-1]];
+  var W = [0, 1, 10, 100, 1000, 100000];
+
+  var cv = document.getElementById('cv');
+  var ctx = cv.getContext('2d');
+  var dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+  cv.width = SIZE * dpr; cv.height = SIZE * dpr;
+  ctx.scale(dpr, dpr);
+
+  var turnEl = document.getElementById('turn');
+  var movesEl = document.getElementById('moves');
+  var recordEl = document.getElementById('record');
+  var startOverlay = document.getElementById('startOverlay');
+  var endOverlay = document.getElementById('endOverlay');
+  var endTitle = document.getElementById('endTitle');
+  var endText = document.getElementById('endText');
+  var musicBtn = document.getElementById('musicBtn');
+
+  var board, moves, over, active, thinking, level = 'normal', winLine, hover, aiTimer;
+  var stats = { win: 0, lose: 0, draw: 0 };
+  try { var sv = JSON.parse(localStorage.getItem('inkgomoku_stats') || 'null'); if (sv) stats = sv; } catch (e) { /* ignore */ }
+  var musicOn = true;
+  try { var mv = localStorage.getItem('inkgomoku_music'); if (mv !== null) musicOn = (mv === '1'); } catch (e) { /* ignore */ }
+
+  var ac = null;
+  function getAc(){
+    try { if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (e) { ac = null; }
+    return ac;
+  }
+  function tone(f, d, type, v, delay){
+    var a = getAc(); if (!a) return;
+    try {
+      var o = a.createOscillator(), g = a.createGain(), t = a.currentTime + (delay || 0);
+      o.type = type; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(v, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + d + 0.03);
+    } catch (e) { /* ignore */ }
+  }
+  var music = {
+    timer: null, step: 0,
+    seq: [293.66, 0, 392.00, 0, 440.00, 392.00, 0, 329.63, 0, 293.66, 0, 0, 392.00, 0, 493.88, 0],
+    start: function(){ this.stop(); if (!musicOn) return; this.step = 0; var s = this; this.timer = setInterval(function(){ s.play(); }, 520); },
+    play: function(){ var f = this.seq[this.step % this.seq.length]; if (f) tone(f, 1.1, 'triangle', 0.05); if (this.step % 8 === 0) tone(146.83, 2, 'sine', 0.035); this.step++; },
+    stop: function(){ if (this.timer){ clearInterval(this.timer); this.timer = null; } }
+  };
+  function clack(p){ tone(p === 1 ? 180 : 230, 0.09, 'triangle', 0.14); tone(900, 0.03, 'square', 0.02); }
+
+  function inb(r, c){ return r >= 0 && r < N && c >= 0 && c < N; }
+
+  function fiveLine(r, c, p){
+    for (var d = 0; d < 4; d++){
+      var dr = DIRS[d][0], dc = DIRS[d][1], line = [[r, c]], k;
+      for (k = 1; inb(r + dr * k, c + dc * k) && board[r + dr * k][c + dc * k] === p; k++) line.push([r + dr * k, c + dc * k]);
+      for (k = 1; inb(r - dr * k, c - dc * k) && board[r - dr * k][c - dc * k] === p; k++) line.push([r - dr * k, c - dc * k]);
+      if (line.length >= 5) return line;
+    }
+    return null;
+  }
+
+  function evalCell(r, c, p){
+    var total = 0, opp = 3 - p;
+    for (var d = 0; d < 4; d++){
+      var dr = DIRS[d][0], dc = DIRS[d][1], cellsArr = [];
+      for (var k = -4; k <= 4; k++){
+        var rr = r + dr * k, cc = c + dc * k;
+        cellsArr.push(k === 0 ? p : (inb(rr, cc) ? board[rr][cc] : opp));
+      }
+      for (var s = 0; s <= 4; s++){
+        var own = 0, bad = 0;
+        for (var i = s; i < s + 5; i++){ if (cellsArr[i] === p) own++; else if (cellsArr[i] === opp) bad++; }
+        if (!bad) total += W[own];
+      }
+    }
+    return total;
+  }
+
+  function candidates(){
+    var list = [], seen = {}, any = false;
+    for (var r = 0; r < N; r++) for (var c = 0; c < N; c++){
+      if (!board[r][c]) continue;
+      any = true;
+      for (var dr = -2; dr <= 2; dr++) for (var dc = -2; dc <= 2; dc++){
+        var rr = r + dr, cc = c + dc;
+        if (inb(rr, cc) && !board[rr][cc] && !seen[rr * N + cc]){ seen[rr * N + cc] = 1; list.push([rr, cc]); }
+      }
+    }
+    if (!any) list.push([6, 6]);
+    return list;
+  }
+
+  function aiMove(){
+    var cands = candidates(), i, best = null;
+    for (i = 0; i < cands.length; i++) if (evalCell(cands[i][0], cands[i][1], 2) >= 100000) return cands[i];
+    for (i = 0; i < cands.length; i++) if (evalCell(cands[i][0], cands[i][1], 1) >= 100000) return cands[i];
+    var def = level === 'easy' ? 0.55 : level === 'normal' ? 1 : 1.05;
+    var scored = cands.map(function(m){
+      var s = evalCell(m[0], m[1], 2) + def * evalCell(m[0], m[1], 1);
+      if (level === 'easy') s *= 0.5 + Math.random();
+      return { m: m, s: s };
+    });
+    scored.sort(function(a, b){ return b.s - a.s; });
+    if (level === 'hard'){
+      var top = scored.slice(0, 6), bestV = -Infinity;
+      top.forEach(function(t){
+        board[t.m[0]][t.m[1]] = 2;
+        var oppBest = 0;
+        candidates().forEach(function(o){ var v = evalCell(o[0], o[1], 1); if (v > oppBest) oppBest = v; });
+        board[t.m[0]][t.m[1]] = 0;
+        var v = t.s - 0.8 * oppBest;
+        if (v > bestV){ bestV = v; best = t.m; }
+      });
+      return best;
+    }
+    return scored[0].m;
+  }
+
+  function setTurn(p){
+    turnEl.innerHTML = p === 1 ? '<i class="dot ink"></i>你' : '<i class="dot red"></i>電腦思考中';
+  }
+  function updateRecord(){
+    recordEl.textContent = '戰績　勝 ' + stats.win + '　負 ' + stats.lose + '　和 ' + stats.draw;
+  }
+  function saveStats(){ try { localStorage.setItem('inkgomoku_stats', JSON.stringify(stats)); } catch (e) { /* ignore */ } }
+
+  function finish(kind, line){
+    over = true; thinking = false; winLine = line || null; music.stop(); draw();
+    var title, text;
+    if (kind === 'win'){ stats.win++; title = '你贏了'; text = '連成五子，漂亮。可以把強度調高再挑戰一次。'; [523.25, 659.25, 783.99, 1046.5].forEach(function(f, i){ tone(f, 0.25, 'triangle', 0.07, i * 0.1); }); }
+    else if (kind === 'lose'){ stats.lose++; title = '電腦贏了'; text = '朱紅連成五子。試試悔棋，或降低強度再來。'; tone(120, 0.5, 'sawtooth', 0.07); }
+    else { stats.draw++; title = '和局'; text = '棋盤已經下滿，雙方不分勝負。'; }
+    saveStats(); updateRecord();
+    setTimeout(function(){ endTitle.textContent = title; endText.textContent = text; endOverlay.classList.remove('hidden'); }, 700);
+  }
+
+  function place(r, c, p){
+    board[r][c] = p; moves.push({ r: r, c: c, p: p });
+    movesEl.textContent = moves.length; clack(p);
+    var line = fiveLine(r, c, p);
+    draw();
+    if (line){ finish(p === 1 ? 'win' : 'lose', line); return true; }
+    if (moves.length === N * N){ finish('draw'); return true; }
+    return false;
+  }
+
+  function playerMove(r, c){
+    if (!active || over || thinking || board[r][c]) return;
+    if (place(r, c, 1)) return;
+    thinking = true; setTurn(2);
+    aiTimer = setTimeout(function(){
+      var m = aiMove();
+      thinking = false;
+      if (!m || over) return;
+      if (!place(m[0], m[1], 2)){ setTurn(1); }
+    }, 380);
+  }
+
+  function pos(e){
+    var rect = cv.getBoundingClientRect(), s = SIZE / rect.width;
+    var x = (e.clientX - rect.left) * s, y = (e.clientY - rect.top) * s;
+    var c = Math.round((x - PAD) / GAP), r = Math.round((y - PAD) / GAP);
+    return inb(r, c) ? [r, c] : null;
+  }
+
+  function stone(x, y, p, last){
+    var rad = GAP * 0.43;
+    ctx.beginPath(); ctx.arc(x + 1.5, y + 2, rad, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2);
+    var g = ctx.createRadialGradient(x - rad * .35, y - rad * .35, rad * .1, x, y, rad);
+    if (p === 1){ g.addColorStop(0, '#4A433D'); g.addColorStop(1, '#14110F'); } else { g.addColorStop(0, '#E4584C'); g.addColorStop(1, '#B02B22'); }
+    ctx.fillStyle = g; ctx.fill();
+    if (last){ ctx.beginPath(); ctx.arc(x, y, rad * .22, 0, Math.PI * 2); ctx.fillStyle = '#F1EADB'; ctx.fill(); }
+  }
+
+  function draw(){
+    ctx.fillStyle = '#E9DDC0'; ctx.fillRect(0, 0, SIZE, SIZE);
+    ctx.strokeStyle = 'rgba(20,17,15,.75)'; ctx.lineWidth = 1;
+    for (var i = 0; i < N; i++){
+      var q = PAD + i * GAP;
+      ctx.beginPath(); ctx.moveTo(PAD, q); ctx.lineTo(SIZE - PAD, q); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(q, PAD); ctx.lineTo(q, SIZE - PAD); ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(20,17,15,.8)';
+    [[3,3],[3,9],[9,3],[9,9],[6,6]].forEach(function(p){ ctx.beginPath(); ctx.arc(PAD + p[1] * GAP, PAD + p[0] * GAP, 3, 0, Math.PI * 2); ctx.fill(); });
+    if (!board) return;
+    if (hover && !over && !thinking && active && !board[hover[0]][hover[1]]){
+      ctx.globalAlpha = 0.35; stone(PAD + hover[1] * GAP, PAD + hover[0] * GAP, 1, false); ctx.globalAlpha = 1;
+    }
+    var lastM = moves.length ? moves[moves.length - 1] : null;
+    for (var r = 0; r < N; r++) for (var c = 0; c < N; c++){
+      if (board[r][c]) stone(PAD + c * GAP, PAD + r * GAP, board[r][c], lastM && lastM.r === r && lastM.c === c);
+    }
+    if (winLine){
+      ctx.strokeStyle = '#D9B45A'; ctx.lineWidth = 3;
+      winLine.forEach(function(p){ ctx.beginPath(); ctx.arc(PAD + p[1] * GAP, PAD + p[0] * GAP, GAP * 0.5, 0, Math.PI * 2); ctx.stroke(); });
+    }
+  }
+
+  function newGame(){
+    clearTimeout(aiTimer);
+    board = []; for (var r = 0; r < N; r++){ board.push(new Array(N).fill(0)); }
+    moves = []; over = false; thinking = false; winLine = null; hover = null;
+    movesEl.textContent = '0'; setTurn(1); updateRecord(); draw();
+  }
+
+  function startGame(){
+    getAc();
+    startOverlay.classList.add('hidden'); endOverlay.classList.add('hidden');
+    newGame(); active = true; music.start();
+  }
+
+  cv.addEventListener('click', function(e){ var p = pos(e); if (p) playerMove(p[0], p[1]); });
+  cv.addEventListener('mousemove', function(e){ hover = pos(e); draw(); });
+  cv.addEventListener('mouseleave', function(){ hover = null; draw(); });
+
+  document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('againBtn').addEventListener('click', startGame);
+  document.getElementById('newBtn').addEventListener('click', function(){ if (active){ endOverlay.classList.add('hidden'); newGame(); if (musicOn) music.start(); } });
+  document.getElementById('undoBtn').addEventListener('click', function(){
+    if (!active || over || thinking || !moves.length) return;
+    var n = moves.length >= 2 && moves[moves.length - 1].p === 2 ? 2 : 1;
+    for (var i = 0; i < n; i++){ var m = moves.pop(); board[m.r][m.c] = 0; }
+    movesEl.textContent = moves.length; setTurn(1); draw();
+  });
+  document.querySelectorAll('.seg button').forEach(function(b){
+    b.addEventListener('click', function(){
+      level = b.dataset.lv;
+      document.querySelectorAll('.seg button').forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+    });
+  });
+  function refreshMusicBtn(){ musicBtn.textContent = musicOn ? '🔊' : '🔇'; musicBtn.setAttribute('aria-pressed', String(musicOn)); }
+  musicBtn.addEventListener('click', function(){
+    musicOn = !musicOn;
+    try { localStorage.setItem('inkgomoku_music', musicOn ? '1' : '0'); } catch (e) { /* ignore */ }
+    if (musicOn && active && !over) music.start(); else music.stop();
+    refreshMusicBtn();
+  });
+
+  refreshMusicBtn(); newGame();
+})();
+</script>
+</body>
+</html>
