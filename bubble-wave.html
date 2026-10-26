@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>泡泡派對 Bubble Wave</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{ --page:#EEF1FF; --card:#FFFFFF; --ink:#1D2347; --soft:#5B6390; --accent:#6C63FF; --accent-dark:#4A42D6; --line:#D9DEFA; --shadow:rgba(60,64,140,.22); }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; min-height:100%; background:var(--page); color:var(--ink); font-family:'Noto Sans TC',system-ui,sans-serif; }
+  body{ display:flex; flex-direction:column; align-items:center; padding:28px 16px 56px; background:linear-gradient(180deg,#E3E8FF,var(--page) 40%); }
+  .marquee{ text-align:center; margin-bottom:18px; }
+  .marquee h1{ margin:0 0 8px; font-weight:900; font-size:clamp(28px,7vw,42px); letter-spacing:2px; }
+  .marquee p{ margin:0 auto; color:var(--soft); font-size:14px; max-width:460px; line-height:1.7; }
+  .board{ width:100%; max-width:520px; background:var(--card); border-radius:24px; padding:14px; box-shadow:0 20px 50px var(--shadow); }
+  .hud{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:2px 8px 10px; }
+  .stat .label{ display:block; font-size:11px; letter-spacing:2px; color:var(--soft); margin-bottom:2px; }
+  .stat .value{ font-weight:900; font-size:24px; font-variant-numeric:tabular-nums; }
+  .stat.right{ text-align:right; }
+  .icon-btn{ width:40px; height:40px; border-radius:50%; border:1px solid var(--line); background:#fff; color:var(--accent); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .icon-btn:focus-visible, .btn:focus-visible, .seg button:focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
+  .frame{ position:relative; border-radius:16px; overflow:hidden; background:#CFD6FF; }
+  canvas{ display:block; width:100%; height:auto; touch-action:none; cursor:pointer; }
+  .overlay{ position:absolute; inset:0; background:rgba(29,35,71,.88); color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:12px; padding:20px; overflow:auto; }
+  .overlay.hidden{ display:none; }
+  .overlay h2{ margin:0; font-weight:900; font-size:clamp(24px,6.5vw,32px); }
+  .overlay p{ margin:0; font-size:14px; line-height:1.8; max-width:380px; }
+  .overlay .small{ font-size:12px; opacity:.85; }
+  .btn{ font:900 16px 'Noto Sans TC',sans-serif; color:#fff; background:var(--accent); border:none; padding:12px 26px; border-radius:24px; cursor:pointer; box-shadow:0 4px 0 var(--accent-dark); }
+  .btn.ghost{ background:transparent; box-shadow:none; border:2px solid rgba(255,255,255,.6); }
+  .btn:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--accent-dark); }
+  .row{ display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+  .controls{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-top:12px; padding:0 4px; }
+  .seg{ display:flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; }
+  .seg button{ font:500 13px 'Noto Sans TC',sans-serif; color:var(--soft); background:transparent; border:none; padding:7px 14px; cursor:pointer; }
+  .seg button[aria-pressed="true"]{ background:var(--accent); color:#fff; font-weight:700; }
+  .status{ font-size:12px; color:var(--soft); }
+  .hint{ margin-top:14px; max-width:480px; text-align:center; font-size:12px; line-height:1.8; color:var(--soft); }
+</style>
+</head>
+<body>
+  <div class="marquee">
+    <h1>泡泡派對</h1>
+    <p>打開鏡頭，用你的手在空中揮一揮，把飄上來的泡泡打破。小心黑色的刺球，別碰到它！</p>
+  </div>
+
+  <div class="board">
+    <div class="hud">
+      <div class="stat"><span class="label">分數</span><span class="value" id="score">0</span></div>
+      <button class="icon-btn" id="musicBtn" aria-label="切換背景音樂" aria-pressed="true">🔊</button>
+      <div class="stat right"><span class="label">剩餘秒數</span><span class="value" id="time">45</span></div>
+    </div>
+
+    <div class="frame">
+      <canvas id="cv" width="480" height="360" aria-label="泡泡派對遊戲畫面"></canvas>
+
+      <div class="overlay" id="startOverlay">
+        <h2>準備揮手</h2>
+        <p>會用到你的鏡頭，畫面只在這個網頁裡即時處理，不會錄影、上傳或儲存。請站在離鏡頭一臂左右、背景光線穩定的地方，雙手在畫面裡揮動就能打破泡泡。</p>
+        <p class="small">黃色泡泡 +5 分，黑色刺球碰到 −5 分。沒有鏡頭也可以用滑鼠或手指點泡泡。</p>
+        <div class="row">
+          <button class="btn" id="camStartBtn">開啟鏡頭並開始</button>
+          <button class="btn ghost" id="plainStartBtn">不用鏡頭，直接玩</button>
+        </div>
+        <p class="small" id="camMsg" role="status"></p>
+      </div>
+
+      <div class="overlay hidden" id="endOverlay">
+        <h2 id="endTitle">時間到！</h2>
+        <p id="endText"></p>
+        <div class="row">
+          <button class="btn" id="againCamBtn">用鏡頭再玩</button>
+          <button class="btn ghost" id="againPlainBtn">不用鏡頭再玩</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="seg" role="group" aria-label="偵測靈敏度">
+        <button type="button" data-s="low" aria-pressed="false">低</button>
+        <button type="button" data-s="mid" aria-pressed="true">中</button>
+        <button type="button" data-s="high" aria-pressed="false">高</button>
+      </div>
+      <span class="status" id="status">靈敏度：揮動不夠靈就調高，一直誤觸就調低</span>
+    </div>
+  </div>
+
+  <p class="hint">需要允許瀏覽器使用鏡頭。畫面是鏡像的，你的左手會出現在畫面左邊。遊戲結束時會自動關閉鏡頭。</p>
+
+<script>
+(function(){
+  "use strict";
+  var cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+  var W = cv.width, H = cv.height;
+  var MW = 64, MH = 48, GAME_TIME = 45;
+  var scoreEl = document.getElementById('score'), timeEl = document.getElementById('time');
+  var startOverlay = document.getElementById('startOverlay'), endOverlay = document.getElementById('endOverlay');
+  var endTitle = document.getElementById('endTitle'), endText = document.getElementById('endText');
+  var camMsg = document.getElementById('camMsg'), statusEl = document.getElementById('status'), musicBtn = document.getElementById('musicBtn');
+
+  var video = document.createElement('video');
+  video.setAttribute('playsinline', ''); video.muted = true;
+  var sc = document.createElement('canvas'); sc.width = MW; sc.height = MH;
+  var sctx = sc.getContext('2d', { willReadFrequently: true });
+
+  var SENS = { low: { diff: 34, frac: 0.30 }, mid: { diff: 24, frac: 0.20 }, high: { diff: 16, frac: 0.12 } };
+  var sens = 'mid';
+  var stream = null, camOn = false, prevGray = null, mask = new Uint8Array(MW * MH), warm = 0;
+  var bubbles, particles, floats, score, popped, bombsHit, combo, lastPop, timeLeft, elapsed, spawnT, running, last, raf, shake, best = 0;
+  try { var sv = localStorage.getItem('bubblewave_best'); if (sv) best = parseInt(sv, 10) || 0; } catch (e) { /* ignore */ }
+  var musicOn = true;
+  try { var mv = localStorage.getItem('bubblewave_music'); if (mv !== null) musicOn = (mv === '1'); } catch (e) { /* ignore */ }
+
+  var ac = null;
+  function getAc(){
+    try { if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === 'suspended') ac.resume(); } catch (e) { ac = null; }
+    return ac;
+  }
+  function tone(f, d, type, v, delay){
+    var a = getAc(); if (!a) return;
+    try {
+      var o = a.createOscillator(), g = a.createGain(), t = a.currentTime + (delay || 0);
+      o.type = type; o.frequency.setValueAtTime(f, t);
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + d + 0.03);
+    } catch (e) { /* ignore */ }
+  }
+  var music = {
+    timer: null, step: 0, mel: [523.25, 659.25, 783.99, 659.25, 587.33, 698.46, 880, 698.46],
+    start: function(){ this.stop(); if (!musicOn) return; this.step = 0; var s = this; this.timer = setInterval(function(){ s.play(); }, 280); },
+    play: function(){ tone(this.mel[this.step % 8], 0.26, 'sine', 0.035); if (this.step % 4 === 0) tone(130.81, 0.6, 'triangle', 0.04); this.step++; },
+    stop: function(){ if (this.timer){ clearInterval(this.timer); this.timer = null; } }
+  };
+  function popSfx(f){ tone(f, 0.07, 'sine', 0.09); tone(f * 1.8, 0.05, 'triangle', 0.05, 0.02); }
+
+  function rnd(a, b){ return a + Math.random() * (b - a); }
+
+  /* ---------- 鏡頭動作偵測 ---------- */
+  function grayOf(data){
+    var g = new Uint8Array(MW * MH);
+    for (var i = 0, p = 0; i < g.length; i++, p += 4) g[i] = (data[p] * 77 + data[p + 1] * 150 + data[p + 2] * 29) >> 8;
+    return g;
+  }
+  function computeMotion(prev, cur, thresh, out){
+    var n = cur.length, moving = 0;
+    for (var i = 0; i < n; i++){
+      var d = cur[i] - prev[i]; if (d < 0) d = -d;
+      out[i] = d > thresh ? 1 : 0; moving += out[i];
+    }
+    if (moving > n * 0.55){ for (var j = 0; j < n; j++) out[j] = 0; return 0; }
+    return moving;
+  }
+  function bubbleMotion(b, m){
+    var cx = b.x / W * MW, cy = b.y / H * MH, rx = b.r / W * MW, ry = b.r / H * MH;
+    var x0 = Math.max(0, Math.floor(cx - rx)), x1 = Math.min(MW - 1, Math.ceil(cx + rx));
+    var y0 = Math.max(0, Math.floor(cy - ry)), y1 = Math.min(MH - 1, Math.ceil(cy + ry));
+    var tot = 0, mov = 0;
+    for (var y = y0; y <= y1; y++) for (var x = x0; x <= x1; x++){
+      var dx = (x + 0.5 - cx) / rx, dy = (y + 0.5 - cy) / ry;
+      if (dx * dx + dy * dy <= 1){ tot++; mov += m[y * MW + x]; }
+    }
+    return tot < 3 ? 0 : mov / tot;
+  }
+  function captureMotion(){
+    if (!camOn || video.readyState < 2) return;
+    try {
+      sctx.save(); sctx.translate(MW, 0); sctx.scale(-1, 1); sctx.drawImage(video, 0, 0, MW, MH); sctx.restore();
+      var g = grayOf(sctx.getImageData(0, 0, MW, MH).data);
+      if (prevGray && warm > 8) computeMotion(prevGray, g, SENS[sens].diff, mask); else { for (var i = 0; i < mask.length; i++) mask[i] = 0; }
+      prevGray = g; warm++;
+    } catch (e) { /* ignore frame */ }
+  }
+
+  async function startCamera(){
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ throw new Error('此瀏覽器或環境不支援鏡頭（需要 https 網址）'); }
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+    video.srcObject = stream;
+    await video.play();
+    camOn = true; prevGray = null; warm = 0;
+  }
+  function stopCamera(){
+    if (stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; }
+    video.srcObject = null; camOn = false; prevGray = null;
+    for (var i = 0; i < mask.length; i++) mask[i] = 0;
+  }
+
+  /* ---------- 泡泡 ---------- */
+  function spawn(){
+    var roll = Math.random(), type = 'normal';
+    if (elapsed > 6 && roll < 0.14) type = 'bomb'; else if (roll > 0.93) type = 'gold';
+    var r = type === 'gold' ? rnd(20, 26) : type === 'bomb' ? rnd(28, 34) : rnd(24, 42);
+    var sp = (type === 'gold' ? rnd(70, 100) : rnd(45, 85)) + Math.min(40, elapsed);
+    bubbles.push({ type: type, x: rnd(r + 6, W - r - 6), y: H + r, r: r, vy: sp, ph: rnd(0, 6), hue: rnd(180, 320) });
+  }
+  function popBubble(b, idx){
+    bubbles.splice(idx, 1);
+    for (var k = 0; k < 12; k++){ var a = k / 12 * Math.PI * 2, s = rnd(60, 140); particles.push({ x: b.x, y: b.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.5, type: b.type }); }
+    if (b.type === 'bomb'){
+      score = Math.max(0, score - 5); bombsHit++; combo = 0; shake = 0.3;
+      floats.push({ x: b.x, y: b.y, text: '−5', color: '#E5484D', life: 0.9 });
+      tone(120, 0.25, 'sawtooth', 0.1);
+    } else {
+      var now = elapsed;
+      combo = (now - lastPop < 1.3) ? combo + 1 : 1; lastPop = now;
+      var mult = Math.min(3, 1 + Math.floor(combo / 6));
+      var gain = (b.type === 'gold' ? 5 : 1) * mult;
+      score += gain; popped++;
+      floats.push({ x: b.x, y: b.y, text: '+' + gain, color: b.type === 'gold' ? '#E0A100' : '#4A42D6', life: 0.8 });
+      if (b.type === 'gold'){ [880, 1175, 1568].forEach(function(f, i){ tone(f, 0.14, 'triangle', 0.07, i * 0.05); }); }
+      else popSfx(520 + Math.min(combo, 12) * 40);
+    }
+    scoreEl.textContent = score;
+  }
+
+  function update(dt){
+    elapsed += dt; timeLeft -= dt;
+    timeEl.textContent = Math.max(0, Math.ceil(timeLeft));
+    if (timeLeft <= 0){ finish(); return; }
+    spawnT -= dt;
+    if (spawnT <= 0){ spawn(); spawnT = Math.max(0.32, 0.95 - elapsed * 0.012) * rnd(0.8, 1.2); }
+    captureMotion();
+    var need = SENS[sens].frac;
+    for (var i = bubbles.length - 1; i >= 0; i--){
+      var b = bubbles[i];
+      b.y -= b.vy * dt; b.ph += dt * 2; b.x += Math.sin(b.ph) * 14 * dt;
+      if (b.y + b.r < -10){ bubbles.splice(i, 1); continue; }
+      if (camOn && warm > 8 && bubbleMotion(b, mask) >= need) popBubble(b, i);
+    }
+    for (var p = particles.length - 1; p >= 0; p--){ var q = particles[p]; q.life -= dt; q.x += q.vx * dt; q.y += q.vy * dt; if (q.life <= 0) particles.splice(p, 1); }
+    for (var f = floats.length - 1; f >= 0; f--){ floats[f].life -= dt; floats[f].y -= 40 * dt; if (floats[f].life <= 0) floats.splice(f, 1); }
+    if (shake > 0) shake -= dt;
+  }
+
+  function drawBubble(b){
+    var g = ctx.createRadialGradient(b.x - b.r * 0.35, b.y - b.r * 0.35, b.r * 0.1, b.x, b.y, b.r);
+    if (b.type === 'bomb'){
+      ctx.strokeStyle = '#2A2140'; ctx.lineWidth = 3;
+      for (var k = 0; k < 10; k++){ var a = k / 10 * Math.PI * 2; ctx.beginPath(); ctx.moveTo(b.x + Math.cos(a) * b.r * 0.8, b.y + Math.sin(a) * b.r * 0.8); ctx.lineTo(b.x + Math.cos(a) * (b.r + 8), b.y + Math.sin(a) * (b.r + 8)); ctx.stroke(); }
+      g.addColorStop(0, '#6B5B95'); g.addColorStop(1, '#1D1633');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#FF6B6B'; ctx.font = "900 " + Math.round(b.r * 0.9) + "px 'Noto Sans TC', sans-serif"; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('!', b.x, b.y + 1);
+      return;
+    }
+    if (b.type === 'gold'){ g.addColorStop(0, 'rgba(255,255,255,.95)'); g.addColorStop(0.6, 'rgba(255,214,102,.8)'); g.addColorStop(1, 'rgba(240,160,30,.9)'); }
+    else { g.addColorStop(0, 'rgba(255,255,255,.9)'); g.addColorStop(0.65, 'hsla(' + b.hue + ',85%,80%,.45)'); g.addColorStop(1, 'hsla(' + b.hue + ',85%,65%,.75)'); }
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.beginPath(); ctx.ellipse(b.x - b.r * 0.35, b.y - b.r * 0.4, b.r * 0.22, b.r * 0.12, -0.6, 0, Math.PI * 2); ctx.fill();
+    if (b.type === 'gold'){ ctx.fillStyle = '#fff'; ctx.font = "900 " + Math.round(b.r) + "px sans-serif"; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('★', b.x, b.y + 1); }
+  }
+
+  function draw(){
+    ctx.save();
+    if (shake > 0) ctx.translate(rnd(-5, 5), rnd(-5, 5));
+    if (camOn && video.readyState >= 2){
+      ctx.save(); ctx.translate(W, 0); ctx.scale(-1, 1); ctx.drawImage(video, 0, 0, W, H); ctx.restore();
+      ctx.fillStyle = 'rgba(238,241,255,.22)'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(255,255,255,.28)';
+      var cw = W / MW, ch = H / MH;
+      for (var y = 0; y < MH; y++) for (var x = 0; x < MW; x++) if (mask[y * MW + x]) ctx.fillRect(x * cw, y * ch, cw, ch);
+    } else {
+      var bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#DCE3FF'); bg.addColorStop(1, '#F4DFFF');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    }
+    bubbles.forEach(drawBubble);
+    particles.forEach(function(q){
+      ctx.globalAlpha = Math.max(0, q.life / 0.5);
+      ctx.fillStyle = q.type === 'bomb' ? '#6B5B95' : q.type === 'gold' ? '#FFD666' : '#FFFFFF';
+      ctx.beginPath(); ctx.arc(q.x, q.y, 3, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.font = "900 18px 'Noto Sans TC', sans-serif";
+    floats.forEach(function(f){ ctx.globalAlpha = Math.max(0, Math.min(1, f.life * 1.6)); ctx.fillStyle = f.color; ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 3; ctx.strokeText(f.text, f.x, f.y); ctx.fillText(f.text, f.x, f.y); });
+    ctx.globalAlpha = 1;
+    if (combo >= 3){ ctx.fillStyle = 'rgba(29,35,71,.85)'; ctx.font = "900 20px 'Noto Sans TC', sans-serif"; ctx.fillText(combo + ' 連擊', W / 2, 30); }
+    ctx.restore();
+  }
+
+  function loop(ts){
+    if (!running) return;
+    if (!last) last = ts;
+    var dt = Math.min(0.05, (ts - last) / 1000); last = ts;
+    update(dt);
+    if (!running) return;
+    draw();
+    raf = requestAnimationFrame(loop);
+  }
+
+  function finish(){
+    running = false; cancelAnimationFrame(raf); music.stop(); stopCamera(); draw();
+    var isBest = score > best;
+    if (isBest){ best = score; try { localStorage.setItem('bubblewave_best', String(best)); } catch (e) { /* ignore */ } }
+    endTitle.textContent = '時間到！';
+    endText.innerHTML = '得分 ' + score + '　打破 ' + popped + ' 顆' + (bombsHit ? '　碰到刺球 ' + bombsHit + ' 次' : '') + '<br>最高紀錄 ' + best + (isBest ? '（刷新了！）' : '') + '<br><span class="small">鏡頭已關閉</span>';
+    [523.25, 659.25, 783.99, 1046.5].forEach(function(f, i){ tone(f, 0.22, 'triangle', 0.07, i * 0.09); });
+    setTimeout(function(){ endOverlay.classList.remove('hidden'); }, 300);
+  }
+
+  function begin(){
+    startOverlay.classList.add('hidden'); endOverlay.classList.add('hidden');
+    bubbles = []; particles = []; floats = []; score = 0; popped = 0; bombsHit = 0; combo = 0; lastPop = -9; timeLeft = GAME_TIME; elapsed = 0; spawnT = 0.4; shake = 0; last = 0;
+    scoreEl.textContent = '0'; timeEl.textContent = GAME_TIME;
+    statusEl.textContent = camOn ? '鏡頭已開啟：在畫面裡揮手打泡泡' : '未使用鏡頭：用滑鼠或手指點泡泡';
+    running = true; music.start(); raf = requestAnimationFrame(loop);
+  }
+
+  async function startGame(useCam){
+    getAc();
+    camMsg.textContent = '';
+    if (useCam){
+      camMsg.textContent = '正在要求鏡頭權限…';
+      try { await startCamera(); }
+      catch (e) {
+        camOn = false;
+        var name = e && e.name ? e.name : '';
+        camMsg.textContent = (name === 'NotAllowedError' ? '你拒絕了鏡頭權限，' : name === 'NotFoundError' ? '找不到鏡頭裝置，' : '無法開啟鏡頭，') + '改用滑鼠或手指點泡泡也可以玩。';
+        statusEl.textContent = '無法使用鏡頭';
+      }
+    }
+    begin();
+  }
+
+  function pointerPop(e){
+    if (!running) return;
+    var r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * W, y = (e.clientY - r.top) / r.height * H;
+    for (var i = bubbles.length - 1; i >= 0; i--){
+      var b = bubbles[i], dx = x - b.x, dy = y - b.y;
+      if (dx * dx + dy * dy <= (b.r + 6) * (b.r + 6)){ popBubble(b, i); break; }
+    }
+  }
+  cv.addEventListener('pointerdown', pointerPop);
+  cv.addEventListener('pointermove', function(e){ if (e.buttons || e.pointerType === 'touch') pointerPop(e); });
+
+  document.addEventListener('visibilitychange', function(){ if (document.hidden && running){ finish(); } });
+  window.addEventListener('pagehide', stopCamera);
+
+  document.getElementById('camStartBtn').addEventListener('click', function(){ startGame(true); });
+  document.getElementById('plainStartBtn').addEventListener('click', function(){ startGame(false); });
+  document.getElementById('againCamBtn').addEventListener('click', function(){ startGame(true); });
+  document.getElementById('againPlainBtn').addEventListener('click', function(){ startGame(false); });
+  document.querySelectorAll('.seg button').forEach(function(b){
+    b.addEventListener('click', function(){
+      sens = b.dataset.s;
+      document.querySelectorAll('.seg button').forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+    });
+  });
+  function refreshMusicBtn(){ musicBtn.textContent = musicOn ? '🔊' : '🔇'; musicBtn.setAttribute('aria-pressed', String(musicOn)); }
+  musicBtn.addEventListener('click', function(){
+    musicOn = !musicOn;
+    try { localStorage.setItem('bubblewave_music', musicOn ? '1' : '0'); } catch (e) { /* ignore */ }
+    if (musicOn && running) music.start(); else music.stop();
+    refreshMusicBtn();
+  });
+
+  bubbles = []; particles = []; floats = []; score = 0; combo = 0; shake = 0;
+  refreshMusicBtn(); draw();
+})();
+</script>
+</body>
+</html>
