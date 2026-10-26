@@ -30,18 +30,20 @@
   .icon-btn:focus-visible, .btn:focus-visible, .seg button:focus-visible{ outline:3px solid var(--gold); outline-offset:2px; }
   .screen-frame{ position:relative; border-radius:12px; padding:10px; background:var(--bg-deep); border:2px solid var(--panel-edge); }
   canvas{ display:block; width:100%; height:auto; border-radius:6px; background:#150C1C; touch-action:none; }
-  .overlay{ position:absolute; inset:10px; border-radius:6px; background:rgba(21,12,28,.9); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:18px; gap:12px; }
+  .overlay{ position:absolute; inset:10px; border-radius:6px; background:rgba(21,12,28,.92); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:14px; gap:9px; overflow:auto; }
   .overlay.hidden{ display:none; }
   .overlay h2{ font-family:'Press Start 2P',monospace; font-size:clamp(14px,4vw,20px); color:var(--gold); margin:0; line-height:1.5; }
   .overlay p{ margin:0; color:var(--cream-dim); font-size:13px; line-height:1.7; max-width:320px; }
-  .legend{ display:grid; grid-template-columns:auto 1fr; gap:6px 10px; text-align:left; font-size:12.5px; color:var(--cream); max-width:320px; }
+  .legend{ display:grid; grid-template-columns:auto 1fr; gap:4px 10px; text-align:left; font-size:12px; color:var(--cream); max-width:330px; }
   .legend i{ display:inline-block; width:14px; height:14px; border-radius:50%; margin-top:3px; }
   .btn{ font-family:'Press Start 2P',monospace; font-size:12px; color:var(--bg-deep); background:var(--teal); border:none; padding:12px 20px; border-radius:8px; cursor:pointer; box-shadow:0 4px 0 var(--teal-dim); }
   .btn:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--teal-dim); }
   .seg{ display:flex; border:2px solid var(--panel-edge); border-radius:8px; overflow:hidden; }
   .seg button{ font:700 13px 'Nunito',sans-serif; color:var(--cream-dim); background:transparent; border:none; padding:8px 14px; cursor:pointer; }
   .seg button[aria-pressed="true"]{ background:var(--gold); color:var(--bg-deep); }
-  .controls{ margin-top:18px; display:flex; justify-content:center; }
+  .controls{ margin-top:18px; display:flex; justify-content:center; align-items:center; gap:28px; }
+  .dash{ width:78px; height:78px; border-radius:50%; border:2px solid var(--gold); background:var(--panel); color:var(--gold); font:700 15px 'Nunito',sans-serif; cursor:pointer; user-select:none; -webkit-user-select:none; touch-action:none; }
+  .dash:active, .dash.on{ background:var(--gold); color:var(--bg-deep); }
   .dpad{ display:grid; grid-template-columns:repeat(3,56px); grid-template-rows:repeat(3,56px); gap:6px; }
   .dpad button{ background:var(--panel); border:1px solid var(--panel-edge); border-radius:10px; color:var(--cream); font-size:20px; display:flex; align-items:center; justify-content:center; cursor:pointer; }
   .dpad button:active{ background:var(--gold-dim); }
@@ -76,7 +78,11 @@
           <i style="background:#F45B8A"></i><span>果實：+10，連續吃會連擊加成（最高 ×5）</span>
           <i style="background:#F4A623"></i><span>金果：限時出現，+50 並長長一節</span>
           <i style="background:#7FF0E0"></i><span>月光花：時間變慢 6 秒</span>
+          <i style="background:#B79CED"></i><span>幽靈花：5 秒內可穿過身體、岩石和螢火蟲</span>
           <i style="background:#7A6A8A"></i><span>岩石：每吃 5 顆升一級並多出現</span>
+          <i style="background:#5AA9FF"></i><span>傳送門：3 級起，進一個從另一個出來</span>
+          <i style="background:#C8F169"></i><span>螢火蟲：4 級起巡邏，碰到就結束</span>
+          <i style="background:#fff"></i><span>按住 Shift 衝刺：速度加快、得分 ×2，會消耗體力</span>
         </div>
         <div class="seg" role="group" aria-label="模式">
           <button type="button" data-mode="classic" aria-pressed="true">經典（撞牆結束）</button>
@@ -104,10 +110,11 @@
         <button class="right" aria-label="右">▶</button>
         <button class="down" aria-label="下">▼</button>
       </div>
+      <button class="dash" id="dashBtn" aria-label="按住衝刺">按住<br>衝刺</button>
     </div>
   </div>
 
-  <p class="hint">方向鍵 / <kbd>W A S D</kbd> 移動，<kbd>P</kbd> 或空白鍵暫停。手機可在畫面上滑動，快速連轉彎也會被記住。</p>
+  <p class="hint">方向鍵 / <kbd>W A S D</kbd> 移動，按住 <kbd>Shift</kbd> 衝刺，<kbd>P</kbd> 或空白鍵暫停。手機可在畫面上滑動，右下角按住「衝刺」鈕加速。</p>
 
 <script>
 (function(){
@@ -231,12 +238,13 @@
   };
 
   var snake, prev, dir, queue, fruit, golden, moon, rocks, score, eaten, level, combo, lastEat, gameTime, slowUntil;
+  var ghostFlower, ghostUntil, portals, flies, stamina, dashHeld = false, dashing, stepN;
   var particles, floats, shake, acc, interval, running, paused, dead, raf, lastTs, pulse;
 
   function rnd(a, b){ return a + Math.random() * (b - a); }
   function cp(p){ return { x: p.x, y: p.y }; }
   function baseInterval(){ return Math.max(72, 138 - (level - 1) * 6); }
-  function curInterval(){ return baseInterval() * (gameTime < slowUntil ? 1.6 : 1); }
+  function curInterval(){ return baseInterval() * (gameTime < slowUntil ? 1.6 : 1) * (dashing ? 0.55 : 1); }
 
   function occupied(x, y){
     if (snake.some(function(s){ return s.x === x && s.y === y; })) return true;
@@ -244,6 +252,9 @@
     if (fruit && fruit.x === x && fruit.y === y) return true;
     if (golden && golden.x === x && golden.y === y) return true;
     if (moon && moon.x === x && moon.y === y) return true;
+    if (ghostFlower && ghostFlower.x === x && ghostFlower.y === y) return true;
+    if (portals && portals.some(function(p){ return p.x === x && p.y === y; })) return true;
+    if (flies && flies.some(function(f){ return f.x === x && f.y === y; })) return true;
     return false;
   }
   function freeCell(minHeadDist){
@@ -259,7 +270,7 @@
   function resetState(){
     snake = [{ x: 9, y: 10 }, { x: 8, y: 10 }, { x: 7, y: 10 }];
     prev = snake.map(cp); dir = { x: 1, y: 0 }; queue = [];
-    rocks = []; golden = null; moon = null; fruit = null;
+    rocks = []; golden = null; moon = null; fruit = null; ghostFlower = null; ghostUntil = 0; portals = null; flies = []; stamina = 100; dashing = false; stepN = 0;
     score = 0; eaten = 0; level = 1; combo = 0; lastEat = -99999; gameTime = 0; slowUntil = 0;
     particles = []; floats = []; shake = 0; acc = 0; pulse = 0; dead = false;
     fruit = freeCell(0);
@@ -273,6 +284,31 @@
     }
   }
   function floatText(x, y, text, color){ floats.push({ x: x * CELL + CELL / 2, y: y * CELL, text: text, color: color, life: 0.9 }); }
+
+  function spawnPortals(){
+    portals = null;
+    var a = freeCell(5); if (!a) return;
+    portals = [a, { x: -9, y: -9 }];
+    var b = freeCell(5);
+    if (!b){ portals = null; return; }
+    portals = [a, b];
+  }
+  function spawnFly(){
+    var c = freeCell(6); if (!c) return;
+    var horiz = Math.random() < 0.5, sg = Math.random() < 0.5 ? 1 : -1;
+    flies.push({ x: c.x, y: c.y, px: c.x, py: c.y, dx: horiz ? sg : 0, dy: horiz ? 0 : sg });
+  }
+  function blockedForFly(x, y){
+    if (x < 0 || x >= GRID || y < 0 || y >= GRID) return true;
+    return rocks.some(function(r){ return r.x === x && r.y === y; });
+  }
+  function moveFlies(){
+    flies.forEach(function(f){
+      f.px = f.x; f.py = f.y;
+      if (blockedForFly(f.x + f.dx, f.y + f.dy)){ f.dx = -f.dx; f.dy = -f.dy; }
+      if (!blockedForFly(f.x + f.dx, f.y + f.dy)){ f.x += f.dx; f.y += f.dy; }
+    });
+  }
 
   function die(){
     dead = true; running = false; music.stop(); shake = 0.35;
@@ -293,13 +329,24 @@
     if (mode === 'wrap'){ head.x = (head.x + GRID) % GRID; head.y = (head.y + GRID) % GRID; }
     else if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID){ die(); return; }
 
+    if (portals){
+      var pi = portals[0].x === head.x && portals[0].y === head.y ? 0 : (portals[1].x === head.x && portals[1].y === head.y ? 1 : -1);
+      if (pi >= 0){
+        burst(head.x, head.y, '#5AA9FF', 10);
+        head = { x: portals[1 - pi].x, y: portals[1 - pi].y };
+        burst(head.x, head.y, '#FF9E5E', 10);
+        tone(300, 0.18, 'sine', 0.07); tone(620, 0.18, 'sine', 0.06, 0.08);
+      }
+    }
+    var ghost = gameTime < ghostUntil;
     var eatFruit = fruit && head.x === fruit.x && head.y === fruit.y;
     var eatGold = golden && head.x === golden.x && head.y === golden.y;
     var eatMoon = moon && head.x === moon.x && head.y === moon.y;
+    var eatGhost = ghostFlower && head.x === ghostFlower.x && head.y === ghostFlower.y;
     var grow = eatFruit || eatGold;
 
     var body = grow ? snake : snake.slice(0, -1);
-    if (body.some(function(s){ return s.x === head.x && s.y === head.y; }) || rocks.some(function(r){ return r.x === head.x && r.y === head.y; })){ die(); return; }
+    if (!ghost && (body.some(function(s){ return s.x === head.x && s.y === head.y; }) || rocks.some(function(r){ return r.x === head.x && r.y === head.y; }) || flies.some(function(f){ return f.x === head.x && f.y === head.y; }))){ die(); return; }
 
     prev = snake.map(cp);
     snake.unshift(head);
@@ -308,25 +355,33 @@
     if (eatFruit){
       combo = (gameTime - lastEat < 2600) ? Math.min(combo + 1, 5) : 1;
       lastEat = gameTime;
-      var gain = 10 * combo;
+      var gain = 10 * combo * (dashing ? 2 : 1);
       score += gain; eaten++;
-      floatText(head.x, head.y, '+' + gain + (combo > 1 ? ' ×' + combo : ''), combo > 1 ? '#F4A623' : '#FDF6EC');
+      floatText(head.x, head.y, '+' + gain + (combo > 1 ? ' ×' + combo : '') + (dashing ? ' 衝刺' : ''), (combo > 1 || dashing) ? '#F4A623' : '#FDF6EC');
       burst(head.x, head.y, '#F45B8A', 12);
       tone(440 + combo * 70, 0.1, 'square', 0.06);
       fruit = freeCell(0);
       if (!golden && Math.random() < 0.22){ var g = freeCell(3); if (g){ golden = { x: g.x, y: g.y, exp: gameTime + 7000 }; tone(988, 0.08, 'triangle', 0.05, 0.12); } }
       if (!moon && gameTime >= slowUntil && Math.random() < 0.16){ var m2 = freeCell(3); if (m2) moon = { x: m2.x, y: m2.y, exp: gameTime + 8000 }; }
+      if (!ghostFlower && gameTime >= ghostUntil && Math.random() < 0.12){ var g2 = freeCell(3); if (g2) ghostFlower = { x: g2.x, y: g2.y, exp: gameTime + 8000 }; }
       var newLevel = 1 + Math.floor(eaten / 5);
       if (newLevel > level){
         level = newLevel;
         for (var r = 0; r < 2 && rocks.length < 14; r++){ var rc = freeCell(6); if (rc) rocks.push(rc); }
         floatText(5, 1, '第 ' + level + ' 級！', '#2DD4BF');
+        if (level >= 3) spawnPortals();
+        var wantFlies = level >= 7 ? 2 : (level >= 4 ? 1 : 0);
+        while (flies.length < wantFlies) { var before = flies.length; spawnFly(); if (flies.length === before) break; }
         [523, 659, 784].forEach(function(f, i){ tone(f, 0.12, 'triangle', 0.07, i * 0.08); });
       }
     } else if (eatGold){
       score += 50; golden = null; lastEat = gameTime;
       floatText(head.x, head.y, '+50', '#F4A623'); burst(head.x, head.y, '#F4A623', 18);
       [784, 988, 1175].forEach(function(f, i){ tone(f, 0.12, 'triangle', 0.08, i * 0.06); });
+    } else if (eatGhost){
+      ghostUntil = gameTime + 5000; ghostFlower = null;
+      floatText(head.x, head.y, '幽靈化！', '#B79CED'); burst(head.x, head.y, '#B79CED', 16);
+      [392, 523, 659].forEach(function(f, i){ tone(f, 0.25, 'sine', 0.06, i * 0.07); });
     } else if (eatMoon){
       slowUntil = gameTime + 6000; moon = null;
       floatText(head.x, head.y, '時間變慢', '#7FF0E0'); burst(head.x, head.y, '#7FF0E0', 16);
@@ -335,6 +390,12 @@
     scoreEl.textContent = score;
     if (golden && gameTime > golden.exp) golden = null;
     if (moon && gameTime > moon.exp) moon = null;
+    if (ghostFlower && gameTime > ghostFlower.exp) ghostFlower = null;
+    stepN++;
+    if (flies.length){
+      if (stepN % 2 === 0) moveFlies();
+      if (gameTime >= ghostUntil && flies.some(function(f){ return f.x === snake[0].x && f.y === snake[0].y; })){ die(); return; }
+    }
   }
 
   function lerpPos(i, t){
@@ -381,9 +442,36 @@
       ctx.fillStyle = '#FDF6EC'; ctx.beginPath(); ctx.arc(mx, my, 3, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0; ring(mx, my, ml, '#7FF0E0');
     }
 
+    if (portals){
+      portals.forEach(function(p, idx){
+        var px = p.x * CELL + 10, py = p.y * CELL + 10, col = idx === 0 ? '#5AA9FF' : '#FF9E5E';
+        ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.shadowColor = col; ctx.shadowBlur = 10;
+        ctx.beginPath(); ctx.arc(px, py, 8 + Math.sin(pulse * 4 + idx) * 1.2, 0, Math.PI * 2); ctx.stroke();
+        ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(px, py, 4, pulse * 3, pulse * 3 + Math.PI * 1.4); ctx.stroke();
+        ctx.shadowBlur = 0;
+      });
+    }
+    if (ghostFlower){
+      var gfl = Math.max(0, (ghostFlower.exp - gameTime) / 8000), gfx = ghostFlower.x * CELL + 10, gfy = ghostFlower.y * CELL + 10 + Math.sin(pulse * 3) * 1.5;
+      ctx.shadowColor = '#B79CED'; ctx.shadowBlur = 12; ctx.fillStyle = '#B79CED';
+      ctx.beginPath(); ctx.arc(gfx, gfy - 2, 5.5, Math.PI, 0); ctx.lineTo(gfx + 5.5, gfy + 6); ctx.lineTo(gfx + 2.7, gfy + 4); ctx.lineTo(gfx, gfy + 6); ctx.lineTo(gfx - 2.7, gfy + 4); ctx.lineTo(gfx - 5.5, gfy + 6); ctx.closePath(); ctx.fill();
+      ctx.shadowBlur = 0; ctx.fillStyle = '#1E1226'; ctx.fillRect(gfx - 3, gfy - 3, 1.8, 2.4); ctx.fillRect(gfx + 1.4, gfy - 3, 1.8, 2.4);
+      ring(gfx, gfy, gfl, '#B79CED');
+    }
+    flies.forEach(function(f){
+      var fx = (f.px + (f.x - f.px) * t) * CELL + 10, fy = (f.py + (f.y - f.py) * t) * CELL + 10;
+      var fl = 0.65 + Math.sin(pulse * 14 + f.x) * 0.35;
+      ctx.shadowColor = '#C8F169'; ctx.shadowBlur = 14 * fl; ctx.fillStyle = '#C8F169';
+      ctx.beginPath(); ctx.arc(fx, fy, 5.5, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(200,241,105,.45)';
+      ctx.beginPath(); ctx.ellipse(fx - 4, fy - 5, 4, 2, -0.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(fx + 4, fy - 5, 4, 2, 0.5, 0, Math.PI * 2); ctx.fill();
+    });
+
     var n = snake.length, pts = [], i;
     for (i = 0; i < n; i++){ var q = lerpPos(i, t); pts.push({ x: q.x * CELL + 10, y: q.y * CELL + 10 }); }
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.globalAlpha = gameTime < ghostUntil ? 0.5 : 1;
     for (i = n - 1; i > 0; i--){
       if (Math.abs(pts[i].x - pts[i - 1].x) > CELL * 1.6 || Math.abs(pts[i].y - pts[i - 1].y) > CELL * 1.6) continue;
       var w = 8 + 8 * (1 - i / n);
@@ -398,6 +486,8 @@
     ctx.fillStyle = '#1E1226';
     ctx.beginPath(); ctx.arc(h.x + d.x * 3 + ex, h.y + d.y * 3 + ey, 2, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(h.x + d.x * 3 - ex, h.y + d.y * 3 - ey, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+    if (dashing){ ctx.strokeStyle = 'rgba(253,246,236,.55)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(h.x, h.y, 12 + Math.sin(pulse * 30) * 1.5, 0, Math.PI * 2); ctx.stroke(); }
 
     particles.forEach(function(pt){ ctx.globalAlpha = Math.max(0, pt.life / pt.max); ctx.fillStyle = pt.color; ctx.fillRect(pt.x - 2, pt.y - 2, 4, 4); });
     ctx.globalAlpha = 1;
@@ -409,6 +499,10 @@
     ctx.fillText('LV ' + level, 10, 18);
     if (combo > 1 && gameTime - lastEat < 2600){ ctx.fillStyle = '#F4A623'; ctx.fillText('COMBO ×' + combo, 10, 34); ctx.fillRect(10, 40, 70 * (1 - (gameTime - lastEat) / 2600), 3); }
     if (gameTime < slowUntil){ ctx.fillStyle = '#7FF0E0'; ctx.fillText('SLOW', SIZE - 62, 18); }
+    if (gameTime < ghostUntil){ ctx.fillStyle = '#B79CED'; ctx.fillText('GHOST', SIZE - 70, 34); ctx.fillRect(SIZE - 70, 40, 60 * ((ghostUntil - gameTime) / 5000), 3); }
+    ctx.fillStyle = 'rgba(253,246,236,.18)'; ctx.fillRect(10, SIZE - 14, 90, 5);
+    ctx.fillStyle = dashing ? '#FDF6EC' : (stamina < 20 ? '#F45B5B' : '#F4A623'); ctx.fillRect(10, SIZE - 14, 90 * stamina / 100, 5);
+    ctx.fillStyle = 'rgba(253,246,236,.6)'; ctx.font = "7px 'Press Start 2P', monospace"; ctx.fillText(dashing ? 'DASH ×2' : 'DASH', 10, SIZE - 19);
     ctx.restore();
   }
 
@@ -417,11 +511,15 @@
     var dt = Math.min(0.05, (ts - lastTs) / 1000); lastTs = ts;
     pulse += dt;
     if (running && !paused){
+      if (dashHeld && ((dashing && stamina > 0) || (!dashing && stamina >= 20))) dashing = true; else dashing = false;
+      if (dashing) stamina = Math.max(0, stamina - 45 * dt); else stamina = Math.min(100, stamina + 22 * dt);
+      if (dashing && stamina <= 0) dashing = false;
       gameTime += dt * 1000; acc += dt * 1000;
       var iv = curInterval(), guard = 0;
       while (acc >= iv && running && guard++ < 4){ acc -= iv; step(); iv = curInterval(); }
       if (golden && gameTime > golden.exp) golden = null;
       if (moon && gameTime > moon.exp) moon = null;
+      if (ghostFlower && gameTime > ghostFlower.exp) ghostFlower = null;
     }
     for (var i = particles.length - 1; i >= 0; i--){ var p = particles[i]; p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; if (p.life <= 0) particles.splice(i, 1); }
     for (var j = floats.length - 1; j >= 0; j--){ floats[j].life -= dt; floats[j].y -= 28 * dt; if (floats[j].life <= 0) floats.splice(j, 1); }
@@ -459,7 +557,13 @@
     else if (k === 'ArrowLeft' || k === 'a' || k === 'A'){ setDir(-1, 0); e.preventDefault(); }
     else if (k === 'ArrowRight' || k === 'd' || k === 'D'){ setDir(1, 0); e.preventDefault(); }
     else if (k === 'p' || k === 'P' || k === ' '){ if (running){ e.preventDefault(); setPaused(!paused); } }
+    else if (k === 'Shift'){ dashHeld = true; }
   });
+  document.addEventListener('keyup', function(e){ if (e.key === 'Shift') dashHeld = false; });
+  window.addEventListener('blur', function(){ dashHeld = false; });
+  var dashBtn = document.getElementById('dashBtn');
+  ['pointerdown'].forEach(function(n){ dashBtn.addEventListener(n, function(e){ e.preventDefault(); dashHeld = true; dashBtn.classList.add('on'); }); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(function(n){ dashBtn.addEventListener(n, function(){ dashHeld = false; dashBtn.classList.remove('on'); }); });
   document.addEventListener('visibilitychange', function(){ if (document.hidden && running && !paused) setPaused(true); });
   document.querySelector('.dpad .up').addEventListener('click', function(){ setDir(0, -1); });
   document.querySelector('.dpad .down').addEventListener('click', function(){ setDir(0, 1); });
