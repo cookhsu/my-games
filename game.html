@@ -34,12 +34,12 @@
   .overlay.hidden{ display:none; }
   .overlay h2{ font-family:'Press Start 2P',monospace; font-size:clamp(14px,4vw,20px); color:var(--gold); margin:0; line-height:1.5; }
   .overlay p{ margin:0; color:var(--cream-dim); font-size:13px; line-height:1.7; max-width:320px; }
-  .legend{ display:grid; grid-template-columns:auto 1fr; gap:4px 10px; text-align:left; font-size:12px; color:var(--cream); max-width:330px; }
+  .legend{ display:grid; grid-template-columns:auto 1fr; gap:3px 10px; text-align:left; font-size:11.5px; color:var(--cream); max-width:330px; }
   .legend i{ display:inline-block; width:14px; height:14px; border-radius:50%; margin-top:3px; }
   .btn{ font-family:'Press Start 2P',monospace; font-size:12px; color:var(--bg-deep); background:var(--teal); border:none; padding:12px 20px; border-radius:8px; cursor:pointer; box-shadow:0 4px 0 var(--teal-dim); }
   .btn:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--teal-dim); }
   .seg{ display:flex; border:2px solid var(--panel-edge); border-radius:8px; overflow:hidden; }
-  .seg button{ font:700 13px 'Nunito',sans-serif; color:var(--cream-dim); background:transparent; border:none; padding:8px 14px; cursor:pointer; }
+  .seg button{ font:700 13px 'Nunito',sans-serif; color:var(--cream-dim); background:transparent; border:none; padding:8px 12px; cursor:pointer; }
   .seg button[aria-pressed="true"]{ background:var(--gold); color:var(--bg-deep); }
   .controls{ margin-top:18px; display:flex; justify-content:center; align-items:center; gap:28px; }
   .dash{ width:78px; height:78px; border-radius:50%; border:2px solid var(--gold); background:var(--panel); color:var(--gold); font:700 15px 'Nunito',sans-serif; cursor:pointer; user-select:none; -webkit-user-select:none; touch-action:none; }
@@ -50,6 +50,13 @@
   .dpad .up{ grid-column:2; grid-row:1; } .dpad .left{ grid-column:1; grid-row:2; } .dpad .right{ grid-column:3; grid-row:2; } .dpad .down{ grid-column:2; grid-row:3; }
   .hint{ margin-top:16px; font-size:12px; color:var(--cream-dim); text-align:center; max-width:440px; line-height:1.8; }
   .hint kbd{ font-family:'Press Start 2P',monospace; font-size:9px; background:var(--panel); border:1px solid var(--panel-edge); border-radius:4px; padding:3px 6px; color:var(--teal); }
+  .skins-wrap{ display:flex; align-items:center; gap:10px; font-size:12px; color:var(--cream-dim); }
+  .skins{ display:flex; gap:7px; }
+  .skin{ width:30px; height:30px; border-radius:50%; border:2px solid var(--panel-edge); cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; padding:0; color:#fff; }
+  .skin[aria-pressed="true"]{ border-color:var(--cream); box-shadow:0 0 0 2px var(--gold); }
+  .skin.locked{ filter:grayscale(1) brightness(.45); }
+  .skin:focus-visible{ outline:3px solid var(--gold); outline-offset:2px; }
+  .skin-note{ font-size:11px; color:var(--cream-dim); min-height:15px; }
   @media (min-width:640px){ .controls{ display:none; } }
 </style>
 </head>
@@ -83,11 +90,17 @@
           <i style="background:#5AA9FF"></i><span>傳送門：3 級起，進一個從另一個出來</span>
           <i style="background:#C8F169"></i><span>螢火蟲：4 級起巡邏，碰到就結束</span>
           <i style="background:#fff"></i><span>按住 Shift 衝刺：速度加快、得分 ×2，會消耗體力</span>
+          <i style="background:#9FE8FF"></i><span>護盾泡泡：擋下一次撞擊，並短暫穿透</span>
+          <i style="background:#FF9EC0"></i><span>果實雨：限時掉下一大把果實，快搶！</span>
+          <i style="background:#E5484D"></i><span>對戰模式：AI 紅蛇會搶果實、攔路；撞到牠你就輸，牠被困住撞毀 +30</span>
         </div>
         <div class="seg" role="group" aria-label="模式">
-          <button type="button" data-mode="classic" aria-pressed="true">經典（撞牆結束）</button>
-          <button type="button" data-mode="wrap" aria-pressed="false">穿牆模式</button>
+          <button type="button" data-mode="classic" aria-pressed="true">經典</button>
+          <button type="button" data-mode="wrap" aria-pressed="false">穿牆</button>
+          <button type="button" data-mode="duel" aria-pressed="false">對戰（AI 紅蛇）</button>
         </div>
+        <div class="skins-wrap"><span>蛇皮膚</span><div class="skins" id="skins" role="group" aria-label="蛇皮膚"></div></div>
+        <div class="skin-note" id="skinNote"></div>
         <button class="btn" id="startBtn">開始遊戲</button>
       </div>
 
@@ -114,7 +127,7 @@
     </div>
   </div>
 
-  <p class="hint">方向鍵 / <kbd>W A S D</kbd> 移動，按住 <kbd>Shift</kbd> 衝刺，<kbd>P</kbd> 或空白鍵暫停。手機可在畫面上滑動，右下角按住「衝刺」鈕加速。</p>
+  <p class="hint">方向鍵 / <kbd>W A S D</kbd> 移動，按住 <kbd>Shift</kbd> 衝刺，<kbd>P</kbd> 或空白鍵暫停。分數越高，蛇皮膚越多。手機可在畫面上滑動，右下角按住「衝刺」鈕加速。</p>
 
 <script>
 (function(){
@@ -126,9 +139,22 @@
   var finalText = document.getElementById('finalText'), musicBtn = document.getElementById('musicBtn'), pauseBtn = document.getElementById('pauseBtn');
 
   var mode = 'classic';
-  try { var mm = localStorage.getItem('nightvine_mode'); if (mm === 'wrap' || mm === 'classic') mode = mm; } catch (e) { /* ignore */ }
-  var bests = { classic: 0, wrap: 0 };
-  try { var b1 = localStorage.getItem('nightvine_best'); if (b1) bests.classic = parseInt(b1, 10) || 0; var b2 = localStorage.getItem('nightvine_best_wrap'); if (b2) bests.wrap = parseInt(b2, 10) || 0; } catch (e) { /* ignore */ }
+  try { var mm = localStorage.getItem('nightvine_mode'); if (mm === 'wrap' || mm === 'classic' || mm === 'duel') mode = mm; } catch (e) { /* ignore */ }
+  var KEYS = { classic: 'nightvine_best', wrap: 'nightvine_best_wrap', duel: 'nightvine_best_duel' };
+  var bests = { classic: 0, wrap: 0, duel: 0 };
+  try { ['classic', 'wrap', 'duel'].forEach(function(k){ var v = localStorage.getItem(KEYS[k]); if (v) bests[k] = parseInt(v, 10) || 0; }); } catch (e) { /* ignore */ }
+  var SKINS = [
+    { n: '夜蔓', c: '#2DD4BF', need: 0 },
+    { n: '粉櫻', c: '#F6A6C8', need: 150 },
+    { n: '金鱗', c: '#F4C95D', need: 400 },
+    { n: '幽藍', c: '#6FA8FF', need: 800 },
+    { n: '彩虹', c: null, need: 1500 }
+  ];
+  var skin = 0;
+  try { var sk = parseInt(localStorage.getItem('nightvine_skin'), 10); if (sk >= 0 && sk < SKINS.length) skin = sk; } catch (e) { /* ignore */ }
+  function topScore(){ return Math.max(bests.classic, bests.wrap, bests.duel); }
+  function unlockedCount(){ var t = topScore(), n = 0; SKINS.forEach(function(k){ if (t >= k.need) n++; }); return n; }
+  if (SKINS[skin].need > topScore()) skin = 0;
   var musicOn = true;
   try { var mv = localStorage.getItem('nightvine_music'); if (mv !== null) musicOn = (mv === '1'); } catch (e) { /* ignore */ }
 
@@ -239,6 +265,7 @@
 
   var snake, prev, dir, queue, fruit, golden, moon, rocks, score, eaten, level, combo, lastEat, gameTime, slowUntil;
   var ghostFlower, ghostUntil, portals, flies, stamina, dashHeld = false, dashing, stepN;
+  var rival, rain, rainUntil, rainNext, rainSpawn, shield, shieldItem;
   var particles, floats, shake, acc, interval, running, paused, dead, raf, lastTs, pulse;
 
   function rnd(a, b){ return a + Math.random() * (b - a); }
@@ -255,6 +282,9 @@
     if (ghostFlower && ghostFlower.x === x && ghostFlower.y === y) return true;
     if (portals && portals.some(function(p){ return p.x === x && p.y === y; })) return true;
     if (flies && flies.some(function(f){ return f.x === x && f.y === y; })) return true;
+    if (rain && rain.some(function(f){ return f.x === x && f.y === y; })) return true;
+    if (shieldItem && shieldItem.x === x && shieldItem.y === y) return true;
+    if (rival && rival.body && rival.body.some(function(s){ return s.x === x && s.y === y; })) return true;
     return false;
   }
   function freeCell(minHeadDist){
@@ -271,9 +301,11 @@
     snake = [{ x: 9, y: 10 }, { x: 8, y: 10 }, { x: 7, y: 10 }];
     prev = snake.map(cp); dir = { x: 1, y: 0 }; queue = [];
     rocks = []; golden = null; moon = null; fruit = null; ghostFlower = null; ghostUntil = 0; portals = null; flies = []; stamina = 100; dashing = false; stepN = 0;
+    rain = []; rainUntil = 0; rainNext = 25000; rainSpawn = 0; shield = false; shieldItem = null; rival = null;
     score = 0; eaten = 0; level = 1; combo = 0; lastEat = -99999; gameTime = 0; slowUntil = 0;
     particles = []; floats = []; shake = 0; acc = 0; pulse = 0; dead = false;
     fruit = freeCell(0);
+    if (mode === 'duel'){ rival = { body: null, prev: [], dir: { x: -1, y: 0 }, wait: 1 }; spawnRival(); }
     scoreEl.textContent = '0';
   }
 
@@ -310,16 +342,142 @@
     });
   }
 
+  // ---- 對手蛇 ----
+  var DIRS = [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }];
+  function inb(x, y){ return x >= 0 && x < GRID && y >= 0 && y < GRID; }
+  function spawnRival(){
+    for (var tries = 0; tries < 60; tries++){
+      var x = 8 + Math.floor(Math.random() * 11), y = Math.floor(Math.random() * GRID);
+      var cells = [], ok = true;
+      for (var k = 0; k < 4; k++){
+        var c = { x: x + k, y: y };
+        if (!inb(c.x, c.y) || occupied(c.x, c.y)){ ok = false; break; }
+        cells.push(c);
+      }
+      if (!ok) continue;
+      if (Math.abs(x - snake[0].x) + Math.abs(y - snake[0].y) < 8) continue;
+      rival.body = cells; rival.prev = cells.map(cp); rival.dir = { x: -1, y: 0 };
+      burst(x, y, '#E5484D', 10);
+      return true;
+    }
+    rival.body = null; rival.wait = 3; return false;
+  }
+  function rivalBlocked(){
+    var blk = [], i, j;
+    for (i = 0; i < GRID; i++){ blk.push([]); for (j = 0; j < GRID; j++) blk[i].push(false); }
+    function mark(c){ if (c && inb(c.x, c.y)) blk[c.y][c.x] = true; }
+    rocks.forEach(mark); snake.forEach(mark); flies.forEach(mark);
+    rival.body.slice(0, -1).forEach(mark);
+    if (portals) portals.forEach(mark);
+    return blk;
+  }
+  function rivalPlan(){
+    var b = rival.body, hd = b[0], blk = rivalBlocked(), i;
+    var targets = [];
+    if (fruit) targets.push(fruit);
+    rain.forEach(function(r){ targets.push(r); });
+    if (level >= 3 && Math.random() < 0.25){
+      var ix = snake[0].x + dir.x * 3, iy = snake[0].y + dir.y * 3;
+      if (inb(ix, iy) && !blk[iy][ix]) targets = [{ x: ix, y: iy }];
+    }
+    var order = DIRS.slice().sort(function(a, c){ return (c.x === rival.dir.x && c.y === rival.dir.y ? 1 : 0) - (a.x === rival.dir.x && a.y === rival.dir.y ? 1 : 0); });
+    var seen = {}, q = [{ x: hd.x, y: hd.y, first: null }], qi = 0;
+    seen[hd.x + ',' + hd.y] = true;
+    var isT = function(x, y){ return targets.some(function(t){ return t.x === x && t.y === y; }); };
+    while (qi < q.length){
+      var cur = q[qi++];
+      for (i = 0; i < order.length; i++){
+        var nx = cur.x + order[i].x, ny = cur.y + order[i].y, key = nx + ',' + ny;
+        if (!inb(nx, ny) || blk[ny][nx] || seen[key]) continue;
+        seen[key] = true;
+        var first = cur.first || order[i];
+        if (first.x === -rival.dir.x && first.y === -rival.dir.y && b.length > 1) continue;
+        if (isT(nx, ny)) return first;
+        q.push({ x: nx, y: ny, first: first });
+      }
+    }
+    var best = null, bestN = -1;
+    for (i = 0; i < order.length; i++){
+      var ax = hd.x + order[i].x, ay = hd.y + order[i].y;
+      if (!inb(ax, ay) || blk[ay][ax]) continue;
+      var n = 0; DIRS.forEach(function(d2){ var bx = ax + d2.x, by = ay + d2.y; if (inb(bx, by) && !blk[by][bx]) n++; });
+      if (n > bestN){ bestN = n; best = order[i]; }
+    }
+    return best;
+  }
+  function crashRival(){
+    var b = rival.body;
+    b.forEach(function(c, i){ if (i % 2 === 0) burst(c.x, c.y, '#E5484D', 4); });
+    score += 30; scoreEl.textContent = score;
+    floatText(b[0].x, b[0].y, '對手撞毀 +30', '#FF9AA2');
+    [392, 330, 262].forEach(function(f, i){ tone(f, 0.12, 'square', 0.05, i * 0.06); });
+    rival.body = null; rival.wait = 8;
+  }
+  function rivalStep(){
+    if (!rival) return;
+    if (!rival.body){ if (--rival.wait <= 0) spawnRival(); return; }
+    if (stepN % 5 === 0) return;
+    var d = rivalPlan();
+    if (!d){ crashRival(); return; }
+    var b = rival.body;
+    rival.dir = d;
+    var h = { x: b[0].x + d.x, y: b[0].y + d.y };
+    var ate = fruit && h.x === fruit.x && h.y === fruit.y;
+    var ri = -1; rain.forEach(function(r, i){ if (r.x === h.x && r.y === h.y) ri = i; });
+    rival.prev = b.map(cp);
+    b.unshift(h);
+    if ((ate || ri >= 0) && b.length < 14) rival.prev.push(cp(rival.prev[rival.prev.length - 1])); else b.pop();
+    if (ate){ burst(h.x, h.y, '#E5484D', 8); fruit = freeCell(0); tone(220, 0.08, 'square', 0.03); }
+    if (ri >= 0){ burst(h.x, h.y, '#FF9EC0', 6); rain.splice(ri, 1); }
+  }
+
+  // ---- 護盾 / 果實雨 ----
+  function hit(){
+    if (shield){
+      shield = false; ghostUntil = Math.max(ghostUntil, gameTime + 1500); shake = 0.25;
+      burst(snake[0].x, snake[0].y, '#9FE8FF', 22);
+      floatText(snake[0].x, snake[0].y, '護盾破碎！', '#9FE8FF');
+      tone(660, 0.1, 'triangle', 0.08); tone(330, 0.25, 'sine', 0.08, 0.06);
+      return false;
+    }
+    die(); return true;
+  }
+  function startRain(){
+    rainUntil = gameTime + 8000; rainNext = gameTime + 40000; rainSpawn = gameTime;
+    floatText(10, 9, '果實雨！', '#FF9EC0');
+    [659, 784, 988, 1319].forEach(function(f, i){ tone(f, 0.1, 'triangle', 0.06, i * 0.06); });
+  }
+  function updateRain(){
+    if (gameTime < rainUntil){
+      if (gameTime >= rainSpawn && rain.length < 7){
+        var c = freeCell(0); if (c) rain.push({ x: c.x, y: c.y });
+        rainSpawn = gameTime + 650;
+      }
+    } else if (rain.length){ rain.forEach(function(r){ burst(r.x, r.y, '#FF9EC0', 3); }); rain = []; }
+    if (shieldItem && gameTime > shieldItem.exp) shieldItem = null;
+  }
+  function fruitScore(head){
+    combo = (gameTime - lastEat < 2600) ? Math.min(combo + 1, 5) : 1;
+    lastEat = gameTime;
+    var gain = 10 * combo * (dashing ? 2 : 1);
+    score += gain;
+    floatText(head.x, head.y, '+' + gain + (combo > 1 ? ' ×' + combo : '') + (dashing ? ' 衝刺' : ''), (combo > 1 || dashing) ? '#F4A623' : '#FDF6EC');
+    tone(440 + combo * 70, 0.1, 'square', 0.06);
+  }
+
   function die(){
     dead = true; running = false; music.stop(); shake = 0.35;
     tone(150, 0.4, 'sawtooth', 0.09); tone(90, 0.5, 'sawtooth', 0.08, 0.1);
     var m = mode;
-    var newBest = score > bests[m];
+    var newBest = score > bests[m], unBefore = unlockedCount();
     if (newBest){
       bests[m] = score; bestEl.textContent = score;
-      try { localStorage.setItem(m === 'wrap' ? 'nightvine_best_wrap' : 'nightvine_best', String(score)); } catch (e) { /* ignore */ }
+      try { localStorage.setItem(KEYS[m], String(score)); } catch (e) { /* ignore */ }
     }
-    finalText.innerHTML = '分數 ' + score + '　等級 ' + level + '<br>' + (m === 'wrap' ? '穿牆模式' : '經典模式') + (newBest ? '<br>刷新最高分了！' : '');
+    var unNow = unlockedCount(), unMsg = '';
+    if (unNow > unBefore){ unMsg = '<br>解鎖新皮膚：' + SKINS.slice(unBefore, unNow).map(function(k){ return k.n; }).join('、'); }
+    finalText.innerHTML = '分數 ' + score + '　等級 ' + level + '<br>' + (m === 'wrap' ? '穿牆模式' : (m === 'duel' ? '對戰模式' : '經典模式')) + (newBest ? '<br>刷新最高分了！' : '') + unMsg;
+    renderSkins();
     setTimeout(function(){ overOverlay.classList.remove('hidden'); }, 600);
   }
 
@@ -327,7 +485,10 @@
     if (queue.length) dir = queue.shift();
     var head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
     if (mode === 'wrap'){ head.x = (head.x + GRID) % GRID; head.y = (head.y + GRID) % GRID; }
-    else if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID){ die(); return; }
+    else if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID){
+      if (!shield){ die(); return; }
+      head.x = (head.x + GRID) % GRID; head.y = (head.y + GRID) % GRID; hit();
+    }
 
     if (portals){
       var pi = portals[0].x === head.x && portals[0].y === head.y ? 0 : (portals[1].x === head.x && portals[1].y === head.y ? 1 : -1);
@@ -343,24 +504,24 @@
     var eatGold = golden && head.x === golden.x && head.y === golden.y;
     var eatMoon = moon && head.x === moon.x && head.y === moon.y;
     var eatGhost = ghostFlower && head.x === ghostFlower.x && head.y === ghostFlower.y;
-    var grow = eatFruit || eatGold;
+    var eatRain = -1; rain.forEach(function(r, i){ if (r.x === head.x && r.y === head.y) eatRain = i; });
+    var eatShield = shieldItem && head.x === shieldItem.x && head.y === shieldItem.y;
+    var grow = eatFruit || eatGold || eatRain >= 0;
 
     var body = grow ? snake : snake.slice(0, -1);
-    if (!ghost && (body.some(function(s){ return s.x === head.x && s.y === head.y; }) || rocks.some(function(r){ return r.x === head.x && r.y === head.y; }) || flies.some(function(f){ return f.x === head.x && f.y === head.y; }))){ die(); return; }
+    var rivalHit = rival && rival.body && rival.body.some(function(c){ return c.x === head.x && c.y === head.y; });
+    if (!ghost && (body.some(function(s){ return s.x === head.x && s.y === head.y; }) || rocks.some(function(r){ return r.x === head.x && r.y === head.y; }) || flies.some(function(f){ return f.x === head.x && f.y === head.y; }) || rivalHit)){ if (hit()) return; }
 
     prev = snake.map(cp);
     snake.unshift(head);
     if (grow) prev.push(cp(prev[prev.length - 1])); else snake.pop();
 
     if (eatFruit){
-      combo = (gameTime - lastEat < 2600) ? Math.min(combo + 1, 5) : 1;
-      lastEat = gameTime;
-      var gain = 10 * combo * (dashing ? 2 : 1);
-      score += gain; eaten++;
-      floatText(head.x, head.y, '+' + gain + (combo > 1 ? ' ×' + combo : '') + (dashing ? ' 衝刺' : ''), (combo > 1 || dashing) ? '#F4A623' : '#FDF6EC');
+      fruitScore(head); eaten++;
       burst(head.x, head.y, '#F45B8A', 12);
-      tone(440 + combo * 70, 0.1, 'square', 0.06);
       fruit = freeCell(0);
+      if (!shield && !shieldItem && Math.random() < 0.10){ var sh = freeCell(3); if (sh) shieldItem = { x: sh.x, y: sh.y, exp: gameTime + 9000 }; }
+      if (gameTime >= rainNext && gameTime >= rainUntil && eaten >= 4 && Math.random() < 0.5) startRain();
       if (!golden && Math.random() < 0.22){ var g = freeCell(3); if (g){ golden = { x: g.x, y: g.y, exp: gameTime + 7000 }; tone(988, 0.08, 'triangle', 0.05, 0.12); } }
       if (!moon && gameTime >= slowUntil && Math.random() < 0.16){ var m2 = freeCell(3); if (m2) moon = { x: m2.x, y: m2.y, exp: gameTime + 8000 }; }
       if (!ghostFlower && gameTime >= ghostUntil && Math.random() < 0.12){ var g2 = freeCell(3); if (g2) ghostFlower = { x: g2.x, y: g2.y, exp: gameTime + 8000 }; }
@@ -374,6 +535,12 @@
         while (flies.length < wantFlies) { var before = flies.length; spawnFly(); if (flies.length === before) break; }
         [523, 659, 784].forEach(function(f, i){ tone(f, 0.12, 'triangle', 0.07, i * 0.08); });
       }
+    } else if (eatRain >= 0){
+      rain.splice(eatRain, 1); fruitScore(head); burst(head.x, head.y, '#FF9EC0', 10);
+    } else if (eatShield){
+      shield = true; shieldItem = null;
+      floatText(head.x, head.y, '護盾！', '#9FE8FF'); burst(head.x, head.y, '#9FE8FF', 16);
+      [523, 784, 1047].forEach(function(f, i){ tone(f, 0.12, 'sine', 0.07, i * 0.06); });
     } else if (eatGold){
       score += 50; golden = null; lastEat = gameTime;
       floatText(head.x, head.y, '+50', '#F4A623'); burst(head.x, head.y, '#F4A623', 18);
@@ -394,16 +561,23 @@
     stepN++;
     if (flies.length){
       if (stepN % 2 === 0) moveFlies();
-      if (gameTime >= ghostUntil && flies.some(function(f){ return f.x === snake[0].x && f.y === snake[0].y; })){ die(); return; }
+      if (gameTime >= ghostUntil && flies.some(function(f){ return f.x === snake[0].x && f.y === snake[0].y; })){ if (hit()) return; }
     }
+    if (rival) rivalStep();
   }
 
-  function lerpPos(i, t){
-    var a = prev[i] || snake[i], b = snake[i];
+  function lerpPos(i, t){ return lerpA(prev, snake, i, t); }
+  function lerpA(pa, arr, i, t){
+    var a = pa[i] || arr[i], b = arr[i];
     if (Math.abs(b.x - a.x) > 1 || Math.abs(b.y - a.y) > 1) return { x: b.x, y: b.y };
     return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
   }
 
+  function skinColor(i){
+    var k = SKINS[skin];
+    if (!k.c) return 'hsl(' + Math.floor((i * 22 + pulse * 120) % 360) + ',80%,62%)';
+    return (skin === 0 && gameTime < slowUntil) ? '#7FF0E0' : k.c;
+  }
   function ring(cx, cy, frac, color){
     ctx.strokeStyle = color; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(cx, cy, 12, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * frac); ctx.stroke();
@@ -424,6 +598,20 @@
     });
 
     var pr = 1 + Math.sin(pulse * 5) * 0.08;
+    rain.forEach(function(r, idx){
+      var rx = r.x * CELL + 10, ry = r.y * CELL + 10 + Math.sin(pulse * 6 + idx) * 1.2;
+      ctx.shadowColor = '#FF9EC0'; ctx.shadowBlur = 10; ctx.fillStyle = '#FF9EC0';
+      ctx.beginPath(); ctx.arc(rx, ry, 5.2 * pr, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+      ctx.fillStyle = '#FDF6EC'; ctx.fillRect(rx - 1, ry - 8, 2, 3);
+    });
+    if (shieldItem){
+      var sl = Math.max(0, (shieldItem.exp - gameTime) / 9000), sx = shieldItem.x * CELL + 10, sy = shieldItem.y * CELL + 10;
+      ctx.shadowColor = '#9FE8FF'; ctx.shadowBlur = 12; ctx.strokeStyle = '#9FE8FF'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(sx, sy, 7 * pr, 0, Math.PI * 2); ctx.stroke(); ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(159,232,255,.25)'; ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillRect(sx - 3, sy - 4, 3, 2);
+      ring(sx, sy, sl, '#9FE8FF');
+    }
     if (fruit){
       ctx.shadowColor = '#F45B8A'; ctx.shadowBlur = 12; ctx.fillStyle = '#F45B8A';
       ctx.beginPath(); ctx.arc(fruit.x * CELL + 10, fruit.y * CELL + 10, 6.5 * pr, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
@@ -468,6 +656,25 @@
       ctx.beginPath(); ctx.ellipse(fx + 4, fy - 5, 4, 2, 0.5, 0, Math.PI * 2); ctx.fill();
     });
 
+    if (rival && rival.body){
+      var rb = rival.body, rn = rb.length, rp = [], ri2;
+      for (ri2 = 0; ri2 < rn; ri2++){ var rq = lerpA(rival.prev, rb, ri2, t); rp.push({ x: rq.x * CELL + 10, y: rq.y * CELL + 10 }); }
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for (ri2 = rn - 1; ri2 > 0; ri2--){
+        if (Math.abs(rp[ri2].x - rp[ri2 - 1].x) > CELL * 1.6 || Math.abs(rp[ri2].y - rp[ri2 - 1].y) > CELL * 1.6) continue;
+        var rw = 7 + 6 * (1 - ri2 / rn);
+        ctx.strokeStyle = ri2 % 2 ? '#E5484D' : '#C93A40'; ctx.lineWidth = rw;
+        ctx.beginPath(); ctx.moveTo(rp[ri2].x, rp[ri2].y); ctx.lineTo(rp[ri2 - 1].x, rp[ri2 - 1].y); ctx.stroke();
+      }
+      var rh = rp[0], rd = rival.dir, rex = -rd.y * 4, rey = rd.x * 4;
+      ctx.fillStyle = '#FF8A8F'; ctx.beginPath(); ctx.arc(rh.x, rh.y, 9, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(rh.x + rd.x * 3 + rex, rh.y + rd.y * 3 + rey, 2.4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(rh.x + rd.x * 3 - rex, rh.y + rd.y * 3 - rey, 2.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#7A1E22';
+      ctx.beginPath(); ctx.arc(rh.x + rd.x * 4 + rex, rh.y + rd.y * 4 + rey, 1.2, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(rh.x + rd.x * 4 - rex, rh.y + rd.y * 4 - rey, 1.2, 0, Math.PI * 2); ctx.fill();
+    }
     var n = snake.length, pts = [], i;
     for (i = 0; i < n; i++){ var q = lerpPos(i, t); pts.push({ x: q.x * CELL + 10, y: q.y * CELL + 10 }); }
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -475,7 +682,7 @@
     for (i = n - 1; i > 0; i--){
       if (Math.abs(pts[i].x - pts[i - 1].x) > CELL * 1.6 || Math.abs(pts[i].y - pts[i - 1].y) > CELL * 1.6) continue;
       var w = 8 + 8 * (1 - i / n);
-      ctx.strokeStyle = gameTime < slowUntil ? '#7FF0E0' : '#2DD4BF'; ctx.lineWidth = w;
+      ctx.strokeStyle = skinColor(i); ctx.lineWidth = w;
       ctx.beginPath(); ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[i - 1].x, pts[i - 1].y); ctx.stroke();
       ctx.strokeStyle = 'rgba(21,12,28,.28)'; ctx.lineWidth = w * 0.3;
       ctx.beginPath(); ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[i - 1].x, pts[i - 1].y); ctx.stroke();
@@ -487,6 +694,7 @@
     ctx.beginPath(); ctx.arc(h.x + d.x * 3 + ex, h.y + d.y * 3 + ey, 2, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(h.x + d.x * 3 - ex, h.y + d.y * 3 - ey, 2, 0, Math.PI * 2); ctx.fill();
     ctx.globalAlpha = 1;
+    if (shield){ ctx.strokeStyle = 'rgba(159,232,255,.9)'; ctx.lineWidth = 2.5; ctx.shadowColor = '#9FE8FF'; ctx.shadowBlur = 10; ctx.beginPath(); ctx.arc(h.x, h.y, 14 + Math.sin(pulse * 8), 0, Math.PI * 2); ctx.stroke(); ctx.shadowBlur = 0; }
     if (dashing){ ctx.strokeStyle = 'rgba(253,246,236,.55)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(h.x, h.y, 12 + Math.sin(pulse * 30) * 1.5, 0, Math.PI * 2); ctx.stroke(); }
 
     particles.forEach(function(pt){ ctx.globalAlpha = Math.max(0, pt.life / pt.max); ctx.fillStyle = pt.color; ctx.fillRect(pt.x - 2, pt.y - 2, 4, 4); });
@@ -499,6 +707,8 @@
     ctx.fillText('LV ' + level, 10, 18);
     if (combo > 1 && gameTime - lastEat < 2600){ ctx.fillStyle = '#F4A623'; ctx.fillText('COMBO ×' + combo, 10, 34); ctx.fillRect(10, 40, 70 * (1 - (gameTime - lastEat) / 2600), 3); }
     if (gameTime < slowUntil){ ctx.fillStyle = '#7FF0E0'; ctx.fillText('SLOW', SIZE - 62, 18); }
+    if (shield){ ctx.fillStyle = '#9FE8FF'; ctx.fillText('SHIELD', SIZE - 78, 58); }
+    if (gameTime < rainUntil){ ctx.fillStyle = '#FF9EC0'; ctx.fillText('RAIN', 10, 58); ctx.fillRect(10, 64, 60 * ((rainUntil - gameTime) / 8000), 3); }
     if (gameTime < ghostUntil){ ctx.fillStyle = '#B79CED'; ctx.fillText('GHOST', SIZE - 70, 34); ctx.fillRect(SIZE - 70, 40, 60 * ((ghostUntil - gameTime) / 5000), 3); }
     ctx.fillStyle = 'rgba(253,246,236,.18)'; ctx.fillRect(10, SIZE - 14, 90, 5);
     ctx.fillStyle = dashing ? '#FDF6EC' : (stamina < 20 ? '#F45B5B' : '#F4A623'); ctx.fillRect(10, SIZE - 14, 90 * stamina / 100, 5);
@@ -520,6 +730,7 @@
       if (golden && gameTime > golden.exp) golden = null;
       if (moon && gameTime > moon.exp) moon = null;
       if (ghostFlower && gameTime > ghostFlower.exp) ghostFlower = null;
+      if (running) updateRain();
     }
     for (var i = particles.length - 1; i >= 0; i--){ var p = particles[i]; p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; if (p.life <= 0) particles.splice(i, 1); }
     for (var j = floats.length - 1; j >= 0; j--){ floats[j].life -= dt; floats[j].y -= 28 * dt; if (floats[j].life <= 0) floats.splice(j, 1); }
@@ -592,6 +803,29 @@
       bestEl.textContent = bests[mode];
     });
   });
+  var skinsEl = document.getElementById('skins'), skinNote = document.getElementById('skinNote');
+  function renderSkins(){
+    skinsEl.innerHTML = '';
+    var top = topScore();
+    SKINS.forEach(function(k, i){
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'skin';
+      var locked = top < k.need;
+      if (locked) b.classList.add('locked');
+      b.style.background = k.c || 'conic-gradient(#ff5e5e,#ffd35e,#5eff8a,#5ec8ff,#c15eff,#ff5e5e)';
+      b.setAttribute('aria-pressed', String(i === skin));
+      b.setAttribute('aria-label', k.n + (locked ? '（最高分 ' + k.need + ' 解鎖）' : ''));
+      b.title = k.n + (locked ? '：任一模式最高分達 ' + k.need + ' 解鎖' : '');
+      b.textContent = locked ? '🔒' : '';
+      b.addEventListener('click', function(){
+        if (locked){ skinNote.textContent = '「' + k.n + '」需要任一模式最高分達 ' + k.need + '（目前 ' + top + '）'; return; }
+        skin = i; try { localStorage.setItem('nightvine_skin', String(i)); } catch (e) { /* ignore */ }
+        renderSkins();
+      });
+      skinsEl.appendChild(b);
+    });
+    var nx = null; SKINS.forEach(function(k){ if (!nx && top < k.need) nx = k; });
+    skinNote.textContent = nx ? '下一款「' + nx.n + '」：最高分 ' + nx.need + '（目前 ' + top + '）' : '全部皮膚已解鎖！';
+  }
   function refreshMusicBtn(){ musicBtn.textContent = musicOn ? '🔊' : '🔇'; musicBtn.setAttribute('aria-pressed', String(musicOn)); }
   musicBtn.addEventListener('click', function(){
     musicOn = !musicOn;
@@ -601,7 +835,7 @@
   });
 
   document.querySelectorAll('.seg button').forEach(function(x){ x.setAttribute('aria-pressed', String(x.dataset.mode === mode)); });
-  refreshMusicBtn();
+  refreshMusicBtn(); renderSkins();
   running = false; paused = false;
   resetState(); bestEl.textContent = bests[mode];
   raf = requestAnimationFrame(loop);
