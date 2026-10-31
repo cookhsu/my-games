@@ -31,7 +31,8 @@
   .stat .v{ font-family:'Fredoka','Noto Sans TC',sans-serif; font-weight:600; font-size:17px; }
   .screen{ position:relative; border-radius:16px; overflow:hidden; border:3px solid #5A4568; background:#201826; box-shadow:inset 0 0 30px rgba(0,0,0,.5), 0 8px 24px rgba(0,0,0,.4); }
   canvas{ display:block; width:100%; height:auto; touch-action:none; }
-  .overlay{ position:absolute; inset:0; background:radial-gradient(ellipse at 50% 30%, rgba(60,44,70,.94), rgba(22,16,28,.97)); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; padding:14px; overflow:auto; }
+  .overlay{ position:absolute; inset:0; background:radial-gradient(ellipse at 50% 30%, rgba(60,44,70,.94), rgba(22,16,28,.97)); display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:12px; text-align:center; padding:14px; overflow:auto; }
+  .overlay::before, .overlay::after{ content:''; flex:1 0 0; }
   .overlay.hidden{ display:none; }
   .overlay h2{ margin:0; font-size:clamp(22px,6.5vw,30px); font-weight:900; letter-spacing:2px; color:var(--gold); }
   .overlay p{ margin:0; color:var(--dim); font-size:13px; line-height:1.8; }
@@ -42,9 +43,9 @@
   .btn.ghost{ color:var(--txt); background:linear-gradient(180deg,#4A3A55,#3A2D44); box-shadow:0 4px 0 #261C2D; border:1px solid var(--edge); }
   .btns{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
   .btn:focus-visible, .tool:focus-visible, .lv:focus-visible, .dp:focus-visible{ outline:3px solid var(--mint); outline-offset:2px; }
-  .grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:9px; width:100%; max-width:320px; }
-  .lv{ position:relative; font:600 20px 'Fredoka','Noto Sans TC',sans-serif; color:var(--txt); background:linear-gradient(180deg,#4A3A55,#382C42); border:1px solid var(--edge); border-radius:14px; padding:10px 0 20px; cursor:pointer; }
-  .lv small{ position:absolute; left:0; right:0; bottom:4px; font-size:11px; letter-spacing:1px; color:rgba(255,255,255,.2); }
+  .grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; width:100%; max-width:330px; }
+  .lv{ position:relative; font:600 18px 'Fredoka','Noto Sans TC',sans-serif; color:var(--txt); background:linear-gradient(180deg,#4A3A55,#382C42); border:1px solid var(--edge); border-radius:14px; padding:9px 0 19px; cursor:pointer; }
+  .lv small{ position:absolute; left:0; right:0; bottom:3px; font-size:9px; letter-spacing:1px; color:rgba(255,255,255,.2); }
   .lv small b{ color:var(--gold); font-weight:400; }
   .lv.cur{ border-color:var(--orange); box-shadow:0 0 14px rgba(255,169,77,.5); }
   .lv:disabled{ opacity:.35; cursor:default; }
@@ -78,7 +79,7 @@
       <div class="overlay" id="menuOv">
         <h2>選擇關卡</h2>
         <div class="grid" id="grid"></div>
-        <p id="menuHint">破完前一關才會解鎖下一關</p>
+        <p id="menuHint"></p>
       </div>
       <div class="overlay hidden" id="winOv">
         <h2>過關了！</h2>
@@ -105,7 +106,7 @@
 <script>
 (function(){
   "use strict";
-  var RAW = [{"map": ["#####", "#@$.#", "#####"], "opt": 1}, {"map": ["######", "#@   #", "# $  #", "#  . #", "######"], "opt": 5}, {"map": ["######", "#   .#", "#  $@#", "#  # #", "######"], "opt": 12}, {"map": ["######", "#   .#", "#    #", "#  $@#", "#  ###", "######"], "opt": 13}, {"map": ["#######", "# @   #", "# $  .#", "#  #$ #", "# .#  #", "#######"], "opt": 17}, {"map": ["#######", "#     #", "#     #", "# $#$.#", "#  #+##", "#######"], "opt": 23}, {"map": ["#######", "#     #", "#   $@#", "# ## .#", "# $ # #", "#.    #", "#######"], "opt": 28}, {"map": ["########", "#   #. #", "# $#   #", "# $  $.#", "#   .@ #", "########"], "opt": 24}, {"map": ["#######", "#     #", "## $  #", "#.    #", "# $## #", "#  *+ #", "#######"], "opt": 28}, {"map": ["########", "# # .  #", "#  $ $ #", "# ###. #", "#  @$  #", "#     .#", "########"], "opt": 32}, {"map": ["########", "#     .#", "#.   # #", "#  $#  #", "# $@$  #", "#  .## #", "########"], "opt": 31}, {"map": ["########", "#..  # #", "# $  $@#", "# *    #", "#.##   #", "# $ #  #", "#      #", "########"], "opt": 34}, {"map": ["########", "#  #   #", "#  #   #", "##@$ . #", "#.#$#  #", "# .  $ #", "#    * #", "########"], "opt": 37}, {"map": ["########", "# .    #", "# $@$  #", "# # $  #", "#  # # #", "## $.# #", "#    ..#", "########"], "opt": 41}];
+  var RAW = [{"map": ["#####", "#@$.#", "#####"], "opt": 1}, {"map": ["######", "#@   #", "# $  #", "#  . #", "######"], "opt": 5}, {"map": ["#######", "# @   #", "# $  .#", "#  #$ #", "# .#  #", "#######"], "opt": 17}, {"map": ["#######", "# $ . #", "#@$   #", "####  #", "##.   #", "#######"], "opt": 18}, {"map": ["#######", "##    #", "#  $  #", "#.  $ #", "# .#@##", "#######"], "opt": 19}, {"map": ["#######", "##+   #", "# $ $ #", "# . ###", "#     #", "#######"], "opt": 19}, {"map": ["#######", "#     #", "# $## #", "#@$.  #", "#.#   #", "#######"], "opt": 21}, {"map": ["#######", "#     #", "# #$#.#", "# @$. #", "#  #  #", "#######"], "opt": 21}, {"map": ["#######", "#    .#", "# ##$ #", "#@$ . #", "#   # #", "#######"], "opt": 21}, {"map": ["#######", "#. @###", "#  $. #", "#   $ #", "###   #", "#######"], "opt": 21}, {"map": ["#######", "###   #", "#    .#", "# $#$.#", "#   @ #", "#######"], "opt": 22}, {"map": ["#######", "#     #", "#     #", "# $#$.#", "#  #+##", "#######"], "opt": 23}, {"map": ["#######", "#    .#", "# $ # #", "# #$# #", "#  @ .#", "#######"], "opt": 23}, {"map": ["#######", "#    ##", "# $ .##", "# ##$ #", "# . @ #", "#######"], "opt": 23}, {"map": ["#######", "# .#  #", "##+$  #", "## $# #", "#     #", "#######"], "opt": 27}, {"map": ["#######", "#     #", "#  $@##", "# $## #", "#   ..#", "#######"], "opt": 27}, {"map": ["#######", "#  .  #", "# @$  #", "#.$#  #", "#   ###", "#######"], "opt": 27}, {"map": ["#######", "#     #", "#   $@#", "# ## .#", "# $ # #", "#.    #", "#######"], "opt": 28}, {"map": ["#######", "# . . #", "#  $@ #", "# $## #", "##    #", "#######"], "opt": 30}, {"map": ["#######", "##  ..#", "##  # #", "## $$$#", "# .  @#", "#######"], "opt": 17}, {"map": ["#######", "# #  ##", "# .$@##", "# $#.*#", "#    ##", "#######"], "opt": 19}, {"map": ["########", "#   #. #", "# $#   #", "# $  $.#", "#   .@ #", "########"], "opt": 24}, {"map": ["#######", "##  @##", "#  #$.#", "# #* $#", "#   . #", "#######"], "opt": 24}, {"map": ["########", "#  #.$ #", "#      #", "#.# ## #", "# #$$  #", "#  +   #", "########"], "opt": 25}, {"map": ["#######", "#   .##", "# $# *#", "#  $@##", "#  #.##", "#######"], "opt": 25}, {"map": ["#######", "#     #", "## $  #", "#.    #", "# $## #", "#  *+ #", "#######"], "opt": 28}, {"map": ["#######", "##   ##", "#@$.$ #", "##  $.#", "##.   #", "#######"], "opt": 28}, {"map": ["########", "# ##   #", "# $    #", "#@$ #*.#", "# #   .#", "##     #", "########"], "opt": 28}, {"map": ["########", "#    . #", "# *  $ #", "#  #.# #", "# $ #  #", "##@   ##", "########"], "opt": 30}, {"map": ["########", "#     .#", "#.   # #", "#  $#  #", "# $@$  #", "#  .## #", "########"], "opt": 31}, {"map": ["########", "# # .  #", "#  $ $ #", "# ###. #", "#  @$  #", "#     .#", "########"], "opt": 32}, {"map": ["#######", "### #.#", "#@$   #", "# $#$ #", "#.  . #", "#######"], "opt": 32}, {"map": ["#######", "#  @.##", "# $$$##", "# # ..#", "#   # #", "#######"], "opt": 36}, {"map": ["########", "# .    #", "# $#$#.#", "#@$  # #", "# #    #", "#  #.  #", "########"], "opt": 37}, {"map": ["#######", "##    #", "##  *.#", "## #$$#", "#   .@#", "#######"], "opt": 38}, {"map": ["########", "#      #", "#@$  # #", "#  # # #", "#*$# # #", "#   . .#", "########"], "opt": 39}, {"map": ["########", "# # @  #", "#. #$$ #", "#      #", "#  .#$ #", "###.   #", "########"], "opt": 41}, {"map": ["########", "# .#   #", "## # @##", "#.$# $ #", "#*$ #  #", "# .    #", "########"], "opt": 29}, {"map": ["########", "#  #* ##", "## .$  #", "## $## #", "##.  $@#", "#.     #", "########"], "opt": 30}, {"map": ["########", "# .. ###", "# #$   #", "#   #$ #", "#@$  * #", "## . # #", "########"], "opt": 31}, {"map": ["########", "#..  # #", "# $  $@#", "# *    #", "#.##   #", "# $ #  #", "#      #", "########"], "opt": 34}, {"map": ["########", "##    ##", "#.$#   #", "#   .# #", "# $$ $ #", "#..@ ###", "########"], "opt": 34}, {"map": ["########", "#    ###", "#    *.#", "#  # #.#", "##.$$$ #", "##  @  #", "########"], "opt": 35}, {"map": ["########", "##  .. #", "## $$* #", "#    #$#", "# ####+#", "#      #", "########"], "opt": 36}, {"map": ["########", "#  #   #", "#  #   #", "##@$ . #", "#.#$#  #", "# .  $ #", "#    * #", "########"], "opt": 37}, {"map": ["########", "#  #+###", "#.$#$$ #", "#     .#", "# $  ###", "#  .   #", "########"], "opt": 38}, {"map": ["########", "#      #", "#@$ .# #", "# ##   #", "##*##$.#", "#.   $ #", "########"], "opt": 40}, {"map": ["########", "# .    #", "# $@$  #", "# # $  #", "#  # # #", "## $.# #", "#    ..#", "########"], "opt": 41}, {"map": ["########", "#..    #", "# # #$ #", "#*### .#", "#@# $$ #", "#      #", "########"], "opt": 43}, {"map": ["########", "# #   ##", "# # #  #", "#.#  # #", "#$#$$$.#", "#. @ . #", "########"], "opt": 43}, {"map": ["########", "#. .####", "#   $@##", "#. ##$ #", "# $$.  #", "#      #", "########"], "opt": 44}, {"map": ["########", "#      #", "# * $  #", "###.#$ #", "# #@$  #", "#..  ###", "########"], "opt": 46}, {"map": ["########", "## . . #", "## $.$ #", "## # $ #", "# $ .# #", "# @  ###", "########"], "opt": 48}, {"map": ["#########", "# . $.  #", "# #     #", "# ##$ $ #", "#   @   #", "# $#  #.#", "#   ##*.#", "#########"], "opt": 39}, {"map": ["#########", "#  ..#  #", "# $ *@# #", "# .  $  #", "# # #.$ #", "# # $ # #", "# #     #", "#########"], "opt": 40}, {"map": ["#########", "#     ###", "##   $  #", "#.$#. # #", "#*$.    #", "#@#   $ #", "### .   #", "#########"], "opt": 40}, {"map": ["########", "###    #", "#  $@  #", "#.$###.#", "# $ #* #", "#     .#", "########"], "opt": 54}, {"map": ["#########", "#   $+  #", "#    #* #", "# ###   #", "# $.$.# #", "# # # $ #", "#     . #", "#########"], "opt": 54}];
   var $ = function(id){ return document.getElementById(id); };
   var cv = $('c'), ctx = cv.getContext('2d');
   var DPR = Math.min(2, window.devicePixelRatio || 1);
@@ -270,7 +271,7 @@
     var g = $('grid'); g.innerHTML = '';
     LEVELS.forEach(function(l, i){
       var b = document.createElement('button'); b.className = 'lv' + (i === cur ? ' cur' : ''); b.type = 'button';
-      var locked = i > save.done;
+      var locked = i > save.done + 2;
       b.disabled = locked;
       var st = save.stars[i] || 0, s = '';
       for (var k = 1; k <= 3; k++) s += k <= st ? '<b>★</b>' : '★';
@@ -279,8 +280,10 @@
       b.addEventListener('click', function(){ getAc(); loadLevel(i); music.start(); });
       g.appendChild(b);
     });
+    var tot = 0; for (var k in save.stars) tot += save.stars[k] | 0;
+    $('menuHint').innerHTML = '★ ' + tot + ' / ' + (LEVELS.length * 3) + '　・　破關後解鎖更多，最多可往後跳 2 關';
   }
-  function showMenu(){ buildMenu(); winOv.classList.add('hidden'); menuOv.classList.remove('hidden'); }
+  function showMenu(){ buildMenu(); winOv.classList.add('hidden'); menuOv.classList.remove('hidden'); var cb = document.querySelector && document.querySelector('.lv.cur'); if (cb && cb.scrollIntoView) { try { cb.scrollIntoView({ block: 'center' }); } catch (e) { /* ignore */ } } }
 
   // ---------- 繪圖 ----------
   function rr(x, y, w, h, r){ ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
