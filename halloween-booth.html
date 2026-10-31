@@ -645,23 +645,33 @@
     var blurOK = ('filter' in c);
     if (!SNAP){ SNAP = document.createElement('canvas'); TMP = document.createElement('canvas'); SNAP.width = TMP.width = W; SNAP.height = TMP.height = H; }
     var sc = SNAP.getContext('2d'), tc = TMP.getContext('2d');
-    sc.globalCompositeOperation = 'source-over'; sc.clearRect(0, 0, W, H); sc.drawImage(c.canvas, 0, 0);
+    sc.globalCompositeOperation = 'source-over'; sc.globalAlpha = 1; sc.clearRect(0, 0, W, H); sc.drawImage(c.canvas, 0, 0);
     [bc, dc].forEach(function(x, i){ x.save(); x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = 'destination-out'; x.globalAlpha = i ? 0.2 : 0.12; x.fillStyle = grainPat(x); x.fillRect(0, 0, W, H); x.restore(); });
+    function blurDraw(dst, src, px){
+      if (blurOK){ dst.filter = 'blur(' + px + 'px)'; dst.drawImage(src, 0, 0); dst.filter = 'none'; return; }
+      var f = Math.max(2, Math.round(px * 1.6)); if (!blurDraw.t){ blurDraw.t = document.createElement('canvas'); }
+      var t = blurDraw.t; t.width = Math.ceil(W / f); t.height = Math.ceil(H / f); var tx = t.getContext('2d'); tx.imageSmoothingEnabled = true; tx.clearRect(0, 0, t.width, t.height); tx.drawImage(src, 0, 0, t.width, t.height);
+      dst.imageSmoothingEnabled = true; dst.drawImage(t, 0, 0, t.width, t.height, 0, 0, W, H);
+    }
     c.save();
     if (bi && bi[2]){
       var bm = BASEMODE[mk.base] || [0.5, 0];
-      if (blurOK) c.filter = 'blur(3px)';
-      c.globalAlpha = bm[0] * mkAlpha; c.drawImage(LB, 0, 0);
-      if (bm[1]){ c.globalCompositeOperation = 'multiply'; c.globalAlpha = bm[1] * mkAlpha; c.drawImage(LB, 0, 0); }
+      // 底妝只畫在臉的輪廓內，邊緣向內淡出，像粉底自然推開
+      c.save(); c.save(); c.translate(p.x, p.y); c.rotate(p.roll); c.scale(p.fw, p.fw); ovalPath(c); c.restore(); c.clip();
+      c.globalAlpha = bm[0] * mkAlpha; blurDraw(c, LB, 6);
+      if (bm[1]){ c.globalCompositeOperation = 'multiply'; c.globalAlpha = bm[1] * mkAlpha; blurDraw(c, LB, 6); }
       c.globalCompositeOperation = 'source-over';
-      // 讓底下皮膚的明暗與五官起伏透出來
       tc.globalCompositeOperation = 'source-over'; tc.clearRect(0, 0, W, H); tc.drawImage(SNAP, 0, 0);
       tc.globalCompositeOperation = 'destination-in'; tc.drawImage(LB, 0, 0);
-      c.filter = 'none'; c.globalCompositeOperation = (mk.base === 'white' || mk.base === 'porcelain' || mk.base === 'blue') ? 'hard-light' : 'overlay'; c.globalAlpha = ((mk.base === 'white' || mk.base === 'porcelain') ? 0.5 : 0.55) * mkAlpha; c.drawImage(TMP, 0, 0);
-      c.globalCompositeOperation = 'source-over';
+      var light = (mk.base === 'white' || mk.base === 'porcelain' || mk.base === 'blue');
+      c.globalCompositeOperation = light ? 'hard-light' : 'overlay'; c.globalAlpha = (light ? 0.55 : 0.75) * mkAlpha; c.drawImage(TMP, 0, 0);
+      c.globalCompositeOperation = 'source-over'; c.restore();
     }
-    if (blurOK) c.filter = 'blur(0.9px)';
-    c.globalAlpha = mkAlpha; c.drawImage(LD, 0, 0);
+    // 彩繪細節：邊緣微暈，並讓皮膚光澤隱約透過顏料
+    c.globalAlpha = mkAlpha * 0.94; blurDraw(c, LD, 1.1);
+    tc.globalCompositeOperation = 'source-over'; tc.clearRect(0, 0, W, H); tc.drawImage(SNAP, 0, 0);
+    tc.globalCompositeOperation = 'destination-in'; tc.drawImage(LD, 0, 0);
+    c.globalCompositeOperation = 'screen'; c.globalAlpha = 0.11 * mkAlpha; c.drawImage(TMP, 0, 0);
     c.restore();
     if (ui && !tracking()){
       c.save(); c.translate(p.x, p.y); c.rotate(p.roll); c.scale(p.fw, p.fw); c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 0.012; c.setLineDash([0.04, 0.03]); ovalPath(c); c.stroke(); c.restore();
