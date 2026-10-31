@@ -65,6 +65,18 @@
   .toast{ position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:rgba(20,12,30,.95); border:1px solid var(--orange); color:var(--txt); padding:9px 18px; border-radius:999px; font-size:13px; z-index:30; opacity:0; pointer-events:none; transition:opacity .25s; }
   .toast.show{ opacity:1; }
   @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
+  .tabs{ display:flex; gap:8px; margin-top:12px; }
+  .tab{ flex:1; height:40px; font:900 14px 'Noto Sans TC',sans-serif; color:var(--dim); background:rgba(0,0,0,.25); border:1px solid var(--edge); border-radius:12px; cursor:pointer; }
+  .tab.on{ color:#2A1200; background:linear-gradient(180deg,#FFB257,#FF8A1F); border-color:#FFB257; }
+  #pMk{ margin-top:10px; max-height:300px; overflow-y:auto; padding-right:2px; }
+  #pMk[hidden]{ display:none; }
+  .mkh{ margin:10px 2px 5px; font-size:12px; color:var(--dim); font-weight:700; }
+  .chips{ display:flex; flex-wrap:wrap; gap:6px; }
+  .c2{ font:700 12.5px 'Noto Sans TC',sans-serif; color:var(--txt); background:linear-gradient(180deg,#46306A,#35224F); border:1px solid var(--edge); border-radius:999px; padding:7px 11px; cursor:pointer; }
+  .c2.on{ background:linear-gradient(180deg,#FFB257,#FF8A1F); color:#2A1200; border-color:#FFB257; }
+  .c2.pre{ background:linear-gradient(180deg,#6A3FB0,#4A2A86); font-size:13px; }
+  .mkr{ display:flex; align-items:center; gap:10px; margin:10px 2px 2px; font-size:12px; color:var(--dim); }
+  .mkr input{ flex:1; accent-color:#FF8A1F; }
 </style>
 </head>
 <body>
@@ -91,8 +103,12 @@
       <button class="tool on" id="followBtn">🎯 貼著臉動</button>
       <button class="tool" id="timerBtn">⏱ 3 秒倒數</button>
     </div>
+    <div class="tabs"><button type="button" class="tab on" id="tabStk">🎃 貼紙</button><button type="button" class="tab" id="tabMk">💄 萬聖妝容</button></div>
+    <div id="pStk">
     <div class="label"><span>點貼紙加到臉上　（在畫面上拖曳、雙指縮放旋轉）</span></div>
     <div class="tray" id="tray" role="group" aria-label="貼紙"></div>
+    </div>
+    <div id="pMk" hidden></div>
     <div class="row">
       <button class="tool" id="smaller" aria-label="縮小">➖ 縮小</button>
       <button class="tool" id="bigger" aria-label="放大">➕ 放大</button>
@@ -167,7 +183,7 @@
       poly(c, [[-0.06, -0.06], [-0.045, -0.2], [-0.0, -0.08]]); c.fill(); poly(c, [[0.06, -0.06], [0.045, -0.2], [0, -0.08]]); c.fill();
       c.fillStyle = '#FF4B5E'; c.beginPath(); c.arc(-0.03, 0.0, 0.013, 0, 6.283); c.arc(0.03, 0.0, 0.013, 0, 6.283); c.fill();
     } },
-    fangs: { name: '吸血鬼牙', pre: { dx: 0, dy: 0.78, ds: 0.5 }, draw: function(c){
+    fangs: { name: '吸血鬼牙', pre: { dx: 0, dy: 0.66, ds: 0.5 }, draw: function(c){
       c.fillStyle = '#FFFDF5'; c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 0.012;
       [[-0.14, -0.04], [0.14, 0.04]].forEach(function(f){
         c.beginPath(); c.moveTo(f[0] - 0.07, -0.12); c.lineTo(f[0] + 0.07, -0.12); c.quadraticCurveTo(f[0] + 0.05, 0.1, f[0] + (f[1] > 0 ? -0.01 : 0.01), 0.3); c.quadraticCurveTo(f[0] - 0.05, 0.1, f[0] - 0.07, -0.12); c.closePath(); c.fill(); c.stroke();
@@ -206,7 +222,7 @@
       c.fillStyle = '#14141C'; c.beginPath(); c.ellipse(0, 0.0, 0.26, 0.21, 0.2, 0, 6.283); c.fill();
       c.fillStyle = 'rgba(255,255,255,.18)'; c.beginPath(); c.ellipse(-0.08, -0.07, 0.07, 0.035, 0.4, 0, 6.283); c.fill();
     } },
-    drip: { name: '血滴', pre: { dx: 0, dy: 0.95, ds: 0.7 }, draw: function(c){
+    drip: { name: '血滴', pre: { dx: 0, dy: 0.86, ds: 0.7 }, draw: function(c){
       c.fillStyle = grad(c, 0, -0.2, 0, 0.45, [[0, '#E5384A'], [1, '#8E0E1E']]);
       c.beginPath(); c.moveTo(-0.4, -0.2); c.lineTo(0.4, -0.2); c.lineTo(0.4, -0.05);
       c.quadraticCurveTo(0.36, 0.05, 0.3, -0.02); c.lineTo(0.28, 0.2); c.quadraticCurveTo(0.24, 0.3, 0.2, 0.2); c.lineTo(0.18, -0.02);
@@ -214,7 +230,7 @@
       c.lineTo(-0.22, 0.02); c.lineTo(-0.24, 0.16); c.quadraticCurveTo(-0.28, 0.24, -0.32, 0.16); c.lineTo(-0.34, -0.02); c.lineTo(-0.4, -0.05); c.closePath(); c.fill();
       c.fillStyle = 'rgba(255,255,255,.35)'; c.beginPath(); c.ellipse(-0.04, 0.2, 0.012, 0.09, 0, 0, 6.283); c.fill();
     } },
-    stache: { name: '鬍子', pre: { dx: 0, dy: 0.5, ds: 0.85 }, draw: function(c){
+    stache: { name: '鬍子', pre: { dx: 0, dy: 0.44, ds: 0.85 }, draw: function(c){
       c.fillStyle = '#1B1218';
       [-1, 1].forEach(function(s){
         c.beginPath(); c.moveTo(0, -0.04); c.quadraticCurveTo(s * 0.18, -0.16, s * 0.34, -0.02); c.quadraticCurveTo(s * 0.46, 0.06, s * 0.44, -0.1);
@@ -329,6 +345,161 @@
   function scaleBy(s, f){ if (s.fixed) s.sz = Math.max(0.15, Math.min(1.6, s.sz * f)); else s.ds = Math.max(0.12, Math.min(3.5, s.ds * f)); }
   function rotateBy(s, a){ if (s.fixed) s.rot += a; else s.dr += a; }
 
+  // ================= 萬聖節妝容 =================
+  var OVAL_IDX = [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109];
+  var LIP_IDX = [61,146,91,181,84,17,314,405,321,375,291,409,270,269,267,0,37,39,40,185];
+  var mk = { base: 'none', eyes: 'none', nose: 'none', lips: 'none', extras: {} }, mkAlpha = 0.9;
+  function anyMk(){ return mk.base !== 'none' || mk.eyes !== 'none' || mk.nose !== 'none' || mk.lips !== 'none' || Object.keys(mk.extras).length > 0; }
+  function tracking(){ return followOn && !!face.pose && (performance.now() - face.lastSeen) < 1500; }
+  function ingest(lm, map, isImage){
+    var raw = poseFromLandmarks(lm, map);
+    if (isImage) face.pose = raw; else smoothPose(raw);
+    function conv(idx){ return idx.map(function(i){ var w = map(lm[i].x, lm[i].y); var l = worldToLocal(raw, w.x, w.y); return [l.dx, l.dy]; }); }
+    face.lo = conv(OVAL_IDX); face.ll = conv(LIP_IDX);
+  }
+  function ovalPath(c){
+    if (tracking() && face.lo){ c.beginPath(); face.lo.forEach(function(p, i){ if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.closePath(); }
+    else { c.beginPath(); c.ellipse(0, 0.1, 0.52, 0.72, 0, 0, 6.283); }
+  }
+  function lipsPath(c){
+    if (tracking() && face.ll){ c.beginPath(); face.ll.forEach(function(p, i){ if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); c.closePath(); }
+    else { c.beginPath(); c.moveTo(-0.17, 0.56); c.quadraticCurveTo(-0.08, 0.5, 0, 0.53); c.quadraticCurveTo(0.08, 0.5, 0.17, 0.56); c.quadraticCurveTo(0, 0.68, -0.17, 0.56); c.closePath(); }
+  }
+  function soft(c, x, y, rx, ry, col, a){
+    var g = c.createRadialGradient(x, y, 0, x, y, 1); g.addColorStop(0, col); g.addColorStop(0.55, col); g.addColorStop(1, 'rgba(0,0,0,0)');
+    c.save(); c.translate(x, y); c.scale(rx, ry); c.translate(-x, -y); c.globalAlpha *= a; c.fillStyle = g; c.beginPath(); c.arc(x, y, 1, 0, 6.283); c.fill(); c.restore();
+  }
+  function rgba(h, a){ var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
+  var MK = {
+    base: [
+      ['none', '素顏', null], ['white', '🤍 慘白', '#F2EEE6'], ['green', '🧟 屍綠', '#7DB566'], ['orange', '🎃 南瓜橘', '#FF8A1F'],
+      ['blue', '👻 幽藍', '#7FA8D8'], ['red', '😈 惡魔紅', '#C4202E'], ['purple', '🔮 巫婆紫', '#8E5BC4']
+    ],
+    eyes: [
+      ['none', '不畫', null], ['socket', '骷髏眼窩'], ['smoky', '煙燻眼'], ['wing', '貓眼線'], ['ring', '殭屍黑眼圈'], ['clown', '小丑眼'], ['tri', '南瓜三角眼'], ['glow', '發光眼']
+    ],
+    nose: [['none', '不畫', null], ['clown', '小丑紅鼻'], ['cat', '貓鼻'], ['skull', '骷髏鼻孔']],
+    lips: [['none', '不畫', null], ['black', '黑唇'], ['wine', '暗紅唇'], ['blue', '藍紫唇'], ['clown', '小丑大嘴'], ['stitch', '縫嘴'], ['teeth', '骷髏牙']],
+    extras: [
+      ['tears', '血淚'], ['bloodmouth', '嘴角流血'], ['scar', '縫線傷疤'], ['web', '臉頰蜘蛛網'], ['cracks', '裂紋'],
+      ['third', '第三隻眼'], ['glitter', '星星亮粉'], ['whisk', '貓鬍鬚'], ['veins', '青筋']
+    ]
+  };
+  var PRESETS = [
+    ['💀 骷髏', { base: 'white', eyes: 'socket', nose: 'skull', lips: 'teeth', extras: ['cracks'] }],
+    ['🤡 小丑', { base: 'white', eyes: 'clown', nose: 'clown', lips: 'clown', extras: ['glitter'] }],
+    ['🧟 殭屍', { base: 'green', eyes: 'ring', nose: 'none', lips: 'wine', extras: ['scar', 'veins', 'bloodmouth'] }],
+    ['🧛 吸血鬼', { base: 'white', eyes: 'smoky', nose: 'none', lips: 'wine', extras: ['bloodmouth', 'tears'] }],
+    ['🐱 黑貓', { base: 'none', eyes: 'wing', nose: 'cat', lips: 'none', extras: ['whisk'] }],
+    ['🎃 南瓜', { base: 'orange', eyes: 'tri', nose: 'none', lips: 'black', extras: [] }],
+    ['🧙 巫婆', { base: 'purple', eyes: 'wing', nose: 'none', lips: 'black', extras: ['web'] }],
+    ['😈 惡魔', { base: 'red', eyes: 'glow', nose: 'none', lips: 'black', extras: ['cracks', 'third'] }],
+    ['👻 幽靈', { base: 'blue', eyes: 'ring', nose: 'none', lips: 'none', extras: ['tears'] }]
+  ];
+  function eyeDraw(c, kind){
+    var ex = 0.225, s;
+    if (kind === 'socket'){ [-1, 1].forEach(function(s){ soft(c, s * ex, 0.0, 0.16, 0.14, 'rgb(8,4,14)', 1); }); }
+    else if (kind === 'smoky'){ [-1, 1].forEach(function(s){ soft(c, s * ex, -0.01, 0.2, 0.13, 'rgb(60,20,90)', 0.85); soft(c, s * ex, 0.0, 0.13, 0.08, 'rgb(15,5,25)', 0.9); }); }
+    else if (kind === 'ring'){ [-1, 1].forEach(function(s){ soft(c, s * ex, 0.02, 0.17, 0.12, 'rgb(40,25,50)', 0.9); }); }
+    else if (kind === 'wing'){
+      c.strokeStyle = '#0A0510'; c.lineCap = 'round'; c.lineJoin = 'round';
+      [-1, 1].forEach(function(s){ c.lineWidth = 0.022; c.beginPath(); c.moveTo(s * 0.11, 0.012); c.quadraticCurveTo(s * 0.22, -0.055, s * 0.31, -0.04); c.lineTo(s * 0.41, -0.11); c.stroke();
+        c.lineWidth = 0.014; c.beginPath(); c.moveTo(s * 0.31, -0.04); c.lineTo(s * 0.37, -0.01); c.stroke(); });
+    }
+    else if (kind === 'clown'){
+      [-1, 1].forEach(function(s){ var x = s * ex;
+        c.fillStyle = '#2E6FD8'; c.beginPath(); c.moveTo(x, -0.26); c.lineTo(x + 0.08, -0.12); c.lineTo(x, -0.01); c.lineTo(x - 0.08, -0.12); c.closePath(); c.fill();
+        c.fillStyle = '#E5384A'; c.beginPath(); c.moveTo(x, 0.04); c.lineTo(x + 0.06, 0.12); c.lineTo(x, 0.2); c.lineTo(x - 0.06, 0.12); c.closePath(); c.fill();
+        c.strokeStyle = '#111'; c.lineWidth = 0.012; c.beginPath(); c.moveTo(x, -0.26); c.lineTo(x + 0.08, -0.12); c.lineTo(x, -0.01); c.lineTo(x - 0.08, -0.12); c.closePath(); c.stroke(); });
+    }
+    else if (kind === 'tri'){
+      c.fillStyle = '#17080A'; [-1, 1].forEach(function(s){ c.beginPath(); c.moveTo(s * ex, -0.17); c.lineTo(s * ex + 0.11, 0.06); c.lineTo(s * ex - 0.11, 0.06); c.closePath(); c.fill(); });
+    }
+    else if (kind === 'glow'){
+      [-1, 1].forEach(function(s){ soft(c, s * ex, 0, 0.2, 0.16, 'rgb(255,60,20)', 0.55); c.fillStyle = '#FFE24A'; c.beginPath(); c.ellipse(s * ex, 0, 0.06, 0.045, 0, 0, 6.283); c.fill(); c.fillStyle = '#100'; c.fillRect(s * ex - 0.01, -0.04, 0.02, 0.08); });
+    }
+  }
+  function noseDraw(c, kind){
+    if (kind === 'clown'){ var g = c.createRadialGradient(-0.02, 0.3, 0.005, 0, 0.33, 0.1); g.addColorStop(0, '#FF8A8A'); g.addColorStop(0.4, '#E5202E'); g.addColorStop(1, '#8E0E1E'); c.fillStyle = g; c.beginPath(); c.arc(0, 0.33, 0.1, 0, 6.283); c.fill(); }
+    else if (kind === 'cat'){ c.fillStyle = '#FF86B4'; c.beginPath(); c.moveTo(-0.07, 0.29); c.lineTo(0.07, 0.29); c.lineTo(0, 0.37); c.closePath(); c.fill();
+      c.strokeStyle = '#2B1018'; c.lineWidth = 0.014; c.lineCap = 'round'; c.beginPath(); c.moveTo(0, 0.37); c.lineTo(0, 0.45); c.moveTo(0, 0.45); c.quadraticCurveTo(-0.05, 0.5, -0.1, 0.46); c.moveTo(0, 0.45); c.quadraticCurveTo(0.05, 0.5, 0.1, 0.46); c.stroke(); }
+    else if (kind === 'skull'){ c.fillStyle = '#0A0510'; [-1, 1].forEach(function(s){ c.beginPath(); c.ellipse(s * 0.04, 0.33, 0.025, 0.055, s * 0.3, 0, 6.283); c.fill(); }); }
+  }
+  function lipsDraw(c, kind){
+    if (kind === 'black' || kind === 'wine' || kind === 'blue'){
+      var col = { black: 'rgba(12,6,18,.92)', wine: 'rgba(120,10,30,.9)', blue: 'rgba(70,50,170,.9)' }[kind];
+      lipsPath(c); c.fillStyle = col; c.fill(); c.strokeStyle = 'rgba(255,255,255,.12)'; c.lineWidth = 0.006; c.stroke();
+    } else if (kind === 'clown'){
+      c.lineCap = 'round'; c.lineJoin = 'round';
+      c.beginPath(); c.moveTo(-0.3, 0.46); c.quadraticCurveTo(-0.34, 0.64, -0.1, 0.62); c.quadraticCurveTo(0, 0.7, 0.1, 0.62); c.quadraticCurveTo(0.34, 0.64, 0.3, 0.46);
+      c.quadraticCurveTo(0.2, 0.55, 0, 0.53); c.quadraticCurveTo(-0.2, 0.55, -0.3, 0.46); c.closePath(); c.fillStyle = '#E5202E'; c.fill(); c.strokeStyle = '#fff'; c.lineWidth = 0.02; c.stroke(); c.strokeStyle = '#222'; c.lineWidth = 0.008; c.stroke();
+    } else if (kind === 'stitch'){
+      c.strokeStyle = '#1A0E14'; c.lineWidth = 0.014; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(-0.24, 0.57); c.quadraticCurveTo(0, 0.6, 0.24, 0.57); c.stroke();
+      for (var i = -5; i <= 5; i++){ var x = i * 0.045, y = 0.585 + 0.003 * (25 - i * i) / 25 * 0 ; c.beginPath(); c.moveTo(x, y - 0.045); c.lineTo(x, y + 0.045); c.stroke(); }
+    } else if (kind === 'teeth'){
+      c.fillStyle = 'rgba(8,4,14,.88)'; c.beginPath(); c.roundRect ? c.roundRect(-0.25, 0.5, 0.5, 0.12, 0.03) : c.rect(-0.25, 0.5, 0.5, 0.12); c.fill();
+      c.strokeStyle = '#F2EEE6'; c.lineWidth = 0.014; c.lineCap = 'round';
+      for (var j = -4; j <= 4; j++){ c.beginPath(); c.moveTo(j * 0.055, 0.49); c.lineTo(j * 0.055, 0.63); c.stroke(); }
+      c.beginPath(); c.moveTo(-0.27, 0.56); c.lineTo(0.27, 0.56); c.stroke();
+    }
+  }
+  function extraDraw(c, k){
+    if (k === 'tears'){
+      [-1, 1].forEach(function(s){ var x = s * 0.225; c.strokeStyle = 'rgba(170,10,25,.9)'; c.lineCap = 'round';
+        c.lineWidth = 0.022; c.beginPath(); c.moveTo(x, 0.06); c.quadraticCurveTo(x + s * 0.03, 0.3, x + s * 0.02, 0.46); c.stroke();
+        c.lineWidth = 0.012; c.beginPath(); c.moveTo(x - s * 0.05, 0.06); c.quadraticCurveTo(x - s * 0.04, 0.2, x - s * 0.05, 0.26); c.stroke();
+        c.fillStyle = 'rgba(170,10,25,.95)'; c.beginPath(); c.ellipse(x + s * 0.02, 0.47, 0.015, 0.022, 0, 0, 6.283); c.fill(); });
+    } else if (k === 'bloodmouth'){
+      c.strokeStyle = 'rgba(160,8,22,.95)'; c.lineCap = 'round'; c.lineWidth = 0.03; c.beginPath(); c.moveTo(0.14, 0.58); c.quadraticCurveTo(0.2, 0.75, 0.17, 0.92); c.stroke();
+      c.lineWidth = 0.016; c.beginPath(); c.moveTo(0.04, 0.62); c.lineTo(0.04, 0.78); c.stroke();
+      c.fillStyle = 'rgba(160,8,22,.95)'; c.beginPath(); c.ellipse(0.17, 0.94, 0.02, 0.03, 0, 0, 6.283); c.fill(); c.beginPath(); c.ellipse(0.04, 0.8, 0.012, 0.02, 0, 0, 6.283); c.fill();
+    } else if (k === 'scar'){
+      c.strokeStyle = 'rgba(110,20,30,.95)'; c.lineWidth = 0.035; c.lineCap = 'round'; c.beginPath(); c.moveTo(-0.42, 0.2); c.lineTo(-0.2, 0.46); c.stroke();
+      c.strokeStyle = '#1A0E14'; c.lineWidth = 0.012; for (var i = 0; i < 6; i++){ var t = i / 5, x = -0.42 + 0.22 * t, y = 0.2 + 0.26 * t; c.beginPath(); c.moveTo(x - 0.035, y - 0.03); c.lineTo(x + 0.035, y + 0.03); c.stroke(); }
+    } else if (k === 'web'){
+      c.save(); c.translate(0.52, 0.05); c.scale(-1, 1); c.strokeStyle = 'rgba(255,255,255,.8)'; c.lineWidth = 0.007;
+      for (var a = 0; a <= 5; a++){ var an = a * 0.31 + 0.2; c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(an) * 0.6, Math.sin(an) * 0.6); c.stroke(); }
+      for (var r = 1; r <= 4; r++){ c.beginPath(); for (var b = 0; b <= 5; b++){ var an2 = b * 0.31 + 0.2, rr = r * 0.13, px = Math.cos(an2) * rr, py = Math.sin(an2) * rr; if (b) c.quadraticCurveTo(Math.cos(an2 - 0.15) * rr * 0.88, Math.sin(an2 - 0.15) * rr * 0.88, px, py); else c.moveTo(px, py); } c.stroke(); }
+      c.restore();
+    } else if (k === 'cracks'){
+      c.strokeStyle = 'rgba(15,8,20,.85)'; c.lineWidth = 0.012; c.lineCap = 'round'; c.lineJoin = 'round';
+      c.beginPath(); c.moveTo(0.3, -0.45); c.lineTo(0.22, -0.3); c.lineTo(0.3, -0.22); c.lineTo(0.2, -0.1); c.moveTo(0.22, -0.3); c.lineTo(0.12, -0.28);
+      c.moveTo(-0.36, 0.3); c.lineTo(-0.28, 0.4); c.lineTo(-0.34, 0.5); c.lineTo(-0.26, 0.62); c.moveTo(-0.28, 0.4); c.lineTo(-0.18, 0.38); c.stroke();
+    } else if (k === 'third'){
+      c.fillStyle = 'rgba(20,6,30,.9)'; c.beginPath(); c.moveTo(-0.1, -0.3); c.quadraticCurveTo(0, -0.4, 0.1, -0.3); c.quadraticCurveTo(0, -0.22, -0.1, -0.3); c.fill();
+      c.fillStyle = '#FFE24A'; c.beginPath(); c.arc(0, -0.3, 0.032, 0, 6.283); c.fill(); c.fillStyle = '#100'; c.fillRect(-0.006, -0.325, 0.012, 0.05);
+    } else if (k === 'glitter'){
+      var pts = [[-0.35, 0.05], [-0.4, 0.18], [-0.3, 0.22], [0.35, 0.05], [0.4, 0.18], [0.3, 0.24], [-0.12, -0.38], [0.14, -0.34], [0, -0.45], [-0.2, 0.4], [0.22, 0.4]];
+      pts.forEach(function(p, i){ var r = 0.014 + (i % 3) * 0.006; c.fillStyle = i % 2 ? '#FFD45E' : '#FF9AE0'; c.beginPath();
+        for (var q = 0; q < 8; q++){ var an = q * Math.PI / 4, rad = q % 2 ? r * 0.4 : r * 1.6; c.lineTo(p[0] + Math.cos(an) * rad, p[1] + Math.sin(an) * rad); } c.closePath(); c.fill(); });
+    } else if (k === 'whisk'){
+      c.strokeStyle = 'rgba(12,6,18,.9)'; c.lineWidth = 0.01; c.lineCap = 'round';
+      [-1, 1].forEach(function(s){ [[0.3, 0.34, 0.62, 0.3], [0.3, 0.4, 0.64, 0.42], [0.3, 0.46, 0.6, 0.54]].forEach(function(l){ c.beginPath(); c.moveTo(s * l[0], l[1]); c.lineTo(s * l[2], l[3]); c.stroke(); }); });
+    } else if (k === 'veins'){
+      c.strokeStyle = 'rgba(70,40,110,.7)'; c.lineWidth = 0.01; c.lineCap = 'round'; c.lineJoin = 'round';
+      c.beginPath(); c.moveTo(-0.32, -0.12); c.lineTo(-0.38, 0.0); c.lineTo(-0.34, 0.1); c.moveTo(-0.38, 0.0); c.lineTo(-0.46, 0.02);
+      c.moveTo(0.34, 0.0); c.lineTo(0.4, 0.14); c.lineTo(0.35, 0.24); c.moveTo(0.4, 0.14); c.lineTo(0.47, 0.16);
+      c.moveTo(0.1, -0.5); c.lineTo(0.16, -0.38); c.lineTo(0.1, -0.3); c.stroke();
+    }
+  }
+  function drawMakeup(c, ui){
+    if (!anyMk()) return;
+    var p = curPose();
+    c.save(); c.translate(p.x, p.y); c.rotate(p.roll); c.scale(p.fw, p.fw); c.globalAlpha = mkAlpha;
+    c.save(); ovalPath(c); c.clip();
+    var bi = MK.base.filter(function(b){ return b[0] === mk.base; })[0];
+    if (bi && bi[2]){ c.save(); c.globalAlpha = mkAlpha * 0.62; c.fillStyle = bi[2]; c.fillRect(-1, -1.2, 2, 2.6); c.restore(); }
+    eyeDraw(c, mk.eyes); noseDraw(c, mk.nose); lipsDraw(c, mk.lips);
+    Object.keys(mk.extras).forEach(function(k){ extraDraw(c, k); });
+    c.restore(); c.restore();
+    if (ui && !tracking()){
+      c.save(); c.translate(p.x, p.y); c.rotate(p.roll); c.scale(p.fw, p.fw); c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 0.012; c.setLineDash([0.04, 0.03]); ovalPath(c); c.stroke(); c.restore();
+      c.save(); c.textAlign = 'center'; c.font = "700 24px 'Noto Sans TC',sans-serif"; c.fillStyle = 'rgba(255,255,255,.9)'; c.shadowColor = '#000'; c.shadowBlur = 6;
+      c.fillText('把臉對準虛線　拖曳移動・雙指縮放', W / 2, 54); c.restore();
+    }
+  }
+
   // ================= 繪製 =================
   function drawSource(c){
     c.fillStyle = '#0B0612'; c.fillRect(0, 0, W, H);
@@ -366,7 +537,7 @@
     c.shadowColor = 'rgba(255,138,31,.9)'; c.shadowBlur = 24; c.fillStyle = '#FF9A33'; c.fillText(txt, W / 2, H - 70); c.restore();
   }
   function render(c, ui){
-    drawSource(c); drawFilter(c);
+    drawSource(c); drawMakeup(c, ui); drawFilter(c);
     stickers.forEach(function(s){
       var w = worldOf(s);
       c.save(); c.translate(w.x, w.y); c.rotate(w.rot); if (s.flip) c.scale(-1, 1);
@@ -394,7 +565,7 @@
     try {
       var res = landmarker.detectForVideo(video, performance.now());
       if (res && res.faceLandmarks && res.faceLandmarks[0]){
-        smoothPose(poseFromLandmarks(res.faceLandmarks[0], mapper(video.videoWidth, video.videoHeight, mirror)));
+        ingest(res.faceLandmarks[0], mapper(video.videoWidth, video.videoHeight, mirror), false);
         face.lastSeen = performance.now();
       }
     } catch (e) { /* ignore */ }
@@ -451,7 +622,7 @@
         try {
           if (lmState === 'ready'){
             var res = landmarker.detect(img);
-            if (res && res.faceLandmarks && res.faceLandmarks[0]){ face.pose = poseFromLandmarks(res.faceLandmarks[0], mapper(img.naturalWidth, img.naturalHeight, false)); face.lastSeen = performance.now() + 1e9; }
+            if (res && res.faceLandmarks && res.faceLandmarks[0]){ ingest(res.faceLandmarks[0], mapper(img.naturalWidth, img.naturalHeight, false), true); face.lastSeen = performance.now() + 1e9; }
             else toast('照片裡找不到臉，請手動拖曳貼紙');
             landmarker.setOptions({ runningMode: 'VIDEO' });
           }
@@ -510,8 +681,11 @@
     var ids = Object.keys(ptrs);
     if (ids.length === 1){
       var hit = hitTest(p.x, p.y); selected = hit;
-      gest = hit ? { mode: 'drag', s: hit, ox: 0, oy: 0 } : null;
+      gest = hit ? { mode: 'drag', s: hit, ox: 0, oy: 0 } : (faceAdj() ? { mode: 'face', ox: DEFAULT_POSE.x - p.x, oy: DEFAULT_POSE.y - p.y } : null);
       if (hit){ var w = worldOf(hit); gest.ox = w.x - p.x; gest.oy = w.y - p.y; }
+    } else if (ids.length === 2 && !selected && faceAdj()){
+      var fa = ptrs[ids[0]], fb = ptrs[ids[1]];
+      gest = { mode: 'fpinch', d: Math.hypot(fb.x - fa.x, fb.y - fa.y), a: Math.atan2(fb.y - fa.y, fb.x - fa.x) };
     } else if (ids.length === 2 && selected){
       var a = ptrs[ids[0]], b = ptrs[ids[1]];
       gest = { mode: 'pinch', s: selected, d: Math.hypot(b.x - a.x, b.y - a.y), a: Math.atan2(b.y - a.y, b.x - a.x) };
@@ -522,7 +696,12 @@
     var p = cpos(e); ptrs[e.pointerId] = p;
     if (!gest) return;
     var ids = Object.keys(ptrs);
-    if (gest.mode === 'drag' && ids.length === 1){ moveTo(gest.s, p.x + gest.ox, p.y + gest.oy); }
+    if (gest.mode === 'face' && ids.length === 1){ DEFAULT_POSE.x = p.x + gest.ox; DEFAULT_POSE.y = p.y + gest.oy; }
+    else if (gest.mode === 'fpinch' && ids.length >= 2){
+      var q1 = ptrs[ids[0]], q2 = ptrs[ids[1]], dd = Math.hypot(q2.x - q1.x, q2.y - q1.y), aa = Math.atan2(q2.y - q1.y, q2.x - q1.x);
+      if (gest.d > 5) DEFAULT_POSE.fw = Math.max(120, Math.min(900, DEFAULT_POSE.fw * dd / gest.d)); DEFAULT_POSE.roll += aa - gest.a; gest.d = dd; gest.a = aa;
+    }
+    else if (gest.mode === 'drag' && ids.length === 1){ moveTo(gest.s, p.x + gest.ox, p.y + gest.oy); }
     else if (gest.mode === 'pinch' && ids.length >= 2){
       var a = ptrs[ids[0]], b = ptrs[ids[1]], d = Math.hypot(b.x - a.x, b.y - a.y), ang = Math.atan2(b.y - a.y, b.x - a.x);
       if (gest.d > 5) scaleBy(gest.s, d / gest.d); rotateBy(gest.s, ang - gest.a); gest.d = d; gest.a = ang;
@@ -531,7 +710,7 @@
   function endPtr(e){ delete ptrs[e.pointerId]; if (Object.keys(ptrs).length === 0) gest = null; else if (Object.keys(ptrs).length === 1) gest = null; }
   cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', endPtr);
   cv.addEventListener('wheel', function(e){
-    if (!selected) return; e.preventDefault();
+    if (!selected){ if (faceAdj()){ e.preventDefault(); if (e.shiftKey) DEFAULT_POSE.roll += e.deltaY * 0.002; else DEFAULT_POSE.fw = Math.max(120, Math.min(900, DEFAULT_POSE.fw * (e.deltaY < 0 ? 1.05 : 0.95))); } return; } e.preventDefault();
     if (e.shiftKey) rotateBy(selected, e.deltaY * 0.002); else scaleBy(selected, e.deltaY < 0 ? 1.06 : 0.94);
   }, { passive: false });
   document.addEventListener('keydown', function(e){
@@ -540,6 +719,7 @@
   });
   function removeSel(){ if (!selected) return; stickers = stickers.filter(function(s){ return s !== selected; }); selected = null; }
 
+  function faceAdj(){ return anyMk() && !tracking(); }
   // 貼紙盤
   var tray = $('tray');
   ORDER.forEach(function(t){
@@ -580,6 +760,39 @@
   });
   document.addEventListener('visibilitychange', function(){ if (document.hidden && video.srcObject) video.pause(); else if (video.srcObject) video.play().catch(function(){}); });
 
+  // 妝容面板
+  (function(){
+    var pm = $('pMk'), html = '';
+    function sec(t){ return '<div class="mkh">' + t + '</div>'; }
+    html += sec('一鍵造型') + '<div class="chips">' + PRESETS.map(function(p, i){ return '<button type="button" class="c2 pre" data-pre="' + i + '">' + p[0] + '</button>'; }).join('') + '</div>';
+    [['base', '底妝顏色'], ['eyes', '眼妝'], ['nose', '鼻子'], ['lips', '嘴唇']].forEach(function(g){
+      html += sec(g[1]) + '<div class="chips">' + MK[g[0]].map(function(o){ return '<button type="button" class="c2" data-g="' + g[0] + '" data-v="' + o[0] + '">' + o[1] + '</button>'; }).join('') + '</div>';
+    });
+    html += sec('特效（可多選）') + '<div class="chips">' + MK.extras.map(function(o){ return '<button type="button" class="c2" data-g="extras" data-v="' + o[0] + '">' + o[1] + '</button>'; }).join('') + '</div>';
+    html += '<div class="mkr"><span>妝容濃度</span><input type="range" id="mkAlpha" min="30" max="100" value="90" aria-label="妝容濃度"><button type="button" class="c2" id="mkClear">清除妝容</button></div>';
+    pm.innerHTML = html;
+    function sync(){
+      Array.prototype.forEach.call(pm.querySelectorAll('[data-g]'), function(b){
+        var g = b.getAttribute('data-g'), v = b.getAttribute('data-v');
+        b.classList.toggle('on', g === 'extras' ? !!mk.extras[v] : (mk[g] === v));
+      });
+    }
+    pm.addEventListener('click', function(e){
+      var b = e.target.closest ? e.target.closest('button') : null; if (!b) return;
+      if (b.id === 'mkClear'){ mk.base = mk.eyes = mk.nose = mk.lips = 'none'; mk.extras = {}; sync(); toast('已清除妝容'); return; }
+      if (b.hasAttribute('data-pre')){
+        var P = PRESETS[+b.getAttribute('data-pre')][1]; mk.base = P.base; mk.eyes = P.eyes; mk.nose = P.nose; mk.lips = P.lips; mk.extras = {};
+        P.extras.forEach(function(k){ mk.extras[k] = 1; }); sync(); toast('已套用' + PRESETS[+b.getAttribute('data-pre')][0].replace(/^\S+\s/, '') + '妝'); return;
+      }
+      var g = b.getAttribute('data-g'), v = b.getAttribute('data-v');
+      if (g === 'extras'){ if (mk.extras[v]) delete mk.extras[v]; else mk.extras[v] = 1; } else mk[g] = v;
+      sync();
+    });
+    $('mkAlpha').addEventListener('input', function(){ mkAlpha = this.value / 100; });
+    function tab(w){ $('pStk').hidden = w !== 'stk'; pm.hidden = w !== 'mk'; $('tabStk').classList.toggle('on', w === 'stk'); $('tabMk').classList.toggle('on', w === 'mk'); }
+    $('tabStk').addEventListener('click', function(){ tab('stk'); }); $('tabMk').addEventListener('click', function(){ tab('mk'); });
+    sync();
+  })();
   window.__booth = { poseFromLandmarks: poseFromLandmarks, mapper: mapper, localToWorld: localToWorld, worldToLocal: worldToLocal };
   raf = requestAnimationFrame(loop);
 })();
