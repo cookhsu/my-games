@@ -425,6 +425,9 @@
     for (i = 0; i < 2; i++){ s = i ? 1 : -1; [0.2, 0.3, 0.4].forEach(function(x){ list.push([s * x, 0.12, s * x * 1.14, 0.62, s * 0.045, 0.026]); }); list.push([s * 0.13, 0.68, s * 0.22, 0.92, s * 0.03, 0.02]); }
     list.push([0, 0.7, 0.01, 0.92, 0, 0.02]);
     list.forEach(function(l, k){
+      var r1 = Math.abs(Math.sin(k * 12.9898) * 43758.5453) % 1, r2 = Math.abs(Math.sin(k * 78.233) * 12345.678) % 1;
+      l = [l[0] + (r1 - 0.5) * 0.03, l[1], l[2] + (r2 - 0.5) * 0.04, l[3] + (r1 - 0.5) * 0.06, l[4], l[5] * (0.8 + r2 * 0.6)];
+      c.fillStyle = 'rgba(90,22,0,.88)'; tapered(c, l[0] - 0.008, l[1], l[2] - 0.006, l[3], l[4], l[5] * 1.3);
       c.fillStyle = 'rgba(122,38,0,.78)'; tapered(c, l[0], l[1], l[2], l[3], l[4], l[5]);
       c.fillStyle = 'rgba(255,214,90,.85)'; tapered(c, l[0] + 0.014, l[1] + 0.01, l[2] + 0.012, l[3] - 0.01, l[4], l[5] * 0.4);
     });
@@ -435,8 +438,7 @@
       c.save(); c.translate(E.cx, E.cy); c.scale(k, k);
       if (kind === 'mask'){
         var P = [[-1.5, -0.5], [-1.1, -1.0], [0, -1.35], [1.2, -1.9], [2.2, -2.5], [3.0, -2.7], [2.6, -1.9], [2.9, -1.1], [2.5, -0.1], [2.3, 0.6], [1.5, 1.4], [0.4, 1.7], [-0.7, 1.4], [-1.3, 0.7]];
-        c.fillStyle = '#0B0507'; c.beginPath(); P.forEach(function(p, i){ var x = s * p[0] * 0.1, y = p[1] * 0.1; if (i) c.lineTo(x, y); else c.moveTo(x, y); });
-        c.closePath(); c.fill();
+        c.fillStyle = '#0B0507'; var Q = P.map(function(p){ return [s * p[0] * 0.1, p[1] * 0.1]; }); Q.splice(6, 0, Q[5].slice()); smoothFill(c, Q);
       } else if (kind === 'socket'){ soft(c, 0, 0, 0.17, 0.15, 'rgb(8,4,14)', 1); }
       else if (kind === 'smoky'){ soft(c, 0, -0.01, 0.22, 0.14, 'rgb(60,20,90)', 0.85); soft(c, 0, 0, 0.13, 0.08, 'rgb(15,5,25)', 0.9); }
       else if (kind === 'ring'){ soft(c, 0, 0.02, 0.18, 0.13, 'rgb(40,25,50)', 0.9); }
@@ -465,6 +467,19 @@
       c.strokeStyle = '#2B1018'; c.lineWidth = 0.014; c.lineCap = 'round'; c.beginPath(); c.moveTo(0, 0.04); c.lineTo(0, 0.12); c.moveTo(0, 0.12); c.quadraticCurveTo(-0.05, 0.17, -0.1, 0.13); c.moveTo(0, 0.12); c.quadraticCurveTo(0.05, 0.17, 0.1, 0.13); c.stroke(); }
     else if (kind === 'skull'){ c.fillStyle = '#0A0510'; [-1, 1].forEach(function(s){ c.beginPath(); c.ellipse(s * 0.045, 0.0, 0.026, 0.058, s * 0.3, 0, 6.283); c.fill(); }); }
     c.restore();
+  }
+  function smoothFill(c, q){
+    var n = q.length, m0 = [(q[n - 1][0] + q[0][0]) / 2, (q[n - 1][1] + q[0][1]) / 2];
+    c.beginPath(); c.moveTo(m0[0], m0[1]);
+    for (var i = 0; i < n; i++){ var a = q[i], b = q[(i + 1) % n]; c.quadraticCurveTo(a[0], a[1], (a[0] + b[0]) / 2, (a[1] + b[1]) / 2); }
+    c.closePath(); c.fill();
+  }
+  var SNAP = null, TMP = null, GRAIN = null;
+  function grainPat(c){
+    if (!GRAIN){ var g = document.createElement('canvas'); g.width = g.height = 160; var x = g.getContext('2d'), im = x.createImageData(160, 160);
+      for (var i = 0; i < im.data.length; i += 4){ im.data[i] = im.data[i + 1] = im.data[i + 2] = 0; im.data[i + 3] = Math.random() < 0.5 ? 0 : Math.floor(Math.random() * 255); }
+      x.putImageData(im, 0, 0); GRAIN = g; }
+    return c.createPattern(GRAIN, 'repeat');
   }
   function jack(c, M){
     var hw = Math.max(0.36, M.hw * 1.9), n = 9, top = M.y - 0.06 - M.hh * 0.5, bot = M.y + 0.07 + M.hh * 0.5, cx = M.x, i;
@@ -566,6 +581,10 @@
     if (mk.eyes !== 'glow') cutEyes(dc, A, 1.08);
     bc.restore(); dc.restore();
     var blurOK = ('filter' in c);
+    if (!SNAP){ SNAP = document.createElement('canvas'); TMP = document.createElement('canvas'); SNAP.width = TMP.width = W; SNAP.height = TMP.height = H; }
+    var sc = SNAP.getContext('2d'), tc = TMP.getContext('2d');
+    sc.globalCompositeOperation = 'source-over'; sc.clearRect(0, 0, W, H); sc.drawImage(c.canvas, 0, 0);
+    [bc, dc].forEach(function(x, i){ x.save(); x.setTransform(1, 0, 0, 1, 0, 0); x.globalCompositeOperation = 'destination-out'; x.globalAlpha = i ? 0.2 : 0.12; x.fillStyle = grainPat(x); x.fillRect(0, 0, W, H); x.restore(); });
     c.save();
     if (bi && bi[2]){
       var bm = BASEMODE[mk.base] || [0.5, 0];
@@ -573,8 +592,13 @@
       c.globalAlpha = bm[0] * mkAlpha; c.drawImage(LB, 0, 0);
       if (bm[1]){ c.globalCompositeOperation = 'multiply'; c.globalAlpha = bm[1] * mkAlpha; c.drawImage(LB, 0, 0); }
       c.globalCompositeOperation = 'source-over';
+      // 讓底下皮膚的明暗與五官起伏透出來
+      tc.globalCompositeOperation = 'source-over'; tc.clearRect(0, 0, W, H); tc.drawImage(SNAP, 0, 0);
+      tc.globalCompositeOperation = 'destination-in'; tc.drawImage(LB, 0, 0);
+      c.filter = 'none'; c.globalCompositeOperation = (mk.base === 'white' || mk.base === 'blue') ? 'hard-light' : 'overlay'; c.globalAlpha = (mk.base === 'white' ? 0.5 : 0.55) * mkAlpha; c.drawImage(TMP, 0, 0);
+      c.globalCompositeOperation = 'source-over';
     }
-    if (blurOK) c.filter = 'blur(1.1px)';
+    if (blurOK) c.filter = 'blur(0.9px)';
     c.globalAlpha = mkAlpha; c.drawImage(LD, 0, 0);
     c.restore();
     if (ui && !tracking()){
