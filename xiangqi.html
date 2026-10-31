@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&display=swap" rel="stylesheet">
+<title>楚河漢界・象棋</title>
+<style>
+  :root{
+    --bg:#120F0C; --panel:#221A14; --panel2:#2C2118; --edge:#5A4330; --cream:#F6E9D0; --dim:#BBA58A;
+    --red:#C8372D; --red2:#8F211A; --gold:#E3B04B; --gold2:#B98225; --ink:#2B1A0E;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; background:var(--bg); color:var(--cream); font-family:'Noto Serif TC','Songti TC','PingFang TC',serif; min-height:100%; }
+  body{ display:flex; flex-direction:column; align-items:center; padding:24px 14px 56px;
+    background:
+      radial-gradient(ellipse at 50% -8%, rgba(227,176,75,.20), transparent 52%),
+      radial-gradient(ellipse at 90% 100%, rgba(200,55,45,.10), transparent 50%),
+      repeating-linear-gradient(45deg, rgba(255,255,255,.012) 0 2px, transparent 2px 9px),
+      var(--bg); }
+  .top{ display:flex; align-items:center; gap:14px; margin-bottom:16px; }
+  .seal{ width:54px; height:54px; border-radius:10px; background:linear-gradient(145deg,#D8473B,#8F211A); color:#FBEBD0; font-size:32px; font-weight:900; display:flex; align-items:center; justify-content:center; transform:rotate(-6deg); box-shadow:0 6px 16px rgba(0,0,0,.5), inset 0 0 0 2px rgba(255,255,255,.18); }
+  h1{ margin:0; font-size:clamp(26px,7vw,38px); letter-spacing:8px; font-weight:900; background:linear-gradient(180deg,#FFE9A8,#E3B04B 55%,#B98225); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 3px 10px rgba(227,176,75,.25)); }
+  .sub{ margin:2px 0 0; color:var(--dim); font-size:13px; letter-spacing:2px; }
+  .wrap{ width:100%; max-width:540px; background:linear-gradient(180deg,var(--panel2),var(--panel)); border:1px solid var(--edge); border-radius:22px; padding:14px; box-shadow:0 24px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06); }
+  .player{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:14px; border:1px solid transparent; transition:.25s; }
+  .player.active{ background:rgba(227,176,75,.09); border-color:rgba(227,176,75,.55); box-shadow:0 0 18px rgba(227,176,75,.18); }
+  .avatar{ width:40px; height:40px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:900; background:radial-gradient(circle at 35% 30%,#FFF1CF,#DDB46E); box-shadow:0 3px 0 #8A5A2B, 0 5px 10px rgba(0,0,0,.4); border:2px solid #8A5A2B; }
+  .avatar.red{ color:#B3281F; } .avatar.black{ color:#1C1C1C; }
+  .pinfo{ display:flex; flex-direction:column; line-height:1.3; flex:none; }
+  .pinfo b{ font-size:15px; }
+  .pinfo span{ font-size:11.5px; color:var(--dim); }
+  .taken{ display:flex; flex-wrap:wrap; gap:3px; flex:1; justify-content:flex-end; min-height:22px; }
+  .taken i{ font-style:normal; width:22px; height:22px; border-radius:50%; font-size:13px; font-weight:900; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle at 35% 30%,#FFF1CF,#DDB46E); border:1px solid #8A5A2B; }
+  .taken i.r{ color:#B3281F; } .taken i.b{ color:#1C1C1C; }
+  .status{ margin:8px auto; width:fit-content; max-width:100%; text-align:center; font-size:16px; font-weight:700; padding:7px 20px; border-radius:999px; background:rgba(0,0,0,.28); border:1px solid var(--edge); letter-spacing:1px; }
+  .status.check{ color:#FF8A7A; border-color:#C8372D; background:rgba(200,55,45,.15); }
+  .status.win{ color:var(--gold); border-color:var(--gold2); background:rgba(227,176,75,.12); }
+  .board-wrap{ position:relative; border-radius:14px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.5); }
+  canvas{ display:block; width:100%; height:auto; touch-action:manipulation; cursor:pointer; }
+  .result{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; background:rgba(15,10,6,.74); backdrop-filter:blur(2px); text-align:center; }
+  .result[hidden]{ display:none; }
+  .result .big{ font-size:110px; font-weight:900; line-height:1; text-shadow:0 6px 26px rgba(0,0,0,.6); }
+  .result.win .big{ color:var(--gold); } .result.lose .big{ color:#FF6B5B; }
+  .result p{ margin:0; color:var(--cream); font-size:15px; }
+  .row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; align-items:center; justify-content:center; }
+  button{ font:700 14px inherit; font-family:inherit; color:var(--cream); background:linear-gradient(180deg,#43332A,#33261E); border:1px solid var(--edge); border-radius:999px; padding:9px 15px; cursor:pointer; transition:.15s; }
+  button:hover:not(:disabled){ border-color:var(--gold); transform:translateY(-1px); }
+  button:active:not(:disabled){ transform:translateY(1px); }
+  button:disabled{ opacity:.4; cursor:default; }
+  button:focus-visible{ outline:3px solid var(--gold); outline-offset:2px; }
+  .seg{ display:flex; border:1px solid var(--edge); border-radius:999px; overflow:hidden; background:rgba(0,0,0,.25); }
+  .seg button{ border:none; border-radius:0; background:transparent; color:var(--dim); padding:9px 14px; }
+  .seg button:hover:not(:disabled){ transform:none; }
+  .seg button[aria-pressed="true"]{ background:linear-gradient(180deg,#F0C466,#C8922D); color:var(--ink); }
+  .primary{ background:linear-gradient(180deg,#DD4A3D,#9C241C); border-color:#E8685B; color:#FFF3E0; }
+  .hint{ margin-top:16px; font-size:12.5px; color:var(--dim); text-align:center; line-height:1.9; max-width:500px; }
+  @media (max-width:420px){ .player .pinfo span{ display:none; } .result .big{ font-size:84px; } }
+  @media (prefers-reduced-motion:reduce){ *{ transition:none !important; } }
+</style>
+</head>
+<body>
+  <header class="top">
+    <div class="seal" aria-hidden="true">象</div>
+    <div><h1>楚河漢界</h1><p class="sub">中國象棋・你執紅先行</p></div>
+  </header>
+  <main class="wrap">
+    <div class="player" id="pOpp">
+      <div class="avatar black" aria-hidden="true">將</div>
+      <div class="pinfo"><b>電腦</b><span id="oppLv">黑方・普通</span></div>
+      <div class="taken" id="takenB" aria-label="黑方吃掉的子"></div>
+    </div>
+    <div class="status" id="status" role="status" aria-live="polite">輪到你（紅方）</div>
+    <div class="board-wrap">
+      <canvas id="bd" width="504" height="560" aria-label="象棋棋盤"></canvas>
+      <div class="result" id="result" hidden>
+        <div class="big" id="resBig">勝</div>
+        <p id="resTxt"></p>
+        <button type="button" id="againBtn" class="primary">再來一局</button>
+      </div>
+    </div>
+    <div class="player" id="pMe" style="margin-top:8px">
+      <div class="avatar red" aria-hidden="true">帥</div>
+      <div class="pinfo"><b>你</b><span>紅方・先手</span></div>
+      <div class="taken" id="takenW" aria-label="紅方吃掉的子"></div>
+    </div>
+    <div class="row">
+      <div class="seg" role="group" aria-label="難度">
+        <button type="button" data-lv="1" aria-pressed="false">新手</button>
+        <button type="button" data-lv="2" aria-pressed="true">普通</button>
+        <button type="button" data-lv="3" aria-pressed="false">高手</button>
+      </div>
+      <button type="button" id="hintBtn">提示</button>
+      <button type="button" id="musicBtn" aria-pressed="true" aria-label="切換背景音樂">🔊 音樂</button>
+      <button type="button" id="undoBtn" disabled>悔棋</button>
+      <button type="button" id="newBtn" class="primary">重新開始</button>
+    </div>
+  </main>
+  <p class="hint">點選己方棋子，再點亮點落子。送將帥照面（飛將）與被將軍後不應將都不合法；無路可走即輸。<br>難度越高電腦想得越深，「高手」會多想幾步，偶爾要等一下。</p>
+
+<script>
+(function(){
+  "use strict";
+  var COLS = 9, ROWS = 10, CW = 504, CH = 560, MX = 36, MY = 36, GAP = 54;
+  var cv = document.getElementById('bd'), ctx = cv.getContext('2d');
+  var statusEl = document.getElementById('status');
+  var pOpp = document.getElementById('pOpp'), pMe = document.getElementById('pMe'), takenB = document.getElementById('takenB'), takenW = document.getElementById('takenW');
+  var resultEl = document.getElementById('result'), resBig = document.getElementById('resBig'), resTxt = document.getElementById('resTxt'), oppLvEl = document.getElementById('oppLv');
+  var DPR = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = CW * DPR; cv.height = CH * DPR;
+  var undoBtn = document.getElementById('undoBtn'), hintBtn = document.getElementById('hintBtn');
+
+  var NAME = { R: '俥', N: '傌', B: '相', A: '仕', K: '帥', C: '炮', P: '兵', r: '車', n: '馬', b: '象', a: '士', k: '將', c: '砲', p: '卒' };
+  var VAL = { r: 900, c: 450, n: 400, a: 200, b: 200, p: 100, k: 10000 };
+
+  var board, turn, selected, legalFor, history, lastMove, over, thinking, level = 2, hintMove = null, caps, anim = null, checkSide = null, bgCache = null;
+
+  function isRed(p){ return p && p === p.toUpperCase(); }
+  function sideOf(p){ return isRed(p) ? 'w' : 'b'; }
+
+  function initBoard(){
+    var back = ['r', 'n', 'b', 'a', 'k', 'a', 'b', 'n', 'r'];
+    board = [];
+    for (var r = 0; r < ROWS; r++){ board.push([]); for (var c = 0; c < COLS; c++) board[r].push(null); }
+    for (var c2 = 0; c2 < COLS; c2++){
+      board[0][c2] = back[c2]; board[9][c2] = back[c2].toUpperCase();
+    }
+    board[2][1] = 'c'; board[2][7] = 'c'; board[7][1] = 'C'; board[7][7] = 'C';
+    [0, 2, 4, 6, 8].forEach(function(c3){ board[3][c3] = 'p'; board[6][c3] = 'P'; });
+  }
+
+  function inb(r, c){ return r >= 0 && r < ROWS && c >= 0 && c < COLS; }
+
+  // ---- 走法產生（偽合法：未檢查自己是否被將軍）----
+  function genMoves(side){
+    var out = [], r, c, p;
+    for (r = 0; r < ROWS; r++) for (c = 0; c < COLS; c++){
+      p = board[r][c]; if (!p || sideOf(p) !== side) continue;
+      genPiece(r, c, p, side, out);
+    }
+    return out;
+  }
+  function add(out, r, c, tr, tc, side){
+    if (!inb(tr, tc)) return;
+    var t = board[tr][tc];
+    if (t && sideOf(t) === side) return;
+    out.push({ fr: r, fc: c, tr: tr, tc: tc });
+  }
+  function inPalace(r, c, side){ return c >= 3 && c <= 5 && (side === 'w' ? r >= 7 : r <= 2); }
+  function genPiece(r, c, p, side, out){
+    var t = p.toLowerCase(), i, d, nr, nc, jumped;
+    var o4 = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    if (t === 'k'){
+      o4.forEach(function(d2){ if (inPalace(r + d2[0], c + d2[1], side)) add(out, r, c, r + d2[0], c + d2[1], side); });
+    } else if (t === 'a'){
+      [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(function(d2){ if (inPalace(r + d2[0], c + d2[1], side)) add(out, r, c, r + d2[0], c + d2[1], side); });
+    } else if (t === 'b'){
+      [[2, 2], [2, -2], [-2, 2], [-2, -2]].forEach(function(d2){
+        nr = r + d2[0]; nc = c + d2[1];
+        if (!inb(nr, nc)) return;
+        if (side === 'w' ? nr < 5 : nr > 4) return;
+        if (board[r + d2[0] / 2][c + d2[1] / 2]) return;
+        add(out, r, c, nr, nc, side);
+      });
+    } else if (t === 'n'){
+      [[-2, -1, -1, 0], [-2, 1, -1, 0], [2, -1, 1, 0], [2, 1, 1, 0], [-1, -2, 0, -1], [1, -2, 0, -1], [-1, 2, 0, 1], [1, 2, 0, 1]].forEach(function(m){
+        if (!inb(r + m[0], c + m[1])) return;
+        if (board[r + m[2]][c + m[3]]) return;
+        add(out, r, c, r + m[0], c + m[1], side);
+      });
+    } else if (t === 'r'){
+      for (i = 0; i < 4; i++){
+        d = o4[i]; nr = r + d[0]; nc = c + d[1];
+        while (inb(nr, nc)){
+          if (board[nr][nc]){ add(out, r, c, nr, nc, side); break; }
+          out.push({ fr: r, fc: c, tr: nr, tc: nc }); nr += d[0]; nc += d[1];
+        }
+      }
+    } else if (t === 'c'){
+      for (i = 0; i < 4; i++){
+        d = o4[i]; nr = r + d[0]; nc = c + d[1]; jumped = false;
+        while (inb(nr, nc)){
+          var tg = board[nr][nc];
+          if (!jumped){
+            if (tg) jumped = true; else out.push({ fr: r, fc: c, tr: nr, tc: nc });
+          } else if (tg){ add(out, r, c, nr, nc, side); break; }
+          nr += d[0]; nc += d[1];
+        }
+      }
+    } else if (t === 'p'){
+      var fwd = side === 'w' ? -1 : 1, crossed = side === 'w' ? r <= 4 : r >= 5;
+      add(out, r, c, r + fwd, c, side);
+      if (crossed){ add(out, r, c, r, c - 1, side); add(out, r, c, r, c + 1, side); }
+    }
+  }
+
+  function findKing(side){
+    var k = side === 'w' ? 'K' : 'k';
+    for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) if (board[r][c] === k) return { r: r, c: c };
+    return null;
+  }
+  function kingsFace(){
+    var a = findKing('w'), b = findKing('b');
+    if (!a || !b || a.c !== b.c) return false;
+    for (var r = Math.min(a.r, b.r) + 1; r < Math.max(a.r, b.r); r++) if (board[r][a.c]) return false;
+    return true;
+  }
+  function attacked(side){ // side 的將帥是否被攻擊（含飛將）
+    var k = findKing(side); if (!k) return true;
+    if (kingsFace()) return true;
+    var opp = side === 'w' ? 'b' : 'w', ms = genMoves(opp);
+    for (var i = 0; i < ms.length; i++) if (ms[i].tr === k.r && ms[i].tc === k.c) return true;
+    return false;
+  }
+  function make(m){ var cap = board[m.tr][m.tc]; board[m.tr][m.tc] = board[m.fr][m.fc]; board[m.fr][m.fc] = null; return cap; }
+  function unmake(m, cap){ board[m.fr][m.fc] = board[m.tr][m.tc]; board[m.tr][m.tc] = cap; }
+  function legalMoves(side){
+    return genMoves(side).filter(function(m){
+      var cap = make(m), bad = attacked(side); unmake(m, cap); return !bad;
+    });
+  }
+
+  // ---- AI ----
+  function evalBoard(){ // 正分有利黑（電腦）
+    var s = 0, r, c, p, v;
+    for (r = 0; r < ROWS; r++) for (c = 0; c < COLS; c++){
+      p = board[r][c]; if (!p) continue;
+      var t = p.toLowerCase(), red = isRed(p);
+      v = VAL[t];
+      if (t === 'p'){ var adv = red ? (6 - r) : (r - 3); if (adv >= 2) v += 100 + (adv - 2) * 12; }
+      if (t === 'n' || t === 'c' || t === 'r'){ var cen = 4 - Math.abs(4 - c); v += cen * 4; }
+      if (t === 'r'){ var openRow = red ? (9 - r) : r; v += openRow > 0 ? 6 : 0; }
+      s += red ? -v : v;
+    }
+    return s;
+  }
+  function ordered(ms){
+    return ms.sort(function(a, b){
+      var ca = board[a.tr][a.tc] ? VAL[board[a.tr][a.tc].toLowerCase()] : 0;
+      var cb = board[b.tr][b.tc] ? VAL[board[b.tr][b.tc].toLowerCase()] : 0;
+      return cb - ca;
+    });
+  }
+  // negamax：回傳對「side」有利的分數
+  function search(depth, alpha, beta, side){
+    if (kingsFace()) return 20000 + depth; // 輪到走的一方可直接飛將吃帥
+    var sign = side === 'b' ? 1 : -1;
+    if (depth === 0) return sign * evalBoard();
+    var ms = ordered(genMoves(side)), i, best = -Infinity;
+    for (i = 0; i < ms.length; i++){
+      var m = ms[i], cap = board[m.tr][m.tc];
+      if (cap && cap.toLowerCase() === 'k') return 20000 + depth;
+      make(m);
+      var sc = -search(depth - 1, -beta, -alpha, side === 'w' ? 'b' : 'w');
+      unmake(m, cap);
+      if (sc > best) best = sc;
+      if (best > alpha) alpha = best;
+      if (alpha >= beta) break;
+    }
+    if (best === -Infinity) return -20000;
+    return best;
+  }
+  function pickMove(side, depth, noise){
+    var ms = ordered(legalMoves(side)); if (!ms.length) return null;
+    var bestSc = -Infinity, best = [], i;
+    for (i = 0; i < ms.length; i++){
+      var m = ms[i], cap = make(m);
+      var sc = -search(depth - 1, -30000, 30000, side === 'w' ? 'b' : 'w') + Math.random() * noise;
+      unmake(m, cap);
+      if (sc > bestSc + 0.5){ bestSc = sc; best = [m]; } else if (Math.abs(sc - bestSc) <= 0.5) best.push(m);
+    }
+    return best[Math.floor(Math.random() * best.length)];
+  }
+
+  // ---- 音效與音樂 ----
+  var ac = null, master = null, noiseBuf = null, musicOn = true;
+  try { var mv = localStorage.getItem('xq_music'); if (mv !== null) musicOn = (mv === '1'); } catch (e) { /* ignore */ }
+  function getAc(){
+    try {
+      if (!ac){
+        ac = new (window.AudioContext || window.webkitAudioContext)();
+        master = ac.createGain(); master.gain.value = 0.9; master.connect(ac.destination);
+        noiseBuf = ac.createBuffer(1, Math.floor(ac.sampleRate * 0.15), ac.sampleRate);
+        var d = noiseBuf.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      }
+      if (ac.state === 'suspended') ac.resume();
+    } catch (e) { ac = null; }
+    return ac;
+  }
+  function beep(f, d, type, v, delay){
+    var a = getAc(); if (!a) return;
+    try {
+      var o = a.createOscillator(), g = a.createGain(), t = a.currentTime + (delay || 0);
+      o.type = type || 'triangle'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(v || 0.08, t + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      o.connect(g); g.connect(master); o.start(t); o.stop(t + d + 0.02);
+    } catch (e) { /* ignore */ }
+  }
+  function clack(freq, vol, dur){ // 木頭敲擊聲：濾波雜訊 + 短促低音
+    var a = getAc(); if (!a) return;
+    try {
+      var t = a.currentTime, src = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+      src.buffer = noiseBuf; f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = 3;
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(f); f.connect(g); g.connect(master); src.start(t); src.stop(t + dur + 0.02);
+      var o = a.createOscillator(), g2 = a.createGain();
+      o.type = 'sine'; o.frequency.setValueAtTime(freq / 4, t); o.frequency.exponentialRampToValueAtTime(freq / 8, t + dur);
+      g2.gain.setValueAtTime(vol * 0.9, t); g2.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g2); g2.connect(master); o.start(t); o.stop(t + dur + 0.02);
+    } catch (e) { /* ignore */ }
+  }
+  function sfx(n){
+    if (n === 'select') beep(880, 0.05, 'sine', 0.04);
+    else if (n === 'move') clack(1500, 0.5, 0.09);
+    else if (n === 'capture'){ clack(1100, 0.8, 0.14); beep(110, 0.22, 'sine', 0.12, 0.02); }
+    else if (n === 'check'){ beep(988, 0.12, 'square', 0.05); beep(1318, 0.18, 'square', 0.05, 0.12); }
+    else if (n === 'win') [523, 659, 784, 1047, 1319].forEach(function(f, i){ beep(f, 0.35, 'triangle', 0.07, i * 0.13); });
+    else if (n === 'lose') [392, 349, 294, 220].forEach(function(f, i){ beep(f, 0.45, 'sawtooth', 0.045, i * 0.2); });
+    else if (n === 'start') [392, 523, 659].forEach(function(f, i){ beep(f, 0.2, 'triangle', 0.05, i * 0.07); });
+  }
+  // 背景音樂：五聲音階（宮商角徵羽）的撥弦旋律＋低音長音，緩慢循環
+  var SC = { D3: 146.83, A3: 220, D4: 293.66, E4: 329.63, Fs4: 369.99, A4: 440, B4: 493.88, D5: 587.33, E5: 659.25, Fs5: 739.99, A5: 880 };
+  var PHRASES = [
+    ['D5', 0, 'A4', 'B4', 'D5', 0, 'B4', 'A4'],
+    ['Fs4', 'A4', 0, 'B4', 'A4', 'Fs4', 'E4', 0],
+    ['E5', 0, 'D5', 'B4', 'A4', 0, 'B4', 'D5'],
+    ['A4', 'B4', 'D5', 'E5', 'Fs5', 'E5', 'D5', 0],
+    ['B4', 0, 'A4', 'Fs4', 'E4', 0, 'Fs4', 'A4'],
+    ['D5', 'E5', 'Fs5', 0, 'E5', 'D5', 'B4', 0],
+    ['A4', 0, 'Fs4', 'E4', 'D4', 0, 'E4', 'Fs4'],
+    ['D4', 0, 'E4', 'Fs4', 'A4', 0, 'D5', 0]
+  ];
+  var BASS = ['D3', 'A3', 'D3', 'A3'];
+  var music = {
+    timer: null, nextTime: 0, step: 0,
+    pluck: function(f, when, dur, vol){
+      try {
+        var o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain(), fl = ac.createBiquadFilter();
+        o.type = 'triangle'; o.frequency.value = f; o2.type = 'sine'; o2.frequency.value = f * 2;
+        fl.type = 'lowpass'; fl.frequency.setValueAtTime(3200, when); fl.frequency.exponentialRampToValueAtTime(500, when + dur);
+        g.gain.setValueAtTime(0.0001, when); g.gain.linearRampToValueAtTime(vol, when + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+        o.connect(fl); o2.connect(fl); fl.connect(g); g.connect(master);
+        o.start(when); o2.start(when); o.stop(when + dur + 0.03); o2.stop(when + dur + 0.03);
+      } catch (e) { /* ignore */ }
+    },
+    schedule: function(){
+      if (!ac) return;
+      var sd = 0.34;
+      while (this.nextTime < ac.currentTime + 0.3){
+        var t = this.nextTime, bar = Math.floor(this.step / 8), s8 = this.step % 8;
+        var ph = PHRASES[bar % PHRASES.length], n = ph[s8];
+        if (n) this.pluck(SC[n], t, 1.3, 0.07);
+        if (s8 === 0) this.pluck(SC[BASS[bar % 4]], t, 2.6, 0.09);
+        if (s8 === 4) this.pluck(SC[BASS[bar % 4]] * 2, t, 1.2, 0.035);
+        this.nextTime += sd; this.step++;
+      }
+    },
+    start: function(){
+      this.stop();
+      if (!musicOn || !getAc()) return;
+      this.step = 0; this.nextTime = ac.currentTime + 0.1;
+      var self = this; this.schedule();
+      this.timer = setInterval(function(){ self.schedule(); }, 80);
+    },
+    stop: function(){ if (this.timer){ clearInterval(this.timer); this.timer = null; } }
+  };
+  var musicBtn = document.getElementById('musicBtn');
+  function refreshMusicBtn(){ musicBtn.textContent = musicOn ? '🔊 音樂' : '🔇 音樂'; musicBtn.setAttribute('aria-pressed', String(musicOn)); }
+  musicBtn.addEventListener('click', function(){
+    musicOn = !musicOn;
+    try { localStorage.setItem('xq_music', musicOn ? '1' : '0'); } catch (e) { /* ignore */ }
+    if (musicOn) music.start(); else music.stop();
+    refreshMusicBtn();
+  });
+  document.addEventListener('visibilitychange', function(){ if (document.hidden) music.stop(); else if (musicOn && started) music.start(); });
+  var started = false;
+  function ensureMusic(){ if (!started){ started = true; if (musicOn) music.start(); } }
+
+  // ---- 繪圖 ----
+  function px(c){ return MX + c * GAP; }
+  function py(r){ return MY + r * GAP; }
+  function rrect(g, x, y, w, h, r){
+    g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+  }
+  function paintBoard(g){
+    var i, r, c;
+    // 外框木紋
+    var fg = g.createLinearGradient(0, 0, CW, CH); fg.addColorStop(0, '#6E4624'); fg.addColorStop(1, '#43280F');
+    g.fillStyle = fg; g.fillRect(0, 0, CW, CH);
+    // 棋盤面
+    var bg = g.createLinearGradient(0, 0, CW, CH); bg.addColorStop(0, '#EFCB88'); bg.addColorStop(.5, '#E2B66F'); bg.addColorStop(1, '#D6A55A');
+    g.fillStyle = bg; rrect(g, 9, 9, CW - 18, CH - 18, 10); g.fill();
+    g.save(); rrect(g, 9, 9, CW - 18, CH - 18, 10); g.clip();
+    for (i = 0; i < 70; i++){ // 木紋
+      var y0 = Math.random() * CH, amp = 3 + Math.random() * 8, ph = Math.random() * 6;
+      g.strokeStyle = 'rgba(110,64,20,' + (0.04 + Math.random() * 0.09).toFixed(3) + ')'; g.lineWidth = 0.5 + Math.random() * 1.6;
+      g.beginPath();
+      for (var x = 0; x <= CW; x += 12){ var yy = y0 + Math.sin(x / 70 + ph) * amp; if (x === 0) g.moveTo(x, yy); else g.lineTo(x, yy); }
+      g.stroke();
+    }
+    var vg = g.createRadialGradient(CW / 2, CH / 2, 120, CW / 2, CH / 2, 380); vg.addColorStop(0, 'rgba(255,240,200,.18)'); vg.addColorStop(1, 'rgba(90,45,10,.28)');
+    g.fillStyle = vg; g.fillRect(0, 0, CW, CH);
+    // 河界淡藍
+    var rv = g.createLinearGradient(0, py(4), 0, py(5)); rv.addColorStop(0, 'rgba(110,160,160,.0)'); rv.addColorStop(.5, 'rgba(110,160,160,.24)'); rv.addColorStop(1, 'rgba(110,160,160,.0)');
+    g.fillStyle = rv; g.fillRect(px(0), py(4), GAP * 8, GAP);
+    g.restore();
+    g.strokeStyle = 'rgba(70,40,10,.55)'; g.lineWidth = 1.5; rrect(g, 9.5, 9.5, CW - 19, CH - 19, 10); g.stroke();
+    // 線
+    g.strokeStyle = '#4E3012'; g.lineWidth = 1.5;
+    for (r = 0; r < ROWS; r++){ g.beginPath(); g.moveTo(px(0), py(r)); g.lineTo(px(8), py(r)); g.stroke(); }
+    for (c = 0; c < COLS; c++){
+      g.beginPath();
+      if (c === 0 || c === 8){ g.moveTo(px(c), py(0)); g.lineTo(px(c), py(9)); }
+      else { g.moveTo(px(c), py(0)); g.lineTo(px(c), py(4)); g.moveTo(px(c), py(5)); g.lineTo(px(c), py(9)); }
+      g.stroke();
+    }
+    [[0, 3, 2, 5], [0, 5, 2, 3], [7, 3, 9, 5], [7, 5, 9, 3]].forEach(function(l){
+      g.beginPath(); g.moveTo(px(l[1]), py(l[0])); g.lineTo(px(l[3]), py(l[2])); g.stroke();
+    });
+    g.lineWidth = 3.2; g.strokeRect(px(0) - 7, py(0) - 7, GAP * 8 + 14, GAP * 9 + 14); g.lineWidth = 1.5;
+    var marks = [[2, 1], [2, 7], [7, 1], [7, 7], [3, 0], [3, 2], [3, 4], [3, 6], [3, 8], [6, 0], [6, 2], [6, 4], [6, 6], [6, 8]];
+    marks.forEach(function(m){
+      var x2 = px(m[1]), y2 = py(m[0]), s0 = 4, l = 9;
+      [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function(d){
+        if ((m[1] === 0 && d[0] === -1) || (m[1] === 8 && d[0] === 1)) return;
+        g.beginPath(); g.moveTo(x2 + d[0] * s0, y2 + d[1] * (s0 + l)); g.lineTo(x2 + d[0] * s0, y2 + d[1] * s0); g.lineTo(x2 + d[0] * (s0 + l), y2 + d[1] * s0); g.stroke();
+      });
+    });
+    // 楚河漢界
+    g.fillStyle = 'rgba(78,44,14,.82)'; g.font = "900 28px 'Noto Serif TC','Songti TC',serif"; g.textAlign = 'center'; g.textBaseline = 'middle';
+    var my = (py(4) + py(5)) / 2 + 1;
+    g.fillText('楚　河', px(2), my);
+    g.save(); g.translate(px(6), my); g.rotate(Math.PI); g.fillText('界　漢', 0, 0); g.restore();
+  }
+  function buildBoard(){
+    var oc = document.createElement('canvas'); oc.width = CW * DPR; oc.height = CH * DPR;
+    var g = oc.getContext('2d'); g.scale(DPR, DPR); paintBoard(g); bgCache = oc;
+  }
+  function drawPieceAt(p, x, y, lift){
+    var R = 23, red = isRed(p), yy = y - lift;
+    ctx.save();
+    ctx.shadowColor = 'rgba(40,20,5,.45)'; ctx.shadowBlur = 6 + lift; ctx.shadowOffsetY = 3 + lift * 0.6;
+    ctx.fillStyle = '#9C6A35'; ctx.beginPath(); ctx.arc(x, yy + 3, R, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    var g = ctx.createRadialGradient(x - 7, yy - 8, 3, x, yy, R);
+    g.addColorStop(0, '#FFF3D4'); g.addColorStop(.7, '#EDCB8C'); g.addColorStop(1, '#D9AE6A');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, yy, R, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#8A5A2B'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(x, yy, R - 0.8, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = red ? '#B3281F' : '#222'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.arc(x, yy, R - 4.5, 0, Math.PI * 2); ctx.stroke();
+    ctx.font = "900 26px 'Noto Serif TC','Songti TC','KaiTi',serif"; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fillText(NAME[p], x, yy + 2.6);
+    ctx.fillStyle = red ? '#B3281F' : '#1B1B1B'; ctx.fillText(NAME[p], x, yy + 1.4);
+  }
+  function draw(){
+    if (!bgCache) buildBoard();
+    var now = Date.now(), pulse = (Math.sin(now / 260) + 1) / 2, r, c;
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(bgCache, 0, 0); ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    if (lastMove){
+      ctx.fillStyle = 'rgba(255,214,102,.40)'; ctx.beginPath(); ctx.arc(px(lastMove.fc), py(lastMove.fr), 24, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(214,150,20,.95)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px(lastMove.tc), py(lastMove.tr), 27, 0, Math.PI * 2); ctx.stroke();
+    }
+    if (hintMove){
+      ctx.strokeStyle = '#18A957'; ctx.lineWidth = 3; ctx.setLineDash([6, 4]);
+      ctx.beginPath(); ctx.arc(px(hintMove.fc), py(hintMove.fr), 27, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(px(hintMove.tc), py(hintMove.tr), 27, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    var ak = 1;
+    if (anim){ ak = (now - anim.t0) / anim.dur; if (ak >= 1){ anim = null; ak = 1; } }
+    for (r = 0; r < ROWS; r++) for (c = 0; c < COLS; c++){
+      var p = board[r][c]; if (!p) continue;
+      if (anim && anim.m.tr === r && anim.m.tc === c) continue;
+      if (checkSide && ((checkSide === 'w' && p === 'K') || (checkSide === 'b' && p === 'k'))){
+        var rg = ctx.createRadialGradient(px(c), py(r), 10, px(c), py(r), 40);
+        rg.addColorStop(0, 'rgba(255,60,40,' + (0.55 + pulse * 0.35).toFixed(2) + ')'); rg.addColorStop(1, 'rgba(255,60,40,0)');
+        ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(px(c), py(r), 40, 0, Math.PI * 2); ctx.fill();
+      }
+      var sel = selected && selected.r === r && selected.c === c;
+      if (sel){ ctx.strokeStyle = 'rgba(255,200,60,' + (0.6 + pulse * 0.4).toFixed(2) + ')'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px(c), py(r) - 4, 29, 0, Math.PI * 2); ctx.stroke(); }
+      drawPieceAt(p, px(c), py(r), sel ? 4 : 0);
+    }
+    if (legalFor) legalFor.forEach(function(m){
+      var cap = board[m.tr][m.tc], x = px(m.tc), y = py(m.tr);
+      if (cap){ ctx.strokeStyle = 'rgba(225,45,35,' + (0.7 + pulse * 0.3).toFixed(2) + ')'; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.arc(x, y, 27, 0, Math.PI * 2); ctx.stroke(); }
+      else {
+        var gg = ctx.createRadialGradient(x, y, 1, x, y, 11); gg.addColorStop(0, 'rgba(40,150,80,.95)'); gg.addColorStop(1, 'rgba(40,150,80,0)');
+        ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(x, y, 11 + pulse * 1.5, 0, Math.PI * 2); ctx.fill();
+      }
+    });
+    if (anim){
+      var e = ak < .5 ? 2 * ak * ak : 1 - Math.pow(-2 * ak + 2, 2) / 2;
+      var ax = px(anim.m.fc) + (px(anim.m.tc) - px(anim.m.fc)) * e, ay = py(anim.m.fr) + (py(anim.m.tr) - py(anim.m.fr)) * e;
+      drawPieceAt(anim.p, ax, ay, Math.sin(Math.PI * ak) * 7);
+    }
+  }
+  function frame(){ draw(); requestAnimationFrame(frame); }
+
+  // ---- 流程 ----
+  function setStatus(t, cls){ statusEl.textContent = t; statusEl.className = 'status' + (cls ? ' ' + cls : ''); }
+  function renderTaken(el, list){
+    el.innerHTML = list.map(function(p){ return '<i class="' + (isRed(p) ? 'r' : 'b') + '">' + NAME[p] + '</i>'; }).join('');
+  }
+  function updateCaps(){
+    renderTaken(takenW, caps.w); renderTaken(takenB, caps.b);
+    pMe.classList.toggle('active', !over && turn === 'w');
+    pOpp.classList.toggle('active', !over && turn === 'b');
+  }
+  function showResult(win){
+    resultEl.className = 'result ' + (win ? 'win' : 'lose'); resultEl.hidden = false;
+    resBig.textContent = win ? '勝' : '敗';
+    resTxt.textContent = win ? '黑方無路可走，你贏了！' : '紅方被將死，再接再厲。';
+  }
+  function afterMove(){
+    selected = null; legalFor = null; hintMove = null;
+    var next = turn;
+    var ms = legalMoves(next);
+    var chk = attacked(next);
+    checkSide = chk ? next : null;
+    if (!ms.length){
+      over = true;
+      if (next === 'b'){ setStatus('你贏了！黑方無路可走', 'win'); sfx('win'); setTimeout(function(){ if (over) showResult(true); }, 900); }
+      else { setStatus('你輸了…紅方被將死', 'check'); sfx('lose'); setTimeout(function(){ if (over) showResult(false); }, 900); }
+    } else if (next === 'w'){
+      setStatus(chk ? '將軍！請應將' : '輪到你（紅方）', chk ? 'check' : '');
+      if (chk) sfx('check');
+    } else {
+      setStatus(chk ? '你將軍了！電腦思考中…' : '電腦思考中…', chk ? 'check' : '');
+    }
+    undoBtn.disabled = history.length < 2 || thinking;
+    updateCaps(); draw();
+  }
+  function doMove(m){
+    var mover = board[m.fr][m.fc], side = sideOf(mover);
+    var cap = make(m);
+    history.push({ m: m, cap: cap, last: lastMove });
+    if (cap){ caps[side].push(cap); sfx('capture'); } else sfx('move');
+    anim = { m: m, p: mover, t0: Date.now(), dur: 190 };
+    lastMove = m; turn = turn === 'w' ? 'b' : 'w';
+    afterMove();
+  }
+  function aiMove(){
+    if (over || turn !== 'b') return;
+    thinking = true; hintBtn.disabled = true; undoBtn.disabled = true;
+    setTimeout(function(){
+      var depth = level === 1 ? 1 : (level === 2 ? 3 : 4);
+      var noise = level === 1 ? 160 : (level === 2 ? 12 : 0);
+      var m = pickMove('b', depth, noise);
+      thinking = false; hintBtn.disabled = false;
+      if (m) doMove(m); else afterMove();
+    }, 260);
+  }
+  function undo(){
+    if (thinking || history.length < 2) return;
+    for (var i = 0; i < 2; i++){
+      var h = history.pop(); unmake(h.m, h.cap);
+      if (h.cap){ caps[sideOf(h.cap) === 'w' ? 'b' : 'w'].pop(); }
+      lastMove = h.last;
+    }
+    anim = null; turn = 'w'; over = false; selected = null; legalFor = null; hintMove = null; resultEl.hidden = true;
+    var chk = attacked('w'); checkSide = chk ? 'w' : null;
+    setStatus(chk ? '將軍！請應將' : '輪到你（紅方）', chk ? 'check' : '');
+    undoBtn.disabled = history.length < 2; updateCaps(); draw();
+  }
+  function newGame(){
+    initBoard(); turn = 'w'; selected = null; legalFor = null; history = []; lastMove = null; over = false; thinking = false; hintMove = null; caps = { w: [], b: [] }; anim = null; checkSide = null;
+    resultEl.hidden = true;
+    setStatus('輪到你（紅方）'); if (started) sfx('start'); undoBtn.disabled = true; hintBtn.disabled = false; updateCaps(); draw();
+  }
+
+  function onClick(e){
+    ensureMusic();
+    if (over || thinking || turn !== 'w') return;
+    var rect = cv.getBoundingClientRect(), sx = CW / rect.width;
+    var x = (e.clientX - rect.left) * sx, y = (e.clientY - rect.top) * sx;
+    var c = Math.round((x - MX) / GAP), r = Math.round((y - MY) / GAP);
+    if (!inb(r, c)) return;
+    if (Math.abs(x - px(c)) > 28 || Math.abs(y - py(r)) > 28) return;
+    hintMove = null;
+    var p = board[r][c];
+    if (legalFor){
+      var mv = null;
+      legalFor.forEach(function(m){ if (m.tr === r && m.tc === c) mv = m; });
+      if (mv){ doMove(mv); aiMove(); return; }
+    }
+    if (p && sideOf(p) === 'w'){
+      selected = { r: r, c: c };
+      legalFor = legalMoves('w').filter(function(m){ return m.fr === r && m.fc === c; });
+      sfx('select');
+    } else { selected = null; legalFor = null; }
+    draw();
+  }
+  cv.addEventListener('click', onClick);
+  document.getElementById('newBtn').addEventListener('click', newGame);
+  document.getElementById('againBtn').addEventListener('click', newGame);
+  undoBtn.addEventListener('click', undo);
+  hintBtn.addEventListener('click', function(){
+    if (over || thinking || turn !== 'w') return;
+    var m = pickMove('w', 2, 0);
+    if (m){ hintMove = m; selected = null; legalFor = null; draw(); }
+  });
+  document.querySelectorAll('.seg button').forEach(function(b){
+    b.addEventListener('click', function(){
+      level = parseInt(b.dataset.lv, 10);
+      oppLvEl.textContent = '黑方・' + (level === 1 ? '新手' : (level === 2 ? '普通' : '高手'));
+      document.querySelectorAll('.seg button').forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+    });
+  });
+
+  window.__xq = { get: function(){ return { board: board, turn: turn, over: over }; }, legalMoves: legalMoves, genMoves: genMoves, attacked: attacked, make: make, unmake: unmake, pickMove: pickMove, init: initBoard, set: function(b, t){ board = b; turn = t; } };
+  refreshMusicBtn();
+  newGame();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ bgCache = null; });
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
