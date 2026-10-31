@@ -118,6 +118,16 @@
       <button class="tool" id="delS" aria-label="刪除貼紙">🗑</button>
     </div>
     <div class="row">
+      <select class="tool" id="frame" aria-label="邊框" style="flex:1">
+        <option value="none">邊框：無</option>
+        <option value="grave">邊框：月夜墓園</option>
+        <option value="blood">邊框：血滴</option>
+        <option value="pumpkin">邊框：南瓜藤</option>
+        <option value="web">邊框：蜘蛛網</option>
+        <option value="haunt">邊框：鬼屋畫框</option>
+      </select>
+    </div>
+    <div class="row">
       <select class="tool" id="filter" aria-label="濾鏡" style="flex:1.2">
         <option value="none">濾鏡：原色</option>
         <option value="night">濾鏡：午夜藍</option>
@@ -608,6 +618,83 @@
     }
   }
 
+  // ================= 萬聖節邊框 =================
+  var frameName = 'none';
+  function rnd(i){ return Math.abs(Math.sin(i * 127.1 + 311.7) * 43758.5453) % 1; }
+  function band(c, t, fill){
+    c.save(); c.beginPath(); c.rect(0, 0, W, H); c.rect(t, t, W - 2 * t, H - 2 * t); c.fillStyle = fill; c.fill('evenodd'); c.restore();
+  }
+  function webCorner(c, x, y, sx, sy, size){
+    c.save(); c.translate(x, y); c.scale(sx, sy); c.strokeStyle = 'rgba(255,255,255,.82)'; c.lineWidth = 2; c.lineCap = 'round';
+    var n = 6, i, r, a;
+    for (i = 0; i <= n; i++){ a = i * (Math.PI / 2) / n; c.beginPath(); c.moveTo(0, 0); c.lineTo(Math.cos(a) * size, Math.sin(a) * size); c.stroke(); }
+    for (r = 1; r <= 6; r++){ c.beginPath(); for (i = 0; i <= n; i++){ a = i * (Math.PI / 2) / n; var rr = r * size / 6, px = Math.cos(a) * rr, py = Math.sin(a) * rr;
+      if (i) c.quadraticCurveTo(Math.cos(a - Math.PI / 12) * rr * 0.9, Math.sin(a - Math.PI / 12) * rr * 0.9, px, py); else c.moveTo(px, py); } c.stroke(); }
+    c.restore();
+  }
+  function spider(c, x, y, len){
+    c.save(); c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 1.6; c.beginPath(); c.moveTo(x, 0); c.lineTo(x, y); c.stroke();
+    c.translate(x, y); c.fillStyle = '#120818'; c.strokeStyle = '#120818'; c.lineWidth = 3; c.lineCap = 'round';
+    for (var k = 0; k < 4; k++){ [-1, 1].forEach(function(s){ var yy = -6 + k * 5; c.beginPath(); c.moveTo(s * 6, yy); c.lineTo(s * (16 + k * 2), yy - 8 + k * 4); c.lineTo(s * (22 + k * 2), yy + 6 + k * 3); c.stroke(); }); }
+    c.beginPath(); c.ellipse(0, 4, 10, 13, 0, 0, 6.283); c.fill(); c.beginPath(); c.arc(0, -8, 7, 0, 6.283); c.fill();
+    c.fillStyle = '#FF3B3B'; c.beginPath(); c.arc(-3, -9, 1.6, 0, 6.283); c.arc(3, -9, 1.6, 0, 6.283); c.fill(); c.restore();
+  }
+  function drawFrame(c){
+    if (frameName === 'none') return;
+    var i, x;
+    c.save();
+    if (frameName === 'grave'){
+      band(c, 30, grad(c, 0, 0, 0, H, [[0, '#1B0B33'], [1, '#07030F']]));
+      c.strokeStyle = '#FF8A1F'; c.lineWidth = 4; c.strokeRect(30, 30, W - 60, H - 60);
+      var mg = c.createRadialGradient(W - 130, 130, 10, W - 130, 130, 120); mg.addColorStop(0, 'rgba(255,240,190,.95)'); mg.addColorStop(0.3, 'rgba(255,225,150,.55)'); mg.addColorStop(1, 'rgba(255,200,100,0)');
+      c.fillStyle = mg; c.fillRect(W - 260, 0, 260, 260); c.fillStyle = '#FFF3C4'; c.beginPath(); c.arc(W - 130, 130, 44, 0, 6.283); c.fill();
+      c.save(); c.translate(100, 110); drawSticker(c, 'bat', 110); c.restore(); c.save(); c.translate(190, 60); c.rotate(-0.2); drawSticker(c, 'bat', 60); c.restore();
+      var fog = grad(c, 0, H - 190, 0, H, [[0, 'rgba(180,160,220,0)'], [1, 'rgba(180,160,220,.38)']]); c.fillStyle = fog; c.fillRect(0, H - 190, W, 190);
+      c.fillStyle = '#05020B';
+      for (i = 0; i < 7; i++){ x = 50 + i * 100 + rnd(i) * 30; var h = 70 + rnd(i + 9) * 60, w = 40 + rnd(i + 3) * 16;
+        c.beginPath(); c.moveTo(x - w / 2, H - 30); c.lineTo(x - w / 2, H - 30 - h + w / 2); c.arc(x, H - 30 - h + w / 2, w / 2, Math.PI, 0); c.lineTo(x + w / 2, H - 30); c.closePath(); c.fill();
+        if (i % 2 === 0){ c.strokeStyle = 'rgba(80,60,110,.9)'; c.lineWidth = 2; c.beginPath(); c.moveTo(x, H - 30 - h + 14); c.lineTo(x, H - 30 - h + 34); c.moveTo(x - 7, H - 30 - h + 22); c.lineTo(x + 7, H - 30 - h + 22); c.stroke(); } }
+      c.strokeStyle = '#05020B'; c.lineWidth = 7; c.lineCap = 'round'; c.beginPath(); c.moveTo(34, H - 30); c.lineTo(40, H - 190); c.moveTo(40, H - 120); c.lineTo(8, H - 170); c.moveTo(40, H - 150); c.lineTo(72, H - 205); c.stroke();
+    } else if (frameName === 'blood'){
+      band(c, 18, grad(c, 0, 0, 0, H, [[0, '#4A0610'], [1, '#1A0208']]));
+      c.fillStyle = grad(c, 0, 0, 0, 200, [[0, '#B3101F'], [1, '#6E0813']]);
+      c.beginPath(); c.moveTo(0, 0); c.lineTo(W, 0); c.lineTo(W, 30); var xs = [];
+      for (i = 0; i <= 18; i++) xs.push(W - i * (W / 18));
+      xs.forEach(function(px, k){ var len = 30 + rnd(k + 2) * (k % 3 === 0 ? 150 : 70), wd = 12 + rnd(k) * 10; c.lineTo(px, 30); c.lineTo(px - wd / 2 + 2, 30 + len - wd / 2); c.arc(px - wd / 2 - 3, 30 + len - wd / 2, wd / 2, 0, Math.PI); c.lineTo(px - wd - 4, 30); });
+      c.lineTo(0, 30); c.closePath(); c.fill();
+      c.fillStyle = 'rgba(255,255,255,.28)'; xs.forEach(function(px, k){ if (k % 3 === 0){ c.beginPath(); c.ellipse(px - 8, 30 + 40 + rnd(k) * 20, 2, 18, 0, 0, 6.283); c.fill(); } });
+      c.strokeStyle = '#B3101F'; c.lineWidth = 3; c.strokeRect(18, 18, W - 36, H - 36);
+    } else if (frameName === 'pumpkin'){
+      band(c, 34, '#E5600A');
+      c.save(); c.beginPath(); c.rect(0, 0, W, H); c.rect(34, 34, W - 68, H - 68); c.clip('evenodd');
+      c.strokeStyle = 'rgba(120,40,0,.55)'; c.lineWidth = 6;
+      for (i = -H; i < W + H; i += 26){ c.beginPath(); c.moveTo(i, 0); c.lineTo(i + H, H); c.stroke(); }
+      c.restore();
+      c.strokeStyle = '#3A1200'; c.lineWidth = 5; c.strokeRect(34, 34, W - 68, H - 68); c.strokeRect(2, 2, W - 4, H - 4);
+      c.strokeStyle = '#4F8F2F'; c.lineWidth = 5; c.lineCap = 'round';
+      [[60, 60, 1, 1], [W - 60, 60, -1, 1], [60, H - 60, 1, -1], [W - 60, H - 60, -1, -1]].forEach(function(k){
+        c.beginPath(); c.moveTo(k[0], k[1]); c.bezierCurveTo(k[0] + k[2] * 90, k[1] + k[3] * 10, k[0] + k[2] * 70, k[1] + k[3] * 70, k[0] + k[2] * 120, k[1] + k[3] * 80); c.stroke();
+        c.save(); c.translate(k[0], k[1]); drawSticker(c, 'pumpkin', 130); c.restore();
+      });
+    } else if (frameName === 'web'){
+      band(c, 14, '#0A0412');
+      c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 2; c.strokeRect(14, 14, W - 28, H - 28);
+      webCorner(c, 0, 0, 1, 1, 300); webCorner(c, W, 0, -1, 1, 300); webCorner(c, 0, H, 1, -1, 260); webCorner(c, W, H, -1, -1, 260);
+      spider(c, 230, 170, 0); spider(c, W - 190, 120, 0);
+    } else if (frameName === 'haunt'){
+      var wood = grad(c, 0, 0, W, H, [[0, '#4A2A14'], [0.5, '#2C170A'], [1, '#4A2A14']]);
+      band(c, 46, wood);
+      c.strokeStyle = '#E8B04A'; c.lineWidth = 4; c.strokeRect(46, 46, W - 92, H - 92); c.strokeStyle = 'rgba(232,176,74,.6)'; c.lineWidth = 2; c.strokeRect(10, 10, W - 20, H - 20); c.strokeRect(30, 30, W - 60, H - 60);
+      c.fillStyle = '#E8B04A'; for (i = 1; i < 12; i++){ var px2 = i * W / 12; c.beginPath(); c.arc(px2, 23, 4, 0, 6.283); c.arc(px2, H - 23, 4, 0, 6.283); c.fill(); }
+      for (i = 1; i < 16; i++){ var py = i * H / 16; c.beginPath(); c.arc(23, py, 4, 0, 6.283); c.arc(W - 23, py, 4, 0, 6.283); c.fill(); }
+      c.font = '56px ' + EMOJI_FONT; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText('💀', 40, 40); c.fillText('💀', W - 40, 40); c.fillText('🕯️', 40, H - 40); c.fillText('🕯️', W - 40, H - 40);
+      var gl = c.createLinearGradient(0, 0, 0, H); gl.addColorStop(0, 'rgba(255,138,31,.22)'); gl.addColorStop(0.2, 'rgba(255,138,31,0)'); gl.addColorStop(0.8, 'rgba(255,138,31,0)'); gl.addColorStop(1, 'rgba(255,138,31,.22)');
+      c.fillStyle = gl; c.fillRect(46, 46, W - 92, H - 92);
+    }
+    c.restore();
+  }
+
   // ================= 繪製 =================
   function drawSource(c){
     c.fillStyle = '#0B0612'; c.fillRect(0, 0, W, H);
@@ -638,11 +725,12 @@
   function drawCaption(c){
     var txt = $('caption').value.trim();
     if (!txt) return;
+    var cy = frameName === 'none' ? 70 : 108;
     c.save(); c.textAlign = 'center'; c.textBaseline = 'middle';
     var fs = Math.min(86, Math.floor(W * 0.9 / Math.max(6, txt.length * 0.72)));
     c.font = "400 " + fs + "px 'Creepster','Noto Sans TC',sans-serif";
-    c.lineJoin = 'round'; c.lineWidth = fs * 0.2; c.strokeStyle = '#3A1400'; c.strokeText(txt, W / 2, H - 70);
-    c.shadowColor = 'rgba(255,138,31,.9)'; c.shadowBlur = 24; c.fillStyle = '#FF9A33'; c.fillText(txt, W / 2, H - 70); c.restore();
+    c.lineJoin = 'round'; c.lineWidth = fs * 0.2; c.strokeStyle = '#3A1400'; c.strokeText(txt, W / 2, H - cy);
+    c.shadowColor = 'rgba(255,138,31,.9)'; c.shadowBlur = 24; c.fillStyle = '#FF9A33'; c.fillText(txt, W / 2, H - cy); c.restore();
   }
   function render(c, ui){
     drawSource(c); drawMakeup(c, ui); drawFilter(c);
@@ -651,6 +739,7 @@
       c.save(); c.translate(w.x, w.y); c.rotate(w.rot); if (s.flip) c.scale(-1, 1);
       drawSticker(c, s.type, w.size); c.restore();
     });
+    drawFrame(c);
     drawCaption(c);
     if (ui && selected){
       var w2 = worldOf(selected);
@@ -844,6 +933,7 @@
   $('flipS').addEventListener('click', function(){ if (selected) selected.flip = !selected.flip; });
   $('delS').addEventListener('click', removeSel);
   $('clearAll').addEventListener('click', function(){ stickers = []; selected = null; toast('已清除全部貼紙'); });
+  $('frame').addEventListener('change', function(){ frameName = this.value; });
   $('filter').addEventListener('change', function(){ filterName = this.value; });
   $('followBtn').addEventListener('click', function(){
     followOn = !followOn; this.classList.toggle('on', followOn);
