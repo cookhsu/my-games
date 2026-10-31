@@ -400,17 +400,18 @@
     c.save(); c.translate(x, y); c.scale(rx, ry); c.translate(-x, -y); c.globalAlpha *= a; c.fillStyle = g; c.beginPath(); c.arc(x, y, 1, 0, 6.283); c.fill(); c.restore();
   }
   var MK = {
-    base: [['none', '素顏', null], ['white', '🤍 慘白', '#F2EEE6'], ['green', '🧟 屍綠', '#6FB055'], ['orange', '🎃 南瓜橘', '#FF7A12'],
+    base: [['none', '素顏', null], ['white', '🤍 慘白', '#F2EEE6'], ['porcelain', '🏺 瓷白', '#EFE6D4'], ['green', '🧟 屍綠', '#6FB055'], ['orange', '🎃 南瓜橘', '#FF7A12'],
       ['blue', '👻 幽藍', '#6E9CD6'], ['red', '😈 惡魔紅', '#C4202E'], ['purple', '🔮 巫婆紫', '#8E5BC4']],
-    eyes: [['none', '不畫', null], ['mask', '南瓜怒眼'], ['socket', '骷髏眼窩'], ['smoky', '煙燻眼'], ['wing', '貓眼線'], ['ring', '殭屍黑眼圈'], ['clown', '小丑眼'], ['glow', '發光眼']],
+    eyes: [['none', '不畫', null], ['mask', '南瓜怒眼'], ['socket', '骷髏眼窩'], ['smoky', '煙燻眼'], ['doll', '洋娃娃睫毛'], ['wing', '貓眼線'], ['ring', '殭屍黑眼圈'], ['clown', '小丑眼'], ['glow', '發光眼']],
     nose: [['none', '不畫', null], ['black', '南瓜黑鼻'], ['clown', '小丑紅鼻'], ['cat', '貓鼻'], ['skull', '骷髏鼻孔']],
-    lips: [['none', '不畫', null], ['jack', '南瓜鋸齒嘴'], ['black', '黑唇'], ['wine', '暗紅唇'], ['blue', '藍紫唇'], ['clown', '小丑大嘴'], ['stitch', '縫嘴'], ['teeth', '骷髏牙']],
-    extras: [['ridges', '南瓜紋路'], ['tears', '血淚'], ['bloodmouth', '嘴角流血'], ['scar', '縫線傷疤'], ['web', '臉頰蜘蛛網'], ['cracks', '裂紋'],
+    lips: [['none', '不畫', null], ['jack', '南瓜鋸齒嘴'], ['black', '黑唇'], ['rose', '玫瑰唇'], ['wine', '暗紅唇'], ['blue', '藍紫唇'], ['clown', '小丑大嘴'], ['stitch', '縫嘴'], ['teeth', '骷髏牙']],
+    extras: [['ridges', '南瓜紋路'], ['porcrack', '瓷面裂紋'], ['blush', '娃娃腮紅'], ['tears', '血淚'], ['bloodmouth', '嘴角流血'], ['scar', '縫線傷疤'], ['web', '臉頰蜘蛛網'], ['cracks', '裂紋'],
       ['third', '第三隻眼'], ['glitter', '星星亮粉'], ['whisk', '貓鬍鬚'], ['veins', '青筋']]
   };
-  var BASEMODE = { white: [0.8, 0], green: [0.35, 0.6], orange: [0.42, 0.72], blue: [0.5, 0.4], red: [0.3, 0.72], purple: [0.4, 0.55] };
+  var BASEMODE = { porcelain: [0.86, 0], white: [0.8, 0], green: [0.35, 0.6], orange: [0.42, 0.72], blue: [0.5, 0.4], red: [0.3, 0.72], purple: [0.4, 0.55] };
   var PRESETS = [
     ['🎃 南瓜', { base: 'orange', eyes: 'mask', nose: 'black', lips: 'jack', extras: ['ridges'] }],
+    ['🎎 破裂瓷偶', { base: 'porcelain', eyes: 'doll', nose: 'none', lips: 'rose', extras: ['blush', 'porcrack'] }],
     ['💀 骷髏', { base: 'white', eyes: 'socket', nose: 'skull', lips: 'teeth', extras: ['cracks'] }],
     ['🤡 小丑', { base: 'white', eyes: 'clown', nose: 'clown', lips: 'clown', extras: ['glitter'] }],
     ['🧟 殭屍', { base: 'green', eyes: 'ring', nose: 'none', lips: 'wine', extras: ['scar', 'veins', 'bloodmouth'] }],
@@ -452,6 +453,12 @@
       } else if (kind === 'socket'){ soft(c, 0, 0, 0.17, 0.15, 'rgb(8,4,14)', 1); }
       else if (kind === 'smoky'){ soft(c, 0, -0.01, 0.22, 0.14, 'rgb(60,20,90)', 0.85); soft(c, 0, 0, 0.13, 0.08, 'rgb(15,5,25)', 0.9); }
       else if (kind === 'ring'){ soft(c, 0, 0.02, 0.18, 0.13, 'rgb(40,25,50)', 0.9); }
+      else if (kind === 'doll'){
+        c.strokeStyle = '#1A0E12'; c.lineCap = 'round'; c.lineWidth = 0.02; c.beginPath(); c.moveTo(-0.11, 0.0); c.quadraticCurveTo(0, -0.085, 0.11, 0.0); c.stroke();
+        c.lineWidth = 0.009; for (var q = 0; q < 7; q++){ var t = q / 6, lx = -0.1 + 0.2 * t, ly = -0.072 * Math.sin(Math.PI * t) + 0.0; c.beginPath(); c.moveTo(lx, ly); c.lineTo(lx + (t - 0.5) * 0.07 + s * 0.015, ly - 0.05 - 0.02 * Math.sin(Math.PI * t)); c.stroke(); }
+        c.lineWidth = 0.007; for (var u = 0; u < 4; u++){ var tx = -0.07 + u * 0.047; c.beginPath(); c.moveTo(tx, 0.065); c.lineTo(tx - 0.006, 0.105); c.stroke(); }
+        soft(c, 0, -0.1, 0.16, 0.05, 'rgb(160,110,100)', 0.35);
+      }
       else if (kind === 'wing'){
         c.strokeStyle = '#0A0510'; c.lineCap = 'round'; c.lineJoin = 'round';
         c.lineWidth = 0.022; c.beginPath(); c.moveTo(-s * 0.1, 0.012); c.quadraticCurveTo(s * 0.02, -0.065, s * 0.12, -0.05); c.lineTo(s * 0.23, -0.12); c.stroke();
@@ -503,8 +510,8 @@
   function lipsDraw(c, kind, A){
     var M = A.mouth;
     if (kind === 'jack'){ jack(c, M); return; }
-    if (kind === 'black' || kind === 'wine' || kind === 'blue'){
-      var col = { black: 'rgba(12,6,18,.92)', wine: 'rgba(120,10,30,.9)', blue: 'rgba(70,50,170,.9)' }[kind];
+    if (kind === 'black' || kind === 'rose' || kind === 'wine' || kind === 'blue'){
+      var col = { rose: 'rgba(175,35,60,.9)', black: 'rgba(12,6,18,.92)', wine: 'rgba(120,10,30,.9)', blue: 'rgba(70,50,170,.9)' }[kind];
       lipsPath(c); c.fillStyle = col; c.fill(); c.strokeStyle = 'rgba(255,255,255,.12)'; c.lineWidth = 0.006; c.stroke(); return;
     }
     c.save(); c.translate(M.x, M.y - 0.56);
@@ -527,6 +534,17 @@
   function extraDraw(c, k, A){
     var E0 = A.eyes[0], E1 = A.eyes[1], M = A.mouth, N = A.nose;
     if (k === 'ridges'){ ridges(c); }
+    else if (k === 'blush'){ [-1, 1].forEach(function(s){ soft(c, s * 0.3, E0.cy + 0.28, 0.12, 0.09, 'rgb(225,110,120)', 0.55); }); }
+    else if (k === 'porcrack'){
+      var ox = 0.2, oy = -0.32, paths = [[0.2, -0.32, 0.12, -0.2, 0.15, -0.08, 0.06, 0.04, 0.09, 0.14], [0.2, -0.32, 0.3, -0.22, 0.28, -0.1, 0.38, 0.02], [0.2, -0.32, 0.26, -0.44, 0.22, -0.56],
+        [0.12, -0.2, 0.0, -0.18, -0.08, -0.26], [0.28, -0.1, 0.34, 0.06, 0.3, 0.2, 0.36, 0.34], [0.06, 0.04, -0.04, 0.12, -0.02, 0.24], [-0.38, 0.12, -0.3, 0.2, -0.33, 0.3, -0.26, 0.4]];
+      c.lineCap = 'round'; c.lineJoin = 'round';
+      [['rgba(60,40,28,.85)', 0.007], ['rgba(222,170,70,.9)', 0.003]].forEach(function(st){
+        c.strokeStyle = st[0]; c.lineWidth = st[1];
+        paths.forEach(function(pt){ c.beginPath(); c.moveTo(pt[0], pt[1]); for (var i = 2; i < pt.length; i += 2) c.lineTo(pt[i] + (st[1] > 0.005 ? 0 : 0.002), pt[i + 1]); c.stroke(); });
+      });
+      c.fillStyle = 'rgba(40,24,18,.55)'; c.beginPath(); c.moveTo(0.2, -0.32); c.lineTo(0.215, -0.31); c.lineTo(0.2, -0.3); c.closePath(); c.fill();
+    }
     else if (k === 'tears'){
       A.eyes.forEach(function(E, idx){ var s = idx ? 1 : -1; c.save(); c.translate(E.cx, E.cy); c.strokeStyle = 'rgba(170,10,25,.9)'; c.lineCap = 'round';
         c.lineWidth = 0.022; c.beginPath(); c.moveTo(0, 0.06); c.quadraticCurveTo(s * 0.03, 0.3, s * 0.02, 0.46); c.stroke();
@@ -605,7 +623,7 @@
       // 讓底下皮膚的明暗與五官起伏透出來
       tc.globalCompositeOperation = 'source-over'; tc.clearRect(0, 0, W, H); tc.drawImage(SNAP, 0, 0);
       tc.globalCompositeOperation = 'destination-in'; tc.drawImage(LB, 0, 0);
-      c.filter = 'none'; c.globalCompositeOperation = (mk.base === 'white' || mk.base === 'blue') ? 'hard-light' : 'overlay'; c.globalAlpha = (mk.base === 'white' ? 0.5 : 0.55) * mkAlpha; c.drawImage(TMP, 0, 0);
+      c.filter = 'none'; c.globalCompositeOperation = (mk.base === 'white' || mk.base === 'porcelain' || mk.base === 'blue') ? 'hard-light' : 'overlay'; c.globalAlpha = ((mk.base === 'white' || mk.base === 'porcelain') ? 0.5 : 0.55) * mkAlpha; c.drawImage(TMP, 0, 0);
       c.globalCompositeOperation = 'source-over';
     }
     if (blurOK) c.filter = 'blur(0.9px)';
