@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>萬聖變臉亭</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Creepster&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#120A1C; --panel:#1F1430; --panel2:#2B1B42; --edge:#4A3070; --txt:#FFF1E0; --dim:#BBA6D6;
+    --orange:#FF8A1F; --orange2:#D9680A; --purple:#9B5CF0; --green:#8BE86B; --blood:#E5384A;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html{ background:var(--bg); }
+  html,body{ margin:0; color:var(--txt); font-family:'Noto Sans TC',system-ui,sans-serif; min-height:100%; }
+  body{ display:flex; flex-direction:column; align-items:center; padding:18px 12px 50px; position:relative; overflow-x:hidden;
+    background:radial-gradient(ellipse at 50% -10%, rgba(255,138,31,.28), transparent 50%), radial-gradient(ellipse at 0% 60%, rgba(155,92,240,.20), transparent 50%), radial-gradient(ellipse at 100% 90%, rgba(139,232,107,.10), transparent 50%), var(--bg); }
+  body::before{ content:''; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.55;
+    background-image:radial-gradient(rgba(255,241,224,.5) 1px, transparent 1.4px); background-size:52px 52px; background-position:12px 20px;
+    -webkit-mask-image:linear-gradient(180deg,#000,transparent 50%); mask-image:linear-gradient(180deg,#000,transparent 50%); }
+  body > *{ position:relative; z-index:1; }
+  h1{ margin:0; font-family:'Creepster','Noto Sans TC',cursive; font-weight:400; font-size:clamp(34px,10vw,48px); letter-spacing:3px; color:var(--orange); text-shadow:0 3px 0 #7A3300, 0 0 24px rgba(255,138,31,.55); }
+  .zh{ font-family:'Noto Sans TC',sans-serif; font-weight:900; font-size:clamp(18px,5vw,24px); letter-spacing:6px; margin:-2px 0 4px; }
+  .sub{ margin:0 0 12px; color:var(--dim); font-size:12.5px; text-align:center; }
+  .cab{ width:100%; max-width:440px; padding:12px; border-radius:22px; border:1px solid rgba(255,255,255,.10); background:linear-gradient(160deg, rgba(48,30,76,.85), rgba(24,14,38,.92)); box-shadow:0 24px 60px rgba(0,0,0,.6), 0 0 50px rgba(155,92,240,.12), inset 0 1px 0 rgba(255,255,255,.10); }
+  .stage{ position:relative; border-radius:16px; overflow:hidden; border:3px solid var(--orange); background:#08040E; box-shadow:0 0 28px rgba(255,138,31,.35), inset 0 0 30px rgba(0,0,0,.6); aspect-ratio:3/4; }
+  canvas#cv{ display:block; width:100%; height:100%; touch-action:none; cursor:grab; }
+  .chip{ position:absolute; left:10px; top:10px; font-size:11.5px; font-weight:700; padding:4px 10px; border-radius:999px; background:rgba(10,5,18,.7); border:1px solid rgba(255,255,255,.18); color:var(--dim); backdrop-filter:blur(4px); }
+  .chip.ok{ color:var(--green); border-color:rgba(139,232,107,.55); }
+  .overlay{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; padding:20px; background:radial-gradient(ellipse at 50% 35%, rgba(60,36,96,.94), rgba(14,8,24,.97)); }
+  .overlay.hidden{ display:none; }
+  .overlay h2{ margin:0; font-size:22px; font-weight:900; letter-spacing:2px; color:var(--orange); }
+  .overlay p{ margin:0; color:var(--dim); font-size:13px; line-height:1.8; max-width:300px; }
+  .pumpkin{ font-size:64px; filter:drop-shadow(0 0 18px rgba(255,138,31,.6)); animation:bob 2.4s ease-in-out infinite; }
+  @keyframes bob{ 0%,100%{ transform:translateY(0) rotate(-4deg); } 50%{ transform:translateY(-8px) rotate(4deg); } }
+  .btn{ font:900 15px 'Noto Sans TC',sans-serif; letter-spacing:1px; color:#2A1200; background:linear-gradient(180deg,#FFB257,#FF8A1F); border:none; padding:13px 26px; border-radius:999px; cursor:pointer; box-shadow:0 4px 0 #A8480A, 0 0 22px rgba(255,138,31,.4); }
+  .btn:active{ transform:translateY(3px); box-shadow:0 1px 0 #A8480A; }
+  .btn.ghost{ color:var(--txt); background:linear-gradient(180deg,#46306A,#35224F); box-shadow:0 4px 0 #1E1030; border:1px solid var(--edge); }
+  .btns{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  .row{ display:flex; gap:8px; margin-top:10px; align-items:center; justify-content:center; flex-wrap:wrap; }
+  .tool{ flex:1; min-width:46px; height:42px; font:700 13px 'Noto Sans TC',sans-serif; color:var(--txt); background:linear-gradient(180deg,#46306A,#35224F); border:1px solid var(--edge); border-radius:13px; cursor:pointer; padding:0 8px; white-space:nowrap; }
+  .tool:hover:not(:disabled){ border-color:var(--orange); }
+  .tool:active:not(:disabled){ transform:translateY(2px); }
+  .tool:disabled{ opacity:.4; cursor:default; }
+  .tool.on{ background:linear-gradient(180deg,#FFB257,#FF8A1F); color:#2A1200; border-color:#FFB257; }
+  .shutter{ flex:none; width:68px; height:68px; border-radius:50%; border:4px solid #fff; background:radial-gradient(circle at 35% 30%, #FFB257, #E5600A); cursor:pointer; box-shadow:0 0 0 3px rgba(255,138,31,.5), 0 6px 18px rgba(0,0,0,.5); }
+  .shutter:active{ transform:scale(.92); }
+  .shutter:disabled{ opacity:.4; }
+  .tray{ display:grid; grid-template-columns:repeat(5,1fr); gap:7px; margin-top:12px; max-height:210px; overflow-y:auto; padding:2px; }
+  .st{ aspect-ratio:1; border-radius:14px; background:linear-gradient(180deg,#3A2757,#2A1B42); border:1px solid var(--edge); cursor:pointer; padding:3px; display:flex; align-items:center; justify-content:center; }
+  .st:hover{ border-color:var(--orange); }
+  .st:active{ transform:scale(.93); }
+  .st canvas{ width:100%; height:100%; display:block; pointer-events:none; }
+  .label{ margin:12px 2px 0; font-size:12px; color:var(--dim); display:flex; justify-content:space-between; }
+  .cap{ width:100%; margin-top:6px; height:42px; border-radius:13px; border:1px solid var(--edge); background:rgba(0,0,0,.3); color:var(--txt); padding:0 12px; font:500 14px 'Noto Sans TC',sans-serif; }
+  .cap:focus{ outline:2px solid var(--orange); }
+  .btn:focus-visible, .tool:focus-visible, .st:focus-visible, .shutter:focus-visible{ outline:3px solid var(--green); outline-offset:2px; }
+  .hint{ margin-top:14px; font-size:12px; color:var(--dim); text-align:center; line-height:1.9; max-width:440px; }
+  .result{ position:fixed; inset:0; z-index:20; background:rgba(8,4,14,.94); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:16px; overflow:auto; }
+  .result.hidden{ display:none; }
+  .result img{ width:min(86vw, 62vh*0.75); max-width:420px; border-radius:14px; border:3px solid var(--orange); box-shadow:0 0 40px rgba(255,138,31,.45); }
+  .result .t{ font-weight:900; font-size:18px; color:var(--orange); letter-spacing:2px; }
+  .toast{ position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:rgba(20,12,30,.95); border:1px solid var(--orange); color:var(--txt); padding:9px 18px; border-radius:999px; font-size:13px; z-index:30; opacity:0; pointer-events:none; transition:opacity .25s; }
+  .toast.show{ opacity:1; }
+  @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+  <h1>Halloween</h1>
+  <div class="zh">萬聖變臉亭</div>
+  <p class="sub">鏡頭一開就能在臉上貼貼紙，拍成圖片傳給朋友嚇一跳</p>
+  <div class="cab">
+    <div class="stage">
+      <canvas id="cv" width="720" height="960" aria-label="相機預覽與貼紙畫布"></canvas>
+      <div class="chip" id="chip">尚未開啟相機</div>
+      <div class="overlay" id="startOv">
+        <div class="pumpkin" aria-hidden="true">🎃</div>
+        <h2>準備變身！</h2>
+        <p>允許使用相機後，從下方挑貼紙點一下就會貼在臉上。<br>照片只在你的手機或電腦上處理，不會上傳。</p>
+        <div class="btns">
+          <button class="btn" id="camBtn">開啟相機</button>
+          <button class="btn ghost" id="upBtn">改用照片</button>
+        </div>
+        <p id="errMsg" style="color:#FF8A8A"></p>
+      </div>
+    </div>
+    <div class="row">
+      <button class="tool" id="flipCam">🔄 前後鏡頭</button>
+      <button class="tool on" id="followBtn">🎯 貼著臉動</button>
+      <button class="tool" id="timerBtn">⏱ 3 秒倒數</button>
+    </div>
+    <div class="label"><span>點貼紙加到臉上　（在畫面上拖曳、雙指縮放旋轉）</span></div>
+    <div class="tray" id="tray" role="group" aria-label="貼紙"></div>
+    <div class="row">
+      <button class="tool" id="smaller" aria-label="縮小">➖ 縮小</button>
+      <button class="tool" id="bigger" aria-label="放大">➕ 放大</button>
+      <button class="tool" id="rotL" aria-label="左轉">⟲</button>
+      <button class="tool" id="rotR" aria-label="右轉">⟳</button>
+      <button class="tool" id="flipS" aria-label="左右翻轉">⇋</button>
+      <button class="tool" id="delS" aria-label="刪除貼紙">🗑</button>
+    </div>
+    <div class="row">
+      <select class="tool" id="filter" aria-label="濾鏡" style="flex:1.2">
+        <option value="none">濾鏡：原色</option>
+        <option value="night">濾鏡：午夜藍</option>
+        <option value="blood">濾鏡：血月紅</option>
+        <option value="toxic">濾鏡：幽綠</option>
+        <option value="bw">濾鏡：老恐怖片</option>
+      </select>
+      <button class="tool" id="clearAll">清除全部</button>
+      <button class="shutter" id="shot" aria-label="拍照" disabled></button>
+    </div>
+    <input class="cap" id="caption" type="text" maxlength="24" value="HAPPY HALLOWEEN" placeholder="照片下方的文字（可留空）" aria-label="照片文字">
+  </div>
+  <p class="hint">手機：貼紙可雙指縮放旋轉。電腦：滑鼠拖曳、滾輪縮放、Delete 刪除。<br>想貼更多？同一種貼紙可以重複點。</p>
+  <input type="file" id="file" accept="image/*" hidden>
+
+  <div class="result hidden" id="result">
+    <div class="t">🎃 完成！長按圖片也能存</div>
+    <img id="resImg" alt="你的萬聖節照片">
+    <div class="btns">
+      <a class="btn" id="dl" download="halloween-face.png" style="text-decoration:none">下載圖片</a>
+      <button class="btn ghost" id="shareBtn">分享給朋友</button>
+      <button class="btn ghost" id="again">繼續玩</button>
+    </div>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+  "use strict";
+  var W = 720, H = 960;
+  var $ = function(id){ return document.getElementById(id); };
+  var cv = $('cv'), ctx = cv.getContext('2d');
+  var video = document.createElement('video'); video.setAttribute('playsinline', ''); video.muted = true;
+
+  // ================= 貼紙繪製（單位方塊 -0.5~0.5） =================
+  function grad(c, x0, y0, x1, y1, stops){ var g = c.createLinearGradient(x0, y0, x1, y1); stops.forEach(function(s){ g.addColorStop(s[0], s[1]); }); return g; }
+  function poly(c, pts){ c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (var i = 1; i < pts.length; i++) c.lineTo(pts[i][0], pts[i][1]); c.closePath(); }
+  var DEFS = {
+    witch: { name: '巫婆帽', pre: { dx: 0, dy: -0.78, ds: 1.5 }, draw: function(c){
+      c.fillStyle = 'rgba(0,0,0,.25)'; c.beginPath(); c.ellipse(0, 0.36, 0.5, 0.1, 0, 0, 6.283); c.fill();
+      c.fillStyle = '#2B1450'; c.beginPath(); c.ellipse(0, 0.32, 0.5, 0.11, 0, 0, 6.283); c.fill();
+      c.fillStyle = grad(c, -0.3, 0, 0.3, 0, [[0, '#6B34A8'], [1, '#2E1456']]);
+      c.beginPath(); c.moveTo(-0.3, 0.3); c.quadraticCurveTo(-0.2, -0.15, 0.12, -0.5); c.quadraticCurveTo(0.3, -0.35, 0.3, 0.3); c.closePath(); c.fill();
+      c.fillStyle = '#FF8A1F'; c.beginPath(); c.moveTo(-0.3, 0.3); c.lineTo(-0.27, 0.15); c.lineTo(0.28, 0.12); c.lineTo(0.3, 0.3); c.closePath(); c.fill();
+      c.fillStyle = '#FFD45E'; c.fillRect(-0.06, 0.13, 0.12, 0.14); c.fillStyle = '#2B1450'; c.fillRect(-0.03, 0.16, 0.06, 0.08);
+      c.fillStyle = 'rgba(255,255,255,.18)'; c.beginPath(); c.ellipse(-0.1, -0.1, 0.03, 0.18, 0.3, 0, 6.283); c.fill();
+    } },
+    pumpkin: { name: '南瓜', pre: { dx: 0.95, dy: -0.55, ds: 0.62 }, draw: function(c){
+      c.fillStyle = grad(c, 0, -0.4, 0, 0.4, [[0, '#FFA54A'], [1, '#E5600A']]);
+      [[-0.22, 0.38], [0.22, 0.38], [0, 0.46]].forEach(function(e){ c.beginPath(); c.ellipse(e[0], 0.04, e[1] * 0.78, 0.36, 0, 0, 6.283); c.fill(); });
+      c.strokeStyle = 'rgba(120,40,0,.45)'; c.lineWidth = 0.014; [-0.2, 0, 0.2].forEach(function(x){ c.beginPath(); c.ellipse(x, 0.04, 0.12, 0.34, 0, 0, 6.283); c.stroke(); });
+      c.fillStyle = '#3F7A2A'; c.beginPath(); c.moveTo(-0.04, -0.3); c.quadraticCurveTo(-0.02, -0.5, 0.08, -0.46); c.lineTo(0.06, -0.3); c.closePath(); c.fill();
+      c.fillStyle = '#FFE08A'; poly(c, [[-0.26, -0.06], [-0.12, -0.06], [-0.19, -0.18]]); c.fill(); poly(c, [[0.12, -0.06], [0.26, -0.06], [0.19, -0.18]]); c.fill();
+      c.beginPath(); c.moveTo(-0.28, 0.08); c.lineTo(-0.18, 0.2); c.lineTo(-0.1, 0.12); c.lineTo(0, 0.22); c.lineTo(0.1, 0.12); c.lineTo(0.18, 0.2); c.lineTo(0.28, 0.08); c.lineTo(0.2, 0.28); c.lineTo(-0.2, 0.28); c.closePath(); c.fill();
+    } },
+    bat: { name: '蝙蝠', pre: { dx: -0.95, dy: -0.5, ds: 0.7 }, draw: function(c){
+      c.fillStyle = '#1B1030';
+      [-1, 1].forEach(function(s){
+        c.beginPath(); c.moveTo(s * 0.05, -0.05); c.quadraticCurveTo(s * 0.25, -0.35, s * 0.5, -0.12); c.quadraticCurveTo(s * 0.42, 0, s * 0.38, 0.06);
+        c.quadraticCurveTo(s * 0.3, -0.02, s * 0.25, 0.1); c.quadraticCurveTo(s * 0.17, 0.02, s * 0.1, 0.14); c.lineTo(s * 0.05, 0.1); c.closePath(); c.fill();
+      });
+      c.beginPath(); c.ellipse(0, 0.05, 0.075, 0.13, 0, 0, 6.283); c.fill();
+      poly(c, [[-0.06, -0.06], [-0.045, -0.2], [-0.0, -0.08]]); c.fill(); poly(c, [[0.06, -0.06], [0.045, -0.2], [0, -0.08]]); c.fill();
+      c.fillStyle = '#FF4B5E'; c.beginPath(); c.arc(-0.03, 0.0, 0.013, 0, 6.283); c.arc(0.03, 0.0, 0.013, 0, 6.283); c.fill();
+    } },
+    fangs: { name: '吸血鬼牙', pre: { dx: 0, dy: 0.78, ds: 0.5 }, draw: function(c){
+      c.fillStyle = '#FFFDF5'; c.strokeStyle = 'rgba(0,0,0,.35)'; c.lineWidth = 0.012;
+      [[-0.14, -0.04], [0.14, 0.04]].forEach(function(f){
+        c.beginPath(); c.moveTo(f[0] - 0.07, -0.12); c.lineTo(f[0] + 0.07, -0.12); c.quadraticCurveTo(f[0] + 0.05, 0.1, f[0] + (f[1] > 0 ? -0.01 : 0.01), 0.3); c.quadraticCurveTo(f[0] - 0.05, 0.1, f[0] - 0.07, -0.12); c.closePath(); c.fill(); c.stroke();
+      });
+      c.fillStyle = '#E5384A'; c.beginPath(); c.ellipse(-0.15, 0.3, 0.012, 0.03, 0, 0, 6.283); c.fill();
+    } },
+    cat: { name: '貓耳', pre: { dx: 0, dy: -0.62, ds: 1.2 }, draw: function(c){
+      c.strokeStyle = '#1B1030'; c.lineWidth = 0.045; c.lineCap = 'round'; c.beginPath(); c.moveTo(-0.46, 0.2); c.quadraticCurveTo(0, -0.12, 0.46, 0.2); c.stroke();
+      [-1, 1].forEach(function(s){
+        c.fillStyle = '#1B1030'; poly(c, [[s * 0.4, 0.14], [s * 0.34, -0.34], [s * 0.08, -0.02]]); c.fill();
+        c.fillStyle = '#FF86B4'; poly(c, [[s * 0.33, 0.04], [s * 0.31, -0.22], [s * 0.15, -0.0]]); c.fill();
+      });
+    } },
+    horns: { name: '惡魔角', pre: { dx: 0, dy: -0.66, ds: 1.05 }, draw: function(c){
+      [-1, 1].forEach(function(s){
+        c.fillStyle = grad(c, 0, 0.3, 0, -0.4, [[0, '#8E0E1E'], [1, '#FF4B5E']]);
+        c.beginPath(); c.moveTo(s * 0.22, 0.25); c.quadraticCurveTo(s * 0.44, 0.1, s * 0.34, -0.4); c.quadraticCurveTo(s * 0.18, -0.05, s * 0.08, 0.2); c.closePath(); c.fill();
+        c.fillStyle = 'rgba(255,255,255,.3)'; c.beginPath(); c.ellipse(s * 0.28, -0.05, 0.015, 0.14, s * 0.2, 0, 6.283); c.fill();
+      });
+    } },
+    skull: { name: '骷髏眼', pre: { dx: 0, dy: 0, ds: 1.0 }, draw: function(c){
+      [-1, 1].forEach(function(s){
+        var x = s * 0.225;
+        c.fillStyle = 'rgba(10,6,20,.82)'; c.beginPath(); c.ellipse(x, 0, 0.145, 0.125, 0, 0, 6.283); c.fill();
+        c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 0.012; c.beginPath(); c.ellipse(x, 0, 0.155, 0.135, 0, 0, 6.283); c.stroke();
+        c.fillStyle = '#FF8A1F'; c.beginPath(); c.arc(x, 0, 0.022, 0, 6.283); c.fill();
+      });
+      c.strokeStyle = 'rgba(255,255,255,.5)'; c.lineWidth = 0.01; c.beginPath(); c.moveTo(-0.06, -0.12); c.lineTo(-0.03, -0.18); c.moveTo(0.1, 0.14); c.lineTo(0.13, 0.2); c.stroke();
+    } },
+    stitch: { name: '縫線疤', pre: { dx: 0.3, dy: 0.28, ds: 0.55 }, draw: function(c){
+      c.strokeStyle = '#7A1626'; c.lineWidth = 0.05; c.lineCap = 'round'; c.beginPath(); c.moveTo(-0.38, -0.22); c.lineTo(0.38, 0.22); c.stroke();
+      c.strokeStyle = '#2B1018'; c.lineWidth = 0.032; for (var i = -3; i <= 3; i++){ var x = i * 0.1, y = i * 0.058; c.beginPath(); c.moveTo(x - 0.05, y + 0.07); c.lineTo(x + 0.05, y - 0.07); c.stroke(); }
+    } },
+    patch: { name: '海盜眼罩', pre: { dx: -0.23, dy: 0.0, ds: 0.55 }, draw: function(c){
+      c.strokeStyle = '#1A1A22'; c.lineWidth = 0.03; c.beginPath(); c.moveTo(-0.5, -0.22); c.lineTo(0.5, 0.12); c.stroke();
+      c.fillStyle = '#14141C'; c.beginPath(); c.ellipse(0, 0.0, 0.26, 0.21, 0.2, 0, 6.283); c.fill();
+      c.fillStyle = 'rgba(255,255,255,.18)'; c.beginPath(); c.ellipse(-0.08, -0.07, 0.07, 0.035, 0.4, 0, 6.283); c.fill();
+    } },
+    drip: { name: '血滴', pre: { dx: 0, dy: 0.95, ds: 0.7 }, draw: function(c){
+      c.fillStyle = grad(c, 0, -0.2, 0, 0.45, [[0, '#E5384A'], [1, '#8E0E1E']]);
+      c.beginPath(); c.moveTo(-0.4, -0.2); c.lineTo(0.4, -0.2); c.lineTo(0.4, -0.05);
+      c.quadraticCurveTo(0.36, 0.05, 0.3, -0.02); c.lineTo(0.28, 0.2); c.quadraticCurveTo(0.24, 0.3, 0.2, 0.2); c.lineTo(0.18, -0.02);
+      c.lineTo(0.02, -0.0); c.lineTo(0, 0.4); c.quadraticCurveTo(-0.05, 0.5, -0.1, 0.4); c.lineTo(-0.1, 0);
+      c.lineTo(-0.22, 0.02); c.lineTo(-0.24, 0.16); c.quadraticCurveTo(-0.28, 0.24, -0.32, 0.16); c.lineTo(-0.34, -0.02); c.lineTo(-0.4, -0.05); c.closePath(); c.fill();
+      c.fillStyle = 'rgba(255,255,255,.35)'; c.beginPath(); c.ellipse(-0.04, 0.2, 0.012, 0.09, 0, 0, 6.283); c.fill();
+    } },
+    stache: { name: '鬍子', pre: { dx: 0, dy: 0.5, ds: 0.85 }, draw: function(c){
+      c.fillStyle = '#1B1218';
+      [-1, 1].forEach(function(s){
+        c.beginPath(); c.moveTo(0, -0.04); c.quadraticCurveTo(s * 0.18, -0.16, s * 0.34, -0.02); c.quadraticCurveTo(s * 0.46, 0.06, s * 0.44, -0.1);
+        c.quadraticCurveTo(s * 0.5, 0.2, s * 0.26, 0.12); c.quadraticCurveTo(s * 0.12, 0.08, 0, 0.06); c.closePath(); c.fill();
+      });
+    } },
+    ghost: { name: '幽靈', pre: { dx: 0.98, dy: 0.05, ds: 0.68 }, draw: function(c){
+      c.shadowColor = '#BFD9FF'; c.shadowBlur = 0.08;
+      c.fillStyle = '#F4F8FF'; c.beginPath(); c.moveTo(-0.3, 0.4); c.lineTo(-0.3, -0.05); c.quadraticCurveTo(-0.3, -0.42, 0, -0.42); c.quadraticCurveTo(0.3, -0.42, 0.3, -0.05); c.lineTo(0.3, 0.4);
+      c.quadraticCurveTo(0.22, 0.3, 0.15, 0.4); c.quadraticCurveTo(0.075, 0.3, 0, 0.4); c.quadraticCurveTo(-0.075, 0.3, -0.15, 0.4); c.quadraticCurveTo(-0.22, 0.3, -0.3, 0.4); c.closePath(); c.fill();
+      c.shadowBlur = 0; c.fillStyle = '#1B1030'; c.beginPath(); c.ellipse(-0.1, -0.1, 0.04, 0.06, 0, 0, 6.283); c.ellipse(0.1, -0.1, 0.04, 0.06, 0, 0, 6.283); c.fill();
+      c.beginPath(); c.ellipse(0, 0.06, 0.05, 0.07, 0, 0, 6.283); c.fill();
+    } },
+    web: { name: '蜘蛛網', fixed: { ax: 0.17, ay: 0.12, sz: 0.5 }, draw: function(c){
+      c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 0.012; c.lineCap = 'round';
+      var ox = -0.5, oy = -0.5, i, r;
+      for (i = 0; i <= 5; i++){ var a = i * (Math.PI / 2) / 5; c.beginPath(); c.moveTo(ox, oy); c.lineTo(ox + Math.cos(a) * 1.0, oy + Math.sin(a) * 1.0); c.stroke(); }
+      for (r = 1; r <= 5; r++){ c.beginPath(); for (i = 0; i <= 5; i++){ var a2 = i * (Math.PI / 2) / 5, rr = r * 0.19 - (i % 1 === 0 ? 0 : 0); var px = ox + Math.cos(a2) * rr, py = oy + Math.sin(a2) * rr; if (i === 0) c.moveTo(px, py); else c.quadraticCurveTo(ox + Math.cos(a2 - 0.1) * rr * 0.9, oy + Math.sin(a2 - 0.1) * rr * 0.9, px, py); } c.stroke(); }
+      c.strokeStyle = 'rgba(255,255,255,.7)'; c.beginPath(); c.moveTo(0.32, 0.3); c.lineTo(0.32, 0.12); c.stroke();
+      c.fillStyle = '#1B1030'; c.beginPath(); c.ellipse(0.32, 0.38, 0.05, 0.065, 0, 0, 6.283); c.arc(0.32, 0.31, 0.03, 0, 6.283); c.fill();
+      c.strokeStyle = '#1B1030'; c.lineWidth = 0.012; [-1, 1].forEach(function(s){ [0.34, 0.38, 0.42].forEach(function(y, k){ c.beginPath(); c.moveTo(0.32, y); c.lineTo(0.32 + s * (0.08 + k * 0.01), y + (k - 1) * 0.05); c.stroke(); }); });
+    } },
+    e1: { name: '🎃', emoji: '🎃', pre: { dx: -0.9, dy: 0.45, ds: 0.5 } },
+    e2: { name: '👻', emoji: '👻', pre: { dx: 0.9, dy: 0.45, ds: 0.5 } },
+    e3: { name: '🦇', emoji: '🦇', pre: { dx: 0.8, dy: -0.8, ds: 0.45 } },
+    e4: { name: '🕷️', emoji: '🕷️', pre: { dx: -0.75, dy: -0.15, ds: 0.4 } },
+    e5: { name: '💀', emoji: '💀', pre: { dx: 0.78, dy: 0.95, ds: 0.45 } },
+    e6: { name: '🍬', emoji: '🍬', pre: { dx: -0.8, dy: 0.95, ds: 0.4 } },
+    e7: { name: '🕯️', emoji: '🕯️', pre: { dx: 0, dy: 1.25, ds: 0.45 } },
+    e8: { name: '🧛', emoji: '🧛', pre: { dx: -0.95, dy: -0.7, ds: 0.5 } },
+    e9: { name: '🔮', emoji: '🔮', pre: { dx: 0.95, dy: 0.7, ds: 0.45 } },
+    e10: { name: '⚰️', emoji: '⚰️', pre: { dx: 0, dy: -1.35, ds: 0.45 } }
+  };
+  var ORDER = ['witch', 'pumpkin', 'bat', 'fangs', 'cat', 'horns', 'skull', 'stitch', 'patch', 'drip', 'stache', 'ghost', 'web', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8', 'e9', 'e10'];
+  var EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+  function drawSticker(c, type, size){
+    var d = DEFS[type];
+    c.save();
+    if (d.emoji){ c.font = (size * 0.82) + 'px ' + EMOJI_FONT; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(d.emoji, 0, size * 0.04); }
+    else { c.scale(size, size); d.draw(c); }
+    c.restore();
+  }
+
+  // ================= 臉部姿態 / 座標轉換 =================
+  var DEFAULT_POSE = { x: W * 0.5, y: H * 0.40, fw: W * 0.40, roll: 0 };
+  var face = { pose: null, lastSeen: 0 };
+  function curPose(){
+    if (followOn && face.pose && (performance.now() - face.lastSeen) < 1500) return face.pose;
+    return DEFAULT_POSE;
+  }
+  function localToWorld(p, dx, dy){
+    var cr = Math.cos(p.roll), sr = Math.sin(p.roll);
+    return { x: p.x + (dx * cr - dy * sr) * p.fw, y: p.y + (dx * sr + dy * cr) * p.fw };
+  }
+  function worldToLocal(p, x, y){
+    var cr = Math.cos(-p.roll), sr = Math.sin(-p.roll), vx = x - p.x, vy = y - p.y;
+    return { dx: (vx * cr - vy * sr) / p.fw, dy: (vx * sr + vy * cr) / p.fw };
+  }
+  // 影片座標（0~1）→ 畫布座標（cover 填滿、必要時鏡像）
+  function mapper(vw, vh, mirror){
+    var sc = Math.max(W / vw, H / vh), ox = (W - vw * sc) / 2, oy = (H - vh * sc) / 2;
+    return function(nx, ny){ var x = nx * vw * sc + ox, y = ny * vh * sc + oy; return { x: mirror ? W - x : x, y: y }; };
+  }
+  function poseFromLandmarks(lm, map){
+    var a = map(lm[33].x, lm[33].y), b = map(lm[263].x, lm[263].y);
+    if (a.x > b.x){ var t = a; a = b; b = t; }
+    var c1 = map(lm[234].x, lm[234].y), c2 = map(lm[454].x, lm[454].y);
+    return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, fw: Math.hypot(c2.x - c1.x, c2.y - c1.y), roll: Math.atan2(b.y - a.y, b.x - a.x) };
+  }
+  function smoothPose(p){
+    if (!face.pose){ face.pose = p; return; }
+    var k = 0.55, q = face.pose, dr = p.roll - q.roll;
+    while (dr > Math.PI) dr -= 2 * Math.PI; while (dr < -Math.PI) dr += 2 * Math.PI;
+    face.pose = { x: q.x + (p.x - q.x) * k, y: q.y + (p.y - q.y) * k, fw: q.fw + (p.fw - q.fw) * k, roll: q.roll + dr * k };
+  }
+
+  // ================= 狀態 =================
+  var stickers = [], selected = null, uid = 1, slot = 0;
+  var followOn = true, mirror = true, facing = 'user', stream = null, source = null, sourceKind = null;
+  var filterName = 'none', timerOn = false, countdown = 0, countdownEnd = 0;
+  var landmarker = null, lmState = 'idle', lastVT = -1;
+  var chip = $('chip');
+
+  function addSticker(type){
+    var d = DEFS[type], s;
+    if (d.fixed){ s = { id: uid++, type: type, fixed: true, ax: d.fixed.ax, ay: d.fixed.ay, sz: d.fixed.sz, rot: 0, flip: false }; }
+    else {
+      var p = d.pre, dx = p.dx, dy = p.dy;
+      if (d.emoji){ dx += (Math.random() - 0.5) * 0.18; dy += (Math.random() - 0.5) * 0.18; }
+      s = { id: uid++, type: type, dx: dx, dy: dy, ds: p.ds, dr: (d.emoji ? (Math.random() - 0.5) * 0.5 : 0), flip: false };
+    }
+    stickers.push(s); selected = s; toast('已貼上 ' + d.name);
+  }
+  function worldOf(s){
+    if (s.fixed) return { x: s.ax * W, y: s.ay * H, size: s.sz * W, rot: s.rot };
+    var p = curPose(), w = localToWorld(p, s.dx, s.dy);
+    return { x: w.x, y: w.y, size: s.ds * p.fw, rot: p.roll + s.dr };
+  }
+  function hitTest(x, y){
+    for (var i = stickers.length - 1; i >= 0; i--){
+      var s = stickers[i], w = worldOf(s), cr = Math.cos(-w.rot), sr = Math.sin(-w.rot), vx = x - w.x, vy = y - w.y;
+      var ux = (vx * cr - vy * sr) / w.size, uy = (vx * sr + vy * cr) / w.size;
+      var lim = DEFS[s.type].emoji ? 0.45 : 0.5;
+      if (Math.abs(ux) <= lim && Math.abs(uy) <= lim) return s;
+    }
+    return null;
+  }
+  function moveTo(s, x, y){
+    if (s.fixed){ s.ax = Math.max(0, Math.min(1, x / W)); s.ay = Math.max(0, Math.min(1, y / H)); return; }
+    var l = worldToLocal(curPose(), x, y); s.dx = l.dx; s.dy = l.dy;
+  }
+  function scaleBy(s, f){ if (s.fixed) s.sz = Math.max(0.15, Math.min(1.6, s.sz * f)); else s.ds = Math.max(0.12, Math.min(3.5, s.ds * f)); }
+  function rotateBy(s, a){ if (s.fixed) s.rot += a; else s.dr += a; }
+
+  // ================= 繪製 =================
+  function drawSource(c){
+    c.fillStyle = '#0B0612'; c.fillRect(0, 0, W, H);
+    if (!source) return;
+    var vw = sourceKind === 'video' ? video.videoWidth : source.naturalWidth, vh = sourceKind === 'video' ? video.videoHeight : source.naturalHeight;
+    if (!vw || !vh) return;
+    var sc = Math.max(W / vw, H / vh), dw = vw * sc, dh = vh * sc;
+    c.save();
+    if (mirror){ c.translate(W, 0); c.scale(-1, 1); }
+    c.drawImage(source, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    c.restore();
+  }
+  function drawFilter(c){
+    var t = {
+      night: ['rgba(30,50,140,.45)', 'multiply', 'rgba(120,140,255,.10)'],
+      blood: ['rgba(190,20,30,.42)', 'multiply', 'rgba(255,60,40,.14)'],
+      toxic: ['rgba(40,170,60,.40)', 'multiply', 'rgba(150,255,90,.12)'],
+      bw: ['rgba(255,255,255,1)', 'saturation', 'rgba(40,30,20,.20)']
+    }[filterName];
+    if (t){
+      c.save(); c.globalCompositeOperation = t[1]; c.fillStyle = t[0]; c.fillRect(0, 0, W, H);
+      c.globalCompositeOperation = 'source-over'; c.fillStyle = t[2]; c.fillRect(0, 0, W, H); c.restore();
+    }
+    var g = c.createRadialGradient(W / 2, H * 0.45, H * 0.28, W / 2, H * 0.5, H * 0.75);
+    g.addColorStop(0, 'rgba(10,0,20,0)'); g.addColorStop(1, 'rgba(10,0,20,.62)');
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+  }
+  function drawCaption(c){
+    var txt = $('caption').value.trim();
+    if (!txt) return;
+    c.save(); c.textAlign = 'center'; c.textBaseline = 'middle';
+    var fs = Math.min(86, Math.floor(W * 0.9 / Math.max(6, txt.length * 0.72)));
+    c.font = "400 " + fs + "px 'Creepster','Noto Sans TC',sans-serif";
+    c.lineJoin = 'round'; c.lineWidth = fs * 0.2; c.strokeStyle = '#3A1400'; c.strokeText(txt, W / 2, H - 70);
+    c.shadowColor = 'rgba(255,138,31,.9)'; c.shadowBlur = 24; c.fillStyle = '#FF9A33'; c.fillText(txt, W / 2, H - 70); c.restore();
+  }
+  function render(c, ui){
+    drawSource(c); drawFilter(c);
+    stickers.forEach(function(s){
+      var w = worldOf(s);
+      c.save(); c.translate(w.x, w.y); c.rotate(w.rot); if (s.flip) c.scale(-1, 1);
+      drawSticker(c, s.type, w.size); c.restore();
+    });
+    drawCaption(c);
+    if (ui && selected){
+      var w2 = worldOf(selected);
+      c.save(); c.translate(w2.x, w2.y); c.rotate(w2.rot);
+      c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 3; c.setLineDash([12, 9]);
+      var h = w2.size * 0.5; c.strokeRect(-h, -h, h * 2, h * 2); c.restore();
+    }
+    if (ui && countdown > 0){
+      c.save(); c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(0, 0, W, H);
+      c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = "400 320px 'Creepster',sans-serif"; c.lineWidth = 14; c.strokeStyle = '#3A1400'; c.strokeText(String(countdown), W / 2, H / 2);
+      c.fillStyle = '#FF9A33'; c.shadowColor = '#FF8A1F'; c.shadowBlur = 40; c.fillText(String(countdown), W / 2, H / 2); c.restore();
+    }
+  }
+
+  // ================= 主迴圈 / 臉部偵測 =================
+  function detect(){
+    if (!landmarker || lmState !== 'ready' || sourceKind !== 'video' || video.readyState < 2) return;
+    if (video.currentTime === lastVT) return;
+    lastVT = video.currentTime;
+    try {
+      var res = landmarker.detectForVideo(video, performance.now());
+      if (res && res.faceLandmarks && res.faceLandmarks[0]){
+        smoothPose(poseFromLandmarks(res.faceLandmarks[0], mapper(video.videoWidth, video.videoHeight, mirror)));
+        face.lastSeen = performance.now();
+      }
+    } catch (e) { /* ignore */ }
+  }
+  function updateChip(){
+    var txt, ok = false;
+    if (!source) txt = '尚未開啟相機';
+    else if (lmState === 'ready'){ var seen = performance.now() - face.lastSeen < 1000 && sourceKind === 'video'; txt = sourceKind === 'image' ? (face.pose ? '已偵測到臉' : '手動貼紙') : (seen ? '偵測到臉 ✓' : '找不到臉，請對準鏡頭'); ok = seen || (sourceKind === 'image' && !!face.pose); }
+    else if (lmState === 'loading') txt = '臉部偵測載入中…（可先手動貼）';
+    else if (lmState === 'failed') txt = '手動模式：拖曳貼紙到臉上';
+    else txt = '手動模式';
+    if (chip.textContent !== txt){ chip.textContent = txt; }
+    chip.className = 'chip' + (ok ? ' ok' : '');
+  }
+  var raf;
+  function loop(){
+    detect();
+    if (countdown > 0){
+      var left = Math.ceil((countdownEnd - performance.now()) / 1000);
+      if (left <= 0){ countdown = 0; doShot(); } else countdown = left;
+    }
+    render(ctx, true);
+    updateChip();
+    raf = requestAnimationFrame(loop);
+  }
+
+  // ================= 相機 / 照片 =================
+  function stopStream(){ if (stream){ stream.getTracks().forEach(function(t){ t.stop(); }); stream = null; } }
+  function startCamera(){
+    $('errMsg').textContent = '';
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){ $('errMsg').textContent = '這個瀏覽器不支援相機，請改用「照片」。'; return Promise.resolve(); }
+    stopStream();
+    return navigator.mediaDevices.getUserMedia({ video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 960 } }, audio: false }).then(function(s){
+      stream = s; video.srcObject = s; mirror = facing === 'user';
+      return video.play().catch(function(){});
+    }).then(function(){
+      source = video; sourceKind = 'video'; face.pose = null; $('startOv').classList.add('hidden'); $('shot').disabled = false;
+      loadLandmarker();
+    }).catch(function(err){
+      var m = (err && err.name === 'NotAllowedError') ? '沒有取得相機權限。請在瀏覽器網址列允許相機，或改用「照片」。' : '打不開相機（' + (err && err.name ? err.name : '未知錯誤') + '）。可以改用「照片」。';
+      $('errMsg').textContent = m;
+    });
+  }
+  function useImage(file){
+    var url = URL.createObjectURL(file), img = new Image();
+    img.onload = function(){
+      stopStream(); source = img; sourceKind = 'image'; mirror = false; face.pose = null; $('startOv').classList.add('hidden'); $('shot').disabled = false;
+      loadLandmarker().then(function(){
+        if (lmState !== 'ready') return;
+        try {
+          return landmarker.setOptions({ runningMode: 'IMAGE' }).then ? landmarker.setOptions({ runningMode: 'IMAGE' }) : (landmarker.setOptions({ runningMode: 'IMAGE' }), null);
+        } catch (e) { return null; }
+      }).then(function(){
+        try {
+          if (lmState === 'ready'){
+            var res = landmarker.detect(img);
+            if (res && res.faceLandmarks && res.faceLandmarks[0]){ face.pose = poseFromLandmarks(res.faceLandmarks[0], mapper(img.naturalWidth, img.naturalHeight, false)); face.lastSeen = performance.now() + 1e9; }
+            else toast('照片裡找不到臉，請手動拖曳貼紙');
+            landmarker.setOptions({ runningMode: 'VIDEO' });
+          }
+        } catch (e) { /* ignore */ }
+      });
+    };
+    img.onerror = function(){ $('errMsg').textContent = '這張圖片打不開，換一張試試。'; };
+    img.src = url;
+  }
+  function loadLandmarker(){
+    if (lmState === 'ready' || lmState === 'loading') return Promise.resolve();
+    lmState = 'loading';
+    var bases = ['0.10.14', '0.10.9'];
+    function attempt(i){
+      if (i >= bases.length){ lmState = 'failed'; $('followBtn').disabled = true; return Promise.resolve(); }
+      var base = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@' + bases[i];
+      return import(base + '/vision_bundle.mjs').then(function(mod){
+        return mod.FilesetResolver.forVisionTasks(base + '/wasm').then(function(fs){
+          return mod.FaceLandmarker.createFromOptions(fs, {
+            baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task', delegate: 'GPU' },
+            runningMode: 'VIDEO', numFaces: 1
+          });
+        }).then(function(lm){ landmarker = lm; lmState = 'ready'; });
+      }).catch(function(){ return attempt(i + 1); });
+    }
+    return attempt(0);
+  }
+
+  // ================= 拍照 / 分享 =================
+  var lastBlob = null;
+  function doShot(){
+    var oc = document.createElement('canvas'); oc.width = W; oc.height = H;
+    render(oc.getContext('2d'), false);
+    flash();
+    oc.toBlob(function(b){
+      if (!b){ toast('拍照失敗，再試一次'); return; }
+      lastBlob = b;
+      var url = URL.createObjectURL(b);
+      $('resImg').src = url; $('dl').href = url; $('result').classList.remove('hidden');
+    }, 'image/png');
+  }
+  function flash(){
+    var f = document.createElement('div'); f.style.cssText = 'position:fixed;inset:0;background:#fff;opacity:.85;z-index:40;pointer-events:none;transition:opacity .35s'; document.body.appendChild(f);
+    requestAnimationFrame(function(){ f.style.opacity = '0'; }); setTimeout(function(){ if (f.parentNode) f.parentNode.removeChild(f); }, 450);
+    try { var a = new (window.AudioContext || window.webkitAudioContext)(), o = a.createOscillator(), g = a.createGain(); o.type = 'square'; o.frequency.value = 1400; g.gain.setValueAtTime(0.05, a.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + 0.08); o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + 0.1); } catch (e) { /* ignore */ }
+  }
+  var toastT = null;
+  function toast(m){ var t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function(){ t.classList.remove('show'); }, 1400); }
+
+  // ================= 互動 =================
+  var ptrs = {}, gest = null;
+  function cpos(e){ var r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height }; }
+  cv.addEventListener('pointerdown', function(e){
+    var p = cpos(e); ptrs[e.pointerId] = p;
+    try { cv.setPointerCapture(e.pointerId); } catch (er) { /* ignore */ }
+    var ids = Object.keys(ptrs);
+    if (ids.length === 1){
+      var hit = hitTest(p.x, p.y); selected = hit;
+      gest = hit ? { mode: 'drag', s: hit, ox: 0, oy: 0 } : null;
+      if (hit){ var w = worldOf(hit); gest.ox = w.x - p.x; gest.oy = w.y - p.y; }
+    } else if (ids.length === 2 && selected){
+      var a = ptrs[ids[0]], b = ptrs[ids[1]];
+      gest = { mode: 'pinch', s: selected, d: Math.hypot(b.x - a.x, b.y - a.y), a: Math.atan2(b.y - a.y, b.x - a.x) };
+    }
+  });
+  cv.addEventListener('pointermove', function(e){
+    if (!ptrs[e.pointerId]) return;
+    var p = cpos(e); ptrs[e.pointerId] = p;
+    if (!gest) return;
+    var ids = Object.keys(ptrs);
+    if (gest.mode === 'drag' && ids.length === 1){ moveTo(gest.s, p.x + gest.ox, p.y + gest.oy); }
+    else if (gest.mode === 'pinch' && ids.length >= 2){
+      var a = ptrs[ids[0]], b = ptrs[ids[1]], d = Math.hypot(b.x - a.x, b.y - a.y), ang = Math.atan2(b.y - a.y, b.x - a.x);
+      if (gest.d > 5) scaleBy(gest.s, d / gest.d); rotateBy(gest.s, ang - gest.a); gest.d = d; gest.a = ang;
+    }
+  });
+  function endPtr(e){ delete ptrs[e.pointerId]; if (Object.keys(ptrs).length === 0) gest = null; else if (Object.keys(ptrs).length === 1) gest = null; }
+  cv.addEventListener('pointerup', endPtr); cv.addEventListener('pointercancel', endPtr);
+  cv.addEventListener('wheel', function(e){
+    if (!selected) return; e.preventDefault();
+    if (e.shiftKey) rotateBy(selected, e.deltaY * 0.002); else scaleBy(selected, e.deltaY < 0 ? 1.06 : 0.94);
+  }, { passive: false });
+  document.addEventListener('keydown', function(e){
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) return;
+    if ((e.key === 'Delete' || e.key === 'Backspace') && selected){ removeSel(); e.preventDefault(); }
+  });
+  function removeSel(){ if (!selected) return; stickers = stickers.filter(function(s){ return s !== selected; }); selected = null; }
+
+  // 貼紙盤
+  var tray = $('tray');
+  ORDER.forEach(function(t){
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'st'; b.setAttribute('aria-label', DEFS[t].name);
+    var c = document.createElement('canvas'); c.width = 96; c.height = 96; var cc = c.getContext('2d');
+    cc.translate(48, 48);
+    if (DEFS[t].fixed) { cc.translate(14, 14); drawSticker(cc, t, 70); } else drawSticker(cc, t, DEFS[t].emoji ? 78 : 78);
+    b.appendChild(c); b.addEventListener('click', function(){ addSticker(t); }); tray.appendChild(b);
+  });
+  $('bigger').addEventListener('click', function(){ if (selected) scaleBy(selected, 1.12); else toast('先點選一個貼紙'); });
+  $('smaller').addEventListener('click', function(){ if (selected) scaleBy(selected, 0.89); else toast('先點選一個貼紙'); });
+  $('rotL').addEventListener('click', function(){ if (selected) rotateBy(selected, -0.17); });
+  $('rotR').addEventListener('click', function(){ if (selected) rotateBy(selected, 0.17); });
+  $('flipS').addEventListener('click', function(){ if (selected) selected.flip = !selected.flip; });
+  $('delS').addEventListener('click', removeSel);
+  $('clearAll').addEventListener('click', function(){ stickers = []; selected = null; toast('已清除全部貼紙'); });
+  $('filter').addEventListener('change', function(){ filterName = this.value; });
+  $('followBtn').addEventListener('click', function(){
+    followOn = !followOn; this.classList.toggle('on', followOn);
+    toast(followOn ? '貼紙會跟著你的臉動' : '貼紙固定在畫面上');
+  });
+  $('timerBtn').addEventListener('click', function(){ timerOn = !timerOn; this.classList.toggle('on', timerOn); toast(timerOn ? '拍照前會倒數 3 秒' : '立即拍照'); });
+  $('flipCam').addEventListener('click', function(){ if (sourceKind === 'image'){ toast('照片模式沒有鏡頭可切換'); return; } facing = facing === 'user' ? 'environment' : 'user'; startCamera(); });
+  $('shot').addEventListener('click', function(){
+    if (!source) return;
+    if (timerOn && sourceKind === 'video'){ countdown = 3; countdownEnd = performance.now() + 3000; selected = null; } else { selected = null; doShot(); }
+  });
+  $('camBtn').addEventListener('click', startCamera);
+  $('upBtn').addEventListener('click', function(){ $('file').click(); });
+  $('file').addEventListener('change', function(){ if (this.files && this.files[0]) useImage(this.files[0]); this.value = ''; });
+  $('again').addEventListener('click', function(){ $('result').classList.add('hidden'); });
+  $('shareBtn').addEventListener('click', function(){
+    if (!lastBlob) return;
+    var f = new File([lastBlob], 'halloween-face.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [f] })){
+      navigator.share({ files: [f], title: '我的萬聖節變臉照', text: '快看我變成什麼了 🎃' }).catch(function(){});
+    } else { toast('這個瀏覽器不能直接分享，請按「下載圖片」再傳給朋友'); }
+  });
+  document.addEventListener('visibilitychange', function(){ if (document.hidden && video.srcObject) video.pause(); else if (video.srcObject) video.play().catch(function(){}); });
+
+  window.__booth = { poseFromLandmarks: poseFromLandmarks, mapper: mapper, localToWorld: localToWorld, worldToLocal: worldToLocal };
+  raf = requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
