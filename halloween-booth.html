@@ -175,6 +175,40 @@
       c.fillStyle = '#FFD45E'; c.fillRect(-0.06, 0.13, 0.12, 0.14); c.fillStyle = '#2B1450'; c.fillRect(-0.03, 0.16, 0.06, 0.08);
       c.fillStyle = 'rgba(255,255,255,.18)'; c.beginPath(); c.ellipse(-0.1, -0.1, 0.03, 0.18, 0.3, 0, 6.283); c.fill();
     } },
+    mdoll: { name: '瓷偶面具', pre: { dx: 0, dy: 0.12, ds: 1.5 }, draw: function(c){
+      var g = grad(c, -0.3, -0.4, 0.3, 0.4, [[0, '#FBF4E6'], [1, '#E3D3B8']]);
+      c.fillStyle = g; c.strokeStyle = '#8C7A5E'; c.lineWidth = 0.012; c.beginPath(); c.ellipse(0, 0.0, 0.35, 0.47, 0, 0, 6.283); c.fill(); c.stroke();
+      [-1, 1].forEach(function(s){
+        c.fillStyle = '#120A10'; c.beginPath(); c.ellipse(s * 0.15, -0.08, 0.075, 0.048, 0, 0, 6.283); c.fill();
+        c.strokeStyle = '#1A0E12'; c.lineCap = 'round'; c.lineWidth = 0.014; c.beginPath(); c.moveTo(s * 0.07, -0.075); c.quadraticCurveTo(s * 0.15, -0.16, s * 0.23, -0.09); c.stroke();
+        c.lineWidth = 0.007; for (var i = 0; i < 6; i++){ var t = i / 5, x = s * (0.08 + 0.15 * t); c.beginPath(); c.moveTo(x, -0.1 - 0.05 * Math.sin(Math.PI * t) + 0.02); c.lineTo(x + s * (t - 0.3) * 0.04, -0.17 - 0.04 * Math.sin(Math.PI * t)); c.stroke(); }
+        c.fillStyle = 'rgba(225,110,120,.55)'; c.beginPath(); c.ellipse(s * 0.2, 0.1, 0.07, 0.05, 0, 0, 6.283); c.fill();
+      });
+      c.strokeStyle = 'rgba(120,90,70,.7)'; c.lineWidth = 0.008; c.beginPath(); c.moveTo(0, -0.02); c.lineTo(-0.015, 0.07); c.lineTo(0.015, 0.08); c.stroke();
+      c.fillStyle = '#B02342'; c.beginPath(); c.moveTo(-0.07, 0.2); c.quadraticCurveTo(-0.03, 0.17, 0, 0.19); c.quadraticCurveTo(0.03, 0.17, 0.07, 0.2); c.quadraticCurveTo(0, 0.25, -0.07, 0.2); c.fill();
+      c.lineCap = 'round'; c.lineJoin = 'round';
+      [['#4A3220', 0.007], ['#E0B04A', 0.003]].forEach(function(st){ c.strokeStyle = st[0]; c.lineWidth = st[1];
+        c.beginPath(); c.moveTo(0.1, -0.4); c.lineTo(0.05, -0.28); c.lineTo(0.11, -0.2); c.lineTo(0.04, -0.14); c.moveTo(0.11, -0.2); c.lineTo(0.2, -0.17); c.lineTo(0.27, -0.2);
+        c.moveTo(-0.2, 0.3); c.lineTo(-0.14, 0.36); c.lineTo(-0.17, 0.43); c.stroke(); });
+    } },
+    mskull: { name: '骷髏面具', pre: { dx: 0, dy: 0.12, ds: 1.5 }, draw: function(c){
+      c.fillStyle = grad(c, 0, -0.45, 0, 0.45, [[0, '#F5F0E2'], [1, '#CFC6AE']]); c.strokeStyle = '#6E664F'; c.lineWidth = 0.012;
+      c.beginPath(); c.moveTo(0, -0.46); c.bezierCurveTo(0.4, -0.46, 0.4, -0.02, 0.28, 0.12); c.lineTo(0.24, 0.3); c.quadraticCurveTo(0.2, 0.46, 0, 0.46); c.quadraticCurveTo(-0.2, 0.46, -0.24, 0.3); c.lineTo(-0.28, 0.12); c.bezierCurveTo(-0.4, -0.02, -0.4, -0.46, 0, -0.46); c.fill(); c.stroke();
+      c.fillStyle = '#0A0510'; [-1, 1].forEach(function(s){ c.beginPath(); c.ellipse(s * 0.15, -0.08, 0.1, 0.11, s * 0.1, 0, 6.283); c.fill(); });
+      c.beginPath(); c.moveTo(0, 0.0); c.lineTo(0.05, 0.12); c.lineTo(-0.05, 0.12); c.closePath(); c.fill();
+      c.fillStyle = 'rgba(8,4,14,.9)'; c.fillRect(-0.15, 0.25, 0.3, 0.13); c.strokeStyle = '#F5F0E2'; c.lineWidth = 0.012;
+      for (var i = -3; i <= 3; i++){ c.beginPath(); c.moveTo(i * 0.045, 0.24); c.lineTo(i * 0.045, 0.39); c.stroke(); }
+      c.strokeStyle = 'rgba(70,60,45,.6)'; c.lineWidth = 0.007; c.beginPath(); c.moveTo(0.18, -0.4); c.lineTo(0.14, -0.28); c.lineTo(0.2, -0.2); c.stroke();
+    } },
+    mpump: { name: '南瓜面具', pre: { dx: 0, dy: 0.12, ds: 1.5 }, draw: function(c){
+      c.fillStyle = grad(c, 0, -0.45, 0, 0.45, [[0, '#FFA54A'], [1, '#E5600A']]); c.strokeStyle = '#7A2A00'; c.lineWidth = 0.014;
+      c.beginPath(); c.ellipse(0, 0.0, 0.37, 0.45, 0, 0, 6.283); c.fill(); c.stroke();
+      c.strokeStyle = 'rgba(120,40,0,.5)'; c.lineWidth = 0.01; [-0.24, -0.12, 0, 0.12, 0.24].forEach(function(x){ c.beginPath(); c.ellipse(x, 0, 0.07 + Math.abs(x) * 0.05, 0.43 - Math.abs(x) * 0.25, 0, 0, 6.283); c.stroke(); });
+      c.fillStyle = '#2A0F05'; [-1, 1].forEach(function(s){ c.beginPath(); c.moveTo(s * 0.06, -0.1); c.lineTo(s * 0.24, -0.2); c.lineTo(s * 0.22, 0.0); c.closePath(); c.fill(); });
+      c.beginPath(); c.moveTo(0, 0.04); c.lineTo(0.05, 0.12); c.lineTo(-0.05, 0.12); c.closePath(); c.fill();
+      c.beginPath(); c.moveTo(-0.24, 0.17); for (var i = 0; i < 7; i++){ c.lineTo(-0.24 + (i + 0.5) * 0.0686, i % 2 ? 0.2 : 0.14); c.lineTo(-0.24 + (i + 1) * 0.0686, 0.17); } for (var j = 6; j >= 0; j--){ c.lineTo(-0.24 + (j + 0.5) * 0.0686, j % 2 ? 0.3 : 0.36); c.lineTo(-0.24 + j * 0.0686, 0.3); } c.closePath(); c.fill();
+      c.fillStyle = '#3F7A2A'; c.beginPath(); c.moveTo(-0.04, -0.43); c.quadraticCurveTo(-0.02, -0.53, 0.07, -0.5); c.lineTo(0.05, -0.42); c.closePath(); c.fill();
+    } },
     pumpkin: { name: '南瓜', pre: { dx: 0.95, dy: -0.55, ds: 0.62 }, draw: function(c){
       c.fillStyle = grad(c, 0, -0.4, 0, 0.4, [[0, '#FFA54A'], [1, '#E5600A']]);
       [[-0.22, 0.38], [0.22, 0.38], [0, 0.46]].forEach(function(e){ c.beginPath(); c.ellipse(e[0], 0.04, e[1] * 0.78, 0.36, 0, 0, 6.283); c.fill(); });
@@ -274,7 +308,7 @@
     e9: { name: '🔮', emoji: '🔮', pre: { dx: 0.95, dy: 0.7, ds: 0.45 } },
     e10: { name: '⚰️', emoji: '⚰️', pre: { dx: 0, dy: -1.35, ds: 0.45 } }
   };
-  var ORDER = ['witch', 'pumpkin', 'bat', 'fangs', 'cat', 'horns', 'skull', 'stitch', 'patch', 'drip', 'stache', 'ghost', 'web', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8', 'e9', 'e10'];
+  var ORDER = ['mdoll', 'mskull', 'mpump', 'witch', 'pumpkin', 'bat', 'fangs', 'cat', 'horns', 'skull', 'stitch', 'patch', 'drip', 'stache', 'ghost', 'web', 'e1', 'e2', 'e3', 'e4', 'e5', 'e6', 'e7', 'e8', 'e9', 'e10'];
   var EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
   function drawSticker(c, type, size){
     var d = DEFS[type];
