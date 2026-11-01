@@ -89,7 +89,7 @@
 @keyframes spUp{ from{ opacity:0; transform:translateY(12px);} }
 .overlay h2,.overlay h3{ text-shadow:0 3px 0 rgba(0,0,0,.3), 0 8px 20px rgba(0,0,0,.35); }
 .btn,.primary,.play{ position:relative; overflow:hidden; transition:transform .1s ease, box-shadow .1s ease, filter .15s; }
-.btn::after,.primary::after,.play::after{ content:""; position:absolute; left:14%; right:14%; top:3px; height:32%; border-radius:99px; background:linear-gradient(180deg,rgba(255,255,255,.45),rgba(255,255,255,0)); pointer-events:none; }
+.btn::after,.primary::after{ content:""; position:absolute; left:14%; right:14%; top:3px; height:32%; border-radius:99px; background:linear-gradient(180deg,rgba(255,255,255,.45),rgba(255,255,255,0)); pointer-events:none; }
 #startBtn,#restartBtn,.primary,.overlay .btn:first-of-type{ animation:spPulse 2s ease-in-out infinite; }
 @keyframes spPulse{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.045);} }
 #startBtn::before,#restartBtn::before,.primary::before{ content:""; position:absolute; top:0; bottom:0; left:-45%; width:28%; background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent); transform:skewX(-20deg); animation:spShine 3s ease-in-out infinite; }
@@ -98,9 +98,48 @@
 .screen,.board-wrap,.stage{ position:relative; }
 .screen::after,.stage::after{ content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; background:radial-gradient(ellipse at 50% 45%, transparent 64%, rgba(0,0,0,.3)); }
 @media (prefers-reduced-motion:reduce){ .overlay,.overlay>*,#startBtn,#restartBtn,.primary,.overlay .btn:first-of-type,#startBtn::before,#restartBtn::before,.primary::before{ animation:none !important; } }
+
+/* ===== UI v3 (deep) ===== */
+h1{ animation:flick 5s infinite; }
+@keyframes flick{ 0%,100%{ opacity:1; } 45%{ opacity:1; } 47%{ opacity:.55; } 49%{ opacity:1; } 52%{ opacity:.7; } 54%{ opacity:1; } }
+.zh{ text-shadow:0 2px 0 rgba(0,0,0,.5), 0 0 16px rgba(155,92,240,.7); }
+.cab{ position:relative; }
+.stage{ border:0 !important; padding:0; border-radius:18px !important; background:#08040E;
+  box-shadow:0 0 0 3px #3A1F0A, 0 0 0 6px #7A4A1A, 0 0 0 7px #2A1406, 0 0 34px rgba(255,138,31,.45), 0 12px 30px rgba(0,0,0,.6) !important; }
+.stage::before{ content:""; position:absolute; inset:0; z-index:2; pointer-events:none; border-radius:inherit;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Cg fill='none' stroke='%23FFF1E0' stroke-opacity='.55' stroke-width='1.1'%3E%3Cpath d='M0 0L90 0M0 0L84 36M0 0L66 66M0 0L36 84M0 0L0 90'/%3E%3Cpath d='M20 0Q16 16 0 20M40 0Q32 32 0 40M60 0Q48 48 0 60M80 0Q64 64 0 80'/%3E%3C/g%3E%3C/svg%3E") top left/84px no-repeat, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Cg fill='none' stroke='%23FFF1E0' stroke-opacity='.55' stroke-width='1.1'%3E%3Cpath d='M0 0L90 0M0 0L84 36M0 0L66 66M0 0L36 84M0 0L0 90'/%3E%3Cpath d='M20 0Q16 16 0 20M40 0Q32 32 0 40M60 0Q48 48 0 60M80 0Q64 64 0 80'/%3E%3C/g%3E%3C/svg%3E") top right/84px no-repeat; background-blend-mode:normal; }
+.stage::before{ -webkit-mask:none; }
+.stage > .chip{ z-index:3; }
+.stage::before{ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Cg fill='none' stroke='%23FFF1E0' stroke-opacity='.55' stroke-width='1.1'%3E%3Cpath d='M0 0L90 0M0 0L84 36M0 0L66 66M0 0L36 84M0 0L0 90'/%3E%3Cpath d='M20 0Q16 16 0 20M40 0Q32 32 0 40M60 0Q48 48 0 60M80 0Q64 64 0 80'/%3E%3C/g%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90' viewBox='0 0 90 90'%3E%3Cg fill='none' stroke='%23FFF1E0' stroke-opacity='.55' stroke-width='1.1'%3E%3Cpath d='M0 0L90 0M0 0L84 36M0 0L66 66M0 0L36 84M0 0L0 90'/%3E%3Cpath d='M20 0Q16 16 0 20M40 0Q32 32 0 40M60 0Q48 48 0 60M80 0Q64 64 0 80'/%3E%3C/g%3E%3C/svg%3E"); background-position:0 0, 100% 0; background-size:84px, 84px; }
+.stage .overlay{ z-index:4; }
+.chip{ left:50%; transform:translateX(-50%); top:10px; white-space:nowrap; }
+.row .tool{ font-size:12.5px; padding:0 6px; white-space:nowrap; letter-spacing:0; }
+.tool.on{ box-shadow:0 0 14px rgba(255,138,31,.55), 0 3px 0 #A8480A !important; }
+.shutter{ position:relative; box-shadow:0 0 0 3px rgba(255,138,31,.5), 0 0 22px rgba(255,138,31,.6), 0 6px 18px rgba(0,0,0,.55) !important; }
+.shutter:not(:disabled){ animation:shp 2s ease-in-out infinite; } @keyframes shp{ 50%{ box-shadow:0 0 0 7px rgba(255,138,31,.25), 0 0 30px rgba(255,138,31,.75), 0 6px 18px rgba(0,0,0,.55); } }
+.shutter::after{ content:""; position:absolute; left:20%; top:14%; width:40%; height:22%; border-radius:50%; background:rgba(255,255,255,.45); transform:rotate(-25deg); }
+.tray{ scrollbar-width:thin; scrollbar-color:#6A3FB0 transparent; -webkit-mask-image:linear-gradient(180deg,#000 88%,transparent); mask-image:linear-gradient(180deg,#000 88%,transparent); padding-bottom:14px; }
+.st{ transition:transform .12s, border-color .15s, box-shadow .15s; }
+.st:hover{ transform:translateY(-2px); box-shadow:0 6px 14px rgba(0,0,0,.4), 0 0 12px rgba(255,138,31,.35); }
+.st.on,.st[aria-pressed="true"]{ border-color:var(--orange); box-shadow:0 0 0 2px rgba(255,138,31,.5), 0 0 14px rgba(255,138,31,.5); }
+.tab{ transition:all .15s; } .tab.on{ box-shadow:0 0 16px rgba(255,138,31,.5), 0 3px 0 #A8480A; }
+.pumpkin{ font-size:78px !important; filter:drop-shadow(0 0 26px rgba(255,138,31,.85)) !important; }
+.overlay h2{ font-family:'Creepster','Noto Sans TC',cursive; font-weight:400 !important; font-size:34px !important; letter-spacing:3px; text-shadow:0 3px 0 #7A3300, 0 0 22px rgba(255,138,31,.6) !important; }
+.result img{ border:10px solid #FFF1E0 !important; border-bottom-width:34px !important; border-radius:6px !important; transform:rotate(-2deg); box-shadow:0 0 0 1px rgba(0,0,0,.3), 0 18px 50px rgba(0,0,0,.7), 0 0 50px rgba(255,138,31,.4) !important; animation:polIn .5s cubic-bezier(.2,1.4,.4,1) backwards; }
+@keyframes polIn{ from{ transform:rotate(8deg) scale(.7) translateY(40px); opacity:0; } }
+.result .t{ font-family:'Creepster','Noto Sans TC',cursive; font-weight:400; font-size:26px; text-shadow:0 0 18px rgba(255,138,31,.6); }
+.fog{ position:fixed; left:-10%; right:-10%; bottom:0; height:22vh; pointer-events:none; z-index:0;
+  background:radial-gradient(ellipse 40% 60% at 20% 100%,rgba(200,170,255,.14),transparent), radial-gradient(ellipse 45% 70% at 70% 100%,rgba(160,140,255,.12),transparent); animation:fogm 18s ease-in-out infinite alternate; }
+@keyframes fogm{ to{ transform:translateX(8%); } }
+.bat{ position:fixed; z-index:0; top:var(--y); left:-60px; width:34px; height:16px; pointer-events:none; opacity:.8; animation:batf var(--d) linear infinite; animation-delay:var(--dl); }
+.bat::before,.bat::after{ content:""; position:absolute; top:0; width:16px; height:14px; background:#0A0510; border-radius:100% 0 100% 0; animation:wing .22s ease-in-out infinite alternate; }
+.bat::before{ left:0; transform-origin:100% 50%; } .bat::after{ right:0; border-radius:0 100% 0 100%; transform-origin:0 50%; }
+@keyframes wing{ to{ transform:scaleY(.35); } }
+@keyframes batf{ 0%{ transform:translate(0,0); } 50%{ transform:translate(55vw,-24px); } 100%{ transform:translate(115vw,10px); } }
 </style>
 </head>
 <body>
+<div class="fog" aria-hidden="true"></div><i class="bat" style="--y:70px;--d:16s;--dl:1s"></i><i class="bat" style="--y:180px;--d:22s;--dl:8s"></i><i class="bat" style="--y:40px;--d:28s;--dl:15s"></i>
   <h1>Halloween</h1>
   <div class="zh">萬聖變臉亭</div>
   <p class="sub">鏡頭一開就能在臉上貼貼紙，拍成圖片傳給朋友嚇一跳</p>
