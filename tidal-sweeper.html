@@ -125,9 +125,10 @@ body{ position:relative; }
   var startBtn = document.getElementById('startBtn');
   var restartBtn = document.getElementById('restartBtn');
 
-  var URCHIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><g stroke="#17343A" stroke-width="2" stroke-linecap="round"><path d="M12 2v5M12 17v5M2 12h5M17 12h5M5 5l3.5 3.5M15.5 15.5L19 19M19 5l-3.5 3.5M8.5 15.5L5 19"/></g><circle cx="12" cy="12" r="5.5" fill="#17343A"/></svg>';
-  var FLAG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v18" stroke="#17343A" stroke-width="2" stroke-linecap="round"/><path d="M7 4l12 4.5L7 13z" fill="#FF7F6B" stroke="#C9503E" stroke-width="1" stroke-linejoin="round"/></svg>';
+  var URCHIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><g stroke="#2A1747" stroke-width="1.8" stroke-linecap="round"><path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4M4.6 4.6l2.8 2.8M16.6 16.6l2.8 2.8M19.4 4.6l-2.8 2.8M7.4 16.6l-2.8 2.8"/></g><circle cx="12" cy="12" r="6.5" fill="#6B3FA8" stroke="#2A1747" stroke-width="1.2"/><ellipse cx="10" cy="9.6" rx="2.6" ry="1.6" fill="#fff" opacity=".35"/><circle cx="9.6" cy="12.4" r="1.2" fill="#fff"/><circle cx="14.4" cy="12.4" r="1.2" fill="#fff"/><circle cx="9.8" cy="12.6" r=".6" fill="#2A1747"/><circle cx="14.6" cy="12.6" r=".6" fill="#2A1747"/></svg>';
+  var FLAG = '<svg class="flagsvg" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="9" cy="21" rx="6" ry="1.6" fill="rgba(0,0,0,.25)"/><path d="M7 3v18" stroke="#6B4423" stroke-width="2.2" stroke-linecap="round"/><g class="wave"><path d="M7.6 4l12 4.5L7.6 13z" fill="#FF7F6B" stroke="#C9503E" stroke-width="1" stroke-linejoin="round"/><path d="M9 6l6 2.3L9 10.6z" fill="#FFB1A3" opacity=".6"/></g></svg>';
 
+  var lastR = 0, lastC = 0;
   var cells = [], active, started, over, flagMode, revealedCount, flagCount, seconds, timer, longPressFired, pressTimer;
 
   var best = 0;
@@ -202,7 +203,7 @@ body{ position:relative; }
     el.className = 'cell';
     el.innerHTML = '';
     if (x.open){
-      el.classList.add('open');
+      el.classList.add('open'); el.style.setProperty('--d', (Math.min(14, Math.abs(x.r - lastR) + Math.abs(x.c - lastC)) * 22) + 'ms');
       if (x.mine){ el.innerHTML = URCHIN; }
       else if (x.adj > 0){ el.textContent = x.adj; el.classList.add('n' + x.adj); }
       el.setAttribute('aria-label', x.mine ? '海膽' : (x.adj ? '周圍有 ' + x.adj + ' 隻海膽' : '空白'));
@@ -223,8 +224,10 @@ body{ position:relative; }
 
   function lose(hit){
     over = true; clearInterval(timer); music.stop();
+    var fr = gridEl.parentNode; fr.classList.remove('shake'); void fr.offsetWidth; fr.classList.add('shake');
+    var mi = 0;
     cells.forEach(function(x){
-      if (x.mine && !x.flag){ x.open = true; paint(x); }
+      if (x.mine && !x.flag){ x.open = true; paint(x); x.el.classList.add('mine-show'); x.el.style.setProperty('--d', (80 + (mi++) * 70) + 'ms'); if (navigator.vibrate && mi === 1) { try { navigator.vibrate(60); } catch (e) {} } }
       if (!x.mine && x.flag){ x.el.classList.add('boom'); }
     });
     hit.el.classList.add('boom');
@@ -233,7 +236,7 @@ body{ position:relative; }
       endTitle.textContent = '踩到海膽了';
       endText.textContent = '這一次走了 ' + seconds + ' 秒。再試一次，把數字多看幾遍。';
       endOverlay.classList.remove('hidden');
-    }, 900);
+    }, 1100);
   }
 
   function win(){
@@ -243,13 +246,15 @@ body{ position:relative; }
     var isBest = !best || seconds < best;
     if (isBest){ best = seconds; try { localStorage.setItem('tidalsweeper_best', String(best)); } catch (e) { /* ignore */ } }
     [523.25, 659.25, 783.99, 1046.5].forEach(function(f, i){ tone(f, 0.25, 'triangle', 0.07, i * 0.1); });
+    var fr2 = gridEl.parentNode; for (var q = 0; q < 26; q++){ var bb = document.createElement('div'); bb.className = 'bub'; var sz = 8 + Math.random() * 20; bb.style.cssText = 'left:' + (Math.random() * 96) + '%;width:' + sz + 'px;height:' + sz + 'px;animation-delay:' + (Math.random() * .9) + 's;--sx:' + ((Math.random() - .5) * 60) + 'px'; fr2.appendChild(bb); (function(e){ setTimeout(function(){ e.remove(); }, 3300); })(bb); }
     endTitle.textContent = '全部排除！';
-    endText.textContent = '用時 ' + seconds + ' 秒' + (isBest ? '，刷新了你的最快紀錄！' : '，最快紀錄是 ' + best + ' 秒。');
+    endText.textContent = (seconds <= 40 ? '潮間帶大師 🏆　' : seconds <= 90 ? '拾貝高手 🐚　' : '踏沙新手 🦀　') + '用時 ' + seconds + ' 秒' + (isBest ? '，刷新了你的最快紀錄！' : '，最快紀錄是 ' + best + ' 秒。');
     endOverlay.classList.remove('hidden');
   }
 
   function reveal(x){
     if (over || x.open || x.flag) return;
+    lastR = x.r; lastC = x.c;
     if (!started){
       started = true; placeMines(x.r, x.c); startTimer();
     }
@@ -370,6 +375,47 @@ canvas{touch-action:none}
 #pl-splash small{font:500 11px 'Noto Sans TC',sans-serif;letter-spacing:.3em;opacity:.7}
 @keyframes plSp{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){body{animation:none}#pl-splash i{animation:none}}
+
+/* ===== UI v3 (deep) ===== */
+body{ background:
+  radial-gradient(ellipse 120% 60% at 50% -12%, rgba(255,160,130,.20), transparent 60%),
+  repeating-radial-gradient(circle at 50% 120%, rgba(255,255,255,.035) 0 3px, transparent 3px 46px),
+  linear-gradient(180deg,#0A3440 0%,#0E4A55 45%,#126069 100%) fixed !important; }
+.marquee h1{ background:linear-gradient(180deg,#FFFFFF,#BFE9E4); -webkit-background-clip:text; background-clip:text; color:transparent; text-shadow:none; filter:drop-shadow(0 3px 0 rgba(0,0,0,.25)); }
+.board{ background:linear-gradient(180deg,#1A6370,#12505B) !important; border:2px solid rgba(255,255,255,.14); }
+.frame{ background:linear-gradient(180deg,#0B3239,#0E3F47) !important; padding:10px; overflow:hidden; }
+.frame::before{ content:""; position:absolute; left:0; right:0; top:0; height:10px; pointer-events:none; z-index:2;
+  background:repeating-linear-gradient(90deg,rgba(255,255,255,.55) 0 22px,rgba(255,255,255,.12) 22px 44px); opacity:.35; animation:foam 6s linear infinite; mask:linear-gradient(#000,transparent); -webkit-mask:linear-gradient(#000,transparent); }
+@keyframes foam{ to{ background-position:44px 0; } }
+.grid{ gap:3px; position:relative; z-index:1; }
+.cell{ border:none !important; border-radius:8px !important; color:#fff; position:relative;
+  background:
+    radial-gradient(circle at 22% 28%,rgba(120,90,40,.22) 0 1.2px,transparent 1.6px),
+    radial-gradient(circle at 70% 64%,rgba(120,90,40,.2) 0 1.2px,transparent 1.6px),
+    radial-gradient(circle at 48% 82%,rgba(255,255,255,.35) 0 1px,transparent 1.5px),
+    linear-gradient(180deg,#F4E3AE,#D9C189) !important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.7), inset 0 -3px 0 #B49A5E, 0 2px 0 rgba(0,0,0,.35); transition:transform .08s, filter .1s; }
+.cell:nth-child(3n+1){ background-position:3px 2px,0 0,0 0,0 0 !important; }
+.cell:nth-child(2n){ filter:brightness(.975); }
+.cell:not(.open):hover{ filter:brightness(1.06); }
+.cell:not(.open):active{ transform:translateY(2px); box-shadow:inset 0 2px 0 rgba(255,255,255,.5), inset 0 -1px 0 #B49A5E, 0 0 0 rgba(0,0,0,0); }
+.cell.open{ background:linear-gradient(180deg,#A38A55,#B9A06A) !important; box-shadow:inset 0 3px 6px rgba(60,40,10,.55), inset 0 -1px 0 rgba(255,255,255,.25); animation:cellOpen .28s ease backwards; animation-delay:var(--d,0ms); }
+.cell.open:not([class*=" n"]):not(.boom)::after{ content:""; position:absolute; inset:0; border-radius:inherit; background:radial-gradient(circle at 50% 120%,rgba(120,210,225,.28),transparent 70%); }
+@keyframes cellOpen{ 0%{ transform:scale(.6); opacity:0; filter:brightness(1.6);} 60%{ transform:scale(1.08);} 100%{ transform:none; opacity:1; filter:none;} }
+.cell.n1{ color:#9FE3FF; } .cell.n2{ color:#A6F3B5; } .cell.n3{ color:#FFB1A3; } .cell.n4{ color:#D6B8FF; } .cell.n5{ color:#FFD08A; } .cell.n6{ color:#8CF2E8; } .cell.n7{ color:#fff; } .cell.n8{ color:#ddd; }
+.cell.open[class*=" n"]{ text-shadow:0 2px 0 rgba(20,10,0,.55), 0 0 8px currentColor; font-weight:900; }
+.cell.boom{ background:radial-gradient(circle,#FFB199,#E5533D) !important; animation:boomPop .5s ease; }
+@keyframes boomPop{ 0%{ transform:scale(.5);} 50%{ transform:scale(1.25);} 100%{ transform:scale(1);} }
+.cell svg{ filter:drop-shadow(0 2px 1px rgba(0,0,0,.4)); }
+.cell .flagsvg{ animation:flagIn .22s cubic-bezier(.3,1.6,.6,1); } @keyframes flagIn{ from{ transform:translateY(-8px) scale(.5); opacity:0;} }
+.cell .wave{ transform-origin:7px 8px; animation:wave 1.3s ease-in-out infinite alternate; } @keyframes wave{ from{ transform:skewY(-5deg);} to{ transform:skewY(5deg);} }
+.cell.mine-show{ animation:boomPop .45s ease backwards; animation-delay:var(--d,0ms); }
+.frame.shake{ animation:shk .4s linear; } @keyframes shk{ 15%{ transform:translate(-4px,2px);} 30%{ transform:translate(4px,-2px);} 45%{ transform:translate(-3px,-1px);} 60%{ transform:translate(3px,2px);} 80%{ transform:translate(-1px,1px);} }
+.bub{ position:absolute; bottom:-20px; border-radius:50%; background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.9),rgba(160,230,240,.25) 60%,rgba(160,230,240,.1)); border:1px solid rgba(255,255,255,.5); pointer-events:none; z-index:6; animation:rise 2.2s ease-in forwards; }
+@keyframes rise{ to{ transform:translateY(-420px) translateX(var(--sx,0)); opacity:0; } }
+.icon-btn[aria-pressed="true"]{ box-shadow:0 0 0 3px rgba(255,127,107,.35), 0 3px 0 rgba(0,0,0,.25) !important; }
+.hud .stat .value::before{ content:""; }
+#left::after{ content:" 🦔"; font-size:14px; } #time::after{ content:" s"; font-size:12px; opacity:.7; }
 </style>
 <script id="pl-js">
 (function(){
