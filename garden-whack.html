@@ -348,6 +348,7 @@ body{ position:relative; }
       '<path class="body" d="M50,20 C74,20 84,44 79,64 C74,84 60,93 50,93 C40,93 26,84 21,64 C16,44 26,20 50,20 Z"/>' +
       '<ellipse class="body" cx="12" cy="68" rx="9" ry="6.5" transform="rotate(-25 12 68)"/>' +
       '<ellipse class="body" cx="88" cy="68" rx="9" ry="6.5" transform="rotate(25 88 68)"/>' +
+      '<ellipse class="shine" cx="38" cy="32" rx="9" ry="5" transform="rotate(-25 38 32)"/>' +
       '<rect class="mask" x="17" y="41" width="66" height="17" rx="8.5"/>' +
       '<circle class="eye-white" cx="37" cy="49.5" r="7"/>' +
       '<circle class="eye-white" cx="63" cy="49.5" r="7"/>' +
@@ -367,13 +368,29 @@ body{ position:relative; }
     var critter = document.createElement('div');
     critter.className = 'critter';
     critter.innerHTML = CRITTER_SVG;
-    hole.appendChild(critter);
+    var pit = document.createElement('div'); pit.className = 'pit'; hole.appendChild(pit);
+    var cb = document.createElement('div'); cb.className = 'clipbox'; cb.appendChild(critter); hole.appendChild(cb);
+    var lip = document.createElement('div'); lip.className = 'lip'; hole.appendChild(lip);
+    ['l','r'].forEach(function(c){ var t = document.createElement('div'); t.className = 'tuft ' + c; hole.appendChild(t); });
+    var veg = document.createElement('div'); veg.className = 'veg'; veg.textContent = ['🥕','🥬','🍅','🌽'][i % 4]; hole.appendChild(veg);
     fieldEl.appendChild(hole);
     holes.push({ el: hole, active: false, golden: false, hideTimer: null, index: i });
     hole.addEventListener('click', (function(h){ return function(){ onHit(h); }; })(holes[i]));
   }
 
   var score, running, timeLeft, spawnTimer, tickTimer;
+
+  var frameEl = document.querySelector('.field-frame');
+  var comboEl = document.createElement('div'); comboEl.className = 'combo'; frameEl.appendChild(comboEl);
+  var combo = 0, bestCombo = 0, hits = 0;
+  function rel(h){ var a = h.el.getBoundingClientRect(), b = frameEl.getBoundingClientRect(); return { x: a.left - b.left + a.width / 2, y: a.top - b.top + a.height * .45 }; }
+  function floatTxt(h, txt, cls){ var p = rel(h), e = document.createElement('div'); e.className = 'fl ' + (cls || ''); e.textContent = txt; e.style.left = p.x + 'px'; e.style.top = p.y + 'px'; frameEl.appendChild(e); setTimeout(function(){ e.remove(); }, 850); }
+  function burst(h, gold){ var p = rel(h), n = gold ? 10 : 6; var r = document.createElement('div'); r.className = 'ring'; r.style.left = p.x + 'px'; r.style.top = p.y + 'px'; frameEl.appendChild(r); setTimeout(function(){ r.remove(); }, 420);
+    for (var k = 0; k < n; k++){ var s = document.createElement('div'); s.className = 'st'; var an = k / n * 6.283 + Math.random() * .5, d = 26 + Math.random() * 22; s.style.left = p.x + 'px'; s.style.top = p.y + 'px'; s.style.setProperty('--dx', Math.cos(an) * d + 'px'); s.style.setProperty('--dy', Math.sin(an) * d + 'px'); if (gold) s.style.background = '#FFF3A0'; frameEl.appendChild(s); (function(x){ setTimeout(function(){ x.remove(); }, 580); })(s); } }
+  function setCombo(n){ combo = n; if (n > bestCombo) bestCombo = n; if (n >= 3){ comboEl.textContent = '連擊 ×' + n; comboEl.classList.add('on'); comboEl.classList.remove('bump'); void comboEl.offsetWidth; comboEl.classList.add('bump'); } else comboEl.classList.remove('on'); }
+  function escaped(h){ setCombo(0); h.el.classList.add('stolen'); frameEl.classList.remove('shake'); void frameEl.offsetWidth; frameEl.classList.add('shake'); setTimeout(function(){ h.el.classList.remove('stolen'); }, 700); }
+  function bumpScore(){ scoreEl.classList.remove('bump'); void scoreEl.offsetWidth; scoreEl.classList.add('bump'); }
+
 
   var audioCtx = null;
   function getAudioCtx(){
@@ -489,7 +506,7 @@ body{ position:relative; }
     h.el.classList.add('active');
     h.el.classList.toggle('golden', h.golden);
     popSfx();
-    h.hideTimer = setTimeout(function(){ deactivateHole(h); }, duration);
+    h.hideTimer = setTimeout(function(){ if (running) escaped(h); deactivateHole(h); }, duration);
   }
 
   function deactivateHole(h){
@@ -499,10 +516,12 @@ body{ position:relative; }
   }
 
   function onHit(h){
-    if (!running || !h.active) return;
+    if (!running) return;
+    if (!h.active){ setCombo(0); floatTxt(h, '揮空', 'm'); return; }
     var points = h.golden ? 3 : 1;
     score += points;
-    scoreEl.textContent = score;
+    scoreEl.textContent = score; bumpScore(); hits++; setCombo(combo + 1);
+    floatTxt(h, '+' + points, h.golden ? 'g' : ''); burst(h, h.golden);
     if (h.golden) goldenHitSfx(); else hitSfx();
     h.el.classList.add('hit');
     deactivateHole(h);
@@ -530,7 +549,7 @@ body{ position:relative; }
       endGame();
       return;
     }
-    timerFill.style.width = (timeLeft / GAME_DURATION * 100) + '%';
+    timerFill.style.width = (timeLeft / GAME_DURATION * 100) + '%'; timerFill.classList.toggle('low', timeLeft <= 8);
   }
 
   function endGame(){
@@ -545,7 +564,9 @@ body{ position:relative; }
       bestEl.textContent = best;
       try { localStorage.setItem('gardenwhack_best', String(best)); } catch (e) { /* ignore */ }
     }
-    finalScoreEl.textContent = '本局分數：' + score;
+    comboEl.classList.remove('on'); timerFill.classList.remove('low');
+    var rk = score >= 50 ? '護田之神 👑' : score >= 35 ? '守菜達人 🥇' : score >= 20 ? '巡田好手 🥈' : '菜園新手 🌱';
+    finalScoreEl.innerHTML = rk + '<br>分數 ' + score + '　最高連擊 ×' + bestCombo;
     overOverlay.classList.remove('hidden');
   }
 
@@ -553,7 +574,7 @@ body{ position:relative; }
     startOverlay.classList.add('hidden');
     overOverlay.classList.add('hidden');
     holes.forEach(deactivateHole);
-    score = 0;
+    score = 0; combo = 0; bestCombo = 0; hits = 0; comboEl.classList.remove('on');
     scoreEl.textContent = '0';
     timeLeft = GAME_DURATION;
     timerFill.style.width = '100%';
@@ -599,6 +620,63 @@ canvas{touch-action:none}
 #pl-splash small{font:500 11px 'Noto Sans TC',sans-serif;letter-spacing:.3em;opacity:.7}
 @keyframes plSp{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){body{animation:none}#pl-splash i{animation:none}}
+
+/* ===== UI v3 (deep) ===== */
+body{ background:linear-gradient(180deg,#7CC8E8 0%,#BFE8F2 34%,#DDF2D2 34.1%,#9ED27A 100%) fixed; overflow-x:hidden; }
+body::before{ content:""; position:fixed; left:0; right:0; top:0; height:34vh; pointer-events:none; z-index:0;
+  background:
+   radial-gradient(circle at 82% 22%, #FFF3B0 0 22px, rgba(255,230,120,.55) 23px 40px, rgba(255,230,120,0) 70px),
+   radial-gradient(ellipse 60px 16px at 14% 30%, rgba(255,255,255,.9) 0 98%, transparent),
+   radial-gradient(ellipse 44px 12px at 22% 36%, rgba(255,255,255,.85) 0 98%, transparent),
+   radial-gradient(ellipse 70px 18px at 58% 18%, rgba(255,255,255,.75) 0 98%, transparent); }
+.marquee,.board,.hint{ position:relative; z-index:1; }
+.marquee h1{ color:#3D7A28; -webkit-text-stroke:0; text-shadow:0 2px 0 #fff,0 4px 0 rgba(61,122,40,.25),0 10px 22px rgba(0,0,0,.18); }
+.board{ background:linear-gradient(180deg,#8B5A2B,#6B431F) !important; border-radius:24px; padding:14px; border:3px solid #4E2F14; }
+.board::before{ content:""; position:absolute; left:16px; right:16px; top:-10px; height:16px; border-radius:8px; background:linear-gradient(#9BD36B,#5E9B3E); box-shadow:0 3px 0 rgba(0,0,0,.2); z-index:-1; }
+.hud .stat{ background:rgba(0,0,0,.22); }
+.timer-bar{ height:14px; border-radius:8px; background:rgba(0,0,0,.28); box-shadow:inset 0 2px 4px rgba(0,0,0,.4); position:relative; }
+.timer-fill{ background:linear-gradient(180deg,#FFE27A,#F0A91E); border-radius:8px; box-shadow:inset 0 2px 0 rgba(255,255,255,.55); }
+.timer-fill.low{ background:linear-gradient(180deg,#FF8A7A,#D9342B); animation:lowp .5s ease-in-out infinite alternate; }
+@keyframes lowp{ to{ filter:brightness(1.25);} }
+.field-frame{ background:#4A8A32 !important; padding:10px; border:3px solid #3A6B26; overflow:hidden; }
+.field{ gap:6px 8px; position:relative; }
+.field-frame::before{ content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.05) 0 28px,rgba(0,0,0,.06) 28px 56px), radial-gradient(ellipse at 50% 30%,rgba(255,255,255,.12),transparent 70%); }
+.hole{ background:none !important; box-shadow:none !important; border-radius:0 !important; overflow:visible !important; }
+.hole .pit{ position:absolute; left:4%; right:4%; bottom:6%; height:36%; border-radius:50%;
+  background:radial-gradient(ellipse at 50% 35%,#2B170A 0 45%,#4B2B14 75%,#6B4423 100%); box-shadow:0 3px 0 rgba(255,255,255,.14), inset 0 4px 8px rgba(0,0,0,.6); }
+.hole .clipbox{ position:absolute; left:0; right:0; top:-14%; bottom:26%; overflow:hidden; pointer-events:none; }
+.hole .lip{ position:absolute; left:2%; right:2%; bottom:3%; height:20%; border-radius:0 0 50% 50% / 0 0 100% 100%;
+  background:linear-gradient(#8A5A31,#5B3920); box-shadow:0 3px 5px rgba(0,0,0,.35); pointer-events:none; }
+.hole .tuft{ position:absolute; bottom:4%; width:14%; height:14%; background:radial-gradient(circle at 50% 100%,#79C255 0 60%,transparent 62%); pointer-events:none; }
+.hole .tuft.l{ left:-1%; } .hole .tuft.r{ right:-1%; transform:scaleX(-1); }
+.hole .veg{ position:absolute; right:-2%; bottom:-2%; font-size:19px; line-height:1; filter:drop-shadow(0 2px 0 rgba(0,0,0,.3)); pointer-events:none; transition:transform .25s, opacity .25s; z-index:3; }
+.hole.stolen .veg{ opacity:0; transform:translateY(6px) scale(.5); }
+.hole.stolen::after{ content:"😤"; position:absolute; left:50%; top:10%; font-size:20px; transform:translateX(-50%); animation:stl .6s ease-out forwards; pointer-events:none; z-index:4; }
+@keyframes stl{ from{ opacity:1; transform:translate(-50%,0);} to{ opacity:0; transform:translate(-50%,-18px);} }
+.critter{ width:70% !important; height:92% !important; bottom:-110%; transition:bottom .13s cubic-bezier(.3,1.5,.6,1) !important; filter:drop-shadow(0 3px 2px rgba(0,0,0,.35)); }
+.hole.active .critter{ bottom:0 !important; animation:wob .5s ease-in-out infinite alternate; }
+@keyframes wob{ from{ transform:translate(-50%,0) rotate(-2.5deg);} to{ transform:translate(-50%,0) rotate(2.5deg);} }
+.hole.golden .critter{ filter:drop-shadow(0 0 8px #FFD84A) drop-shadow(0 0 3px #FFF1A8); }
+.hole.golden .critter .body{ fill:#FFC933; }
+.hole.golden .pit{ box-shadow:0 0 14px rgba(255,216,74,.8), inset 0 4px 8px rgba(0,0,0,.6); }
+.hole.hit .critter{ animation:hitpop .28s ease forwards !important; }
+@keyframes hitpop{ 0%{ transform:translate(-50%,0) scale(1.1,.7); opacity:1;} 100%{ transform:translate(-50%,-30%) scale(.5) rotate(18deg); opacity:0;} }
+.critter .shine{ fill:#fff; opacity:.28; }
+.fl{ position:absolute; z-index:6; pointer-events:none; font-family:'Baloo 2',sans-serif; font-weight:800; font-size:24px; color:#FFF6C4; -webkit-text-stroke:5px #6B3A12; paint-order:stroke fill; transform:translate(-50%,-50%); animation:flup .8s ease-out forwards; text-shadow:0 2px 0 rgba(0,0,0,.2); }
+.fl.g{ font-size:32px; color:#FFE04A; }
+.fl.m{ font-size:18px; color:#FFB1A8; }
+@keyframes flup{ 0%{ opacity:0; transform:translate(-50%,-30%) scale(.5);} 15%{ opacity:1; transform:translate(-50%,-60%) scale(1.2);} 100%{ opacity:0; transform:translate(-50%,-190%) scale(1);} }
+.st{ position:absolute; z-index:5; width:8px; height:8px; margin:-4px; background:#FFE56B; clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%); pointer-events:none; animation:stb .55s ease-out forwards; }
+@keyframes stb{ to{ transform:translate(var(--dx),var(--dy)) scale(.2) rotate(180deg); opacity:0; } }
+.ring{ position:absolute; z-index:5; width:20px; height:20px; margin:-10px; border-radius:50%; border:3px solid #fff; pointer-events:none; animation:rg .4s ease-out forwards; }
+@keyframes rg{ to{ transform:scale(4); opacity:0; border-width:1px; } }
+.combo{ position:absolute; left:50%; top:4px; transform:translateX(-50%) scale(.8); z-index:7; padding:3px 14px; border-radius:99px; font:800 15px 'Baloo 2',sans-serif; color:#5A2E00; background:linear-gradient(#FFE27A,#F0A91E); box-shadow:0 3px 0 #B9740F,0 6px 12px rgba(0,0,0,.3); opacity:0; transition:opacity .2s, transform .2s; pointer-events:none; }
+.combo.on{ opacity:1; transform:translateX(-50%) scale(1); }
+.combo.bump{ animation:cb .22s ease; } @keyframes cb{ 50%{ transform:translateX(-50%) scale(1.25);} }
+.value.bump{ animation:vb .25s ease; display:inline-block; } @keyframes vb{ 50%{ transform:scale(1.35); color:#FFE56B; } }
+.field-frame.shake{ animation:shk .25s linear; } @keyframes shk{ 25%{ transform:translate(-3px,2px);} 50%{ transform:translate(3px,-2px);} 75%{ transform:translate(-2px,-1px);} }
+.hole{ -webkit-tap-highlight-color:transparent; cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36'%3E%3Cg transform='rotate(-35 18 18)'%3E%3Crect x='15' y='14' width='6' height='20' rx='2' fill='%238B5A2B'/%3E%3Crect x='5' y='3' width='26' height='14' rx='4' fill='%23C98B4B' stroke='%235A3512' stroke-width='2'/%3E%3C/g%3E%3C/svg%3E") 8 8, pointer; }
 </style>
 <script id="pl-js">
 (function(){
