@@ -58,6 +58,56 @@
   .skin:focus-visible{ outline:3px solid var(--gold); outline-offset:2px; }
   .skin-note{ font-size:11px; color:var(--cream-dim); min-height:15px; }
   @media (min-width:640px){ .controls{ display:none; } }
+
+  /* ===== UI v2 ===== */
+  body{ background:radial-gradient(ellipse at 50% -10%, rgba(244,166,35,.16), transparent 55%), radial-gradient(ellipse at 90% 100%, rgba(45,212,191,.10), transparent 50%), var(--bg-deep); }
+  .marquee{ margin-bottom:16px; margin-top:22px; }
+  .marquee h1{ font-size:clamp(20px,5.2vw,30px); background:linear-gradient(180deg,#FFE29A,#F4A623 60%,#B67C1C); -webkit-background-clip:text; background-clip:text; color:transparent; text-shadow:none; filter:drop-shadow(0 3px 0 #6b440b) drop-shadow(0 8px 16px rgba(244,166,35,.3)); }
+  .marquee p{ font-size:13px; opacity:.85; }
+  .cabinet{ position:relative; border:0; padding:16px; background:linear-gradient(180deg,#4a2f58,#2b1b33 60%,#241529); box-shadow:0 26px 60px rgba(0,0,0,.6), 0 0 0 2px #5a3a69, 0 0 0 5px #1b0f22, 0 0 40px rgba(244,166,35,.12), inset 0 2px 0 rgba(255,255,255,.12); }
+  .cabinet::before{ content:""; position:absolute; left:50%; top:7px; width:46px; height:4px; margin-left:-23px; border-radius:4px; background:linear-gradient(90deg,#F4A623,#2DD4BF); opacity:.7; box-shadow:0 0 10px rgba(244,166,35,.6); }
+  .hud{ padding:8px 4px 12px; }
+  .hud .stat{ min-width:84px; padding:8px 12px 9px; border-radius:12px; background:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.2)); box-shadow:inset 0 1px 0 rgba(255,255,255,.06), inset 0 0 0 1px rgba(255,255,255,.06); }
+  .hud .label{ color:#6FF0DD; text-shadow:0 0 8px rgba(45,212,191,.6); }
+  .hud .value{ font-size:19px; text-shadow:0 0 12px rgba(253,246,236,.3); font-variant-numeric:tabular-nums; }
+  .icon-btn{ background:linear-gradient(180deg,#4e3159,#33203d); box-shadow:0 3px 0 #1b0f22, inset 0 1px 0 rgba(255,255,255,.15); transition:transform .1s, box-shadow .1s; }
+  .icon-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 #1b0f22; background:linear-gradient(180deg,#4e3159,#33203d); }
+  .screen-frame{ background:#0d0612; border:0; padding:8px; box-shadow:inset 0 0 0 2px #3a2545, inset 0 0 24px rgba(0,0,0,.8), 0 0 0 2px #1b0f22; }
+  .screen-frame::after{ content:""; position:absolute; inset:8px; border-radius:6px; pointer-events:none; background:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px), radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(0,0,0,.35)); }
+  .overlay{ inset:8px; z-index:3; gap:10px; justify-content:center; background:radial-gradient(ellipse at 50% 20%, rgba(70,38,86,.97), rgba(18,9,24,.98)); backdrop-filter:blur(3px); animation:ovIn .3s ease; }
+  @keyframes ovIn{ from{ opacity:0; transform:scale(.97);} to{ opacity:1; transform:none; } }
+  .overlay .logo{ font-size:46px; line-height:1; filter:drop-shadow(0 6px 0 rgba(0,0,0,.35)) drop-shadow(0 0 18px rgba(244,166,35,.35)); animation:bobx 2.6s ease-in-out infinite; }
+  @keyframes bobx{ 0%,100%{ transform:translateY(0) rotate(-5deg);} 50%{ transform:translateY(-6px) rotate(5deg);} }
+  .overlay h2.title{ font-size:clamp(16px,4.6vw,22px); background:linear-gradient(180deg,#FFE29A,#F4A623); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 2px 0 #6b440b); }
+  .overlay .sub{ font-size:12px; margin-top:-4px; }
+  .seg{ border:0; gap:8px; overflow:visible; width:100%; max-width:330px; }
+  .seg button{ flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 4px 9px; border-radius:14px; background:linear-gradient(180deg,#3d2849,#2a1a34); border:2px solid #4E3159; color:var(--cream-dim); transition:transform .12s, border-color .15s, box-shadow .15s; }
+  .seg button i{ font-style:normal; font-size:22px; line-height:1.1; } .seg button b{ font-size:13.5px; color:var(--cream); } .seg button small{ font-size:10.5px; opacity:.75; }
+  .seg button:hover{ transform:translateY(-2px); }
+  .seg button[aria-pressed="true"]{ background:linear-gradient(180deg,#FFD27A,#F4A623); border-color:#FFE7B0; color:#3a2300; box-shadow:0 0 0 2px rgba(244,166,35,.35), 0 8px 18px rgba(244,166,35,.3); transform:translateY(-2px); }
+  .seg button[aria-pressed="true"] b{ color:#2b1b33; }
+  .skins-wrap{ margin-top:2px; } .skin{ width:32px; height:32px; box-shadow:0 2px 0 rgba(0,0,0,.4); transition:transform .12s; } .skin:hover{ transform:scale(1.1); }
+  .skin-note{ font-size:11px; opacity:.8; }
+  .btn{ position:relative; overflow:hidden; background:linear-gradient(180deg,#7DF3E2,#2DD4BF 55%,#1F9B8B); box-shadow:0 5px 0 #146b60, 0 10px 18px rgba(45,212,191,.28), inset 0 1px 0 rgba(255,255,255,.55); letter-spacing:1px; transition:transform .1s, box-shadow .1s; }
+  .btn:active{ transform:translateY(4px); box-shadow:0 1px 0 #146b60; }
+  .btn.big{ font-size:14px; padding:15px 34px; border-radius:12px; animation:pulsex 1.9s ease-in-out infinite; }
+  .btn.big::after{ content:""; position:absolute; top:0; bottom:0; left:-40%; width:30%; background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent); transform:skewX(-20deg); animation:shinex 2.8s ease-in-out infinite; }
+  @keyframes pulsex{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.04);} } @keyframes shinex{ 0%{ left:-40%; } 60%,100%{ left:140%; } }
+  .link{ background:none; border:0; color:var(--cream-dim); font:700 13px 'Nunito',sans-serif; padding:6px 10px; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+  .link:hover{ color:var(--gold); }
+  .legend{ background:rgba(0,0,0,.25); border-radius:14px; padding:12px 14px; gap:6px 10px; max-height:calc(100% - 120px); overflow:auto; }
+  .legend i{ box-shadow:0 0 8px currentColor; }
+  .stats{ display:flex; gap:8px; justify-content:center; margin:4px 0; }
+  .st{ min-width:78px; padding:9px 10px 8px; border-radius:12px; background:rgba(0,0,0,.35); box-shadow:inset 0 0 0 1px rgba(255,255,255,.08); }
+  .st small{ display:block; font-size:10.5px; color:var(--teal); letter-spacing:1px; margin-bottom:3px; }
+  .st b{ font-family:'Press Start 2P',monospace; font-size:15px; color:var(--cream); font-weight:400; }
+  .newbest{ display:block; margin-top:4px; padding:6px 14px; border-radius:99px; background:linear-gradient(180deg,#FFD27A,#F4A623); color:#3a2300; font-weight:800; font-size:13px; animation:pulsex 1.4s ease-in-out infinite; }
+  .unlock{ display:block; margin-top:6px; color:#9FE8FF; font-size:12px; }
+  .dpad button{ background:linear-gradient(180deg,#4e3159,#33203d); box-shadow:0 4px 0 #1b0f22, inset 0 1px 0 rgba(255,255,255,.12); border:0; transition:transform .08s, box-shadow .08s; }
+  .dpad button:active{ transform:translateY(3px); box-shadow:0 1px 0 #1b0f22; background:linear-gradient(180deg,#B67C1C,#8a5a10); }
+  .dash{ box-shadow:0 5px 0 #8a5a10, 0 0 20px rgba(244,166,35,.25), inset 0 1px 0 rgba(255,255,255,.12); background:linear-gradient(180deg,#4e3159,#33203d); border-width:3px; transition:transform .08s, box-shadow .08s; }
+  .dash:active,.dash.on{ transform:translateY(3px); box-shadow:0 2px 0 #8a5a10, 0 0 30px rgba(244,166,35,.55); background:linear-gradient(180deg,#FFD27A,#F4A623); }
+  @media (prefers-reduced-motion:reduce){ .overlay .logo,.btn.big,.btn.big::after,.newbest{ animation:none; } }
 </style>
 </head>
 <body>
@@ -80,7 +130,20 @@
       <canvas id="game" width="400" height="400" aria-label="貪食蛇遊戲畫面"></canvas>
 
       <div class="overlay" id="startOverlay">
-        <h2>夜蔓出發</h2>
+        <h2 class="title">🌿 夜蔓出發</h2>
+        <div class="seg" role="group" aria-label="模式">
+          <button type="button" data-mode="classic" aria-pressed="true"><i>🐍</i><b>經典</b><small>撞牆就結束</small></button>
+          <button type="button" data-mode="wrap" aria-pressed="false"><i>🌀</i><b>穿牆</b><small>邊界相連</small></button>
+          <button type="button" data-mode="duel" aria-pressed="false"><i>⚔️</i><b>對戰</b><small>AI 紅蛇</small></button>
+        </div>
+        <div class="skins-wrap"><span>蛇皮膚</span><div class="skins" id="skins" role="group" aria-label="蛇皮膚"></div></div>
+        <div class="skin-note" id="skinNote"></div>
+        <button class="btn big" id="startBtn">▶ 開始遊戲</button>
+        <button class="link" id="dexBtn" type="button">📖 道具圖鑑</button>
+      </div>
+
+      <div class="overlay hidden" id="dexOverlay">
+        <h2 class="title">道具圖鑑</h2>
         <div class="legend">
           <i style="background:#F45B8A"></i><span>果實：+10，連續吃會連擊加成（最高 ×5）</span>
           <i style="background:#F4A623"></i><span>金果：限時出現，+50 並長長一節</span>
@@ -94,23 +157,16 @@
           <i style="background:#FF9EC0"></i><span>果實雨：限時掉下一大把果實，快搶！</span>
           <i style="background:#E5484D"></i><span>對戰模式：AI 紅蛇會搶果實、攔路；撞到牠你就輸，牠被困住撞毀 +30</span>
         </div>
-        <div class="seg" role="group" aria-label="模式">
-          <button type="button" data-mode="classic" aria-pressed="true">經典</button>
-          <button type="button" data-mode="wrap" aria-pressed="false">穿牆</button>
-          <button type="button" data-mode="duel" aria-pressed="false">對戰（AI 紅蛇）</button>
-        </div>
-        <div class="skins-wrap"><span>蛇皮膚</span><div class="skins" id="skins" role="group" aria-label="蛇皮膚"></div></div>
-        <div class="skin-note" id="skinNote"></div>
-        <button class="btn" id="startBtn">開始遊戲</button>
+        <button class="btn" id="dexClose" type="button">返回</button>
       </div>
 
       <div class="overlay hidden" id="pauseOverlay">
-        <h2>暫停中</h2>
+        <div class="logo" aria-hidden="true">⏸</div><h2 class="title">暫停中</h2>
         <button class="btn" id="resumeBtn">繼續</button>
       </div>
 
       <div class="overlay hidden" id="overOverlay">
-        <h2>遊戲結束</h2>
+        <div class="logo" aria-hidden="true">💥</div><h2 class="title">遊戲結束</h2>
         <p id="finalText"></p>
         <button class="btn" id="restartBtn">再玩一次</button>
       </div>
@@ -476,7 +532,7 @@
     }
     var unNow = unlockedCount(), unMsg = '';
     if (unNow > unBefore){ unMsg = '<br>解鎖新皮膚：' + SKINS.slice(unBefore, unNow).map(function(k){ return k.n; }).join('、'); }
-    finalText.innerHTML = '分數 ' + score + '　等級 ' + level + '<br>' + (m === 'wrap' ? '穿牆模式' : (m === 'duel' ? '對戰模式' : '經典模式')) + (newBest ? '<br>刷新最高分了！' : '') + unMsg;
+    finalText.innerHTML = '<span class="stats"><span class="st"><small>分數</small><b>' + score + '</b></span><span class="st"><small>等級</small><b>' + level + '</b></span><span class="st"><small>模式</small><b>' + (m === 'wrap' ? '穿牆' : (m === 'duel' ? '對戰' : '經典')) + '</b></span></span>' + (newBest ? '<span class="newbest">🏆 刷新最高分!</span>' : '') + (unMsg ? '<span class="unlock">' + unMsg.replace('<br>','') + '</span>' : '');
     renderSkins();
     setTimeout(function(){ overOverlay.classList.remove('hidden'); }, 600);
   }
@@ -792,6 +848,8 @@
   }, { passive: true });
 
   document.getElementById('startBtn').addEventListener('click', startGame);
+  document.getElementById('dexBtn').addEventListener('click', function(){ document.getElementById('dexOverlay').classList.remove('hidden'); });
+  document.getElementById('dexClose').addEventListener('click', function(){ document.getElementById('dexOverlay').classList.add('hidden'); });
   document.getElementById('restartBtn').addEventListener('click', startGame);
   document.getElementById('resumeBtn').addEventListener('click', function(){ setPaused(false); });
   pauseBtn.addEventListener('click', function(){ if (running) setPaused(!paused); });
@@ -862,6 +920,13 @@ canvas{touch-action:none}
 #pl-splash small{font:500 11px 'Noto Sans TC',sans-serif;letter-spacing:.3em;opacity:.7}
 @keyframes plSp{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){body{animation:none}#pl-splash i{animation:none}}
+
+  .overlay{ justify-content:safe center; padding:12px 12px 14px; gap:8px; }
+  #startOverlay{ gap:9px; }
+  #startOverlay .seg button{ padding:8px 4px 7px; } #startOverlay .seg button i{ font-size:20px; } #startOverlay .seg button small{ font-size:10px; }
+  #startOverlay .btn.big{ padding:13px 30px; }
+  #startOverlay .link{ padding:2px 8px; font-size:12.5px; }
+  .skin-note{ min-height:0; line-height:1.3; }
 </style>
 <script id="pl-js">
 (function(){
