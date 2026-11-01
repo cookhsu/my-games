@@ -51,6 +51,15 @@
   @keyframes pop{ 0%{ transform:scale(.6); opacity:0;} 70%{ transform:scale(1.04);} 100%{ transform:none; opacity:1;} }
   .have{ font-size:12px; color:#8A6A55; max-width:300px; line-height:1.7; }
   @media (prefers-reduced-motion:reduce){ .hero,.pearls i,.pulse{ animation:none!important; } }
+
+  .ov h2,h1{ -webkit-font-smoothing:antialiased; }
+  .hero{ filter:drop-shadow(0 10px 0 rgba(74,46,32,.18)) drop-shadow(0 0 28px rgba(255,123,165,.45)); }
+  .pc{ position:relative; overflow:hidden; } .pc::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--pink); }
+  .btn{ overflow:hidden; }
+  .btn.pulse::before{ content:''; position:absolute; top:0; bottom:0; left:-40%; width:30%; background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent); transform:skewX(-20deg); animation:shine 2.8s ease-in-out infinite; }
+  @keyframes shine{ 0%{left:-40%} 60%,100%{left:140%} }
+  .stat{ background:linear-gradient(180deg,#fff,#FFF3E2); }
+  @media (prefers-reduced-motion:reduce){ .btn.pulse::before{ animation:none; } }
 </style>
 </head>
 <body>
@@ -334,7 +343,7 @@ function drawGems(){G.gems.forEach(function(g){var x=sx(g.x),y=sy(g.y);if(x<-10|
   else{ctx.fillStyle=g.v>=3?'#FFC94D':g.v>=2?'#B58CFF':'#6FD8FF';ctx.beginPath();ctx.moveTo(x,y-6+bob);ctx.lineTo(x+5,y+bob);ctx.lineTo(x,y+6+bob);ctx.lineTo(x-5,y+bob);ctx.closePath();ctx.fill();ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillRect(x-1,y-4+bob,2,3);}});}
 function drawHUD(){
   var need_=need(),fr=Math.min(1,G.xp/need_);
-  ctx.fillStyle='rgba(74,46,32,.55)';ctx.fillRect(0,0,W,12);ctx.fillStyle='#FF7BA5';ctx.fillRect(0,0,W*fr,12);ctx.fillStyle='rgba(255,255,255,.4)';ctx.fillRect(0,1,W*fr,3);
+  var tg=ctx.createLinearGradient(0,0,0,64);tg.addColorStop(0,'rgba(36,23,17,.78)');tg.addColorStop(1,'rgba(36,23,17,0)');ctx.fillStyle=tg;ctx.fillRect(0,0,W,64);ctx.fillStyle='rgba(74,46,32,.7)';ctx.fillRect(0,0,W,12);var xg=ctx.createLinearGradient(0,0,W,0);xg.addColorStop(0,'#FFB3CC');xg.addColorStop(1,'#FF5C8F');ctx.fillStyle=xg;ctx.fillRect(0,0,W*fr,12);ctx.fillStyle='rgba(255,255,255,.45)';ctx.fillRect(0,1,W*fr,3);ctx.fillStyle='rgba(255,255,255,.5)';ctx.fillRect(Math.max(0,W*fr-2),0,2,12);
   txt('Lv '+G.lv,8,6.5,10,'#fff','left','rgba(74,46,32,.6)');
   txt(fmt(G.t),CX,27,22,'#fff','center','#6E4630');
   if(!G.endless&&!G.won)txt('目標 5:00',CX,45,10,'#FFF1D0','center','#6E4630');
@@ -347,6 +356,7 @@ function drawHUD(){
   var j=0;Object.keys(G.P).forEach(function(k){var x=W-8-26-j*24,y=H-30;ctx.fillStyle='rgba(255,246,233,.85)';rr(x,y,22,22,7);ctx.fill();ctx.font='12px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle='#000';ctx.fillText(PD[k].i,x+11,y+10);txt(String(G.P[k]),x+17,y+19,7,'#fff','center','#6E4630');j++;});
   if(joy.on){ctx.fillStyle='rgba(255,255,255,.18)';ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(joy.ox,joy.oy,44,0,6.3);ctx.fill();ctx.stroke();var jx=joy.x-joy.ox,jy=joy.y-joy.oy,jl=Math.hypot(jx,jy),m=Math.min(44,jl);if(jl>0){jx=jx/jl*m;jy=jy/jl*m;}ctx.fillStyle='rgba(255,255,255,.7)';ctx.beginPath();ctx.arc(joy.ox+jx,joy.oy+jy,20,0,6.3);ctx.fill();}
   if(G.banner){var b=G.banner,p=1-b.life/b.max,al=Math.min(1,p*6,(1-p)*4);ctx.globalAlpha=Math.max(0,al);var by=140;ctx.fillStyle=b.boss?'#C42A45':'#D8456F';rr(CX-120,by-22,240,44,12);ctx.fill();ctx.fillStyle='rgba(255,255,255,.3)';rr(CX-112,by-18,224,5,2.5);ctx.fill();txt(b.text,CX,by+2,24,'#fff','center',b.boss?'#7E1830':'#9E2C4E');ctx.globalAlpha=1;}
+  var vv=ctx.createRadialGradient(CX,CY,170,CX,CY,430);vv.addColorStop(0,'rgba(36,23,17,0)');vv.addColorStop(1,'rgba(36,23,17,.38)');ctx.fillStyle=vv;ctx.fillRect(0,0,W,H);
   if(G.hurtT>0){var vg=ctx.createRadialGradient(CX,CY,150,CX,CY,420);vg.addColorStop(0,'rgba(255,40,70,0)');vg.addColorStop(1,'rgba(255,40,70,'+Math.min(.55,G.hurtT*2.4)+')');ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);}
   if(G.hp/G.maxhp<.3&&running){var pu=.12+.1*Math.sin(G.t*8),vg2=ctx.createRadialGradient(CX,CY,180,CX,CY,420);vg2.addColorStop(0,'rgba(255,40,70,0)');vg2.addColorStop(1,'rgba(255,40,70,'+pu+')');ctx.fillStyle=vg2;ctx.fillRect(0,0,W,H);}
 }
