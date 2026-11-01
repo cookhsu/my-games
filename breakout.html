@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>甜點打磚塊 Sweet Breakout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --kraft: #E7C9A0;
+    --kraft-dark: #C69C6D;
+    --ribbon: #F2789F;
+    --ribbon-dark: #D9567F;
+    --counter: #FFF6EA;
+    --counter-line: rgba(92,58,33,0.06);
+    --paddle: #D9A66C;
+    --paddle-light: #FDF6EC;
+    --paddle-dark: #8B5E34;
+    --ball: #F45B69;
+    --ink: #5C3A21;
+    --ink-soft: #8A6B4F;
+    --cream: #FFF8F0;
+    --shadow: rgba(60,38,18,0.32);
+  }
+
+  *{ box-sizing: border-box; }
+  html, body{
+    margin:0; padding:0;
+    background: #F6ECDA;
+    color: var(--ink);
+    font-family: 'Nunito', system-ui, sans-serif;
+    min-height: 100%;
+  }
+
+  body{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding: 28px 16px 60px;
+    background:
+      radial-gradient(ellipse at 50% -10%, rgba(242,120,159,0.10), transparent 55%),
+      #F6ECDA;
+  }
+
+  .marquee{
+    text-align:center;
+    margin-bottom: 20px;
+  }
+  .marquee h1{
+    font-family:'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: clamp(22px, 6vw, 34px);
+    color: var(--ink);
+    margin: 0 0 8px;
+  }
+  .marquee p{
+    margin:0;
+    color: var(--ink-soft);
+    font-size: 14px;
+    max-width: 420px;
+  }
+
+  .board{
+    position:relative;
+    background:
+      repeating-linear-gradient(135deg, rgba(255,255,255,0.15) 0 8px, transparent 8px 16px),
+      linear-gradient(180deg, var(--kraft), var(--kraft-dark));
+    border-radius: 20px;
+    padding: 22px 18px 18px;
+    box-shadow: 0 20px 45px var(--shadow);
+    width: 100%;
+    max-width: 420px;
+  }
+
+  .ribbon{
+    position:absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ribbon);
+    color: var(--cream);
+    font-family:'Fredoka', sans-serif;
+    font-weight:600;
+    font-size: 12px;
+    padding: 6px 16px;
+    border-radius: 6px;
+    box-shadow: 0 3px 0 var(--ribbon-dark);
+    white-space: nowrap;
+  }
+
+  .hud{
+    display:flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 6px 6px;
+  }
+  .hud .stat{ text-align:left; }
+  .hud .stat.right{ text-align:right; }
+  .hud .label{
+    font-family:'Fredoka', sans-serif;
+    font-size: 11px;
+    color: var(--cream);
+    letter-spacing: 0.5px;
+    display:block;
+    margin-bottom: 2px;
+    opacity: 0.9;
+  }
+  .hud .value{
+    font-family:'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 22px;
+    color: var(--ink);
+  }
+  .music-btn{
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--cream);
+    border: none;
+    color: var(--ink);
+    font-size: 18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    flex-shrink:0;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.15);
+  }
+  .music-btn:active{ transform: translateY(1px); box-shadow:none; }
+  .music-btn:focus-visible{
+    outline: 3px solid var(--ribbon);
+    outline-offset: 2px;
+  }
+
+  .lives{
+    text-align:center;
+    font-size: 18px;
+    letter-spacing: 4px;
+    padding-bottom: 8px;
+  }
+
+  .screen-frame{
+    position:relative;
+    border-radius: 12px;
+    padding: 6px;
+    background: var(--kraft-dark);
+  }
+
+  canvas{
+    display:block;
+    width:100%;
+    height:auto;
+    border-radius: 8px;
+    background: var(--counter);
+    touch-action: none;
+    cursor: pointer;
+  }
+
+  .overlay{
+    position:absolute;
+    inset: 6px;
+    border-radius: 8px;
+    background: rgba(92,58,33,0.82);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding: 20px;
+    gap: 14px;
+  }
+  .overlay.hidden{ display:none; }
+  .overlay h2{
+    font-family:'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: clamp(18px, 5vw, 26px);
+    color: var(--cream);
+    margin:0;
+  }
+  .overlay p{
+    margin:0;
+    color: #F2E2CE;
+    font-size: 13px;
+    line-height:1.6;
+    max-width: 260px;
+  }
+  .btn{
+    font-family:'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--ribbon);
+    border: none;
+    padding: 12px 26px;
+    border-radius: 24px;
+    cursor:pointer;
+    color: var(--cream);
+    box-shadow: 0 4px 0 var(--ribbon-dark);
+    transition: transform 0.08s ease;
+  }
+  .btn:active{
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 var(--ribbon-dark);
+  }
+  .btn:focus-visible{
+    outline: 3px solid var(--cream);
+    outline-offset: 2px;
+  }
+
+  .hint{
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align:center;
+    max-width: 420px;
+  }
+  .hint kbd{
+    font-family:'Fredoka', sans-serif;
+    font-size: 11px;
+    background: var(--cream);
+    border-radius: 4px;
+    padding: 3px 8px;
+    color: var(--ink);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .btn, .music-btn{ transition: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="marquee">
+    <h1>甜點打磚塊</h1>
+    <p>滑動擀麵棍接住櫻桃球，把整盒繽紛小點心通通敲碎！</p>
+  </div>
+
+  <div class="board">
+    <div class="ribbon">SWEET BREAKOUT</div>
+
+    <div class="hud">
+      <div class="stat">
+        <span class="label">分數 SCORE</span>
+        <span class="value" id="score">0</span>
+      </div>
+      <button class="music-btn" id="musicBtn" aria-label="切換背景音樂" aria-pressed="true">🔊</button>
+      <div class="stat right">
+        <span class="label">最佳 BEST</span>
+        <span class="value" id="best">0</span>
+      </div>
+    </div>
+    <div class="lives" id="lives">🍪🍪🍪</div>
+
+    <div class="screen-frame">
+      <canvas id="game" width="360" height="560" aria-label="甜點打磚塊遊戲畫面"></canvas>
+
+      <div class="overlay" id="startOverlay">
+        <h2>開始烘焙！</h2>
+        <p>滑動滑鼠或手指移動擀麵棍，點一下或按空白鍵發球，把所有點心磚塊都敲掉吧</p>
+        <button class="btn" id="startBtn">開始遊戲</button>
+      </div>
+
+      <div class="overlay hidden" id="endOverlay">
+        <h2 id="endTitle">遊戲結束</h2>
+        <p id="finalScore">本局分數：0</p>
+        <button class="btn" id="restartBtn">再玩一次</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">桌機請移動滑鼠、按 <kbd>空白鍵</kbd> 發球　手機請直接用手指拖曳與點擊</p>
+
+<script>
+(function(){
+  "use strict";
+
+  var canvas = document.getElementById('game');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+
+  var scoreEl = document.getElementById('score');
+  var bestEl = document.getElementById('best');
+  var livesEl = document.getElementById('lives');
+  var startOverlay = document.getElementById('startOverlay');
+  var endOverlay = document.getElementById('endOverlay');
+  var endTitle = document.getElementById('endTitle');
+  var finalScoreEl = document.getElementById('finalScore');
+  var startBtn = document.getElementById('startBtn');
+  var restartBtn = document.getElementById('restartBtn');
+
+  var best = 0;
+  try {
+    var stored = localStorage.getItem('sweetbreakout_best');
+    if (stored) best = parseInt(stored, 10) || 0;
+  } catch (e) { /* storage unavailable */ }
+  bestEl.textContent = best;
+
+  var COLS = 6, ROWS = 6;
+  var PADDING = 14, GAP = 8, BRICK_H = 20, TOP_OFFSET = 20;
+  var BRICK_W = (W - PADDING*2 - GAP*(COLS-1)) / COLS;
+  var ROW_COLORS = ['#F2789F','#F7B267','#F4D35E','#8FD9C4','#7FB2E5','#B98BD9'];
+  var ROW_HP = [2,2,1,1,1,1];
+
+  var PADDLE_W = 78, PADDLE_H = 16, PADDLE_Y = H - 40;
+  var BALL_R = 8;
+  var BASE_SPEED = 260;
+
+  var paddle, ball, bricks, score, lives, state, keyLeft, keyRight, rafId, lastTime, ballSpeed, brickCount;
+
+  function makeBricks(){
+    var list = [];
+    for (var r=0; r<ROWS; r++){
+      for (var c=0; c<COLS; c++){
+        list.push({
+          x: PADDING + c*(BRICK_W+GAP),
+          y: TOP_OFFSET + r*(BRICK_H+GAP),
+          w: BRICK_W, h: BRICK_H,
+          hp: ROW_HP[r], maxHp: ROW_HP[r],
+          color: ROW_COLORS[r],
+          alive: true
+        });
+      }
+    }
+    return list;
+  }
+
+  function resetState(){
+    paddle = { x: (W-PADDLE_W)/2, w: PADDLE_W, h: PADDLE_H, y: PADDLE_Y };
+    bricks = makeBricks();
+    brickCount = bricks.length;
+    score = 0;
+    lives = 3;
+    ballSpeed = BASE_SPEED;
+    scoreEl.textContent = '0';
+    updateLives();
+    placeBallOnPaddle();
+    state = 'ready';
+  }
+
+  function placeBallOnPaddle(){
+    ball = {
+      x: paddle.x + paddle.w/2,
+      y: paddle.y - BALL_R - 2,
+      vx: 0, vy: 0
+    };
+  }
+
+  function updateLives(){
+    var s = '';
+    for (var i=0; i<lives; i++) s += '🍪';
+    livesEl.textContent = s || '💔';
+  }
+
+  function lighten(hex, amt){
+    var c = hex.replace('#','');
+    var r = parseInt(c.substr(0,2),16), g = parseInt(c.substr(2,2),16), b = parseInt(c.substr(4,2),16);
+    r = Math.min(255, Math.round(r + (255-r)*amt));
+    g = Math.min(255, Math.round(g + (255-g)*amt));
+    b = Math.min(255, Math.round(b + (255-b)*amt));
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
+  }
+
+  function roundRectPath(x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r);
+    ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r);
+    ctx.arcTo(x, y, x+w, y, r);
+    ctx.closePath();
+  }
+
+  function drawBackground(){
+    ctx.fillStyle = '#FFF6EA';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(92,58,33,0.035)';
+    var sq = 30;
+    for (var y=0; y<H; y+=sq){
+      for (var x=(Math.floor(y/sq)%2===0?0:sq); x<W; x+=sq*2){
+        ctx.fillRect(x, y, sq, sq);
+      }
+    }
+  }
+
+  function drawBricks(){
+    bricks.forEach(function(b){
+      if (!b.alive) return;
+      var color = b.hp < b.maxHp ? lighten(b.color, 0.45) : b.color;
+      ctx.fillStyle = color;
+      roundRectPath(b.x, b.y, b.w, b.h, 6);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(92,58,33,0.18)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      roundRectPath(b.x+3, b.y+3, b.w-6, 5, 3);
+      ctx.fill();
+    });
+  }
+
+  function drawPaddle(){
+    ctx.save();
+    ctx.fillStyle = '#8B5E34';
+    roundRectPath(paddle.x-6, paddle.y-2, paddle.w+12, paddle.h+4, 8);
+    ctx.fill();
+    ctx.fillStyle = '#D9A66C';
+    roundRectPath(paddle.x, paddle.y, paddle.w, paddle.h, 6);
+    ctx.fill();
+    ctx.fillStyle = '#FDF6EC';
+    roundRectPath(paddle.x+8, paddle.y+4, paddle.w-16, paddle.h-8, 4);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawBall(){
+    ctx.save();
+    ctx.fillStyle = '#F45B69';
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI*2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath();
+    ctx.arc(ball.x-2.5, ball.y-2.5, 2.4, 0, Math.PI*2);
+    ctx.fill();
+    ctx.strokeStyle = '#5C3A21';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(ball.x+1, ball.y-BALL_R);
+    ctx.lineTo(ball.x+4, ball.y-BALL_R-4);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function draw(){
+    drawBackground();
+    drawBricks();
+    drawPaddle();
+    drawBall();
+  }
+
+  var audioCtx = null;
+  function getAudioCtx(){
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    } catch (e) { audioCtx = null; }
+    return audioCtx;
+  }
+  function sfx(freq, dur, type, vol){
+    var ac = getAudioCtx();
+    if (!ac) return;
+    try {
+      var o = ac.createOscillator();
+      var g = ac.createGain();
+      o.type = type || 'square';
+      o.frequency.value = freq;
+      g.gain.value = 0;
+      o.connect(g); g.connect(ac.destination);
+      var t = ac.currentTime;
+      o.start(t);
+      g.gain.linearRampToValueAtTime(vol || 0.06, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.stop(t + dur + 0.02);
+    } catch (e) { /* ignore */ }
+  }
+  function popSfx(){ sfx(720, 0.09, 'square', 0.05); }
+  function paddleSfx(){ sfx(300, 0.07, 'triangle', 0.05); }
+  function wallSfx(){ sfx(420, 0.05, 'sine', 0.04); }
+  function loseLifeSfx(){ sfx(200, 0.3, 'sawtooth', 0.06); }
+  function winSfx(){ sfx(1046, 0.4, 'triangle', 0.06); }
+
+  var music = {
+    enabled: true,
+    timer: null,
+    step: 0,
+    tempo: 240,
+    melody: [523.25, 659.25, 783.99, 659.25, 587.33, 659.25, 523.25, 392.00],
+    bass:   [130.81, null,   196.00, null,   146.83, null,   130.81, null],
+    loadPref: function(){
+      try {
+        var v = localStorage.getItem('sweetbreakout_music');
+        if (v !== null) this.enabled = (v === '1');
+      } catch (e) { /* ignore */ }
+    },
+    savePref: function(){
+      try { localStorage.setItem('sweetbreakout_music', this.enabled ? '1' : '0'); } catch (e) { /* ignore */ }
+    },
+    tone: function(freq, dur, type, vol){
+      var ac = getAudioCtx();
+      if (!ac || !freq) return;
+      try {
+        var o = ac.createOscillator();
+        var g = ac.createGain();
+        o.type = type;
+        o.frequency.value = freq;
+        g.gain.value = 0;
+        o.connect(g); g.connect(ac.destination);
+        var t = ac.currentTime;
+        o.start(t);
+        g.gain.linearRampToValueAtTime(vol, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.stop(t + dur + 0.03);
+      } catch (e) { /* ignore */ }
+    },
+    playStep: function(){
+      var m = this.melody[this.step % this.melody.length];
+      var b = this.bass[this.step % this.bass.length];
+      this.tone(m, 0.26, 'sine', 0.045);
+      if (b) this.tone(b, 0.46, 'triangle', 0.045);
+      this.step++;
+    },
+    start: function(){
+      this.stop();
+      if (!this.enabled) return;
+      getAudioCtx();
+      this.step = 0;
+      this.playStep();
+      var self = this;
+      this.timer = setInterval(function(){ self.playStep(); }, this.tempo);
+    },
+    stop: function(){
+      if (this.timer){ clearInterval(this.timer); this.timer = null; }
+    },
+    toggle: function(){
+      this.enabled = !this.enabled;
+      this.savePref();
+      if (this.enabled && state === 'playing') this.start();
+      else this.stop();
+      return this.enabled;
+    }
+  };
+  music.loadPref();
+
+  function launchBall(){
+    var angle = (Math.random()*40 - 20) * Math.PI/180; // -20~20 deg from straight up
+    ball.vx = ballSpeed * Math.sin(angle);
+    ball.vy = -ballSpeed * Math.cos(angle);
+    state = 'playing';
+    music.start();
+  }
+
+  function movePaddleTo(clientX){
+    var rect = canvas.getBoundingClientRect();
+    var scale = W / rect.width;
+    var x = (clientX - rect.left) * scale;
+    paddle.x = Math.max(0, Math.min(W - paddle.w, x - paddle.w/2));
+  }
+
+  function update(dt){
+    if (keyLeft) paddle.x -= 340*dt;
+    if (keyRight) paddle.x += 340*dt;
+    paddle.x = Math.max(0, Math.min(W - paddle.w, paddle.x));
+
+    if (state === 'ready'){
+      ball.x = paddle.x + paddle.w/2;
+      ball.y = paddle.y - BALL_R - 2;
+      return;
+    }
+    if (state !== 'playing') return;
+
+    ball.x += ball.vx * dt;
+    ball.y += ball.vy * dt;
+
+    if (ball.x - BALL_R < 0){ ball.x = BALL_R; ball.vx *= -1; wallSfx(); }
+    if (ball.x + BALL_R > W){ ball.x = W - BALL_R; ball.vx *= -1; wallSfx(); }
+    if (ball.y - BALL_R < 0){ ball.y = BALL_R; ball.vy *= -1; wallSfx(); }
+
+    if (ball.y + BALL_R > paddle.y && ball.y - BALL_R < paddle.y + paddle.h &&
+        ball.x > paddle.x - BALL_R && ball.x < paddle.x + paddle.w + BALL_R && ball.vy > 0){
+      var hitPos = (ball.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
+      hitPos = Math.max(-1, Math.min(1, hitPos));
+      var maxAngle = 65 * Math.PI/180;
+      var angle = hitPos * maxAngle;
+      ball.vx = ballSpeed * Math.sin(angle);
+      ball.vy = -ballSpeed * Math.cos(angle);
+      ball.y = paddle.y - BALL_R - 0.5;
+      paddleSfx();
+    }
+
+    for (var i=0; i<bricks.length; i++){
+      var b = bricks[i];
+      if (!b.alive) continue;
+      if (ball.x + BALL_R > b.x && ball.x - BALL_R < b.x + b.w &&
+          ball.y + BALL_R > b.y && ball.y - BALL_R < b.y + b.h){
+        var overlapX = Math.min(ball.x + BALL_R - b.x, b.x + b.w - (ball.x - BALL_R));
+        var overlapY = Math.min(ball.y + BALL_R - b.y, b.y + b.h - (ball.y - BALL_R));
+        if (overlapX < overlapY) ball.vx *= -1; else ball.vy *= -1;
+
+        b.hp -= 1;
+        if (b.hp <= 0){
+          b.alive = false;
+          brickCount -= 1;
+          score += b.maxHp * 10;
+          ballSpeed = Math.min(420, BASE_SPEED + (bricks.length - brickCount) * 3);
+        } else {
+          score += 5;
+        }
+        scoreEl.textContent = score;
+        popSfx();
+        break;
+      }
+    }
+
+    if (brickCount <= 0){
+      winGame();
+      return;
+    }
+
+    if (ball.y - BALL_R > H){
+      lives -= 1;
+      updateLives();
+      loseLifeSfx();
+      if (lives <= 0){
+        loseGame();
+      } else {
+        placeBallOnPaddle();
+        state = 'ready';
+        music.stop();
+      }
+    }
+  }
+
+  function loop(ts){
+    if (!lastTime) lastTime = ts;
+    var dt = Math.min(0.033, (ts - lastTime) / 1000);
+    lastTime = ts;
+    update(dt);
+    draw();
+    if (state === 'playing' || state === 'ready'){
+      rafId = requestAnimationFrame(loop);
+    }
+  }
+
+  function winGame(){
+    state = 'won';
+    music.stop();
+    winSfx();
+    if (score > best){
+      best = score;
+      bestEl.textContent = best;
+      try { localStorage.setItem('sweetbreakout_best', String(best)); } catch (e) { /* ignore */ }
+    }
+    endTitle.textContent = '全部烤好了！';
+    finalScoreEl.textContent = '本局分數：' + score;
+    endOverlay.classList.remove('hidden');
+  }
+
+  function loseGame(){
+    state = 'gameover';
+    music.stop();
+    if (score > best){
+      best = score;
+      bestEl.textContent = best;
+      try { localStorage.setItem('sweetbreakout_best', String(best)); } catch (e) { /* ignore */ }
+    }
+    endTitle.textContent = '點心掉光了！';
+    finalScoreEl.textContent = '本局分數：' + score;
+    endOverlay.classList.remove('hidden');
+  }
+
+  function startGame(){
+    startOverlay.classList.add('hidden');
+    endOverlay.classList.add('hidden');
+    resetState();
+    draw();
+    lastTime = 0;
+    rafId = requestAnimationFrame(loop);
+  }
+
+  canvas.addEventListener('mousemove', function(e){ movePaddleTo(e.clientX); });
+  canvas.addEventListener('touchmove', function(e){
+    if (e.touches[0]) movePaddleTo(e.touches[0].clientX);
+    e.preventDefault();
+  }, {passive:false});
+
+  function handleTap(clientX){
+    movePaddleTo(clientX);
+    if (state === 'ready') launchBall();
+  }
+  canvas.addEventListener('mousedown', function(e){ handleTap(e.clientX); });
+  canvas.addEventListener('touchstart', function(e){
+    if (e.touches[0]) handleTap(e.touches[0].clientX);
+    e.preventDefault();
+  }, {passive:false});
+
+  keyLeft = false; keyRight = false;
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keyLeft = true;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keyRight = true;
+    if (e.code === 'Space'){
+      e.preventDefault();
+      if (state === 'ready') launchBall();
+    }
+  });
+  document.addEventListener('keyup', function(e){
+    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keyLeft = false;
+    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keyRight = false;
+  });
+
+  startBtn.addEventListener('click', startGame);
+  restartBtn.addEventListener('click', startGame);
+
+  var musicBtn = document.getElementById('musicBtn');
+  function refreshMusicBtn(){
+    musicBtn.textContent = music.enabled ? '🔊' : '🔇';
+    musicBtn.setAttribute('aria-pressed', String(music.enabled));
+  }
+  musicBtn.addEventListener('click', function(){
+    music.toggle();
+    refreshMusicBtn();
+  });
+  refreshMusicBtn();
+
+  resetState();
+  draw();
+})();
+</script>
+<!--pl:start-->
+<style id="pl-css">
+html{-webkit-text-size-adjust:100%;overscroll-behavior:none}
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;animation:plIn .45s ease both}
+@keyframes plIn{from{opacity:0}to{opacity:1}}
+button,a,[role=button],canvas{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button{transition:transform .12s ease,filter .15s ease,box-shadow .15s ease}
+button:not(:disabled):hover{filter:brightness(1.07)}
+button:not(:disabled):active{transform:translateY(1px) scale(.975);filter:brightness(.96)}
+button:focus-visible,a:focus-visible{outline:3px solid rgba(255,255,255,.85);outline-offset:3px;box-shadow:0 0 0 6px rgba(0,0,0,.35)}
+canvas{touch-action:none}
+#pl-vig{position:fixed;inset:0;pointer-events:none;z-index:2147482000;background:radial-gradient(ellipse at 50% 45%,transparent 58%,rgba(0,0,0,.20) 100%)}
+#pl-back{position:fixed;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));z-index:2147482500;display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 12px 0 9px;border-radius:999px;font:700 12px/1 'Noto Sans TC',system-ui,sans-serif;letter-spacing:.06em;color:#fff;text-decoration:none;background:rgba(18,16,28,.55);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 3px 10px rgba(0,0,0,.3);opacity:.85;transition:opacity .15s,transform .12s}
+#pl-back:hover{opacity:1}#pl-back:active{transform:scale(.95)}
+#pl-splash{position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:#fff;transition:opacity .45s ease,visibility .45s}
+#pl-splash.off{opacity:0;visibility:hidden}
+#pl-splash b{font:900 clamp(26px,7vw,40px)/1.2 'Noto Serif TC','Noto Sans TC',serif;letter-spacing:.14em;text-shadow:0 4px 18px rgba(0,0,0,.45)}
+#pl-splash i{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.28);border-top-color:#fff;animation:plSp .8s linear infinite}
+#pl-splash small{font:500 11px 'Noto Sans TC',sans-serif;letter-spacing:.3em;opacity:.7}
+@keyframes plSp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){body{animation:none}#pl-splash i{animation:none}}
+</style>
+<script id="pl-js">
+(function(){
+ try{
+  var d=document,b=d.body,cs=getComputedStyle(b),bg=cs.backgroundColor;
+  if(!bg||bg==='rgba(0, 0, 0, 0)'){bg=getComputedStyle(d.documentElement).backgroundColor;}
+  if(!bg||bg==='rgba(0, 0, 0, 0)')bg='#1c1830';
+  var m=d.querySelector('meta[name=theme-color]');if(!m){m=d.createElement('meta');m.name='theme-color';d.head.appendChild(m);}m.content=bg;
+  var vp=d.querySelector('meta[name=viewport]');if(vp&&vp.content.indexOf('viewport-fit')<0)vp.content+=',viewport-fit=cover';
+  var v=d.createElement('div');v.id='pl-vig';b.appendChild(v);
+  if(!d.querySelector('a[href*="index.html"]')){var a=d.createElement('a');a.id='pl-back';a.href='index.html';a.setAttribute('aria-label','回遊戲大廳');a.innerHTML='<span aria-hidden="true">‹</span>大廳';b.appendChild(a);}
+  var s=d.createElement('div');s.id='pl-splash';s.style.background='radial-gradient(ellipse at 50% 30%,rgba(255,255,255,.16),transparent 60%),'+bg;
+  var t=(d.title||'').trim();s.innerHTML='<small>NOW LOADING</small><b></b><i></i>';s.querySelector('b').textContent=t;b.appendChild(s);
+  addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('button');if(t&&navigator.vibrate){try{navigator.vibrate(8);}catch(_){}}},true);
+  var done=false;function off(){if(done)return;done=true;s.classList.add('off');setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s);},600);}
+  if(d.readyState==='complete')setTimeout(off,350);else addEventListener('load',function(){setTimeout(off,350);});
+  setTimeout(off,1800);
+ }catch(e){}
+})();
+</script>
+<!--pl:end-->
+</body>
+</html>
