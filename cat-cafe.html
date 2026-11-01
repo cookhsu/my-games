@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>貓咪咖啡館</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#2E1A10; --brown:#6B3F23; --brown2:#4A2A16; --cream:#FFF4E0; --cream2:#F5DFB8; --car:#E0903A; --car2:#B96A1C; --mint:#6FD6B2; --mint2:#2FA07C; --pink:#FF9DB4; --ink:#4A2A16; --gold:#FFC83D; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; height:100%; background:var(--bg); color:var(--ink); font-family:'Noto Sans TC',system-ui,sans-serif; overflow:hidden; }
+  body{ display:flex; align-items:center; justify-content:center; background:radial-gradient(ellipse at 50% 0%, #6B4630 0%, #2E1A10 72%); }
+  .wrap{ position:relative; width:min(100vw, calc(100vh * 0.5625)); aspect-ratio:360/640; max-height:100vh; border-radius:20px; overflow:hidden; background:var(--brown2); box-shadow:0 24px 70px rgba(0,0,0,.6), 0 0 0 3px rgba(224,144,58,.35); display:flex; flex-direction:column; user-select:none; -webkit-user-select:none; font-size:calc(min(100vw, 100vh*.5625)/360*16px); }
+  button{ font-family:inherit; cursor:pointer; }
+
+  .hud{ flex:none; display:flex; align-items:center; gap:.5em; padding:.55em .6em .45em .6em; background:linear-gradient(180deg,#5A331C,#4A2A16); box-shadow:0 .2em 0 rgba(0,0,0,.25); position:relative; z-index:3; }
+  .coin{ flex:1; min-width:0; }
+  .coin b{ display:flex; align-items:center; gap:.3em; font:700 1.5em/1.1 'Fredoka','Noto Sans TC',sans-serif; color:#FFE9A8; text-shadow:0 .08em 0 rgba(0,0,0,.4); white-space:nowrap; }
+  .coin b i{ font-style:normal; width:1.05em; height:1.05em; border-radius:50%; background:radial-gradient(circle at 35% 30%,#FFF0A0,#FFC83D 55%,#D08A0A); box-shadow:0 .08em 0 #8A5600; display:inline-block; font-size:.8em; }
+  .coin span{ font-size:.72em; font-weight:700; color:#E9C99A; letter-spacing:.04em; }
+  .chip{ flex:none; border:0; height:2.1em; padding:0 .75em; border-radius:999px; background:rgba(0,0,0,.28); color:#FFE9A8; font:700 .78em 'Noto Sans TC'; box-shadow:0 .14em 0 rgba(0,0,0,.3); }
+  .chip:active{ transform:translateY(.1em); }
+
+  .scene{ position:relative; flex:none; width:100%; aspect-ratio:360/236; background:#E9CFA0; overflow:hidden; touch-action:manipulation; }
+  .scene canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .buff{ position:absolute; left:.5em; top:.5em; z-index:2; display:flex; gap:.4em; }
+  .buff i{ font-style:normal; font:900 .72em 'Noto Sans TC'; padding:.3em .7em; border-radius:999px; background:rgba(255,92,92,.92); color:#fff; box-shadow:0 .12em 0 rgba(0,0,0,.3); animation:pl 1s ease-in-out infinite; } @keyframes pl{ 50%{ transform:scale(1.07);} }
+
+  .tabs{ flex:none; display:flex; gap:.35em; padding:.5em .6em 0; background:var(--brown2); }
+  .tab{ flex:1; border:0; padding:.62em 0 .5em; border-radius:.8em .8em 0 0; background:#5C3720; color:#E9C99A; font:900 .84em 'Noto Sans TC'; letter-spacing:.06em; position:relative; }
+  .tab.on{ background:var(--cream); color:var(--brown); }
+  .tab .dot{ position:absolute; top:.25em; right:.5em; width:.7em; height:.7em; border-radius:50%; background:#FF5C5C; display:none; box-shadow:0 0 0 .13em #5C3720; } .tab.on .dot{ box-shadow:0 0 0 .13em var(--cream); } .tab .dot.on{ display:block; }
+  .panel{ flex:1; min-height:0; overflow:auto; background:var(--cream); padding:.6em .6em 1em; display:none; flex-direction:column; gap:.5em; }
+  .panel.on{ display:flex; }
+  .bar{ display:flex; align-items:center; gap:.4em; font-size:.76em; font-weight:700; color:#8A6240; }
+  .bar .sp{ flex:1; }
+  .seg{ display:flex; background:#EBD5A8; border-radius:999px; padding:.18em; } .seg button{ border:0; background:none; padding:.3em .8em; border-radius:999px; font:900 1em 'Fredoka',sans-serif; color:#8A6240; } .seg button.on{ background:var(--brown); color:#FFE9A8; }
+
+  .row{ display:flex; align-items:center; gap:.6em; padding:.5em .6em; border-radius:.9em; background:#fff; box-shadow:0 .16em 0 #E0C79A; }
+  .row.lock{ opacity:.55; }
+  .row .ic{ flex:none; width:2.9em; height:2.9em; border-radius:50%; background:#FFF0D2; display:flex; align-items:center; justify-content:center; box-shadow:inset 0 0 0 .15em #F2DBAA; font-size:1em; }
+  .row .ic svg{ width:88%; height:88%; }
+  .row .tx{ flex:1; min-width:0; }
+  .row .tx b{ display:block; font-size:.92em; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .row .tx b em{ font-style:normal; font:700 .78em 'Fredoka'; color:#fff; background:var(--car); padding:.1em .5em; border-radius:999px; margin-left:.4em; vertical-align:middle; }
+  .row .tx span{ display:block; font-size:.72em; color:#9A7650; line-height:1.4; }
+  .row .tx .nx{ color:#2FA07C; font-weight:700; }
+  .buy{ flex:none; min-width:5.4em; border:0; border-radius:.8em; padding:.5em .5em; color:#fff; font:700 .86em 'Fredoka','Noto Sans TC',sans-serif; background:linear-gradient(180deg,#8FE6C6,#2FA07C); box-shadow:0 .22em 0 #1C6E54; line-height:1.2; text-align:center; }
+  .buy small{ display:block; font:700 .72em 'Noto Sans TC'; opacity:.9; }
+  .buy:active:not(:disabled){ transform:translateY(.16em); box-shadow:0 .05em 0 #1C6E54; }
+  .buy:disabled{ background:#D9C6A0; box-shadow:0 .22em 0 #B8A074; color:#8A7048; }
+  .buy.gold{ background:linear-gradient(180deg,#FFE27A,#E0903A); box-shadow:0 .22em 0 #A85F10; }
+  .done{ flex:none; font-size:.76em; font-weight:900; color:#2FA07C; padding:0 .6em; }
+  .ach .ic{ font-size:1.3em; } .ach.got .ic{ background:#FFE27A; box-shadow:inset 0 0 0 .15em #E0A010; }
+  .pbar{ height:.45em; background:#EBD5A8; border-radius:.3em; margin-top:.25em; overflow:hidden; } .pbar i{ display:block; height:100%; background:linear-gradient(90deg,#6FD6B2,#2FA07C); border-radius:.3em; }
+  .hero{ text-align:center; background:linear-gradient(180deg,#FFF9EA,#FFE8BA); border-radius:1em; padding:.9em; box-shadow:0 .16em 0 #E0C79A; font-size:.84em; line-height:1.7; }
+  .hero h3{ margin:0 0 .2em; font:900 1.2em 'Noto Sans TC'; color:var(--brown); } .hero b{ color:#C9561C; }
+  .bigbtn{ border:0; border-radius:999px; padding:.9em 1.4em; font:900 1em 'Noto Sans TC'; letter-spacing:.1em; color:#fff; background:linear-gradient(180deg,#FFB26B,#E0702C); box-shadow:0 .3em 0 #A04A12; }
+  .bigbtn:active:not(:disabled){ transform:translateY(.22em); box-shadow:0 .06em 0 #A04A12; } .bigbtn:disabled{ background:#D9C6A0; box-shadow:0 .3em 0 #B8A074; color:#8A7048; }
+
+  .ov{ position:absolute; inset:0; z-index:20; display:none; flex-direction:column; align-items:center; justify-content:center; gap:.7em; padding:1.2em; background:rgba(30,16,8,.78); backdrop-filter:blur(2px); text-align:center; }
+  .ov.on{ display:flex; animation:fin .25s ease; } @keyframes fin{ from{ opacity:0; transform:scale(.97);} to{ opacity:1; transform:none; } }
+  .card{ width:100%; max-width:21em; background:var(--cream); border-radius:1.1em; padding:1.1em 1em; box-shadow:0 .35em 0 #C9A56A, 0 1em 2em rgba(0,0,0,.5); display:flex; flex-direction:column; align-items:center; gap:.6em; max-height:94%; overflow:auto; }
+  .card h3{ margin:0; font:900 1.35em 'Noto Sans TC'; color:var(--brown); letter-spacing:.08em; }
+  .card p{ margin:0; font-size:.86em; line-height:1.7; color:#6B4A30; } .card p b{ color:#C9561C; }
+  .card .big{ font:700 2em 'Fredoka','Noto Sans TC'; color:#C9561C; }
+  .card .r{ display:flex; gap:.6em; } .card .bigbtn{ font-size:.92em; padding:.75em 1.2em; } .card .bigbtn.g{ background:linear-gradient(180deg,#B9946A,#8A6240); box-shadow:0 .3em 0 #5A3A1C; }
+  .toast{ position:absolute; left:50%; top:4.4em; transform:translateX(-50%) translateY(-.6em); z-index:30; background:rgba(255,244,224,.97); color:var(--brown); padding:.5em 1.1em; border-radius:999px; font:900 .82em 'Noto Sans TC'; letter-spacing:.04em; opacity:0; pointer-events:none; transition:all .3s; white-space:nowrap; box-shadow:0 .3em 1em rgba(0,0,0,.4); }
+  .toast.show{ opacity:1; transform:translateX(-50%); }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <div class="hud">
+    <a class="chip" href="index.html" style="text-decoration:none;display:flex;align-items:center" aria-label="回大廳">‹ 大廳</a><div class="coin"><b><i></i><span id="coins" style="font:inherit;color:inherit">0</span></b><span id="cps">每秒 +0</span></div>
+    <button class="chip" id="starChip">⭐ <span id="starN">0</span></button>
+    <button class="chip" id="setBtn">⚙</button>
+  </div>
+  <div class="scene" id="scene"><canvas id="cv" aria-label="貓咪咖啡館店內"></canvas><div class="buff" id="buff"></div></div>
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-t="staff">貓咪店員</button>
+    <button class="tab" data-t="up">升級<span class="dot" id="dotUp"></span></button>
+    <button class="tab" data-t="ach">成就<span class="dot" id="dotAch"></span></button>
+    <button class="tab" data-t="br">分店<span class="dot" id="dotBr"></span></button>
+  </div>
+  <div class="panel on" id="p-staff">
+    <div class="bar"><span>購買數量</span><div class="seg" id="seg"><button data-n="1" class="on">×1</button><button data-n="10">×10</button><button data-n="0">最大</button></div><span class="sp"></span></div>
+    <div id="staffList" style="display:flex;flex-direction:column;gap:.5em"></div>
+  </div>
+  <div class="panel" id="p-up"><div id="upList" style="display:flex;flex-direction:column;gap:.5em"></div></div>
+  <div class="panel" id="p-ach"><div class="hero"><h3>成就徽章</h3>每個成就讓全店收益 <b>+2%</b></div><div id="achList" style="display:flex;flex-direction:column;gap:.5em"></div></div>
+  <div class="panel" id="p-br">
+    <div class="hero"><h3>🏪 開分店</h3>把咖啡館交給新店長,從頭再來!<br>你會得到永久的 <b>招財星</b>,每顆讓全店收益 <b>+10%</b>。<br><span id="brInfo"></span></div>
+    <button class="bigbtn" id="brBtn">開分店</button>
+    <div class="hero" id="brStat" style="font-size:.78em"></div>
+  </div>
+
+  <div class="ov" id="welcome"><div class="card"><h3>歡迎回來!</h3><p id="wTxt"></p><div class="big" id="wAmt">+0</div><button class="bigbtn" id="wOk">收下!</button></div></div>
+  <div class="ov" id="confirm"><div class="card"><h3 id="cTitle">確定嗎?</h3><p id="cTxt"></p><div class="r"><button class="bigbtn g" id="cNo">再想想</button><button class="bigbtn" id="cYes">確定</button></div></div></div>
+  <div class="ov" id="settings"><div class="card"><h3>設定</h3><div class="r"><button class="bigbtn g" id="sSnd">🔊 音效</button><button class="bigbtn g" id="sReset">重置存檔</button></div><p>遊戲會自動存檔,離線時貓咪也會繼續營業(最多 8 小時)。</p><a class="bigbtn" href="index.html" style="text-decoration:none">回大廳</a><button class="bigbtn g" id="sOk">關閉</button></div></div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+function $(id){ return document.getElementById(id); }
+function store(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){ return null; } }
+function clamp(v,a,b){ return v<a?a:v>b?b:v; }
+function rnd(a,b){ return a+Math.random()*(b-a); }
+
+/* ================= data ================= */
+var STAFF=[
+ {n:'小橘',role:'吧台助手',c0:15,p0:.3,fill:'#F2A154',dk:'#D9822B',hat:'cap'},
+ {n:'雪球',role:'蛋糕師',c0:110,p0:1.6,fill:'#F6F2EA',dk:'#D2CBBD',hat:'chef'},
+ {n:'墨墨',role:'烘豆師',c0:650,p0:8,fill:'#3B3B4C',dk:'#24242E',hat:'beret'},
+ {n:'小灰',role:'咖啡師',c0:3800,p0:42,fill:'#A5ABB8',dk:'#7F8696',hat:'bow'},
+ {n:'花花',role:'外場經理',c0:22000,p0:230,fill:'#F6F2EA',dk:'#D2CBBD',hat:'flower',cal:1},
+ {n:'暹暹',role:'拉花師',c0:130000,p0:1400,fill:'#EAD7B8',dk:'#6B4A30',hat:'glasses'},
+ {n:'布丁',role:'甜點主廚',c0:850000,p0:8600,fill:'#F4E6D2',dk:'#C9A27A',hat:'chef2'},
+ {n:'藍藍',role:'特調師',c0:5.8e6,p0:55000,fill:'#8FA3C8',dk:'#6B7FA8',hat:'tie'},
+ {n:'虎斑',role:'行銷經理',c0:4.2e7,p0:380000,fill:'#C99A5B',dk:'#7A5A30',hat:'visor'},
+ {n:'折耳',role:'分店店長',c0:3.2e8,p0:2.7e6,fill:'#D9D3C7',dk:'#A8A090',hat:'crown'},
+ {n:'無毛',role:'星級主廚',c0:2.5e9,p0:2.1e7,fill:'#F2C9B8',dk:'#D9A090',hat:'chef3'},
+ {n:'招財',role:'傳說店長',c0:2.2e10,p0:1.8e8,fill:'#FFF4E0',dk:'#E0903A',hat:'gold'}
+];
+var GROW=1.15, MILES=[10,25,50,100,150,200,300,400];
+var UPS=[
+ {id:'u1',n:'手沖咖啡組',d:'點擊收益 ×2',c:120,e:{tap:2}},
+ {id:'u2',n:'小橘的新圍裙',d:'小橘效率 ×2',c:400,e:{staff:[0,2]}},
+ {id:'u3',n:'招牌布朗尼',d:'全店收益 +25%',c:1800,e:{all:1.25}},
+ {id:'u4',n:'雙頭咖啡機',d:'點擊收益 ×3',c:6000,e:{tap:3}},
+ {id:'u5',n:'雪球的烤箱',d:'雪球效率 ×2',c:12000,e:{staff:[1,2]}},
+ {id:'u6',n:'舒適沙發區',d:'全店收益 +25%',c:60000,e:{all:1.25}},
+ {id:'u7',n:'墨墨的烘豆機',d:'墨墨效率 ×2',c:150000,e:{staff:[2,2]}},
+ {id:'u8',n:'貓薄荷香氛',d:'點擊收益 ×5',c:500000,e:{tap:5}},
+ {id:'u9',n:'會員集點卡',d:'全店收益 +50%',c:2.5e6,e:{all:1.5}},
+ {id:'u10',n:'爵士樂唱片機',d:'全店收益 +50%',c:2e7,e:{all:1.5}},
+ {id:'u11',n:'小灰的拉花盃',d:'小灰、花花效率 ×2',c:8e7,e:{staff:[3,2],staff2:[4,2]}},
+ {id:'u12',n:'外送平台',d:'全店收益 ×2',c:6e8,e:{all:2}},
+ {id:'u13',n:'連鎖品牌招牌',d:'全店收益 ×2',c:8e9,e:{all:2}},
+ {id:'u14',n:'金色咖啡機',d:'點擊收益 ×10',c:6e10,e:{tap:10}},
+ {id:'u15',n:'貓咪咖啡節',d:'全店收益 ×3',c:5e11,e:{all:3}}
+];
+var ACH=[
+ {id:'a1',n:'初次營業',d:'累計點擊 50 次',chk:function(s){ return s.taps>=50; },pg:function(s){ return s.taps/50; }},
+ {id:'a2',n:'手速咖啡師',d:'累計點擊 1,000 次',chk:function(s){ return s.taps>=1000; },pg:function(s){ return s.taps/1000; }},
+ {id:'a3',n:'鐵手腕',d:'累計點擊 10,000 次',chk:function(s){ return s.taps>=10000; },pg:function(s){ return s.taps/10000; }},
+ {id:'a4',n:'雇到第一隻貓',d:'僱用 1 位店員',chk:function(s){ return lvTotal(s)>0; },pg:function(s){ return lvTotal(s)>0?1:0; }},
+ {id:'a5',n:'人手充足',d:'店員等級合計 50',chk:function(s){ return lvTotal(s)>=50; },pg:function(s){ return lvTotal(s)/50; }},
+ {id:'a6',n:'貓咪大家庭',d:'店員等級合計 300',chk:function(s){ return lvTotal(s)>=300; },pg:function(s){ return lvTotal(s)/300; }},
+ {id:'a7',n:'全員到齊',d:'12 位店員都僱用',chk:function(s){ return s.staff.every(function(l){ return l>0; }); },pg:function(s){ return s.staff.filter(function(l){ return l>0; }).length/12; }},
+ {id:'a8',n:'千元小店',d:'累計賺進 1,000',chk:function(s){ return s.life>=1e3; },pg:function(s){ return Math.log10(s.life+1)/3; }},
+ {id:'a9',n:'百萬店長',d:'累計賺進 100 萬',chk:function(s){ return s.life>=1e6; },pg:function(s){ return Math.log10(s.life+1)/6; }},
+ {id:'a10',n:'十億商業帝國',d:'累計賺進 10 億',chk:function(s){ return s.life>=1e9; },pg:function(s){ return Math.log10(s.life+1)/9; }},
+ {id:'a11',n:'兆元傳說',d:'累計賺進 1 兆',chk:function(s){ return s.life>=1e12; },pg:function(s){ return Math.log10(s.life+1)/12; }},
+ {id:'a12',n:'眼明手快',d:'抓到 10 位金色客人',chk:function(s){ return s.vip>=10; },pg:function(s){ return s.vip/10; }},
+ {id:'a13',n:'貓薄荷狂熱',d:'吃到 5 次貓薄荷',chk:function(s){ return s.nip>=5; },pg:function(s){ return s.nip/5; }},
+ {id:'a14',n:'第一間分店',d:'開設第 1 間分店',chk:function(s){ return s.branch>=1; },pg:function(s){ return s.branch>=1?1:0; }}
+];
+function lvTotal(s){ var t=0; s.staff.forEach(function(l){ t+=l; }); return t; }
+
+/* ================= number format ================= */
+var UNITS=['','萬','億','兆','京','垓','秭','穰','溝','澗'];
+function fmt(n,dec){
+  if(!isFinite(n)) return '∞'; if(n<0) n=0;
+  if(n<1e4){ return dec&&n<100?(Math.round(n*10)/10).toString():Math.floor(n).toString(); }
+  var k=0, v=n; while(v>=1e4&&k<UNITS.length-1){ v/=1e4; k++; }
+  var s=v>=1000?v.toFixed(0):v>=100?v.toFixed(1):v.toFixed(2); return parseFloat(s)+UNITS[k];
+}
+
+/* ================= state ================= */
+var S=null, tab='staff', buyN=1;
+function fresh(){ return {coins:0,run:0,life:0,taps:0,vip:0,nip:0,staff:STAFF.map(function(){ return 0; }),ups:{},ach:{},stars:0,branch:0,last:Date.now(),snd:1,tutor:0}; }
+function load(){ var raw=store('cc_save'); try{ var o=raw?JSON.parse(raw):null; if(o&&o.staff&&o.staff.length===STAFF.length){ var f=fresh(); for(var k in o) f[k]=o[k]; return f; } }catch(e){} return fresh(); }
+function save(){ S.last=Date.now(); store('cc_save',JSON.stringify(S)); }
+
+/* ================= economy ================= */
+var BUFF={nip:0,vipMsg:0};
+function mileMult(i){ var l=S.staff[i],m=1; for(var k=0;k<MILES.length;k++) if(l>=MILES[k]) m*=2; return m; }
+function upMults(){ var all=1,tap=1,st=STAFF.map(function(){ return 1; }); UPS.forEach(function(u){ if(!S.ups[u.id]) return; var e=u.e; if(e.all) all*=e.all; if(e.tap) tap*=e.tap; if(e.staff) st[e.staff[0]]*=e.staff[1]; if(e.staff2) st[e.staff2[0]]*=e.staff2[1]; }); return {all:all,tap:tap,st:st}; }
+function achCount(){ var c=0; for(var k in S.ach) if(S.ach[k]) c++; return c; }
+function globalMult(){ return (1+.1*S.stars)*(1+.02*achCount()); }
+function staffCps(i,um){ return S.staff[i]*STAFF[i].p0*mileMult(i)*um.st[i]; }
+function calcCps(){ var um=upMults(),t=0; for(var i=0;i<STAFF.length;i++) t+=staffCps(i,um); return t*um.all*globalMult(); }
+function tapValue(cps){ var um=upMults(); var v=(1+cps*.025)*um.tap*(1+.05*S.stars); return v*(BUFF.nip>0?7:1); }
+function costOf(i,n){ var c0=STAFF[i].c0,l=S.staff[i]; return c0*Math.pow(GROW,l)*(Math.pow(GROW,n)-1)/(GROW-1); }
+function maxAfford(i){ var c0=STAFF[i].c0*Math.pow(GROW,S.staff[i]); var n=Math.floor(Math.log(1+S.coins*(GROW-1)/c0)/Math.log(GROW)); return clamp(n,0,500); }
+function earn(x){ S.coins+=x; S.run+=x; S.life+=x; }
+function starsPossible(){ return Math.floor(Math.sqrt(S.run/1e6)); }
+
+/* ================= audio ================= */
+var AC=null;
+function audio(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ AC=null; } } if(AC&&AC.state==='suspended') AC.resume(); }
+function tone(f,d,type,v,slide,delay){ if(!AC||!S.snd) return; var t=AC.currentTime+(delay||0),o=AC.createOscillator(),g=AC.createGain(); o.type=type||'sine'; o.frequency.setValueAtTime(f,t); if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(30,slide),t+d); g.gain.setValueAtTime(v||.06,t); g.gain.exponentialRampToValueAtTime(.0001,t+d); o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+d+.02); }
+var sfx={ tap:function(c){ tone(520+(c%5)*60,.09,'triangle',.06,880); }, buy:function(){ tone(700,.08,'square',.05); tone(1050,.12,'square',.05,null,.06); },
+  vip:function(){ [784,988,1175,1568].forEach(function(f,i){ tone(f,.16,'triangle',.07,null,i*.06); }); }, no:function(){ tone(200,.15,'sawtooth',.05,140); },
+  ach:function(){ [523,659,784,1047].forEach(function(f,i){ tone(f,.2,'triangle',.07,null,i*.08); }); }, branch:function(){ [392,523,659,784,1047,1319].forEach(function(f,i){ tone(f,.25,'triangle',.07,null,i*.09); }); },
+  bell:function(){ tone(1568,.3,'sine',.04); tone(2093,.4,'sine',.03,null,.05); } };
+
+/* ================= toast ================= */
+function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toast.h); toast.h=setTimeout(function(){ t.classList.remove('show'); },1900); }
+
+/* ================= scene ================= */
+var canvas=$('cv'), ctx=canvas.getContext('2d'), DPR=1, SW=360, SH=236;
+function resize(){ DPR=Math.min(2.5,window.devicePixelRatio||1); var r=canvas.getBoundingClientRect(); canvas.width=Math.round(r.width*DPR); canvas.height=Math.round(r.height*DPR); bgC=null; }
+window.addEventListener('resize',resize);
+var bgC=null, clockT=0, floats=[], parts=[], custs=[], event=null, nextVip=18, nextNip=55, steam=[], tapKick=0, machine={x:268,y:112};
+function skyCols(){ var h=new Date().getHours()+new Date().getMinutes()/60; if(h>=6&&h<17) return {a:'#8FD3FF',b:'#E4F6FF',lamp:.25,night:0}; if(h>=17&&h<19.5) return {a:'#FF9D74',b:'#FFE0A8',lamp:.7,night:.2}; return {a:'#1B2150',b:'#4A4890',lamp:1,night:1}; }
+function buildBg(){
+  var c=document.createElement('canvas'); c.width=SW*2; c.height=SH*2; var g=c.getContext('2d'); g.scale(2,2); var sk=skyCols();
+  // wall
+  var wg=g.createLinearGradient(0,0,0,150); wg.addColorStop(0,'#F7DEB0'); wg.addColorStop(1,'#EDC98E'); g.fillStyle=wg; g.fillRect(0,0,SW,150);
+  g.fillStyle='rgba(255,255,255,.14)'; for(var x=0;x<SW;x+=24) g.fillRect(x,0,10,150);
+  // wainscot
+  g.fillStyle='#9A5F34'; g.fillRect(0,110,SW,44); g.fillStyle='#B87843'; g.fillRect(0,110,SW,5); g.strokeStyle='rgba(0,0,0,.15)'; g.lineWidth=1; for(x=0;x<SW;x+=30){ g.strokeRect(x+4,120,22,26); }
+  // window
+  g.fillStyle='#7A4A28'; g.fillRect(22,18,104,86); var wgd=g.createLinearGradient(0,22,0,100); wgd.addColorStop(0,sk.a); wgd.addColorStop(1,sk.b); g.fillStyle=wgd; g.fillRect(27,23,94,76);
+  if(sk.night>.5){ for(var i=0;i<14;i++){ g.fillStyle='rgba(255,255,255,'+(.4+Math.random()*.5)+')'; g.beginPath(); g.arc(30+Math.random()*88,26+Math.random()*40,.7+Math.random()*1,0,6.283); g.fill(); } g.fillStyle='#FFF6C8'; g.beginPath(); g.arc(100,40,8,0,6.283); g.fill(); g.fillStyle=wgd; g.beginPath(); g.arc(104,38,7,0,6.283); g.fill(); }
+  else { g.fillStyle='rgba(255,255,255,.85)'; g.beginPath(); g.arc(60,44,8,0,6.283); g.arc(70,46,6,0,6.283); g.arc(50,47,6,0,6.283); g.fill(); g.fillStyle='#FFF3A8'; g.beginPath(); g.arc(104,38,8,0,6.283); g.fill(); }
+  g.fillStyle=sk.night>.5?'#2A2760':'#9BC49A'; g.fillRect(27,82,94,17); [[30,12],[44,16],[62,10],[80,15],[98,11]].forEach(function(b){ g.fillStyle=sk.night>.5?'#1F1C4A':'#7FB07E'; g.fillRect(b[0],99-b[1]-4,12,b[1]+4); if(sk.night>.5){ g.fillStyle='#FFE27A'; g.fillRect(b[0]+3,99-b[1],2.4,2.4); g.fillRect(b[0]+7,99-b[1]+4,2.4,2.4); } });
+  g.fillStyle='#7A4A28'; g.fillRect(72,23,4,76); g.fillRect(27,58,94,4); g.fillStyle='rgba(255,255,255,.18)'; g.beginPath(); g.moveTo(27,23); g.lineTo(60,23); g.lineTo(27,70); g.fill();
+  // shelf
+  g.fillStyle='#7A4A28'; g.fillRect(146,48,92,5); g.fillRect(146,82,92,5); g.fillStyle='rgba(0,0,0,.2)'; g.fillRect(146,53,92,3); g.fillRect(146,87,92,3);
+  [['#fff',150],['#FFB3C6',166],['#BFE8D8',182],['#fff',198],['#FFD98A',214]].forEach(function(cu){ g.fillStyle=cu[0]; g.fillRect(cu[1],40,11,8); g.fillStyle='rgba(0,0,0,.18)'; g.fillRect(cu[1],40,11,2); g.strokeStyle=cu[0]; g.lineWidth=1.4; g.beginPath(); g.arc(cu[1]+12,44,2.6,-1.5,1.5); g.stroke(); });
+  [['#8A5A2E',152],['#6B3F23',172],['#B87843',192]].forEach(function(j){ g.fillStyle=j[0]; g.fillRect(j[1],64,14,18); g.fillStyle='#E9C99A'; g.fillRect(j[1]+1,68,12,6); g.fillStyle='#4A2A16'; g.fillRect(j[1]-1,62,16,3); });
+  g.fillStyle='#5BAA6B'; g.beginPath(); g.arc(224,76,7,Math.PI,0); g.fill(); g.fillStyle='#E0702C'; g.fillRect(218,76,12,6);
+  // sign
+    // floor
+  var fg=g.createLinearGradient(0,176,0,SH); fg.addColorStop(0,'#D8A86A'); fg.addColorStop(1,'#B98450'); g.fillStyle=fg; g.fillRect(0,176,SW,SH-176);
+  g.strokeStyle='rgba(120,70,30,.22)'; g.lineWidth=1; for(var y=186;y<SH;y+=14){ g.beginPath(); g.moveTo(0,y); g.lineTo(SW,y); g.stroke(); } for(x=0;x<SW;x+=40){ g.beginPath(); g.moveTo(x,176); g.lineTo(x-14,SH); g.stroke(); }
+  bgC=c; bgC.lamp=sk.lamp;
+}
+function rrr(){}
+function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function drawLamps(){
+  var L=bgC.lamp; [[100,0],[250,0]].forEach(function(p,i){ var x=p[0]+Math.sin(clockT*1.2+i)*1.5; ctx.strokeStyle='#4A2A16'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,22); ctx.stroke();
+    if(L>.2){ var g=ctx.createRadialGradient(x,34,2,x,34,52); g.addColorStop(0,'rgba(255,230,150,'+(.5*L)+')'); g.addColorStop(1,'rgba(255,230,150,0)'); ctx.fillStyle=g; ctx.fillRect(x-56,0,112,100); }
+    ctx.fillStyle='#E0903A'; ctx.beginPath(); ctx.moveTo(x-13,34); ctx.quadraticCurveTo(x-10,20,x,20); ctx.quadraticCurveTo(x+10,20,x+13,34); ctx.closePath(); ctx.fill(); ctx.fillStyle='#FFF2B8'; ctx.beginPath(); ctx.ellipse(x,34,11,3,0,0,6.283); ctx.fill(); });
+}
+function drawSign(){
+  ctx.save(); ctx.translate(180,16); ctx.fillStyle='#2E1A10'; rr(-50,-4,100,26,8); ctx.fill(); ctx.strokeStyle='#E0903A'; ctx.lineWidth=2; rr(-48,-2,96,22,7); ctx.stroke();
+  ctx.fillStyle='#FFE9A8'; ctx.font='900 12px Noto Sans TC,sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('CAT CAFÉ'+(S.branch?' · '+(S.branch+1)+'號店':''),0,9); ctx.restore(); ctx.textBaseline='alphabetic';
+}
+function drawCat(x,y,def,t,seed,s){
+  s=s||1; var wob=Math.sin(t*3+seed)*1.2, blink=(Math.sin(t*.9+seed*3)>.96);
+  ctx.save(); ctx.translate(x,y+wob); ctx.scale(s,s);
+  // body
+  ctx.fillStyle=def.cal?'#F6F2EA':def.fill; ctx.beginPath(); ctx.ellipse(0,18,15,16,0,0,6.283); ctx.fill();
+  ctx.fillStyle='#FFFFFF'; ctx.globalAlpha=.9; ctx.beginPath(); ctx.moveTo(-10,10); ctx.quadraticCurveTo(0,6,10,10); ctx.lineTo(9,30); ctx.lineTo(-9,30); ctx.fill(); ctx.globalAlpha=1;
+  ctx.fillStyle='#E0903A'; ctx.fillRect(-9,16,18,3); // apron stripe
+  // arms working
+  var a=Math.sin(t*6+seed*2)*3; ctx.fillStyle=def.fill; ctx.beginPath(); ctx.ellipse(-14,20+a,4,7,.3,0,6.283); ctx.ellipse(14,20-a,4,7,-.3,0,6.283); ctx.fill();
+  // head
+  ctx.fillStyle=def.fill; ctx.beginPath(); ctx.moveTo(-14,-2); ctx.lineTo(-10,-20); ctx.lineTo(-2,-12); ctx.fill(); ctx.beginPath(); ctx.moveTo(14,-2); ctx.lineTo(10,-20); ctx.lineTo(2,-12); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0,0,15,13,0,0,6.283); ctx.fill();
+  if(def.cal){ ctx.fillStyle='#E8913A'; ctx.beginPath(); ctx.ellipse(-8,-4,6,6,0,0,6.283); ctx.fill(); ctx.fillStyle='#3B3B4C'; ctx.beginPath(); ctx.ellipse(8,-3,5,5,0,0,6.283); ctx.fill(); }
+  if(def.fill==='#EAD7B8'){ ctx.fillStyle=def.dk; ctx.globalAlpha=.55; ctx.beginPath(); ctx.ellipse(0,3,9,7,0,0,6.283); ctx.fill(); ctx.globalAlpha=1; }
+  ctx.fillStyle='#FF9DB4'; ctx.beginPath(); ctx.moveTo(-11,-12); ctx.lineTo(-9,-17); ctx.lineTo(-5,-11); ctx.fill(); ctx.beginPath(); ctx.moveTo(11,-12); ctx.lineTo(9,-17); ctx.lineTo(5,-11); ctx.fill();
+  var ec=def.fill==='#3B3B4C'?'#FFD84A':'#2A2A3A';
+  if(blink){ ctx.strokeStyle=ec; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(-8,0); ctx.lineTo(-4,0); ctx.moveTo(4,0); ctx.lineTo(8,0); ctx.stroke(); }
+  else{ ctx.fillStyle=ec; ctx.beginPath(); ctx.ellipse(-6,0,2.6,3.2,0,0,6.283); ctx.ellipse(6,0,2.6,3.2,0,0,6.283); ctx.fill(); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-5.2,-1.2,.9,0,6.283); ctx.arc(6.8,-1.2,.9,0,6.283); ctx.fill(); }
+  ctx.fillStyle='#FF8FA8'; ctx.beginPath(); ctx.moveTo(-2,4); ctx.lineTo(2,4); ctx.lineTo(0,6.4); ctx.fill();
+  ctx.strokeStyle='rgba(80,50,30,.7)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(0,6.4); ctx.quadraticCurveTo(-2,9,-4,7.5); ctx.moveTo(0,6.4); ctx.quadraticCurveTo(2,9,4,7.5); ctx.stroke();
+  ctx.fillStyle='rgba(255,140,160,.4)'; ctx.beginPath(); ctx.ellipse(-10,4,3,2,0,0,6.283); ctx.ellipse(10,4,3,2,0,0,6.283); ctx.fill();
+  hat(def.hat);
+  ctx.restore();
+}
+function hat(h){
+  ctx.save(); ctx.translate(0,-13);
+  if(h==='cap'){ ctx.fillStyle='#4A8CE8'; ctx.beginPath(); ctx.arc(0,0,11,Math.PI,0); ctx.fill(); ctx.fillRect(-12,-1,24,3); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(0,-6,2,0,6.283); ctx.fill(); }
+  else if(h==='chef'||h==='chef2'||h==='chef3'){ ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-6,-6,6,0,6.283); ctx.arc(0,-9,7,0,6.283); ctx.arc(6,-6,6,0,6.283); ctx.fill(); ctx.fillRect(-9,-6,18,8); ctx.fillStyle=h==='chef3'?'#FFC83D':'#EDE3D0'; ctx.fillRect(-9,0,18,3); }
+  else if(h==='beret'){ ctx.fillStyle='#C9442A'; ctx.beginPath(); ctx.ellipse(-1,-2,13,6,-.15,0,6.283); ctx.fill(); ctx.fillRect(-1,-9,2,4); }
+  else if(h==='bow'){ ctx.fillStyle='#FF7FA8'; ctx.translate(9,-4); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-8,-5); ctx.lineTo(-8,5); ctx.closePath(); ctx.moveTo(0,0); ctx.lineTo(8,-5); ctx.lineTo(8,5); ctx.closePath(); ctx.fill(); ctx.fillStyle='#FF4D88'; ctx.beginPath(); ctx.arc(0,0,2.6,0,6.283); ctx.fill(); }
+  else if(h==='flower'){ ctx.translate(9,-3); ctx.fillStyle='#FF7FA8'; for(var i=0;i<5;i++){ ctx.beginPath(); ctx.arc(Math.cos(i*1.2566)*4,Math.sin(i*1.2566)*4,3,0,6.283); ctx.fill(); } ctx.fillStyle='#FFE27A'; ctx.beginPath(); ctx.arc(0,0,2.4,0,6.283); ctx.fill(); }
+  else if(h==='glasses'){ ctx.translate(0,13); ctx.strokeStyle='#2A2A3A'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(-6,0,4.6,0,6.283); ctx.arc(6,0,4.6,0,6.283); ctx.moveTo(-1.4,0); ctx.lineTo(1.4,0); ctx.stroke(); ctx.fillStyle='#4A2A16'; ctx.beginPath(); ctx.arc(0,-13,10,Math.PI,0); ctx.fill(); }
+  else if(h==='tie'){ ctx.fillStyle='#2A3A6A'; ctx.beginPath(); ctx.moveTo(-10,0); ctx.lineTo(10,0); ctx.lineTo(7,-10); ctx.lineTo(-7,-10); ctx.fill(); ctx.fillRect(-12,-1,24,3); }
+  else if(h==='visor'){ ctx.fillStyle='#E0702C'; ctx.beginPath(); ctx.moveTo(-12,1); ctx.quadraticCurveTo(0,-9,12,1); ctx.lineTo(18,3); ctx.lineTo(-12,3); ctx.fill(); }
+  else if(h==='crown'){ ctx.fillStyle='#FFC83D'; ctx.beginPath(); ctx.moveTo(-9,1); ctx.lineTo(-9,-8); ctx.lineTo(-4,-3); ctx.lineTo(0,-10); ctx.lineTo(4,-3); ctx.lineTo(9,-8); ctx.lineTo(9,1); ctx.fill(); ctx.fillStyle='#E0443A'; ctx.beginPath(); ctx.arc(0,-3,1.8,0,6.283); ctx.fill(); }
+  else if(h==='gold'){ ctx.fillStyle='#FFC83D'; ctx.beginPath(); ctx.arc(0,-1,10,Math.PI,0); ctx.fill(); ctx.fillStyle='#E0903A'; ctx.fillRect(-11,-1,22,3); ctx.fillStyle='#fff'; ctx.font='900 8px sans-serif'; ctx.textAlign='center'; ctx.fillText('福',0,-3); }
+  ctx.restore();
+}
+function drawCust(c,t){
+  ctx.save(); ctx.translate(c.x,c.y+Math.sin(t*8+c.ph)*(c.state==='walk'?1.6:0)); var s=c.vip?1.15:1;
+  ctx.scale(c.dir,1); ctx.scale(s,s);
+  if(c.vip){ var g=ctx.createRadialGradient(0,2,4,0,2,30); g.addColorStop(0,'rgba(255,230,120,.8)'); g.addColorStop(1,'rgba(255,230,120,0)'); ctx.fillStyle=g; ctx.fillRect(-32,-30,64,64); }
+  ctx.fillStyle='rgba(0,0,0,.18)'; ctx.beginPath(); ctx.ellipse(0,18,12,3.5,0,0,6.283); ctx.fill();
+  ctx.fillStyle=c.vip?'#FFD84A':c.body; ctx.beginPath(); ctx.ellipse(0,8,10,11,0,0,6.283); ctx.fill();
+  ctx.fillStyle=c.vip?'#FFF0A0':c.fill; ctx.beginPath(); ctx.ellipse(0,-6,11,10,0,0,6.283); ctx.fill();
+  ctx.fillStyle=c.vip?'#FFF0A0':c.fill;
+  if(c.kind==='bunny'){ ctx.beginPath(); ctx.ellipse(-5,-20,3.2,9,-.15,0,6.283); ctx.ellipse(5,-20,3.2,9,.15,0,6.283); ctx.fill(); ctx.fillStyle='#FF9DB4'; ctx.beginPath(); ctx.ellipse(-5,-20,1.6,6,-.15,0,6.283); ctx.ellipse(5,-20,1.6,6,.15,0,6.283); ctx.fill(); }
+  else if(c.kind==='dog'){ ctx.fillStyle=c.ear; ctx.beginPath(); ctx.ellipse(-11,-7,4,8,.3,0,6.283); ctx.ellipse(11,-7,4,8,-.3,0,6.283); ctx.fill(); }
+  else if(c.kind==='bear'){ ctx.beginPath(); ctx.arc(-8,-14,4,0,6.283); ctx.arc(8,-14,4,0,6.283); ctx.fill(); }
+  else { ctx.beginPath(); ctx.moveTo(-10,-10); ctx.lineTo(-8,-20); ctx.lineTo(-2,-14); ctx.fill(); ctx.beginPath(); ctx.moveTo(10,-10); ctx.lineTo(8,-20); ctx.lineTo(2,-14); ctx.fill(); }
+  ctx.fillStyle='#2A2A3A'; ctx.beginPath(); ctx.arc(-4,-6,1.6,0,6.283); ctx.arc(4,-6,1.6,0,6.283); ctx.fill(); ctx.fillStyle='#FF8FA8'; ctx.beginPath(); ctx.arc(0,-3,1.4,0,6.283); ctx.fill();
+  ctx.restore();
+  if(c.state==='wait'||c.vip){ var by=c.y-44+Math.sin(t*4+c.ph)*1.5, a=c.vip?1:Math.min(1,c.wait*2); ctx.globalAlpha=a; ctx.fillStyle=c.vip?'#FFF6C8':'#fff'; rr(c.x-14,by-12,28,22,8); ctx.fill(); ctx.beginPath(); ctx.moveTo(c.x-3,by+9); ctx.lineTo(c.x,by+14); ctx.lineTo(c.x+3,by+9); ctx.fill(); if(c.vip){ ctx.strokeStyle='#E0A010'; ctx.lineWidth=2; rr(c.x-14,by-12,28,22,8); ctx.stroke(); } ctx.font='15px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(c.vip?'💰':c.order,c.x,by); ctx.textBaseline='alphabetic'; ctx.globalAlpha=1; }
+}
+var KINDS=[{kind:'cat',fill:'#F2A154',body:'#7FB6E8'},{kind:'cat',fill:'#C9C9D3',body:'#E8A0B8'},{kind:'bunny',fill:'#FFF0F0',body:'#9CD8B0'},{kind:'dog',fill:'#D9A870',body:'#E8C86A',ear:'#8A5A2E'},{kind:'bear',fill:'#B07A4A',body:'#E88A7A'},{kind:'cat',fill:'#3B3B4C',body:'#C8A0E8'}];
+var ORDERS=['☕','🍰','🧁','🍪','🥐','🧋'];
+function spawnCust(vip){
+  var k=KINDS[Math.floor(Math.random()*KINDS.length)], from=Math.random()<.5?-20:SW+20;
+  var tx=vip?rnd(60,300):rnd(70,300), c={kind:k.kind,fill:k.fill,body:k.body,ear:k.ear||k.fill,x:from,y:vip?206:rnd(198,214),tx:tx,dir:from<tx?1:-1,state:'walk',wait:rnd(2.5,5),ph:rnd(0,6),order:ORDERS[Math.floor(Math.random()*6)],vip:!!vip,life:vip?11:0};
+  custs.push(c); return c;
+}
+function emitFloat(t,x,y,col,sz){ floats.push({t:t,x:x,y:y,life:1,c:col||'#fff',s:sz||14}); }
+function emitCoins(x,y,n){ for(var i=0;i<n;i++) parts.push({x:x,y:y,vx:rnd(-50,50),vy:-rnd(60,150),life:rnd(.5,.9),t:0,r:rnd(2,3.6),c:['#FFE27A','#FFC83D','#FFF6C8'][i%3]}); }
+function staffPos(i,n){ var xs=[56,100,144,188,232,276]; return [84,120,156,192,228][i]?[[84,128],[120,128],[156,128],[192,128],[228,128]][i]:[228,128]; }
+function drawCounter(){
+  // counter body
+  var g=ctx.createLinearGradient(0,152,0,190); g.addColorStop(0,'#C98F4E'); g.addColorStop(1,'#8A5A2E'); ctx.fillStyle=g; ctx.fillRect(0,152,SW,38);
+  ctx.fillStyle='#E8B878'; ctx.fillRect(0,148,SW,8); ctx.fillStyle='rgba(255,255,255,.35)'; ctx.fillRect(0,148,SW,2.5);
+  ctx.strokeStyle='rgba(60,30,10,.25)'; ctx.lineWidth=1.2; for(var x=14;x<SW;x+=44){ rr(x,160,34,22,4); ctx.stroke(); }
+  ctx.fillStyle='rgba(0,0,0,.18)'; ctx.fillRect(0,190,SW,4);
+  // cake case (left)
+  ctx.fillStyle='rgba(200,235,255,.55)'; rr(8,122,58,30,5); ctx.fill(); ctx.strokeStyle='rgba(255,255,255,.9)'; ctx.lineWidth=2; rr(8,122,58,30,5); ctx.stroke();
+  [[16,'#FF9DB4'],[32,'#FFE27A'],[48,'#BFE8D8']].forEach(function(c){ ctx.fillStyle='#fff'; ctx.beginPath(); ctx.moveTo(c[0],146); ctx.lineTo(c[0]+14,146); ctx.lineTo(c[0]+11,134); ctx.lineTo(c[0]+3,134); ctx.fill(); ctx.fillStyle=c[1]; ctx.fillRect(c[0]+3,134,8,4); ctx.fillStyle='#E0443A'; ctx.beginPath(); ctx.arc(c[0]+7,132,2,0,6.283); ctx.fill(); });
+  // register
+  ctx.fillStyle='#4A2A16'; rr(78,132,26,16,3); ctx.fill(); ctx.fillStyle='#6FD6B2'; ctx.fillRect(81,135,20,7); ctx.fillStyle='#fff'; ctx.font='700 6px Fredoka'; ctx.textAlign='center'; ctx.fillText('$'+fmt(S.coins).slice(0,5),91,141);
+  // espresso machine (tap target)
+  var k=tapKick, mx=machine.x, my=machine.y-k*2;
+  ctx.save(); ctx.translate(mx,my); ctx.scale(1+k*.04,1-k*.04);
+  ctx.fillStyle='#B8BCC8'; rr(-30,0,60,42,6); ctx.fill(); var mg=ctx.createLinearGradient(-30,0,30,0); mg.addColorStop(0,'rgba(255,255,255,.55)'); mg.addColorStop(.5,'rgba(255,255,255,0)'); mg.addColorStop(1,'rgba(0,0,0,.2)'); ctx.fillStyle=mg; rr(-30,0,60,42,6); ctx.fill();
+  ctx.fillStyle='#E0443A'; rr(-30,-6,60,10,5); ctx.fill(); ctx.fillStyle='#8A8D9A'; ctx.fillRect(-22,12,44,5);
+  ctx.fillStyle='#2E3240'; ctx.beginPath(); ctx.arc(-16,26,8,0,6.283); ctx.fill(); ctx.fillStyle='#FFE9A8'; ctx.beginPath(); ctx.arc(-16,26,6,0,6.283); ctx.fill(); ctx.strokeStyle='#E0443A'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(-16,26); ctx.lineTo(-16+Math.cos(clockT*2)*4,26+Math.sin(clockT*2)*4); ctx.stroke();
+  ctx.fillStyle='#4A2A16'; ctx.fillRect(2,24,18,6); ctx.fillStyle='#fff'; rr(7,34,10,9,2); ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.arc(18,38,3,-1.4,1.4); ctx.stroke();
+  ctx.restore();
+  // steam
+  steam.forEach(function(s){ ctx.globalAlpha=Math.max(0,(1-s.t/s.life))*.55; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(s.x,s.y,s.r*(1+s.t),0,6.283); ctx.fill(); }); ctx.globalAlpha=1;
+}
+function sceneTap(x,y){
+  // events first
+  for(var i=custs.length-1;i>=0;i--){ var c=custs[i]; if(c.vip&&Math.hypot(x-c.x,y-(c.y-10))<34){ catchVip(c); return true; } }
+  if(event&&event.k==='nip'&&Math.hypot(x-event.x,y-event.y)<30){ catchNip(); return true; }
+  return false;
+}
+function catchVip(c){
+  c.state='leave'; c.vip=false; S.vip++; var cps=calcCps(), amt=Math.max(cps*50,tapValue(cps)*40,20); earn(amt); sfx.vip();
+  emitFloat('+'+fmt(amt),c.x,c.y-50,'#FFE27A',20); emitCoins(c.x,c.y-20,22); toast('💰 金色客人給了豐厚的小費!'); checkAch();
+}
+function catchNip(){ var e=event; event=null; S.nip++; BUFF.nip=10; sfx.vip(); emitCoins(e.x,e.y,18); toast('🌿 貓薄荷狂歡!10 秒內點擊 ×7'); nextNip=rnd(80,130); checkAch(); }
+function doTap(x,y){
+  S.taps++; var cps=calcCps(), v=tapValue(cps); earn(v); tapKick=1; sfx.tap(S.taps);
+  emitFloat('+'+fmt(v,1),x,y-8,BUFF.nip>0?'#FF8A5A':'#fff',BUFF.nip>0?18:14); emitCoins(x,y,BUFF.nip>0?4:2);
+  for(var i=0;i<2;i++) steam.push({x:machine.x-10+Math.random()*14,y:machine.y-6,t:0,life:.8,r:2+Math.random()*2,vx:rnd(-8,8)});
+}
+function drawScene(dt){
+  if(!bgC) buildBg();
+  ctx.setTransform(canvas.width/SW,0,0,canvas.height/SH,0,0);
+  ctx.drawImage(bgC,0,0,SW,SH); drawLamps(); drawSign();
+  // staff behind counter
+  var shown=[]; S.staff.forEach(function(l,i){ if(l>0) shown.push(i); }); shown=shown.slice(-5);
+  shown.forEach(function(si,k){ var p=staffPos(k); if(k===0&&false) return; drawCat(p[0]+((k===5)?0:0),p[1]-6,STAFF[si],clockT,si+1,.95); });
+  if(!shown.length){ ctx.fillStyle='rgba(74,42,22,.75)'; ctx.font='700 11px Noto Sans TC'; ctx.textAlign='center'; ctx.fillText('點咖啡機賺錢,再僱用第一位店員!',180,112); }
+  drawCounter();
+  // customers
+  custs.sort(function(a,b){ return a.y-b.y; }).forEach(function(c){ drawCust(c,clockT); });
+  // nip event
+  if(event&&event.k==='nip'){ var ex=event.x, ey=event.y+Math.sin(clockT*4)*4; var g=ctx.createRadialGradient(ex,ey,2,ex,ey,26); g.addColorStop(0,'rgba(120,255,170,.8)'); g.addColorStop(1,'rgba(120,255,170,0)'); ctx.fillStyle=g; ctx.fillRect(ex-28,ey-28,56,56); ctx.font='24px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('🌿',ex,ey); ctx.textBaseline='alphabetic'; }
+  parts.forEach(function(p){ ctx.globalAlpha=Math.max(0,1-p.t/p.life); ctx.fillStyle=p.c; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.283); ctx.fill(); }); ctx.globalAlpha=1;
+  floats.forEach(function(f){ ctx.globalAlpha=Math.min(1,f.life*2); ctx.font='900 '+f.s+'px Fredoka,Noto Sans TC,sans-serif'; ctx.textAlign='center'; ctx.lineWidth=4; ctx.lineJoin='round'; ctx.strokeStyle='rgba(60,30,10,.85)'; ctx.strokeText(f.t,f.x,f.y); ctx.fillStyle=f.c; ctx.fillText(f.t,f.x,f.y); }); ctx.globalAlpha=1;
+  // vignette
+  var vg=ctx.createRadialGradient(SW/2,SH/2,SH*.45,SW/2,SH/2,SH*.95); vg.addColorStop(0,'rgba(40,20,5,0)'); vg.addColorStop(1,'rgba(40,20,5,.28)'); ctx.fillStyle=vg; ctx.fillRect(0,0,SW,SH);
+}
+
+/* ================= update ================= */
+var acc=0, floatAcc=0, lastTick=0;
+function update(dt){
+  clockT+=dt; tapKick=Math.max(0,tapKick-dt*5);
+  var cps=calcCps();
+  earn(cps*dt);
+  // buffs
+  if(BUFF.nip>0){ BUFF.nip-=dt; }
+  // visual coin ticks
+  floatAcc+=dt; if(floatAcc>=1.2&&cps>0){ floatAcc=0; var shown=S.staff.map(function(l,i){ return l>0?i:-1; }).filter(function(i){ return i>=0; }).slice(-5); var k=Math.floor(Math.random()*shown.length); var p=staffPos(k); emitFloat('+'+fmt(cps*1.2,1),p[0],p[1]-30,'#FFE9A8',11); }
+  // customers
+  var maxC=Math.min(6,2+Math.floor(lvTotal(S)/12));
+  if(custs.filter(function(c){ return !c.vip; }).length<maxC&&Math.random()<dt*.5) spawnCust(false);
+  custs.forEach(function(c){
+    if(c.state==='walk'){ var d=c.tx-c.x; c.x+=Math.sign(d)*70*dt; c.dir=d>=0?1:-1; if(Math.abs(d)<3){ c.state='wait'; c.dir=1; } }
+    else if(c.state==='wait'){ c.wait-=dt; if(c.vip){ c.life-=dt; if(c.life<=0){ c.state='leave'; c.vip=false; } } else if(c.wait<=0){ c.state='leave'; if(Math.random()<.35) sfx.bell(); emitCoins(c.x,c.y-20,2); } }
+    else if(c.state==='leave'){ var dir=c.x<SW/2?-1:1; c.x+=dir*80*dt; c.dir=dir; }
+  });
+  custs=custs.filter(function(c){ return c.x>-30&&c.x<SW+30; });
+  // events
+  nextVip-=dt; if(nextVip<=0){ nextVip=rnd(28,55); spawnCust(true); }
+  nextNip-=dt; if(nextNip<=0&&!event){ nextNip=rnd(80,130); event={k:'nip',x:rnd(60,300),y:rnd(70,120),life:9}; }
+  if(event){ event.life-=dt; if(event.life<=0) event=null; }
+  parts.forEach(function(p){ p.t+=dt; p.vy+=260*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; }); parts=parts.filter(function(p){ return p.t<p.life; });
+  floats.forEach(function(f){ f.life-=dt*1.1; f.y-=26*dt; }); floats=floats.filter(function(f){ return f.life>0; });
+  steam.forEach(function(s){ s.t+=dt; s.y-=26*dt; s.x+=s.vx*dt; }); steam=steam.filter(function(s){ return s.t<s.life; });
+}
+
+/* ================= UI ================= */
+var staffEls=[], upEls={}, achEls={};
+function iconSVG(def){
+  var f=def.fill,d=def.dk; var s='<svg viewBox="0 0 40 40"><path d="M8 14L11 4l8 7zM32 14L29 4l-8 7z" fill="'+f+'"/><circle cx="20" cy="22" r="14" fill="'+f+'"/>';
+  if(def.cal) s+='<path d="M8 20a14 14 0 0 1 8-12c-5 4-5 10-2 14z" fill="#E8913A"/><path d="M31 22a14 14 0 0 0-5-12c2 5 1 9-2 12z" fill="#3B3B4C"/>';
+  var ec=f==='#3B3B4C'?'#FFD84A':'#2A2A3A';
+  s+='<ellipse cx="14.5" cy="22" rx="2.2" ry="2.8" fill="'+ec+'"/><ellipse cx="25.5" cy="22" rx="2.2" ry="2.8" fill="'+ec+'"/><path d="M18.5 26.5h3l-1.5 2z" fill="#FF8FA8"/>';
+  var h=def.hat;
+  if(h==='cap') s+='<path d="M9 11a11 11 0 0 1 22 0z" fill="#4A8CE8"/>';
+  else if(h==='chef'||h==='chef2'||h==='chef3') s+='<circle cx="14" cy="6" r="5" fill="#fff"/><circle cx="20" cy="4" r="6" fill="#fff"/><circle cx="26" cy="6" r="5" fill="#fff"/><rect x="11" y="6" width="18" height="6" fill="#fff"/>';
+  else if(h==='beret') s+='<ellipse cx="19" cy="9" rx="12" ry="5" fill="#C9442A"/>';
+  else if(h==='bow') s+='<path d="M28 9l8-5v10z" fill="#FF7FA8"/><path d="M28 9l-6-5v10z" fill="#FF7FA8"/>';
+  else if(h==='flower') s+='<circle cx="30" cy="9" r="4" fill="#FF7FA8"/><circle cx="30" cy="9" r="1.8" fill="#FFE27A"/>';
+  else if(h==='glasses') s+='<circle cx="14.5" cy="22" r="4.6" fill="none" stroke="#2A2A3A" stroke-width="1.4"/><circle cx="25.5" cy="22" r="4.6" fill="none" stroke="#2A2A3A" stroke-width="1.4"/>';
+  else if(h==='tie') s+='<path d="M10 11h20l-3-8H13z" fill="#2A3A6A"/>';
+  else if(h==='visor') s+='<path d="M9 11q11-9 22 0l6 2H9z" fill="#E0702C"/>';
+  else if(h==='crown') s+='<path d="M11 11V3l5 4 4-6 4 6 5-4v8z" fill="#FFC83D"/>';
+  else if(h==='gold') s+='<path d="M9 11a11 11 0 0 1 22 0z" fill="#FFC83D"/>';
+  return s+'</svg>';
+}
+function buildStaff(){
+  var box=$('staffList'); box.innerHTML=''; staffEls=[];
+  STAFF.forEach(function(d,i){
+    var el=document.createElement('div'); el.className='row';
+    el.innerHTML='<div class="ic">'+iconSVG(d)+'</div><div class="tx"><b></b><span class="s1"></span><span class="nx"></span></div><button class="buy"></button>';
+    el.querySelector('.buy').addEventListener('click',function(){ audio(); buyStaff(i); });
+    box.appendChild(el); staffEls.push(el);
+  });
+}
+function buyCount(i){ if(buyN===0) return Math.max(1,maxAfford(i)); return buyN; }
+function buyStaff(i){
+  var n=buyN===0?maxAfford(i):buyN; if(n<=0) n=1; var c=costOf(i,n); if(S.coins<c){ sfx.no(); return; }
+  S.coins-=c; S.staff[i]+=n; sfx.buy(); var l=S.staff[i]; if(MILES.indexOf(l)>=0||MILES.some(function(m){ return l-n<m&&l>=m; })) { toast('🎉 '+STAFF[i].n+' 達到里程碑,效率 ×2!'); }
+  checkAch(); refreshStaff(true);
+}
+function refreshStaff(){
+  var um=upMults(), gm=globalMult();
+  STAFF.forEach(function(d,i){
+    var el=staffEls[i]; if(!el) return; var lv=S.staff[i];
+    var prevOwned=i===0||S.staff[i-1]>0, show=prevOwned||lv>0||S.coins>=d.c0*.5;
+    el.style.display=show?'flex':'none'; if(!show) return;
+    var locked=!(prevOwned||lv>0); el.classList.toggle('lock',locked);
+    var n=buyN===0?Math.max(1,maxAfford(i)):buyN, c=costOf(i,n), per=d.p0*mileMult(i)*um.st[i]*um.all*gm;
+    el.querySelector('b').innerHTML=(locked?'???':d.n+' ・ '+d.role)+(lv>0?'<em>Lv.'+lv+'</em>':'');
+    var nm=MILES.filter(function(m){ return m>lv; })[0];
+    el.querySelector('.s1').textContent=lv>0?'每秒 +'+fmt(per*lv,1)+'(單隻 '+fmt(per,1)+')':'每秒可賺 '+fmt(per,1);
+    el.querySelector('.nx').textContent=lv>0&&nm?'Lv.'+nm+' 效率 ×2(再 '+(nm-lv)+' 級)':'';
+    var b=el.querySelector('.buy'); b.disabled=S.coins<c||locked; b.innerHTML=(lv>0?'升級':'僱用')+(n>1?' ×'+n:'')+'<small>🪙 '+fmt(c)+'</small>';
+  });
+}
+function buildUps(){ var box=$('upList'); box.innerHTML=''; upEls={}; UPS.forEach(function(u){ var el=document.createElement('div'); el.className='row'; el.innerHTML='<div class="ic">⬆️</div><div class="tx"><b>'+u.n+'</b><span>'+u.d+'</span></div><button class="buy gold"></button>'; el.querySelector('.buy').addEventListener('click',function(){ audio(); buyUp(u); }); box.appendChild(el); upEls[u.id]=el; }); }
+function buyUp(u){ if(S.ups[u.id]||S.coins<u.c){ sfx.no(); return; } S.coins-=u.c; S.ups[u.id]=1; sfx.buy(); toast('✨ 購買「'+u.n+'」:'+u.d); refreshUps(); refreshStaff(); }
+function refreshUps(){ var firstLocked=true; UPS.forEach(function(u){ var el=upEls[u.id]; if(!el) return; var own=!!S.ups[u.id]; var visible=own||S.coins>=u.c*.3||S.run>=u.c*.3; el.style.display=visible?'flex':'none'; var b=el.querySelector('.buy'); if(own){ b.outerHTML='<span class="done">已擁有 ✓</span>'; } else if(b){ b.disabled=S.coins<u.c; b.innerHTML='購買<small>🪙 '+fmt(u.c)+'</small>'; } }); }
+function buildAch(){ var box=$('achList'); box.innerHTML=''; achEls={}; ACH.forEach(function(a){ var el=document.createElement('div'); el.className='row ach'; el.innerHTML='<div class="ic">🏅</div><div class="tx"><b>'+a.n+'</b><span>'+a.d+'</span><div class="pbar"><i></i></div></div><span class="done" style="display:none">+2%</span>'; box.appendChild(el); achEls[a.id]=el; }); }
+function refreshAch(){ ACH.forEach(function(a){ var el=achEls[a.id]; if(!el) return; var got=!!S.ach[a.id]; el.classList.toggle('got',got); el.querySelector('.pbar i').style.width=(got?100:clamp(a.pg(S)*100,0,99))+'%'; el.querySelector('.done').style.display=got?'block':'none'; }); }
+function checkAch(){ var any=false; ACH.forEach(function(a){ if(!S.ach[a.id]&&a.chk(S)){ S.ach[a.id]=1; any=true; sfx.ach(); toast('🏅 成就達成:'+a.n+'(全店 +2%)'); } }); if(any){ refreshAch(); $('dotAch').classList.toggle('on',tab!=='ach'); } }
+function refreshBranch(){
+  var pos=starsPossible(), need=Math.pow(Math.max(1,pos+1),2)*1e6;
+  $('brInfo').innerHTML='目前可得 <b>'+pos+'</b> 顆招財星'+(pos<1?'(本輪累計賺到 100 萬就能開店)':'(再賺到 '+fmt(need)+' 可多 1 顆)');
+  $('brBtn').disabled=pos<1; $('brBtn').textContent=pos<1?'還不能開分店':'開分店 → 獲得 ⭐'+pos;
+  $('brStat').innerHTML='已開分店:<b>'+S.branch+'</b> 間 ・ 招財星:<b>'+S.stars+'</b> 顆(收益 +'+(S.stars*10)+'%)<br>本輪累計:'+fmt(S.run)+' ・ 歷史累計:'+fmt(S.life);
+  $('dotBr').classList.toggle('on',pos>=1&&tab!=='br'&&pos>S.lastBrHint);
+}
+S=load(); S.lastBrHint=0;
+
+function refreshHUD(){ $('coins').textContent=fmt(S.coins); var c=calcCps(); $('cps').textContent='每秒 +'+fmt(c,1)+'  ・  點擊 +'+fmt(tapValue(c),1); $('starN').textContent=S.stars; }
+function updateDots(){ var canUp=UPS.some(function(u){ return !S.ups[u.id]&&S.coins>=u.c; }); $('dotUp').classList.toggle('on',canUp&&tab!=='up'); }
+function showTab(t){ tab=t; document.querySelectorAll('.tab').forEach(function(b){ b.classList.toggle('on',b.dataset.t===t); }); ['staff','up','ach','br'].forEach(function(k){ $('p-'+k).classList.toggle('on',k===t); }); if(t==='ach'){ $('dotAch').classList.remove('on'); refreshAch(); } if(t==='br'){ $('dotBr').classList.remove('on'); S.lastBrHint=starsPossible(); refreshBranch(); } if(t==='up') refreshUps(); if(t==='staff') refreshStaff(); }
+
+/* ---- prestige ---- */
+function confirmBox(title,txt,yes){ $('cTitle').textContent=title; $('cTxt').innerHTML=txt; $('confirm').classList.add('on'); $('cYes').onclick=function(){ $('confirm').classList.remove('on'); yes(); }; }
+$('cNo').addEventListener('click',function(){ $('confirm').classList.remove('on'); });
+$('brBtn').addEventListener('click',function(){ var pos=starsPossible(); if(pos<1) return;
+  confirmBox('開分店?','咖啡館會<b>重新開始</b>(金幣、店員、升級歸零),<br>但你會得到 <b>⭐'+pos+'</b> 招財星與成就。',function(){
+    S.stars+=pos; S.branch++; S.coins=0; S.run=0; S.staff=STAFF.map(function(){ return 0; }); S.ups={}; custs=[]; floats=[]; parts=[]; event=null; sfx.branch(); toast('🏪 第 '+(S.branch+1)+' 號店開張!招財星 +'+pos);
+    checkAch(); buildStaff(); buildUps(); refreshStaff(); refreshUps(); refreshBranch(); save(); showTab('staff'); }); });
+
+/* ---- settings ---- */
+$('setBtn').addEventListener('click',function(){ audio(); $('sSnd').textContent=S.snd?'🔊 音效:開':'🔇 音效:關'; $('settings').classList.add('on'); });
+$('sOk').addEventListener('click',function(){ $('settings').classList.remove('on'); });
+$('sSnd').addEventListener('click',function(){ S.snd=S.snd?0:1; $('sSnd').textContent=S.snd?'🔊 音效:開':'🔇 音效:關'; save(); });
+$('sReset').addEventListener('click',function(){ $('settings').classList.remove('on'); confirmBox('重置存檔?','所有進度(含招財星)都會<b>永久消失</b>。',function(){ S=fresh(); S.lastBrHint=0; custs=[]; save(); buildStaff(); buildUps(); buildAch(); refreshAll(); toast('已重置'); }); });
+$('starChip').addEventListener('click',function(){ showTab('br'); });
+
+/* ---- tabs / seg ---- */
+document.querySelectorAll('.tab').forEach(function(b){ b.addEventListener('click',function(){ audio(); showTab(b.dataset.t); }); });
+$('seg').addEventListener('click',function(e){ var b=e.target.closest('button'); if(!b) return; buyN=+b.dataset.n; document.querySelectorAll('#seg button').forEach(function(x){ x.classList.toggle('on',x===b); }); refreshStaff(); });
+
+/* ---- scene input ---- */
+$('scene').addEventListener('pointerdown',function(e){ audio(); var r=$('scene').getBoundingClientRect(); var x=(e.clientX-r.left)*SW/r.width, y=(e.clientY-r.top)*SH/r.height; if(!sceneTap(x,y)) doTap(clamp(x,20,SW-20),clamp(y,40,SH-40)); refreshHUD(); e.preventDefault(); });
+window.addEventListener('keydown',function(e){ if(e.key===' '||e.key==='Enter'){ if(document.activeElement&&document.activeElement.tagName==='BUTTON') return; e.preventDefault(); doTap(machine.x,machine.y+10); } });
+
+function refreshAll(){ refreshHUD(); refreshStaff(); refreshUps(); refreshAch(); refreshBranch(); updateDots(); $('buff').innerHTML=BUFF.nip>0?'<i>🌿 貓薄荷 ×7 · '+Math.ceil(BUFF.nip)+'s</i>':''; }
+
+/* ---- offline ---- */
+function offline(){
+  var dt=(Date.now()-S.last)/1000; if(dt<60) return;
+  dt=Math.min(dt,8*3600); var cps=calcCps(); if(cps<=0) return; var g=cps*dt*.6; earn(g);
+  var h=Math.floor(dt/3600), m=Math.floor(dt%3600/60); $('wTxt').innerHTML='你離開了 <b>'+(h?h+' 小時 ':'')+m+' 分鐘</b>,<br>貓咪們繼續營業,賺到了:'; $('wAmt').textContent='+'+fmt(g); $('welcome').classList.add('on');
+}
+$('wOk').addEventListener('click',function(){ $('welcome').classList.remove('on'); sfx.buy(); });
+
+/* ---- loop ---- */
+var uiT=0, saveT=0, last=0;
+function loop(ts){ var dt=Math.min(.1,(ts-last)/1000||.016); last=ts; update(dt); drawScene(dt); uiT+=dt; saveT+=dt; if(uiT>.25){ uiT=0; refreshHUD(); if(tab==='staff') refreshStaff(); else if(tab==='up') refreshUps(); else if(tab==='br') refreshBranch(); else if(tab==='ach') refreshAch(); updateDots(); $('buff').innerHTML=BUFF.nip>0?'<i>🌿 貓薄荷 ×7 · '+Math.ceil(BUFF.nip)+'s</i>':''; checkAch(); } if(saveT>5){ saveT=0; save(); } requestAnimationFrame(loop); }
+document.addEventListener('visibilitychange',function(){ if(document.hidden) save(); }); window.addEventListener('pagehide',save);
+buildStaff(); buildUps(); buildAch(); offline(); refreshAll(); resize();
+for(var i=0;i<2;i++) spawnCust(false);
+window.__CC={S:function(){ return S; },tick:function(d){ update(d); },cps:calcCps,tap:function(){ doTap(machine.x,machine.y+10); },buy:buyStaff,sp:starsPossible,spawnVip:function(){ return spawnCust(true); },refresh:refreshAll,fmt:fmt};
+requestAnimationFrame(loop);
+})();
+</script>
+<!--pl:start-->
+<style id="pl-css">
+html{-webkit-text-size-adjust:100%;overscroll-behavior:none}
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;animation:plIn .45s ease both}
+@keyframes plIn{from{opacity:0}to{opacity:1}}
+button,a,[role=button],canvas{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button{transition:transform .12s ease,filter .15s ease,box-shadow .15s ease}
+button:not(:disabled):hover{filter:brightness(1.07)}
+button:not(:disabled):active{transform:translateY(1px) scale(.975);filter:brightness(.96)}
+button:focus-visible,a:focus-visible{outline:3px solid rgba(255,255,255,.85);outline-offset:3px;box-shadow:0 0 0 6px rgba(0,0,0,.35)}
+canvas{touch-action:none}
+#pl-vig{position:fixed;inset:0;pointer-events:none;z-index:2147482000;background:radial-gradient(ellipse at 50% 45%,transparent 58%,rgba(0,0,0,.20) 100%)}
+#pl-back{position:fixed;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));z-index:2147482500;display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 12px 0 9px;border-radius:999px;font:700 12px/1 'Noto Sans TC',system-ui,sans-serif;letter-spacing:.06em;color:#fff;text-decoration:none;background:rgba(18,16,28,.55);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 3px 10px rgba(0,0,0,.3);opacity:.85;transition:opacity .15s,transform .12s}
+#pl-back:hover{opacity:1}#pl-back:active{transform:scale(.95)}
+#pl-splash{position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:#fff;transition:opacity .45s ease,visibility .45s}
+#pl-splash.off{opacity:0;visibility:hidden}
+#pl-splash b{font:900 clamp(26px,7vw,40px)/1.2 'Noto Serif TC','Noto Sans TC',serif;letter-spacing:.14em;text-shadow:0 4px 18px rgba(0,0,0,.45)}
+#pl-splash i{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.28);border-top-color:#fff;animation:plSp .8s linear infinite}
+#pl-splash small{font:500 11px 'Noto Sans TC',sans-serif;letter-spacing:.3em;opacity:.7}
+@keyframes plSp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){body{animation:none}#pl-splash i{animation:none}}
+</style>
+<script id="pl-js">
+(function(){
+ try{
+  var d=document,b=d.body,cs=getComputedStyle(b),bg=cs.backgroundColor;
+  if(!bg||bg==='rgba(0, 0, 0, 0)'){bg=getComputedStyle(d.documentElement).backgroundColor;}
+  if(!bg||bg==='rgba(0, 0, 0, 0)')bg='#1c1830';
+  var m=d.querySelector('meta[name=theme-color]');if(!m){m=d.createElement('meta');m.name='theme-color';d.head.appendChild(m);}m.content=bg;
+  var vp=d.querySelector('meta[name=viewport]');if(vp&&vp.content.indexOf('viewport-fit')<0)vp.content+=',viewport-fit=cover';
+  var v=d.createElement('div');v.id='pl-vig';b.appendChild(v);
+  if(!d.querySelector('a[href*="index.html"]')){var a=d.createElement('a');a.id='pl-back';a.href='index.html';a.setAttribute('aria-label','回遊戲大廳');a.innerHTML='<span aria-hidden="true">‹</span>大廳';b.appendChild(a);}
+  var s=d.createElement('div');s.id='pl-splash';s.style.background='radial-gradient(ellipse at 50% 30%,rgba(255,255,255,.16),transparent 60%),'+bg;
+  var t=(d.title||'').trim();s.innerHTML='<small>NOW LOADING</small><b></b><i></i>';s.querySelector('b').textContent=t;b.appendChild(s);
+  addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('button');if(t&&navigator.vibrate){try{navigator.vibrate(8);}catch(_){}}},true);
+  var done=false;function off(){if(done)return;done=true;s.classList.add('off');setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s);},600);}
+  if(d.readyState==='complete')setTimeout(off,350);else addEventListener('load',function(){setTimeout(off,350);});
+  setTimeout(off,1800);
+ }catch(e){}
+})();
+</script>
+<!--pl:end-->
+</body>
+</html>
