@@ -127,7 +127,19 @@
   <footer>
     <span>手機與電腦皆可遊玩</span>
     <span>遊戲內的喇叭按鈕可開關音樂</span>
+    <span id="visitors" hidden></span>
   </footer>
 </div>
+<script>
+// 訪客統計：同一個瀏覽器只計一次（隨機 id 存在 localStorage，不含任何個資）
+(function(){
+  var el = document.getElementById('visitors'); if (!el) return; var id = null;
+  try { id = localStorage.getItem('lobby_vid'); if (!id){ id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)); localStorage.setItem('lobby_vid', id); } } catch (e) { id = null; }
+  fetch('/api/visit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) })
+    .then(function(r){ return r.json(); })
+    .then(function(j){ if (j && j.ok){ el.textContent = '累計 ' + j.total + ' 位訪客 · 今日新訪客 ' + j.today; el.hidden = false; } })
+    .catch(function(){});
+})();
+</script>
 </body>
 </html>
