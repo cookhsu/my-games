@@ -80,6 +80,16 @@
 .screen,.board-wrap,.stage{ position:relative; }
 .screen::after,.stage::after{ content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; background:radial-gradient(ellipse at 50% 45%, transparent 64%, rgba(0,0,0,.3)); }
 @media (prefers-reduced-motion:reduce){ .overlay,.overlay>*,#startBtn,#restartBtn,.primary,.overlay .btn:first-of-type,#startBtn::before,#restartBtn::before,.primary::before{ animation:none !important; } }
+
+/* ===== UI v3 (deep) ===== */
+.result{ background:radial-gradient(ellipse at 50% 45%,rgba(60,20,10,.7),rgba(10,5,2,.88)) !important; }
+.result .big{ width:150px; height:150px; border-radius:18px; display:flex; align-items:center; justify-content:center; font-size:96px !important; border:6px solid currentColor; transform:rotate(-8deg); animation:stamp .55s cubic-bezier(.2,1.5,.4,1) backwards; box-shadow:0 0 0 3px rgba(0,0,0,.4), inset 0 0 22px rgba(0,0,0,.35), 0 12px 40px rgba(0,0,0,.6); background:rgba(0,0,0,.25); }
+.result.win .big{ color:#F0C466; text-shadow:0 0 22px rgba(240,196,102,.7); } .result.lose .big{ color:#FF6B5B; text-shadow:0 0 22px rgba(255,107,91,.6); }
+@keyframes stamp{ from{ transform:rotate(-8deg) scale(2.4); opacity:0; } }
+.result p{ font-size:16px !important; letter-spacing:.1em; animation:spUp .5s .3s ease backwards; }
+.player.active .avatar{ animation:avp 1.4s ease-in-out infinite alternate; } @keyframes avp{ to{ box-shadow:0 0 0 4px rgba(227,176,75,.5), 0 0 18px rgba(227,176,75,.5); } }
+.status{ transition:all .25s; } .status.check{ animation:chk .5s ease 2; } @keyframes chk{ 50%{ transform:scale(1.08); } }
+@media (max-width:420px){ .result .big{ width:116px; height:116px; font-size:70px !important; } }
 </style>
 </head>
 <body>
@@ -449,6 +459,12 @@
         g.beginPath(); g.moveTo(x2 + d[0] * s0, y2 + d[1] * (s0 + l)); g.lineTo(x2 + d[0] * s0, y2 + d[1] * s0); g.lineTo(x2 + d[0] * (s0 + l), y2 + d[1] * s0); g.stroke();
       });
     });
+    // 座標與河紋
+    g.fillStyle = 'rgba(78,44,14,.7)'; g.font = "700 13px 'Noto Serif TC',serif"; g.textAlign = 'center'; g.textBaseline = 'middle';
+    var CN = ['九','八','七','六','五','四','三','二','一'];
+    for (c = 0; c < 9; c++){ g.fillText(String(c + 1), px(c), py(0) - 21); g.fillText(CN[c], px(c), py(9) + 21); }
+    g.strokeStyle = 'rgba(70,120,130,.28)'; g.lineWidth = 1.4; var wy = (py(4) + py(5)) / 2;
+    for (var wv = 0; wv < 3; wv++){ var y3 = wy - 14 + wv * 14; g.beginPath(); for (var xx = px(0) + 6; xx < px(8) - 6; xx += 6){ var yy2 = y3 + Math.sin(xx * .09 + wv) * 2.4; if (xx === px(0) + 6) g.moveTo(xx, yy2); else g.lineTo(xx, yy2); } g.stroke(); }
     // 楚河漢界
     g.fillStyle = 'rgba(78,44,14,.82)'; g.font = "900 28px 'Noto Serif TC','Songti TC',serif"; g.textAlign = 'center'; g.textBaseline = 'middle';
     var my = (py(4) + py(5)) / 2 + 1;
@@ -460,19 +476,45 @@
     var g = oc.getContext('2d'); g.scale(DPR, DPR); paintBoard(g); bgCache = oc;
   }
   function drawPieceAt(p, x, y, lift){
-    var R = 23, red = isRed(p), yy = y - lift;
-    ctx.save();
-    ctx.shadowColor = 'rgba(40,20,5,.45)'; ctx.shadowBlur = 6 + lift; ctx.shadowOffsetY = 3 + lift * 0.6;
-    ctx.fillStyle = '#9C6A35'; ctx.beginPath(); ctx.arc(x, yy + 3, R, 0, Math.PI * 2); ctx.fill();
+    var R = 24, red = isRed(p), yy = y - lift;
+    // ground shadow
+    ctx.save(); ctx.fillStyle = 'rgba(40,20,5,' + (.32 - lift * .015) + ')'; ctx.beginPath(); ctx.ellipse(x + 2, y + 7 + lift * .4, R * (1 - lift * .01), R * .78, 0, 0, 6.3); ctx.fill(); ctx.restore();
+    // thickness (side)
+    var sg = ctx.createLinearGradient(0, yy, 0, yy + 6); sg.addColorStop(0, '#B07A3E'); sg.addColorStop(1, '#6E4520');
+    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(x, yy + 4.5, R, 0, 6.3); ctx.fill();
+    // top face
+    var g = ctx.createRadialGradient(x - 8, yy - 9, 2, x, yy, R);
+    g.addColorStop(0, '#FFF6DC'); g.addColorStop(.55, '#F2D59A'); g.addColorStop(1, '#D8AB62');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, yy, R, 0, 6.3); ctx.fill();
+    // grain
+    ctx.save(); ctx.beginPath(); ctx.arc(x, yy, R - 1, 0, 6.3); ctx.clip(); ctx.strokeStyle = 'rgba(140,90,30,.13)'; ctx.lineWidth = .8;
+    for (var k = -3; k <= 3; k++){ ctx.beginPath(); ctx.moveTo(x - R, yy + k * 6 + Math.sin(k) * 2); ctx.bezierCurveTo(x - 8, yy + k * 6 - 4, x + 8, yy + k * 6 + 4, x + R, yy + k * 6); ctx.stroke(); }
     ctx.restore();
-    var g = ctx.createRadialGradient(x - 7, yy - 8, 3, x, yy, R);
-    g.addColorStop(0, '#FFF3D4'); g.addColorStop(.7, '#EDCB8C'); g.addColorStop(1, '#D9AE6A');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, yy, R, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#8A5A2B'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(x, yy, R - 0.8, 0, Math.PI * 2); ctx.stroke();
-    ctx.strokeStyle = red ? '#B3281F' : '#222'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.arc(x, yy, R - 4.5, 0, Math.PI * 2); ctx.stroke();
-    ctx.font = "900 26px 'Noto Serif TC','Songti TC','KaiTi',serif"; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fillText(NAME[p], x, yy + 2.6);
-    ctx.fillStyle = red ? '#B3281F' : '#1B1B1B'; ctx.fillText(NAME[p], x, yy + 1.4);
+    ctx.strokeStyle = 'rgba(110,70,25,.9)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x, yy, R - .8, 0, 6.3); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, yy, R - 2.2, Math.PI * 1.05, Math.PI * 1.7); ctx.stroke();
+    var ink = red ? '#B3281F' : '#1B1B1B';
+    ctx.strokeStyle = ink; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(x, yy, R - 3.6, 0, 6.3); ctx.stroke();
+    ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, yy, R - 6, 0, 6.3); ctx.stroke();
+    ctx.font = "900 25px 'Noto Serif TC','Songti TC','KaiTi',serif"; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillText(NAME[p], x, yy + 2.8);
+    ctx.fillStyle = 'rgba(60,30,10,.35)'; ctx.fillText(NAME[p], x - .5, yy + .9);
+    ctx.fillStyle = red ? '#C0301F' : '#1B1B1B'; ctx.fillText(NAME[p], x, yy + 1.6);
+  }
+  var fx = [];
+  function drawFx(now){
+    for (var i = fx.length - 1; i >= 0; i--){
+      var f = fx[i], t = (now - f.t0) / (f.k === 'check' ? 1100 : 600);
+      if (t >= 1){ fx.splice(i, 1); continue; } if (t < 0) continue;
+      if (f.k === 'cap'){
+        ctx.strokeStyle = f.red ? 'rgba(220,50,35,' + (1 - t) + ')' : 'rgba(40,40,40,' + (.8 * (1 - t)) + ')'; ctx.lineWidth = 5 * (1 - t) + 1; ctx.beginPath(); ctx.arc(f.x, f.y, 24 + t * 34, 0, 6.3); ctx.stroke();
+        f.ps.forEach(function(q){ ctx.globalAlpha = 1 - t; ctx.fillStyle = q.c; ctx.beginPath(); ctx.arc(f.x + q.dx * t, f.y + q.dy * t + 60 * t * t, q.r * (1 - t * .5), 0, 6.3); ctx.fill(); }); ctx.globalAlpha = 1;
+      } else if (f.k === 'check'){
+        var sc = 1 + Math.max(0, .3 - t * 2) * 1.2, al = t < .15 ? t / .15 : 1 - Math.max(0, (t - .6) / .4);
+        ctx.save(); ctx.globalAlpha = al; ctx.translate(CW / 2, CH / 2); ctx.rotate(-.06); ctx.scale(sc, sc);
+        ctx.fillStyle = 'rgba(160,25,20,.9)'; rrect(ctx, -92, -40, 184, 80, 10); ctx.fill(); ctx.strokeStyle = '#F6D58A'; ctx.lineWidth = 3; rrect(ctx, -86, -34, 172, 68, 7); ctx.stroke();
+        ctx.fillStyle = '#FFF0C8'; ctx.font = "900 46px 'Noto Serif TC',serif"; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('將　軍', 0, 3); ctx.restore();
+      }
+    }
   }
   function draw(){
     if (!bgCache) buildBoard();
@@ -514,6 +556,7 @@
       var ax = px(anim.m.fc) + (px(anim.m.tc) - px(anim.m.fc)) * e, ay = py(anim.m.fr) + (py(anim.m.tr) - py(anim.m.fr)) * e;
       drawPieceAt(anim.p, ax, ay, Math.sin(Math.PI * ak) * 7);
     }
+    drawFx(now);
   }
   function frame(){ draw(); requestAnimationFrame(frame); }
 
@@ -538,6 +581,7 @@
     var ms = legalMoves(next);
     var chk = attacked(next);
     checkSide = chk ? next : null;
+    if (chk && ms.length) fx.push({ k: 'check', t0: Date.now() });
     if (!ms.length){
       over = true;
       if (next === 'b'){ setStatus('你贏了！黑方無路可走', 'win'); sfx('win'); setTimeout(function(){ if (over) showResult(true); }, 900); }
@@ -557,6 +601,7 @@
     history.push({ m: m, cap: cap, last: lastMove });
     if (cap){ caps[side].push(cap); sfx('capture'); } else sfx('move');
     anim = { m: m, p: mover, t0: Date.now(), dur: 190 };
+    if (cap){ var ps = []; for (var q = 0; q < 12; q++){ var an = q / 12 * 6.283; ps.push({ dx: Math.cos(an) * (28 + Math.random() * 22), dy: Math.sin(an) * (28 + Math.random() * 22) - 8, r: 2 + Math.random() * 2.5, c: q % 2 ? '#F2D59A' : (isRed(cap) ? '#C0301F' : '#333') }); } fx.push({ k: 'cap', x: px(m.tc), y: py(m.tr), t0: Date.now() + 170, red: isRed(cap), ps: ps }); }
     lastMove = m; turn = turn === 'w' ? 'b' : 'w';
     afterMove();
   }
