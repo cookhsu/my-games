@@ -458,6 +458,21 @@ body{ position:relative; }
   };
   music.loadPref();
 
+  var STARCOL = { '★':'#FFD66B', '☾':'#BFD7FF', '☀':'#FFA24D', '✦':'#FF8FC8', '♆':'#5FE0C8', '☄':'#6FB6FF', '♇':'#B58CFF', '◈':'#7BE08F' };
+  var ICON = {
+    '★':'<svg viewBox="0 0 48 48"><polygon fill="currentColor" points="24,4 29.8,17.8 44.5,19 33.3,28.7 36.8,43 24,35.4 11.2,43 14.7,28.7 3.5,19 18.2,17.8"/><polygon fill="#fff" opacity=".35" points="24,8 28,18 24,22 20,18"/></svg>',
+    '☾':'<svg viewBox="0 0 48 48"><path fill="currentColor" d="M32 5a19 19 0 1 0 11 31A16 16 0 0 1 32 5z"/><circle cx="17" cy="22" r="3" fill="#000" opacity=".12"/><circle cx="23" cy="34" r="2.2" fill="#000" opacity=".12"/><circle cx="14" cy="32" r="1.6" fill="#000" opacity=".1"/></svg>',
+    '☀':'<svg viewBox="0 0 48 48"><g stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M24 3v7M24 38v7M3 24h7M38 24h7M9 9l5 5M34 34l5 5M39 9l-5 5M14 34l-5 5"/></g><circle cx="24" cy="24" r="10.5" fill="currentColor"/><circle cx="21" cy="21" r="4" fill="#fff" opacity=".35"/></svg>',
+    '✦':'<svg viewBox="0 0 48 48"><path fill="currentColor" d="M24 3C25.6 16 32 22.4 45 24 32 25.6 25.6 32 24 45 22.4 32 16 25.6 3 24 16 22.4 22.4 16 24 3z"/><circle cx="24" cy="24" r="3" fill="#fff" opacity=".7"/></svg>',
+    '♆':'<svg viewBox="0 0 48 48"><ellipse cx="24" cy="26" rx="21" ry="6.5" transform="rotate(-18 24 26)" fill="none" stroke="currentColor" stroke-width="2.6" opacity=".55"/><circle cx="24" cy="24" r="11.5" fill="currentColor"/><path d="M14 22Q24 17 34 22" stroke="#000" stroke-opacity=".14" stroke-width="2.4" fill="none"/><path d="M13 28Q24 24 35 28" stroke="#000" stroke-opacity=".12" stroke-width="2" fill="none"/><ellipse cx="24" cy="26" rx="21" ry="6.5" transform="rotate(-18 24 26)" fill="none" stroke="currentColor" stroke-width="2.6" stroke-dasharray="24 60" stroke-dashoffset="-6"/><circle cx="20" cy="19" r="3.5" fill="#fff" opacity=".3"/></svg>',
+    '☄':'<svg viewBox="0 0 48 48"><path d="M33 15 6 38 12 42 36 20z" fill="currentColor" opacity=".35"/><path d="M33 15 14 40 20 42 37 20z" fill="currentColor" opacity=".55"/><circle cx="34" cy="16" r="8.5" fill="currentColor"/><circle cx="31.5" cy="13.5" r="3" fill="#fff" opacity=".45"/></svg>',
+    '♇':'<svg viewBox="0 0 48 48"><ellipse cx="24" cy="24" rx="20" ry="8" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".5" transform="rotate(24 24 24)"/><circle cx="24" cy="24" r="10" fill="currentColor"/><circle cx="20.5" cy="20.5" r="3.4" fill="#fff" opacity=".32"/><circle cx="8" cy="33" r="2.8" fill="currentColor"/><circle cx="41" cy="14" r="2.2" fill="currentColor"/></svg>',
+    '◈':'<svg viewBox="0 0 48 48"><polygon fill="currentColor" points="24,3 43,24 24,45 5,24"/><polygon fill="#fff" opacity=".3" points="24,3 43,24 24,24"/><polygon fill="#000" opacity=".16" points="24,45 5,24 24,24"/><path d="M24 3v42M5 24h38" stroke="#fff" stroke-opacity=".35" stroke-width="1"/></svg>'
+  };
+  function sparkBurst(el, color){
+    for (var i = 0; i < 8; i++){ var sp = document.createElement('span'); sp.className = 'sm-spark'; var an = i * Math.PI / 4 + Math.random() * .4, d = 30 + Math.random() * 18; sp.style.background = i % 2 ? '#FFF6D8' : color; sp.style.setProperty('--dx', Math.cos(an) * d + 'px'); sp.style.setProperty('--dy', Math.sin(an) * d + 'px'); el.appendChild(sp); (function(n){ setTimeout(function(){ if (n.parentNode) n.parentNode.removeChild(n); }, 750); })(sp); }
+  }
+
   function renderBoard(){
     gridEl.innerHTML = '';
     var deck = buildDeck();
@@ -475,7 +490,7 @@ body{ position:relative; }
 
       var front = document.createElement('div');
       front.className = 'card-face card-front-face';
-      front.textContent = symbol;
+      if (ICON[symbol]){ front.innerHTML = ICON[symbol]; front.style.setProperty('--sc', STARCOL[symbol]); card.style.setProperty('--sc', STARCOL[symbol]); } else front.textContent = symbol;
 
       inner.appendChild(back);
       inner.appendChild(front);
@@ -523,6 +538,7 @@ body{ position:relative; }
         secondCard.matched = true;
         firstCard.el.classList.add('matched');
         secondCard.el.classList.add('matched');
+        sparkBurst(firstCard.el, STARCOL[firstCard.symbol] || '#F4D58D'); sparkBurst(secondCard.el, STARCOL[secondCard.symbol] || '#F4D58D');
         matchedCount += 2;
         matchSfx();
         firstCard = null;
@@ -557,7 +573,7 @@ body{ position:relative; }
       bestEl.textContent = best;
       try { localStorage.setItem('starmatch_best', String(best)); } catch (e) { /* ignore */ }
     }
-    winStatsEl.textContent = '步數：' + moves;
+    winStatsEl.textContent = (moves <= 12 ? '⭐⭐⭐' : moves <= 18 ? '⭐⭐' : '⭐') + '　步數:' + moves + (moves === best ? '　🎉 最佳紀錄!' : '');
     winOverlay.classList.remove('hidden');
   }
 
@@ -607,6 +623,32 @@ canvas{touch-action:none}
 #pl-splash small{font:500 11px 'Noto Sans TC',sans-serif;letter-spacing:.3em;opacity:.7}
 @keyframes plSp{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){body{animation:none}#pl-splash i{animation:none}}
+
+/* ===== star art v2 ===== */
+.table-frame{ overflow:hidden; background:radial-gradient(ellipse at 20% 0%, rgba(120,90,200,.35), transparent 55%), radial-gradient(ellipse at 90% 100%, rgba(60,140,220,.25), transparent 55%), linear-gradient(180deg,#141B3F,#0B1029) !important; }
+.table-frame::before{ content:""; position:absolute; inset:0; pointer-events:none; opacity:.9; background:
+  radial-gradient(1.2px 1.2px at 12% 18%, #fff, transparent), radial-gradient(1px 1px at 33% 72%, #cfe0ff, transparent), radial-gradient(1.4px 1.4px at 58% 12%, #fff, transparent), radial-gradient(1px 1px at 81% 44%, #ffe9b0, transparent), radial-gradient(1.2px 1.2px at 90% 86%, #fff, transparent), radial-gradient(1px 1px at 22% 90%, #ffd6ff, transparent), radial-gradient(1.3px 1.3px at 68% 62%, #cfe0ff, transparent), radial-gradient(1px 1px at 45% 40%, #fff, transparent), radial-gradient(1.2px 1.2px at 6% 55%, #fff, transparent), radial-gradient(1px 1px at 95% 20%, #fff, transparent);
+  animation:smTwinkle 3.2s ease-in-out infinite alternate; }
+@keyframes smTwinkle{ from{ opacity:.45; } to{ opacity:1; } }
+.grid{ position:relative; z-index:1; gap:9px !important; }
+.card{ filter:drop-shadow(0 4px 4px rgba(0,0,0,.45)); transition:transform .15s ease; }
+.card:not(.flipped):not(.matched):hover{ transform:translateY(-3px); }
+.card:not(.flipped):not(.matched):active{ transform:translateY(0) scale(.97); }
+.card-inner{ transition:transform .42s cubic-bezier(.3,1.3,.5,1) !important; }
+.card-face{ border-radius:11px !important; overflow:hidden; }
+.card-back-face{ background:
+  radial-gradient(1.4px 1.4px at 24% 28%, rgba(255,255,255,.9), transparent), radial-gradient(1.2px 1.2px at 74% 22%, rgba(255,230,160,.9), transparent), radial-gradient(1.2px 1.2px at 60% 74%, rgba(255,255,255,.8), transparent), radial-gradient(1px 1px at 30% 80%, rgba(190,210,255,.9), transparent),
+  radial-gradient(ellipse at 50% 30%, #4B5FA8 0%, #2A3A7A 55%, #1A2557 100%) !important; border:1.5px solid #8EA0E8 !important; box-shadow:inset 0 0 0 3px #1A2557, inset 0 0 0 4px rgba(244,213,141,.55), inset 0 2px 8px rgba(255,255,255,.18); }
+.card-back-face::after{ content:"" !important; width:56%; height:56%; opacity:.95 !important; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none' stroke='%23F4D58D' stroke-width='1.2' stroke-linecap='round'%3E%3Cpath d='M8 36 18 22 26 28 38 10' opacity='.7'/%3E%3Ccircle cx='8' cy='36' r='2.4' fill='%23F4D58D'/%3E%3Ccircle cx='18' cy='22' r='2' fill='%23fff'/%3E%3Ccircle cx='26' cy='28' r='2.2' fill='%23F4D58D'/%3E%3Ccircle cx='38' cy='10' r='2.8' fill='%23fff'/%3E%3C/svg%3E") center/contain no-repeat; filter:drop-shadow(0 0 4px rgba(244,213,141,.7)); }
+.card-front-face{ background:radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--sc,#8EA0E8) 100%, #0B1029 72%) 0%, #151E45 70%, #0F1636 100%) !important; border:1.5px solid color-mix(in srgb, var(--sc,#8EA0E8) 100%, #0B1029 35%) !important; box-shadow:inset 0 2px 6px rgba(255,255,255,.14), inset 0 -8px 14px rgba(0,0,0,.35); color:var(--sc,#fff); }
+.card-front-face svg{ width:62%; height:62%; filter:drop-shadow(0 0 6px var(--sc)) drop-shadow(0 0 2px #fff6); transition:transform .3s; }
+.card.matched .card-front-face{ box-shadow:0 0 18px color-mix(in srgb,var(--sc) 100%,transparent 35%), inset 0 0 14px color-mix(in srgb,var(--sc) 100%,transparent 60%) !important; border-color:var(--sc) !important; }
+.card.matched .card-front-face svg{ animation:smPulse 1.6s ease-in-out infinite; }
+@keyframes smPulse{ 0%,100%{ transform:scale(1) rotate(0); } 50%{ transform:scale(1.12) rotate(6deg); } }
+.card.mismatch .card-front-face{ box-shadow:0 0 14px rgba(255,100,120,.6), inset 0 0 10px rgba(255,100,120,.35) !important; border-color:#ff6b81 !important; }
+.sm-spark{ position:absolute; left:50%; top:50%; width:7px; height:7px; margin:-3.5px; border-radius:50%; z-index:5; pointer-events:none; animation:smSpark .7s ease-out forwards; }
+@keyframes smSpark{ to{ transform:translate(var(--dx),var(--dy)) scale(.2); opacity:0; } }
+@media (prefers-reduced-motion:reduce){ .table-frame::before,.card.matched .card-front-face svg,.sm-spark{ animation:none; } }
 </style>
 <script id="pl-js">
 (function(){
