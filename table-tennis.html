@@ -29,19 +29,24 @@
   .bigbtn.o{ background:linear-gradient(180deg,#FFB26B,#E0702C); box-shadow:0 .26em 0 #A04A12; } .bigbtn.g{ background:linear-gradient(180deg,#B9946A,#8A6240); box-shadow:0 .26em 0 #5A3A1C; }
   .bigbtn.m{ background:linear-gradient(180deg,#6FD6B2,#2FA07C); box-shadow:0 .26em 0 #1C6E54; } .bigbtn.r{ background:linear-gradient(180deg,#FF7A7A,#D93A3A); box-shadow:0 .26em 0 #8E1F1F; }
   .full{ width:100%; } .row{ display:flex; gap:.45em; width:100%; } .row>*{ flex:1; }
+  #spinBar{ position:absolute; left:.6em; right:.6em; bottom:.55em; display:flex; gap:.35em; z-index:4; }
+  #spinBar button{ flex:1; border:0; padding:.5em 0; border-radius:999px; background:rgba(0,0,0,.45); color:#CFE3EE; font:900 .78em 'Noto Sans TC'; letter-spacing:.06em; box-shadow:0 .12em 0 rgba(0,0,0,.4); touch-action:manipulation; }
+  #spinBar button.on{ color:#fff; background:linear-gradient(180deg,#FFB26B,#E0702C); box-shadow:0 .12em 0 #A04A12; }
+  #spinBar button[data-s=top].on{ background:linear-gradient(180deg,#FF9A6A,#E0502C); } #spinBar button[data-s=back].on{ background:linear-gradient(180deg,#8FD6FF,#2A78D8); } #spinBar button[data-s=side].on{ background:linear-gradient(180deg,#D3A8FF,#8A4AD8); }
 </style>
 </head>
 <body>
 <div class="wrap" id="wrap">
   <canvas id="cv" aria-label="桌球桌"></canvas>
   <button id="menuBtn" aria-label="選單">☰</button>
+  <div id="spinBar"><button data-s="auto" class="on">自動</button><button data-s="top">上旋</button><button data-s="back">下旋</button><button data-s="side">側旋</button></div>
   <div class="ov on" id="menu"><div class="card">
     <h2>極速桌球<small>TABLE TENNIS</small></h2>
     <div class="stat" id="stat"></div>
     <div class="lbl">對戰 AI(11 分制,領先 2 分才贏)</div>
     <div class="grid"><button class="bigbtn m" data-d="easy">簡單<small>練手感</small></button><button class="bigbtn" data-d="normal">普通<small>有來有往</small></button><button class="bigbtn o" data-d="hard">困難<small>會殺球</small></button><button class="bigbtn r" data-d="legend">傳說<small>幾乎不失誤</small></button></div>
     <button class="bigbtn g full" data-d="rally">無盡對拉<small>對手永遠回球,看你能連續幾拍</small></button>
-    <p><b>玩法:</b>手指在畫面下半部拖曳球拍,球彈起後碰到球拍就會自動回擊。<br><b>球感:</b>球拍往前<b>揮得越快</b>,球越快越深;<b>左右揮</b>可以打角度;球在高處又快速向前揮就是<b>殺球</b>。<br><b>規則:</b>球要先過網並在對方桌面落地;球在你這邊落地兩次就失分。輪流發球,每 2 分換發球。</p>
+    <p><b>玩法:</b>手指在畫面下半部拖曳球拍,球彈起後碰到球拍就會自動回擊。<br><b>球感:</b>球拍往前<b>揮得越快</b>,球越快越深;<b>左右揮</b>可以打角度;球在高處又快速向前揮就是<b>殺球</b>。<br><b>變化球:</b>下方可選<b>上旋</b>(球飛得快、落地會往前衝)、<b>下旋</b>(球短又低、落地會「死」)、<b>側旋</b>(球會拐彎、落地橫跳);選「自動」則依揮拍:前揮=上旋、往後拉=下旋、橫揮=側旋。對手也會打旋球,看球上的彩色記號:橘=上旋、藍=下旋、紫=側旋。<br><b>規則:</b>球要先過網並在對方桌面落地;球在你這邊落地兩次就失分。輪流發球,每 2 分換發球。</p>
     <div class="row"><button class="bigbtn m" id="resume" style="display:none">繼續</button><button class="bigbtn" id="snd">🔊 音效</button></div>
     <a class="bigbtn g full" href="index.html">回遊戲大廳</a>
   </div></div>
@@ -63,11 +68,11 @@ function gauss(){ var u=0,v=0; while(!u) u=Math.random(); while(!v) v=Math.rando
 function P(x,y,z){ var dd=Math.max(25,CAMY-y),s=F/dd; return {x:180+x*s,y:HZ+(CAMZ-z)*s,s:s}; }
 
 var DIFFS={
- easy:{n:'簡單',sp:150,react:.35,sig:20,R:16,T:[.85,1.05],smash:0,place:.1,col:'#7FD6B2'},
- normal:{n:'普通',sp:230,react:.22,sig:11,R:18,T:[.72,.92],smash:.15,place:.35,col:'#5FB4E8'},
- hard:{n:'困難',sp:330,react:.12,sig:6,R:20,T:[.58,.8],smash:.4,place:.6,col:'#FFA24A'},
- legend:{n:'傳說',sp:400,react:.07,sig:4,R:21,T:[.5,.7],smash:.5,place:.8,col:'#FF6A6A'},
- rally:{n:'無盡對拉',sp:900,react:0,sig:2,R:30,T:[.8,.95],smash:0,place:0,col:'#FFC83D'}
+ easy:{spin:0.15,spinErr:24,n:'簡單',sp:150,react:.35,sig:20,R:16,T:[.85,1.05],smash:0,place:.1,col:'#7FD6B2'},
+ normal:{spin:0.35,spinErr:14,n:'普通',sp:230,react:.22,sig:11,R:18,T:[.72,.92],smash:.15,place:.35,col:'#5FB4E8'},
+ hard:{spin:0.55,spinErr:8,n:'困難',sp:330,react:.12,sig:6,R:20,T:[.58,.8],smash:.4,place:.6,col:'#FFA24A'},
+ legend:{spin:0.75,spinErr:4,n:'傳說',sp:400,react:.07,sig:4,R:21,T:[.5,.7],smash:.5,place:.8,col:'#FF6A6A'},
+ rally:{spin:0,spinErr:0,n:'無盡對拉',sp:900,react:0,sig:2,R:30,T:[.8,.95],smash:0,place:0,col:'#FFC83D'}
 };
 /* ---------- audio ---------- */
 var AC=null,sndOn=store('tt_snd')!=='0';
@@ -79,6 +84,7 @@ var sfx={ hit:function(p){ tone(420+p*300,.07,'square',.05,150); tone(1400,.03,'
   net:function(){ tone(160,.12,'sine',.07,90); },
   win:function(){ [523,659,784,1047].forEach(function(f,i){ tone(f,.2,'triangle',.07,null,i*.08); }); },
   lose:function(){ [392,330,262].forEach(function(f,i){ tone(f,.22,'triangle',.06,null,i*.1); }); },
+  spin:function(){ tone(700,.12,'sine',.04,1200); },
   pt:function(){ tone(880,.1,'triangle',.06); tone(1175,.14,'triangle',.06,null,.08); }, miss:function(){ tone(220,.2,'sawtooth',.04,140); } };
 function vib(n){ try{ if(navigator.vibrate) navigator.vibrate(n); }catch(e){} }
 
@@ -96,11 +102,11 @@ function newGame(d){
 function serverOf(t){ var k=(Math.floor(Math.min(t,20)/2)+Math.max(0,t-20))%2; return k===0?S.first:other(S.first); }
 function startServe(){
   S.state='ready'; S.timer=1.1; S.rally=0; S.server=serverOf(S.total);
-  b={x:0,y:0,z:300,vx:0,vy:0,vz:0,toward:S.server,bn:0,cool:0,over:false,net:false,trail:[],live:false};
+  b={x:0,y:0,z:300,vx:0,vy:0,vz:0,toward:S.server,bn:0,cool:0,over:false,net:false,trail:[],live:false,top:0,side:0,rot:0};
   S.hint=S.server==='p'?'你發球:把球拍移到球下方,球彈起後碰到球拍就會發出':'對手發球…';
 }
 function launchServe(){
-  var s=S.server; b.live=true; S.state='play';
+  var s=S.server; b.live=true; S.state='play'; b.top=0; b.side=0;
   b.x=s==='p'?clamp(pp.x,-40,40):rnd(-35,35); b.y=s==='p'?122:-122; b.z=125; b.vx=0; b.vy=0; b.vz=0; b.toward=s; b.bn=0;
   if(s==='o') aiPlan(true);
 }
@@ -122,49 +128,95 @@ function onBounce(court){
 function floorHit(){ if(b.over) return; if(b.bn>=1) endPoint(other(b.toward),'miss'); else endPoint(b.toward,b.net?'net':'out'); }
 
 /* ---------- hit solver ---------- */
-function solve(x,y,z,tx,ty,T){ return {vx:(tx-x)/T,vy:(ty-y)/T,vz:(TZ+RB-z+.5*G*T*T)/T}; }
-function clears(y,z,v){ var tn=(0-y)/v.vy; if(tn<=0) return true; return z+v.vz*tn-.5*G*tn*tn>NETZ+RB+4; }
-function applyHit(who,tx,ty,T,smash){
-  var v=solve(b.x,b.y,b.z,tx,ty,T); for(var i=0;i<14&&!clears(b.y,b.z,v);i++){ T+=.06; v=solve(b.x,b.y,b.z,tx,ty,T); }
-  b.vx=v.vx; b.vy=v.vy; b.vz=v.vz; b.toward=other(who); b.bn=0; b.cool=.12; S.rally++; b.net=false;
-  var spd=Math.sqrt(v.vx*v.vx+v.vy*v.vy);
-  var q=P(b.x,b.y,b.z); for(var k=0;k<(smash?16:8);k++) sparks.push({x:q.x,y:q.y,vx:rnd(-120,120),vy:rnd(-140,60),l:.4,c:smash?'#FFB04A':'#fff'});
+/* ---- spin physics: top>0 上旋(下墜、落地前衝), top<0 下旋(飄浮、落地變慢), side 側旋(拐彎、落地橫跳) ---- */
+var K1=420,K2=220,K3=90;
+function flight(c,h){
+  var vh=Math.sqrt(c.vx*c.vx+c.vy*c.vy),k=vh/400,ox=c.vx,oy=c.vy;
+  c.vz-=(G+K1*c.top*k)*h;
+  if(vh>1&&c.side){ var a=K2*c.side*k*h/vh; c.vx=ox-oy*a; c.vy=oy+ox*a; }
+  var dk=1-.25*h; c.top*=dk; c.side*=dk;
+}
+function bounceFx(c){
+  var vv=-c.vz,vh=Math.sqrt(c.vx*c.vx+c.vy*c.vy),ox=c.vx,oy=c.vy,f=.985+.2*c.top;
+  c.vz=vv*(.86-.08*c.top); c.vx=ox*f; c.vy=oy*f;
+  if(vh>1&&c.side){ c.vx+=-oy/vh*K3*c.side; c.vy+=ox/vh*K3*c.side; }
+  c.top*=.7; c.side*=.8;
+}
+function simLand(x,y,z,vx,vy,vz,top,side){
+  var c={x:x,y:y,z:z,vx:vx,vy:vy,vz:vz,top:top,side:side},t=0,h=.008,netz=null,px,py,pz;
+  for(var i=0;i<260;i++){
+    px=c.x; py=c.y; pz=c.z; flight(c,h); c.x+=c.vx*h; c.y+=c.vy*h; c.z+=c.vz*h; t+=h;
+    if(netz===null&&((py>0&&c.y<=0)||(py<0&&c.y>=0))) netz=c.z;
+    if(c.vz<0&&c.z<=TZ+RB&&t>.04){ var f=(pz-(TZ+RB))/Math.max(1e-6,pz-c.z); return {x:px+(c.x-px)*f,y:py+(c.y-py)*f,t:t-h+h*f,netz:netz===null?999:netz}; }
+  } return null;
+}
+function solveSpin(x,y,z,tx,ty,T,top,side){
+  var best=null;
+  for(var outer=0;outer<10;outer++){
+    var vx=(tx-x)/T,vy=(ty-y)/T,vh=Math.sqrt(vx*vx+vy*vy),ge=G+K1*top*vh/400,vz=(TZ+RB-z+.5*ge*T*T)/T,r=null;
+    for(var it=0;it<4;it++){ r=simLand(x,y,z,vx,vy,vz,top,side); if(!r) break; vx+=(tx-r.x)/r.t; vy+=(ty-r.y)/r.t; vz+=(T-r.t)*G/2; }
+    r=simLand(x,y,z,vx,vy,vz,top,side); best={vx:vx,vy:vy,vz:vz};
+    if(r&&r.netz>NETZ+RB+3) return best; T+=.06;
+  }
+  return best;
+}
+var SPIN_NAME=function(top,side){ if(Math.abs(top)>=Math.abs(side)) return top>0?'上旋':'下旋'; return '側旋'; };
+function applyHit(who,tx,ty,T,smash,top,side){
+  top=top||0; side=side||0;
+  var v,f,fs=[1,.55,0],r0;
+  for(var fi=0;fi<3;fi++){ f=fs[fi]; v=solveSpin(b.x,b.y,b.z,tx,ty,T,top*f,side*f); r0=simLand(b.x,b.y,b.z,v.vx,v.vy,v.vz,top*f,side*f); if(r0&&Math.hypot(r0.x-tx,r0.y-ty)<18&&r0.netz>NETZ+RB+2) break; }
+  top*=f; side*=f;
+  b.vx=v.vx; b.vy=v.vy; b.vz=v.vz; b.top=top; b.side=side; b.toward=other(who); b.bn=0; b.cool=.12; S.rally++; b.net=false;
+  var spd=Math.sqrt(v.vx*v.vx+v.vy*v.vy),mag=Math.max(Math.abs(top),Math.abs(side));
+  var q=P(b.x,b.y,b.z),col=smash?'#FFB04A':(mag>.3?(Math.abs(top)>=Math.abs(side)?(top>0?'#FF8A5A':'#6FC8FF'):'#C58BFF'):'#fff');
+  for(var k=0;k<(smash?16:8);k++) sparks.push({x:q.x,y:q.y,vx:rnd(-120,120),vy:rnd(-140,60),l:.4,c:col});
   if(smash){ sfx.smash(); vib(30); pops.push({t:'SMASH!',x:180,y:300,l:1,c:'#FFB04A',s:26}); S.shake=.25; } else { sfx.hit(clamp(spd/700,0,1)); vib(10); }
+  if(mag>.3&&!smash){ pops.push({t:SPIN_NAME(top,side)+(mag>.8?'!':''),x:180,y:who==='p'?515:225,l:1,c:col,s:20}); sfx.spin(); }
   if(who==='p') aiPlan(true);
 }
+var spinMode='auto';
 function playerHit(){
   var R=20,ox=clamp((b.x-pp.x)/R,-1,1);
-  var fwd=clamp(-pp.vy,0,900),lat=clamp(pp.vx,-700,700);
-  var tx=clamp(b.x*.35+lat*.07+ox*30,-68,68), ty=-(45+fwd*.11), T=clamp(.95-fwd/1300,.46,1), smash=false;
-  if(b.z>=112&&fwd>420){ smash=true; T=.4; ty=-(75+Math.abs(lat)*.05); }
-  var sg=2+Math.abs(ox)*5+fwd*.01; tx+=gauss()*sg; ty=clamp(ty,-125,-25)+gauss()*sg*.9;
-  pp.swing=.18; applyHit('p',tx,ty,T,smash);
+  var fwd=clamp(-pp.vy,0,900),back=clamp(pp.vy,0,600),lat=clamp(pp.vx,-700,700);
+  var tx=clamp(b.x*.35+lat*.07+ox*30,-62,62), ty=-(45+fwd*.11), T=clamp(.95-fwd/1300,.46,1), smash=false, top=0, side=0, mode=spinMode;
+  if(mode==='auto'){ if(fwd>260) mode='top'; else if(back>140) mode='back'; else if(Math.abs(lat)>380) mode='side'; else mode='flat'; }
+  if(b.z>=112&&fwd>420&&mode!=='back'){ smash=true; mode='flat'; T=.4; ty=-(75+Math.abs(lat)*.05); }
+  else if(mode==='top'){ top=.5+Math.min(.5,fwd/700); T*=.92; ty-=6; }
+  else if(mode==='back'){ top=-(.6+Math.min(.4,back/400+fwd/1400)); T=T*1.1+.05; ty=-(28+fwd*.05); }
+  else if(mode==='side'){ side=(Math.abs(lat)>60?(lat>0?1:-1):(ox>=0?1:-1))*(.55+Math.min(.45,Math.abs(lat)/600)); }
+  // 來球的旋轉會影響回球:上旋球容易回長、下旋球容易回短、側旋球容易偏
+  ty-=14*b.top; tx+=b.side*8*(b.vy>0?-1:1);
+  var sg=2+Math.abs(ox)*5+fwd*.01+(Math.abs(b.top)+Math.abs(b.side))*2; tx+=gauss()*sg; ty=clamp(ty,-118,-22)+gauss()*sg*.9;
+  pp.swing=.18; applyHit('p',tx,ty,T,smash,top,side);
 }
 function aiHit(){
-  var d=D(),tx,ty,T=rnd(d.T[0],d.T[1]),smash=false;
+  var d=D(),tx,ty,T=rnd(d.T[0],d.T[1]),smash=false,top=0,side=0;
   if(S.mode==='rally'){ tx=rnd(-30,30); ty=rnd(60,100); }
   else { if(Math.random()<d.place) tx=-Math.sign(pp.x||(Math.random()-.5))*rnd(30,64); else tx=rnd(-58,58); ty=rnd(40,118);
-    if(b.z>108&&Math.random()<d.smash){ smash=true; T=.4; ty=rnd(60,100); tx=(Math.random()<.5?-1:1)*rnd(35,62); } }
-  tx+=gauss()*d.sig*.9; ty+=gauss()*d.sig; ai.swing=.2; applyHit('o',tx,ty,T,smash);
+    if(b.z>108&&Math.random()<d.smash){ smash=true; T=.4; ty=rnd(60,100); tx=(Math.random()<.5?-1:1)*rnd(35,62); }
+    else if(Math.random()<d.spin){ var r=Math.random(); if(r<.45){ top=rnd(.5,1); T*=.92; } else if(r<.75){ top=-rnd(.55,1); T=T*1.1+.05; ty=rnd(36,70); } else side=(Math.random()<.5?-1:1)*rnd(.55,1); } }
+  var inMag=Math.abs(b.top)+Math.abs(b.side);
+  ty+=14*b.top; tx+=gauss()*(d.sig*.9+inMag*d.spinErr); ty+=gauss()*(d.sig+inMag*d.spinErr);
+  ai.swing=.2; applyHit('o',tx,ty,T,smash,top,side);
 }
 /* ---------- AI ---------- */
 function predict(){
-  var c={x:b.x,y:b.y,z:b.z,vx:b.vx,vy:b.vy,vz:b.vz},bn=b.bn,h=.01;
-  for(var i=0;i<400;i++){ c.vz-=G*h; c.x+=c.vx*h; c.y+=c.vy*h; c.z+=c.vz*h;
-    if(c.vz<0&&c.z<=TZ+RB&&Math.abs(c.x)<=TW&&Math.abs(c.y)<=TL){ c.z=TZ+RB; c.vz=-c.vz*.86; c.vx*=.985; c.vy*=.985; bn++; if(bn>=2) return c; }
+  var c={x:b.x,y:b.y,z:b.z,vx:b.vx,vy:b.vy,vz:b.vz,top:b.top,side:b.side},bn=b.bn,h=.01;
+  for(var i=0;i<400;i++){ flight(c,h); c.x+=c.vx*h; c.y+=c.vy*h; c.z+=c.vz*h;
+    if(c.vz<0&&c.z<=TZ+RB&&Math.abs(c.x)<=TW&&Math.abs(c.y)<=TL){ c.z=TZ+RB; bounceFx(c); bn++; if(bn>=2) return c; }
     if(bn>=1&&c.y<=-146) return c; if(c.z<0) break; }
   return c;
 }
 function aiPlan(newHit){
-  if(b.toward!=='o') return; var d=D(),c=predict(); var noise=gauss()*d.sig*(newHit?.9:.4);
+  if(b.toward!=='o') return; var d=D(),c=predict(); var noise=gauss()*(d.sig*(newHit?.9:.4)+(Math.abs(b.top)+Math.abs(b.side))*d.spinErr*(newHit?.7:.3));
   ai.tx=clamp(c.x+noise,-115,115); ai.ty=clamp(c.y-6,-190,-118); if(newHit) ai.delay=d.react;
 }
 /* ---------- physics ---------- */
 function stepBall(h){
   var py=b.y,px=b.x;
-  b.vz-=G*h; b.x+=b.vx*h; b.y+=b.vy*h; b.z+=b.vz*h; if(b.cool>0) b.cool-=h;
+  flight(b,h); b.x+=b.vx*h; b.y+=b.vy*h; b.z+=b.vz*h; b.rot+=(Math.abs(b.top)+Math.abs(b.side)*.8)*26*h; if(b.cool>0) b.cool-=h;
   if(((py>0&&b.y<=0)||(py<0&&b.y>=0))&&b.z<NETZ+RB&&Math.abs(b.x)<NETW&&b.z>TZ-4){ b.y=py; b.vy=-b.vy*.18; b.vx*=.4; b.net=true; if(!b.hitNet){ b.hitNet=true; sfx.net(); } }
-  if(b.vz<0&&b.z<=TZ+RB&&Math.abs(b.x)<=TW&&Math.abs(b.y)<=TL&&b.z>TZ-10){ b.z=TZ+RB; var vv=-b.vz; b.vz=vv*.86; b.vx*=.985; b.vy*=.985; sfx.bounce(vv); onBounce(b.y>0?'p':'o'); b.hitNet=false; }
+  if(b.vz<0&&b.z<=TZ+RB&&Math.abs(b.x)<=TW&&Math.abs(b.y)<=TL&&b.z>TZ-10){ b.z=TZ+RB; var vv=-b.vz; bounceFx(b); sfx.bounce(vv); if(Math.abs(b.side)>.25||Math.abs(b.top)>.4) { var bq=P(b.x,b.y,b.z); for(var kk=0;kk<4;kk++) sparks.push({x:bq.x,y:bq.y,vx:rnd(-60,60),vy:rnd(-70,0),l:.3,c:'#fff'}); } onBounce(b.y>0?'p':'o'); b.hitNet=false; }
   if(b.z<=RB&&b.vz<0){ b.z=RB; b.vz=-b.vz*.45; b.vx*=.8; b.vy*=.8; floorHit(); }
   // paddles
   if(!b.over&&b.cool<=0){
@@ -271,14 +323,16 @@ function drawOpp(){
 function drawBall(){
   if(!b.live&&S.state==='ready') return; if(b.y>CAMY-30) return;
   // trail
-  for(var i=0;i<b.trail.length;i++){ var t=b.trail[i],q=P(t.x,t.y,t.z); ctx.globalAlpha=(i+1)/b.trail.length*.25; ctx.fillStyle='#FFE9C8'; ctx.beginPath(); ctx.arc(q.x,q.y,3.6*q.s*.9,0,7); ctx.fill(); } ctx.globalAlpha=1;
+  for(var i=0;i<b.trail.length;i++){ var t=b.trail[i],q=P(t.x,t.y,t.z); ctx.globalAlpha=(i+1)/b.trail.length*.28; ctx.fillStyle=spinCol(); ctx.beginPath(); ctx.arc(q.x,q.y,3.6*q.s*.9,0,7); ctx.fill(); } ctx.globalAlpha=1;
   // shadow
   var overT=Math.abs(b.x)<=TW&&Math.abs(b.y)<=TL, sz=overT?TZ:0, sq=P(b.x,b.y,sz), hgt=Math.max(0,b.z-sz), k=clamp(1-hgt/220,.25,1);
   ctx.fillStyle='rgba(0,0,0,'+(.38*k)+')'; ctx.beginPath(); ctx.ellipse(sq.x,sq.y,4.2*sq.s*(1+hgt/260),2.1*sq.s*(1+hgt/260),0,0,7); ctx.fill();
   var q2=P(b.x,b.y,b.z),r=Math.max(3.4,3.4*q2.s);
   var gg=ctx.createRadialGradient(q2.x-r*.35,q2.y-r*.4,r*.1,q2.x,q2.y,r); gg.addColorStop(0,'#fff'); gg.addColorStop(.35,'#FFB04A'); gg.addColorStop(1,'#E0701C'); ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(q2.x,q2.y,r,0,7); ctx.fill();
   ctx.strokeStyle='rgba(120,50,0,.35)'; ctx.lineWidth=1; ctx.stroke();
+  var mg=Math.max(Math.abs(b.top),Math.abs(b.side)); if(mg>.15){ ctx.save(); ctx.translate(q2.x,q2.y); ctx.rotate(b.rot); ctx.strokeStyle=spinCol(); ctx.lineWidth=Math.max(1.4,r*.28); ctx.beginPath(); ctx.moveTo(-r*.9,0); ctx.lineTo(r*.9,0); ctx.stroke(); ctx.restore(); }
 }
+function spinCol(){ var m=Math.max(Math.abs(b.top),Math.abs(b.side)); if(m<.3) return '#FFE9C8'; return Math.abs(b.top)>=Math.abs(b.side)?(b.top>0?'#FF8A5A':'#6FC8FF'):'#C58BFF'; }
 function drawHUD(){
   var pa=S.score.p,oa=S.score.o;
   function pill(x,w,label,val,act,col){ ctx.fillStyle=act?'rgba(255,170,60,.28)':'rgba(0,0,0,.38)'; rr(ctx,x,9,w,44,12); ctx.fill(); if(act){ ctx.strokeStyle='#FFB04A'; ctx.lineWidth=2; rr(ctx,x+1,10,w-2,42,11); ctx.stroke(); }
@@ -290,7 +344,7 @@ function drawHUD(){
     pill(42,134,'你',pa,S.server==='p','#FFE9C8'); pill(184,134,D().n+' 對手',oa,S.server==='o','#FFE9C8');
         ctx.fillStyle='rgba(0,0,0,.4)'; rr(ctx,138,58,84,18,9); ctx.fill(); ctx.fillStyle='#FFD9A8'; ctx.font='700 10px Noto Sans TC'; ctx.textAlign='center'; ctx.fillText(S.rally>1?'回合 '+S.rally+' 拍':(S.server==='p'?'你發球':'對手發球'),180,70);
   }
-  if(S.state==='ready'||(S.state==='play'&&S.rally===0&&S.server==='p'&&b.bn<2)){ if(S.hint){ ctx.font='900 11px Noto Sans TC,sans-serif'; var tw=ctx.measureText(S.hint).width+20; ctx.fillStyle='rgba(0,0,0,.55)'; rr(ctx,180-tw/2,598,tw,20,10); ctx.fill(); ctx.fillStyle='#FFE9C8'; ctx.textAlign='center'; ctx.fillText(S.hint,180,612); } }
+  if(S.state==='ready'||(S.state==='play'&&S.rally===0&&S.server==='p'&&b.bn<2)){ if(S.hint){ ctx.font='900 11px Noto Sans TC,sans-serif'; var tw=ctx.measureText(S.hint).width+20; ctx.fillStyle='rgba(0,0,0,.55)'; rr(ctx,180-tw/2,578,tw,20,10); ctx.fill(); ctx.fillStyle='#FFE9C8'; ctx.textAlign='center'; ctx.fillText(S.hint,180,592); } }
   if(S.msgT>0){ ctx.globalAlpha=Math.min(1,S.msgT*2); ctx.font='900 20px Noto Sans TC,sans-serif'; var mw=ctx.measureText(S.msg).width+34; ctx.fillStyle='rgba(20,10,4,.78)'; rr(ctx,180-mw/2,236,mw,38,19); ctx.fill(); ctx.fillStyle=S.msg.indexOf('得分')===0?'#7BE8B0':S.msg.indexOf('失分')===0?'#FF9A8A':'#FFE9C8'; ctx.textAlign='center'; ctx.fillText(S.msg,180,262); ctx.globalAlpha=1; }
 }
 function drawScene(){
@@ -325,6 +379,7 @@ function showOver(){
   store('tt_stat',JSON.stringify(st)); $('over').classList.add('on'); win||S.mode==='rally'&&S.best>=10?sfx.win():sfx.lose();
 }
 document.querySelectorAll('[data-d]').forEach(function(x){ x.addEventListener('click',function(){ audio(); startGame(x.dataset.d); }); });
+document.querySelectorAll('#spinBar button').forEach(function(x){ x.addEventListener('click',function(){ audio(); spinMode=x.dataset.s; document.querySelectorAll('#spinBar button').forEach(function(y){ y.classList.toggle('on',y===x); }); }); });
 $('resume').addEventListener('click',function(){ $('menu').classList.remove('on'); });
 $('snd').addEventListener('click',function(){ sndOn=!sndOn; store('tt_snd',sndOn?'1':'0'); $('snd').textContent=sndOn?'🔊 音效:開':'🔇 音效:關'; audio(); });
 $('menuBtn').addEventListener('click',openMenu);
@@ -334,7 +389,7 @@ $('toMenu').addEventListener('click',function(){ $('over').classList.remove('on'
 var last=0;
 function loop(ts){ var dt=Math.min(.033,(ts-last)/1000||.016); last=ts; if(S){ if(!$('menu').classList.contains('on')) tick(dt); drawScene(); } requestAnimationFrame(loop); }
 resize(); newGame('normal'); openMenu();
-window.__TT={S:function(){ return S; },b:function(){ return b; },pp:function(){ return pp; },tick:tick,newGame:function(d){ lastD=d; newGame(d); S.live=true; $('menu').classList.remove('on'); },setBot:function(v,sp){ bot=!!v; if(sp) BOT_SP=sp; },hit:function(){ return 0; }};
+window.__TT={S:function(){ return S; },b:function(){ return b; },pp:function(){ return pp; },tick:tick,newGame:function(d){ lastD=d; newGame(d); S.live=true; $('menu').classList.remove('on'); },setSpin:function(m){ spinMode=m; },land:function(top,side,tx,ty,T){ var v=solveSpin(0,160,100,tx,ty,T,top,side),r=simLand(0,160,100,v.vx,v.vy,v.vz,top,side); var c={x:0,y:160,z:100,vx:v.vx,vy:v.vy,vz:v.vz,top:top,side:side}; return {v:v,r:r,t:{tx:tx,ty:ty}}; },setBot:function(v,sp){ bot=!!v; if(sp) BOT_SP=sp; },hit:function(){ return 0; }};
 requestAnimationFrame(loop);
 })();
 </script>
