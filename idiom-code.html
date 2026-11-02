@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>四字密碼</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@700;900&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#2B2118; --paper:#F4ECD8; --ink:#2B2B2B; --g:#5FA777; --y:#E3B341; --x:#8F959B; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; height:100%; background:var(--bg); font-family:'Noto Sans TC',system-ui,sans-serif; overflow:hidden; color:var(--ink); }
+  body{ display:flex; align-items:center; justify-content:center; background:radial-gradient(ellipse at 50% 0%, #6B4E34 0%, #17100A 75%); }
+  .wrap{ position:relative; width:min(100vw, calc(100vh * 0.5625)); aspect-ratio:360/640; max-height:100vh; border-radius:18px; overflow:hidden; background:var(--paper); box-shadow:0 24px 70px rgba(0,0,0,.6), 0 0 0 3px rgba(230,190,120,.3); user-select:none; -webkit-user-select:none; font-size:calc(min(100vw, 100vh*.5625)/360*16px); display:flex; flex-direction:column; padding:0 .8em .8em; gap:.55em; }
+  button{ font-family:inherit; cursor:pointer; }
+  #top{ display:flex; align-items:center; gap:.4em; height:2.9em; flex:none; }
+  #bk{ color:#fff; background:#7A5A3A; text-decoration:none; font:700 .78em 'Noto Sans TC'; border-radius:1em; padding:.4em .75em; }
+  #ttl{ flex:1; text-align:center; font:900 1.25em 'Noto Serif TC',serif; letter-spacing:.15em; color:#8B2E1F; }
+  .ib{ border:0; border-radius:50%; width:2em; height:2em; background:#7A5A3A; color:#fff; font:900 .95em sans-serif; }
+  #modes{ display:flex; gap:.4em; flex:none; } #modes button{ flex:1; border:0; border-radius:.8em; padding:.35em 0; font:700 .85em 'Noto Sans TC'; background:#E3D6B8; color:#6B5538; }
+  #modes button.on{ background:#8B2E1F; color:#fff; }
+  #hintbox{ flex:none; background:#fff; border-radius:.8em; padding:.5em .7em; border-left:.35em solid #8B2E1F; font-size:.88em; line-height:1.4; min-height:3.6em; box-shadow:0 .1em 0 rgba(0,0,0,.08); }
+  #hintbox b{ color:#8B2E1F; font-size:.8em; letter-spacing:.1em; display:block; margin-bottom:.1em; }
+  #hh{ color:#C07A00; font-weight:700; display:block; margin-top:.15em; font-size:.92em; }
+  #board{ flex:none; display:flex; flex-direction:column; gap:.3em; align-items:center; }
+  .r{ display:flex; gap:.3em; } .r.shake{ animation:sh .35s; }
+  @keyframes sh{ 20%,60%{ transform:translateX(-.3em);} 40%,80%{ transform:translateX(.3em);} }
+  .t{ width:1.95em; height:1.95em; border:.09em solid #CDBE9C; border-radius:.35em; background:#FBF7EA; display:flex; align-items:center; justify-content:center; font:900 1.3em/1 'Noto Serif TC',serif; color:var(--ink); perspective:400px; }
+  .t.f{ border-color:#8B2E1F; }
+  .t.g,.t.y,.t.x{ color:#fff; border-color:transparent; } .t.g{ background:var(--g); } .t.y{ background:var(--y); } .t.x{ background:var(--x); }
+  .t.flip{ animation:fl .55s both; } @keyframes fl{ 0%{ transform:rotateX(0);} 50%{ transform:rotateX(90deg);} 100%{ transform:rotateX(0);} }
+  #pad{ flex:1; min-height:0; display:grid; grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(3,1fr); gap:.35em; }
+  .k{ border:0; border-radius:.6em; background:#E9DDC0; box-shadow:0 .16em 0 #BBA97F; font:900 1.35em/1 'Noto Serif TC',serif; color:var(--ink); padding:0; }
+  .k:active{ transform:translateY(.1em); box-shadow:0 .06em 0 #BBA97F; }
+  .k.g{ background:var(--g); color:#fff; box-shadow:0 .16em 0 #3B7A52; } .k.y{ background:var(--y); color:#fff; box-shadow:0 .16em 0 #A8821F; } .k.x{ background:#BFC3C7; color:#8A9096; box-shadow:0 .16em 0 #9CA1A6; }
+  #act{ display:flex; gap:.45em; flex:none; }
+  #act button{ flex:1; border:0; border-radius:.8em; padding:.6em 0; font:900 .9em 'Noto Sans TC'; color:#fff; letter-spacing:.08em; }
+  #bH{ background:linear-gradient(180deg,#F2B94B,#C98A12); box-shadow:0 .22em 0 #8A5E08; } #bD{ background:linear-gradient(180deg,#9BA3AA,#6C757D); box-shadow:0 .22em 0 #484F55; } #bS{ background:linear-gradient(180deg,#D4573F,#8B2E1F); box-shadow:0 .22em 0 #5E1D12; }
+  #act button:disabled{ opacity:.45; }
+  .ov{ position:absolute; inset:0; z-index:20; display:none; align-items:center; justify-content:center; padding:1em; background:rgba(30,20,10,.78); text-align:center; }
+  .ov.show{ display:flex; }
+  .card{ width:100%; max-width:21.5em; background:var(--paper); border-radius:1.1em; padding:1em; box-shadow:0 .35em 0 #B59A66, 0 1em 2em rgba(0,0,0,.5); display:flex; flex-direction:column; gap:.55em; max-height:96%; overflow:auto; }
+  .card h2{ margin:0; font:900 1.5em 'Noto Serif TC',serif; color:#8B2E1F; }
+  .big{ font:900 2.1em 'Noto Serif TC',serif; letter-spacing:.12em; color:#2B2B2B; }
+  .card p{ margin:0; font-size:.86em; color:#5C4A33; line-height:1.5; }
+  .stt{ display:flex; justify-content:space-around; background:#fff; border-radius:.8em; padding:.45em 0; } .stt div{ font-size:.7em; color:#7A6A55; } .stt b{ display:block; font:900 1.7em 'Noto Serif TC',serif; color:#2B2B2B; }
+  .row{ display:flex; gap:.5em; } .row > *{ flex:1; }
+  .bigbtn{ border:0; border-radius:.9em; padding:.7em .4em; font:900 .92em 'Noto Sans TC'; letter-spacing:.06em; color:#fff; background:linear-gradient(180deg,#D4573F,#8B2E1F); box-shadow:0 .24em 0 #5E1D12; text-decoration:none; display:block; text-align:center; }
+  .bigbtn.g{ background:linear-gradient(180deg,#9BA3AA,#6C757D); box-shadow:0 .24em 0 #484F55; } .bigbtn.m{ background:linear-gradient(180deg,#6FBF8A,#3B7A52); box-shadow:0 .24em 0 #265238; }
+  #toast{ position:absolute; left:50%; top:26%; transform:translateX(-50%); z-index:30; background:rgba(0,0,0,.75); color:#fff; padding:.5em 1em; border-radius:1em; font:700 .85em 'Noto Sans TC'; display:none; white-space:nowrap; }
+  .how{ text-align:left; font-size:.82em; line-height:1.6; color:#4A3B28; } .how i{ display:inline-block; width:1.1em; height:1.1em; border-radius:.25em; vertical-align:-.2em; margin-right:.3em; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <div id="top"><a id="bk" href="index.html">‹ 大廳</a><div id="ttl">四字密碼</div><button class="ib" id="bHelp">?</button><button class="ib" id="bStat">★</button></div>
+  <div id="modes"><button id="mD" class="on">每日一題</button><button id="mF">無限練習</button></div>
+  <div id="hintbox"><b>成語提示</b><span id="hm"></span><span id="hh"></span></div>
+  <div id="board"></div>
+  <div id="pad"></div>
+  <div id="act"><button id="bH">💡 提示</button><button id="bD">⌫ 刪除</button><button id="bS">送出</button></div>
+  <div id="toast"></div>
+
+  <div class="ov" id="res"><div class="card">
+    <h2 id="rt">答對了!</h2><div class="big" id="ri"></div><p id="rm"></p>
+    <div class="stt"><div><b id="s1">0</b>已玩</div><div><b id="s2">0%</b>勝率</div><div><b id="s3">0</b>連勝</div><div><b id="s4">0</b>最佳連勝</div></div>
+    <div class="row"><button class="bigbtn m" id="rShare">複製成績</button><button class="bigbtn" id="rNext">無限練習</button></div>
+    <button class="bigbtn g" id="rClose">看盤面</button>
+  </div></div>
+
+  <div class="ov" id="help"><div class="card">
+    <h2>怎麼玩</h2>
+    <div class="how">從下面 12 個字裡,猜出一個四字成語,共 6 次機會。<br>
+    <i style="background:#5FA777"></i>字對,位置也對<br><i style="background:#E3B341"></i>成語裡有這個字,但位置不對<br><i style="background:#8F959B"></i>成語裡沒有這個字<br>
+    12 個字裡面,4 個是答案,8 個是干擾。看上面的「成語提示」猜猜看!卡關時可以按「💡 提示」(每題一次)。</div>
+    <button class="bigbtn" id="hx">開始</button>
+  </div></div>
+
+  <div class="ov" id="stat"><div class="card">
+    <h2>戰績</h2>
+    <div class="stt"><div><b id="t1">0</b>已玩</div><div><b id="t2">0%</b>勝率</div><div><b id="t3">0</b>連勝</div><div><b id="t4">0</b>最佳連勝</div></div>
+    <p id="dist"></p>
+    <button class="bigbtn g" id="sx">關閉</button>
+  </div></div>
+</div>
+<!--pl:start-->
+<style id="pl-css">
+html{-webkit-text-size-adjust:100%;overscroll-behavior:none}
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;animation:plIn .45s ease both}
+@keyframes plIn{from{opacity:0}to{opacity:1}}
+button,a,[role=button],canvas{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button{transition:transform .12s ease,filter .15s ease,box-shadow .15s ease}
+button:not(:disabled):hover{filter:brightness(1.07)}
+button:not(:disabled):active{transform:translateY(1px) scale(.975);filter:brightness(.96)}
+button:focus-visible,a:focus-visible{outline:3px solid rgba(255,255,255,.85);outline-offset:3px;box-shadow:0 0 0 6px rgba(0,0,0,.35)}
+canvas{touch-action:none}
+#pl-vig{position:fixed;inset:0;pointer-events:none;z-index:2147482000;background:radial-gradient(ellipse at 50% 45%,transparent 58%,rgba(0,0,0,.20) 100%)}
+#pl-back{position:fixed;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));z-index:2147482500;display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 12px 0 9px;border-radius:999px;font:700 12px/1 'Noto Sans TC',system-ui,sans-serif;letter-spacing:.06em;color:#fff;text-decoration:none;background:rgba(18,16,28,.55);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 3px 10px rgba(0,0,0,.3);opacity:.85;transition:opacity .15s,transform .12s}
+#pl-back:hover{opacity:1}#pl-back:active{transform:scale(.95)}
+#pl-splash{position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:#fff;transition:opacity .45s ease,visibility .45s}
+#pl-splash.off{opacity:0;visibility:hidden}
+#pl-splash b{font:900 clamp(26px,7vw,40px)/1.2 'Noto Serif TC','Noto Sans TC',serif;letter-spacing:.14em;text-shadow:0 4px 18px rgba(0,0,0,.45)}
+#pl-splash i{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.28);border-top-color:#fff;animation:plSp .8s linear infinite}
+#pl-splash small{font:500 11px 'Noto Sans TC',sans-serif;letter-spacing:.3em;opacity:.7}
+@keyframes plSp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){body{animation:none}#pl-splash i{animation:none}}
+</style>
+<script id="pl-js">
+(function(){
+ try{
+  var d=document,b=d.body,cs=getComputedStyle(b),bg=cs.backgroundColor;
+  if(!bg||bg==='rgba(0, 0, 0, 0)'){bg=getComputedStyle(d.documentElement).backgroundColor;}
+  if(!bg||bg==='rgba(0, 0, 0, 0)')bg='#1c1830';
+  var m=d.querySelector('meta[name=theme-color]');if(!m){m=d.createElement('meta');m.name='theme-color';d.head.appendChild(m);}m.content=bg;
+  var vp=d.querySelector('meta[name=viewport]');if(vp&&vp.content.indexOf('viewport-fit')<0)vp.content+=',viewport-fit=cover';
+  var v=d.createElement('div');v.id='pl-vig';b.appendChild(v);
+  if(!d.querySelector('a[href*="index.html"]')){var a=d.createElement('a');a.id='pl-back';a.href='index.html';a.setAttribute('aria-label','回遊戲大廳');a.innerHTML='<span aria-hidden="true">‹</span>大廳';b.appendChild(a);}
+  var s=d.createElement('div');s.id='pl-splash';s.style.background='radial-gradient(ellipse at 50% 30%,rgba(255,255,255,.16),transparent 60%),'+bg;
+  var t=(d.title||'').trim();s.innerHTML='<small>NOW LOADING</small><b></b><i></i>';s.querySelector('b').textContent=t;b.appendChild(s);
+  addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('button');if(t&&navigator.vibrate){try{navigator.vibrate(8);}catch(_){}}},true);
+  var done=false;function off(){if(done)return;done=true;s.classList.add('off');setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s);},600);}
+  if(d.readyState==='complete')setTimeout(off,350);else addEventListener('load',function(){setTimeout(off,350);});
+  setTimeout(off,1800);
+ }catch(e){}
+})();
+</script>
+<!--pl:end-->
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const ID=[
+['畫蛇添足','做了多餘的事,反而弄巧成拙'],['守株待兔','不肯努力,只想靠僥倖得到成果'],['亡羊補牢','出了問題後及時補救,還來得及'],['掩耳盜鈴','自己欺騙自己,以為別人也不知道'],
+['刻舟求劍','拘泥成法,不知變通'],['井底之蛙','見識狹小的人'],['狐假虎威','借別人的權勢來嚇唬人'],['對牛彈琴','對不懂的人講道理,白費力氣'],
+['葉公好龍','嘴上說喜歡,實際上害怕'],['買櫝還珠','取捨不當,捨本逐末'],['杯弓蛇影','疑神疑鬼,自己嚇自己'],['驚弓之鳥','受過驚嚇,稍有動靜就害怕的人'],
+['鶴立雞群','才能或儀表在人群中特別突出'],['塞翁失馬','壞事也可能變成好事'],['愚公移山','有恆心毅力,什麼困難都能克服'],['精衛填海','意志堅定,不怕困難'],
+['臥薪嘗膽','刻苦自勵,立志報仇雪恥'],['破釜沉舟','下定決心,不留退路'],['完璧歸趙','東西完好無損地歸還原主'],['負荊請罪','主動認錯道歉'],
+['三顧茅廬','誠心誠意地邀請人才'],['草船借箭','巧妙運用智慧取得資源'],['紙上談兵','只會空談,沒有實際能力'],['望梅止渴','用空想來安慰自己'],
+['指鹿為馬','故意顛倒是非黑白'],['四面楚歌','四面受敵,孤立無援'],['背水一戰','沒有退路,拚死一搏'],['馬到成功','事情進行順利,很快成功'],
+['一帆風順','做事順利,沒有阻礙'],['大器晚成','有才能的人,成就得比較晚'],['半途而廢','做事沒做完就放棄'],['鐵杵成針','只要有恆心,再難的事都能成功'],
+['水到渠成','條件成熟,事情自然成功'],['守口如瓶','把祕密守得很嚴'],['畫龍點睛','在關鍵處加上精采的一筆'],['錦上添花','好上加好'],
+['雪中送炭','在別人困難時給予幫助'],['趁火打劫','趁別人危難時撈取好處'],['落井下石','趁別人危難時再加以陷害'],['如魚得水','遇到適合自己的環境或人'],
+['虎頭蛇尾','開始聲勢浩大,後來無力收場'],['龍飛鳳舞','形容書法筆勢活潑奔放'],['鳥語花香','形容春天美好的景象'],['風和日麗','天氣晴朗溫暖'],
+['山明水秀','風景優美'],['天長地久','時間長久不變'],['海闊天空','形容空間廣闊,或說話漫無邊際'],['春暖花開','春天溫暖,花朵盛開'],
+['秋高氣爽','秋天天空高遠,氣候涼爽'],['狼吞虎嚥','吃東西又猛又急'],['垂涎三尺','非常想吃,或非常羨慕'],['活蹦亂跳','充滿活力的樣子'],
+['手舞足蹈','高興得手腳都舞動起來'],['眉開眼笑','高興的樣子'],['愁眉苦臉','憂愁痛苦的神情'],['目瞪口呆','吃驚得說不出話'],
+['驚慌失措','慌張得不知怎麼辦'],['垂頭喪氣','失意沮喪的樣子'],['興高采烈','非常高興'],['勇往直前','勇敢向前,不退縮'],
+['持之以恆','長久堅持下去'],['全神貫注','精神高度集中'],['專心致志','一心一意地投入'],['迫不及待','急得不能等待'],
+['三心二意','不專心,猶豫不決'],['七上八下','心神不定'],['九牛一毛','極小的一部分'],['千鈞一髮','情勢非常危急'],
+['萬無一失','絕對穩妥,不會出錯'],['一舉兩得','做一件事,得到兩種好處'],['一箭雙鵰','一個動作達成兩個目的'],
+['事半功倍','用力少而收效大'],['得不償失','得到的比不上失去的'],['本末倒置','把主要和次要的顛倒了'],['自相矛盾','說話做事前後衝突'],
+['以身作則','用自己的行動做榜樣'],['見義勇為','看見正義的事就勇敢去做'],['助人為樂','以幫助別人為快樂'],['樂不思蜀','在新環境中快樂得忘了家'],
+['開卷有益','讀書總有好處'],['學無止境','學問沒有盡頭'],['溫故知新','複習舊的,得到新的體會'],['舉一反三','由一件事推知其他類似的事'],
+['觸類旁通','掌握一類知識後,能推及其他'],['虛懷若谷','心胸謙虛,像山谷一樣'],['腳踏實地','做事踏實,不浮誇'],
+['實事求是','依事實求得正確結論'],['急功近利','急著求眼前的成效'],['脫穎而出','才能出眾,顯露出來'],['出類拔萃','超出同類之上'],
+['與眾不同','和大家都不一樣'],['異想天開','想法奇特,不切實際'],['無中生有','憑空捏造'],['胸有成竹','做事之前已有周全的打算'],
+['運籌帷幄','在後方策劃決定策略'],['未雨綢繆','事先做好準備'],['防患未然','事先防止禍患發生'],['居安思危','平安時想到可能的危險'],
+['好高騖遠','不切實際地追求過高的目標'],['唇亡齒寒','關係密切,互相依存'],['日新月異','變化進步很快'],
+['同舟共濟','同心協力度過難關'],['眾志成城','大家團結,力量就大'],['抱薪救火','用錯方法,反使災禍擴大'],['揠苗助長','急於求成,反而壞事'],
+['緣木求魚','方向方法錯誤,達不到目的'],['刻骨銘心','感受深刻,永遠難忘'],['一鳴驚人','平時沒表現,突然有驚人成就'],['名列前茅','名次排在前面'],
+['氣宇軒昂','儀表不凡,精神飽滿'],['神采飛揚','精神煥發的樣子'],['迎刃而解','問題很順利地解決了'],['左右逢源','做事處處順利,得心應手'],
+['爐火純青','學問技藝達到完美的境界'],['博覽群書','廣泛地閱讀很多書'],['別出心裁','想出與眾不同的巧妙辦法'],['夜以繼日','日夜不停地工作']
+];
+const N=ID.length;
+const MAXT=6;
+let SV={played:0,won:0,streak:0,best:0,dist:[0,0,0,0,0,0],daily:null};
+try{const s=JSON.parse(localStorage.getItem('idiom_save')||'null');if(s&&typeof s==='object')SV=Object.assign(SV,s);}catch(e){}
+function save(){try{localStorage.setItem('idiom_save',JSON.stringify(SV));}catch(e){}}
+
+function mulb(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const ORDER=(()=>{const a=[...Array(N).keys()],r=mulb(20261102);for(let i=N-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;})();
+const dayNum=()=>Math.floor((Date.now()+8*3600e3)/864e5);
+function makePad(idx){
+ const ans=[...ID[idx][0]],r=mulb(idx*7919+13);
+ const pool=[];ID.forEach((x,i)=>{if(i!==idx)[...x[0]].forEach(c=>{if(!ans.includes(c)&&!pool.includes(c))pool.push(c);});});
+ for(let i=pool.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+ const set=[...new Set(ans)];const need=12-set.length;const pad=set.concat(pool.slice(0,need));
+ for(let i=pad.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[pad[i],pad[j]]=[pad[j],pad[i]];}
+ return pad;
+}
+function evalG(g,a){
+ const G=[...g],A=[...a],res=Array(4).fill('x'),used=Array(4).fill(false);
+ for(let i=0;i<4;i++)if(G[i]===A[i]){res[i]='g';used[i]=true;}
+ for(let i=0;i<4;i++){if(res[i]==='g')continue;const j=A.findIndex((c,k)=>!used[k]&&c===G[i]);if(j>=0){res[i]='y';used[j]=true;}}
+ return res;
+}
+const S={mode:'daily',idx:0,pad:[],rows:[],cur:[],hint:null,done:false,won:false,newRow:false};
+const EM={g:'🟩',y:'🟨',x:'⬜'};
+function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast._t);toast._t=setTimeout(()=>e.style.display='none',1600);}
+
+function start(mode,force){
+ S.mode=mode;
+ $('mD').classList.toggle('on',mode==='daily');$('mF').classList.toggle('on',mode==='free');
+ let idx;
+ if(mode==='daily'){idx=ORDER[dayNum()%N];}
+ else{do{idx=Math.floor(Math.random()*N);}while(idx===S.idx&&N>1);}
+ S.idx=idx;S.pad=makePad(idx);S.rows=[];S.cur=[];S.hint=null;S.done=false;S.won=false;S.newRow=false;
+ if(mode==='daily'&&SV.daily&&SV.daily.day===dayNum()&&SV.daily.idx===idx){
+  S.rows=SV.daily.rows.slice();S.hint=SV.daily.hint;S.done=!!SV.daily.done;S.won=!!SV.daily.won;
+ }
+ $('hm').textContent='「'+ID[idx][1]+'」';
+ render();
+ if(S.done)setTimeout(showRes,300);
+}
+function padState(){
+ const m={};const rk={g:3,y:2,x:1};
+ S.rows.forEach(g=>{const r=evalG(g,ID[S.idx][0]);[...g].forEach((c,i)=>{if(!m[c]||rk[r[i]]>rk[m[c]])m[c]=r[i];});});
+ return m;
+}
+function render(){
+ const A=ID[S.idx][0];
+ const b=$('board');b.innerHTML='';
+ for(let r=0;r<MAXT;r++){
+  const row=document.createElement('div');row.className='r';row.id='row'+r;
+  let chars=null,res=null;
+  if(r<S.rows.length){chars=[...S.rows[r]];res=evalG(S.rows[r],A);}
+  else if(r===S.rows.length&&!S.done){chars=S.cur;}
+  for(let i=0;i<4;i++){
+   const t=document.createElement('div');t.className='t';
+   if(chars&&chars[i]){t.textContent=chars[i];if(res){t.classList.add(res[i]);if(S.newRow&&r===S.rows.length-1){t.classList.add('flip');t.style.animationDelay=(i*.18)+'s';}}else t.classList.add('f');}
+   row.appendChild(t);
+  }
+  b.appendChild(row);
+ }
+ S.newRow=false;
+ const st=padState(),p=$('pad');p.innerHTML='';
+ S.pad.forEach(c=>{const k=document.createElement('button');k.className='k'+(st[c]?' '+st[c]:'');k.textContent=c;k.onclick=()=>addChar(c);p.appendChild(k);});
+ $('hh').textContent=S.hint!=null?'💡 第 '+(S.hint+1)+' 個字是「'+[...A][S.hint]+'」':'';
+ $('bH').disabled=S.hint!=null||S.done;$('bD').disabled=S.done;$('bS').disabled=S.done;
+}
+function addChar(c){if(S.done||S.cur.length>=4)return;S.cur.push(c);render();}
+function del(){if(S.done||!S.cur.length)return;S.cur.pop();render();}
+function persist(){
+ if(S.mode==='daily'){SV.daily={day:dayNum(),idx:S.idx,rows:S.rows,hint:S.hint,done:S.done,won:S.won};}
+ save();
+}
+function submit(){
+ if(S.done)return;
+ if(S.cur.length<4){const r=$('row'+S.rows.length);if(r){r.classList.remove('shake');void r.offsetWidth;r.classList.add('shake');}toast('要選滿 4 個字喔');return;}
+ const g=S.cur.join('');S.rows.push(g);S.cur=[];S.newRow=true;
+ const A=ID[S.idx][0];
+ if(g===A){S.done=true;S.won=true;}
+ else if(S.rows.length>=MAXT){S.done=true;S.won=false;}
+ if(S.done&&S.mode==='daily'){
+  SV.played++;if(S.won){SV.won++;SV.streak++;SV.best=Math.max(SV.best,SV.streak);SV.dist[S.rows.length-1]++;}else SV.streak=0;
+ }
+ persist();render();
+ if(S.done)setTimeout(showRes,1100);
+}
+function hintFn(){
+ if(S.done||S.hint!=null)return;
+ const A=[...ID[S.idx][0]];
+ let cand=[0,1,2,3].filter(i=>!S.rows.some(g=>[...g][i]===A[i]));
+ if(!cand.length)cand=[0,1,2,3];
+ S.hint=cand[Math.floor(Math.random()*cand.length)];persist();render();
+}
+function statsFill(a,b,c,d){$(a).textContent=SV.played;$(b).textContent=SV.played?Math.round(SV.won/SV.played*100)+'%':'0%';$(c).textContent=SV.streak;$(d).textContent=SV.best;}
+function showRes(){
+ const A=ID[S.idx];
+ $('rt').textContent=S.won?(S.rows.length===1?'一擊命中!':'答對了!'):'可惜,差一點!';
+ $('ri').textContent=A[0];$('rm').textContent=A[1]+(S.won?'  ・  用了 '+S.rows.length+' 次':'');
+ statsFill('s1','s2','s3','s4');
+ $('rNext').textContent=S.mode==='daily'?'無限練習':'再來一題';
+ $('res').classList.add('show');
+}
+function shareText(){
+ const A=ID[S.idx][0];
+ const head='四字密碼 '+(S.mode==='daily'?'每日 #'+(dayNum()-20400):'練習')+' '+(S.won?S.rows.length:'X')+'/'+MAXT;
+ return head+'\n'+S.rows.map(g=>evalG(g,A).map(r=>EM[r]).join('')).join('\n');
+}
+$('bD').onclick=del;$('bS').onclick=submit;$('bH').onclick=hintFn;
+$('mD').onclick=()=>start('daily');$('mF').onclick=()=>start('free');
+$('rClose').onclick=()=>$('res').classList.remove('show');
+$('rNext').onclick=()=>{$('res').classList.remove('show');start('free');};
+$('rShare').onclick=()=>{const t=shareText();try{navigator.clipboard.writeText(t).then(()=>toast('已複製成績'),()=>toast(t.replace(/\n/g,' ')));}catch(e){toast('複製失敗');}};
+$('bHelp').onclick=()=>$('help').classList.add('show');$('hx').onclick=()=>$('help').classList.remove('show');
+$('bStat').onclick=()=>{statsFill('t1','t2','t3','t4');const mx=Math.max(1,...SV.dist);$('dist').innerHTML='猜中次數分布<br>'+SV.dist.map((n,i)=>(i+1)+' 次 '+'█'.repeat(Math.round(n/mx*10))+' '+n).join('<br>');$('stat').classList.add('show');};
+$('sx').onclick=()=>$('stat').classList.remove('show');
+start('daily');
+if(!SV.played&&!(SV.daily&&SV.daily.rows&&SV.daily.rows.length))setTimeout(()=>$('help').classList.add('show'),400);
+window.__IC={ID,SV,S,evalG,makePad,start,addChar,submit,del,hintFn,ORDER,N,dayNum};
+})();
+</script>
+</body>
+</html>
