@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>紙牌決鬥</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#10182A; --cream:#FFF3DC; --ink:#4A2A1A; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; height:100%; background:var(--bg); font-family:'Noto Sans TC',system-ui,sans-serif; overflow:hidden; color:var(--ink); }
+  body{ display:flex; align-items:center; justify-content:center; background:radial-gradient(ellipse at 50% 0%, #2A3A6A 0%, #070A14 75%); }
+  .wrap{ position:relative; width:min(100vw, calc(100vh * 0.5625)); aspect-ratio:360/640; max-height:100vh; border-radius:18px; overflow:hidden; background:#14203A; box-shadow:0 24px 70px rgba(0,0,0,.6), 0 0 0 3px rgba(255,170,80,.3); user-select:none; -webkit-user-select:none; font-size:calc(min(100vw, 100vh * 0.5625) / 24); }
+  canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+  button{ font-family:inherit; cursor:pointer; }
+  #hud{ position:absolute; left:0; right:0; top:0; height:8.2%; display:flex; align-items:center; gap:.4em; padding:0 .6em; z-index:5; color:#fff; pointer-events:none; }
+  #hud > *{ pointer-events:auto; }
+  #bk{ color:#fff; text-decoration:none; font:700 .78em 'Noto Sans TC'; background:rgba(0,0,0,.4); border-radius:1em; padding:.4em .7em; }
+  .pill{ font:700 .88em 'Fredoka','Noto Sans TC',sans-serif; background:rgba(0,0,0,.45); border-radius:1em; padding:.25em .65em; pointer-events:none; white-space:nowrap; }
+  #sp{ flex:1; text-align:center; font:700 .85em 'Noto Sans TC'; text-shadow:0 .1em .2em rgba(0,0,0,.6); }
+  #mb{ width:2em; height:2em; border:0; border-radius:50%; background:rgba(0,0,0,.45); color:#fff; font:900 .95em sans-serif; }
+  #hint{ position:absolute; left:50%; top:15%; transform:translateX(-50%); z-index:4; background:rgba(0,0,0,.66); color:#fff; font:700 .74em 'Noto Sans TC'; padding:.45em 1em; border-radius:1em; pointer-events:none; display:none; text-align:center; line-height:1.5; width:86%; }
+  .ov{ position:absolute; inset:0; z-index:20; display:none; align-items:center; justify-content:center; padding:1.1em; background:rgba(6,10,22,.86); backdrop-filter:blur(2px); text-align:center; }
+  .ov.show{ display:flex; }
+  .card{ width:100%; max-width:21.5em; background:var(--cream); border-radius:1.1em; padding:1em; box-shadow:0 .35em 0 #C98A3A, 0 1em 2em rgba(0,0,0,.5); display:flex; flex-direction:column; gap:.55em; max-height:96%; overflow:auto; }
+  .card h1{ margin:0; font:900 1.45em 'Noto Sans TC'; color:#B8321E; letter-spacing:.08em; }
+  .card h2{ margin:0; font:900 1.6em 'Noto Sans TC'; color:#D9602A; }
+  .card p{ margin:0; font-size:.8em; color:#7A4A38; }
+  .grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:.4em; }
+  .lv{ border:0; border-radius:.7em; background:linear-gradient(180deg,#FF9A5C,#D9482B); color:#fff; padding:.4em 0 .3em; box-shadow:0 .2em 0 #8E2A14; display:flex; flex-direction:column; align-items:center; line-height:1.1; }
+  .lv b{ font:700 1.15em 'Fredoka',sans-serif; } .lv i{ font-style:normal; font-size:.6em; color:#FFE27A; min-height:1.1em; }
+  .lv:disabled{ background:linear-gradient(180deg,#C9C0B6,#A59D92); box-shadow:0 .2em 0 #7C766C; color:#eee; cursor:default; } .lv:disabled i{ color:#eee; }
+  .stars{ font-size:2em; letter-spacing:.1em; color:#F5B731; text-shadow:0 .06em 0 #B07A00; } .stars .off{ color:#D8CDB4; text-shadow:none; }
+  .row{ display:flex; gap:.5em; } .row > *{ flex:1; }
+  .bigbtn{ border:0; border-radius:.9em; padding:.7em .4em; font:900 .92em 'Noto Sans TC'; letter-spacing:.06em; color:#fff; background:linear-gradient(180deg,#FF9A5C,#D9482B); box-shadow:0 .24em 0 #8E2A14; text-decoration:none; display:block; text-align:center; }
+  .bigbtn.b{ background:linear-gradient(180deg,#5FB4E8,#2A78B8); box-shadow:0 .24em 0 #1B4F78; } .bigbtn.g{ background:linear-gradient(180deg,#B9946A,#8A6240); box-shadow:0 .24em 0 #5A3A1C; } .bigbtn.full{ width:100%; }
+  .bowl{ font-size:3em; line-height:1.1; }
+  .brk{ display:grid; grid-template-columns:repeat(3,1fr); gap:.4em; } .brk div{ background:#fff; border-radius:.7em; padding:.4em .2em; font-size:.72em; } .brk b{ display:block; font:700 1.5em 'Fredoka',sans-serif; color:#D9602A; }
+  .cgrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:.4em; text-align:left; }
+  .cc{ background:#fff; border-radius:.7em; padding:.45em .55em; font-size:.72em; line-height:1.3; display:flex; gap:.5em; align-items:center; } .cc .e{ font-size:2.1em; line-height:1; } .cc small{ color:#8A6A5E; display:block; } .cc.no .e{ filter:grayscale(1) brightness(.2); opacity:.5; } .cc.gold{ background:linear-gradient(180deg,#FFF3C4,#FFE08A); }
+  #toast{ position:absolute; left:50%; top:24%; transform:translateX(-50%); z-index:30; background:rgba(0,0,0,.72); color:#fff; padding:.45em 1em; border-radius:1em; font:700 .85em 'Noto Sans TC'; display:none; white-space:nowrap; }
+
+  #hint{ top:46%; }
+  .abs{ position:absolute; left:0; right:0; }
+  .felt{ position:absolute; inset:0; background:radial-gradient(ellipse at 50% 40%, #2E5A4A 0%, #16302A 60%, #0C1A18 100%); }
+  .felt:after{ content:""; position:absolute; left:6%; right:6%; top:38.4%; height:2px; background:rgba(255,255,255,.15); }
+  .hero{ position:absolute; left:3%; right:3%; display:flex; align-items:center; gap:.4em; padding:.3em .55em; background:rgba(0,0,0,.4); border-radius:.9em; color:#fff; }
+  .hero .av{ font-size:1.9em; line-height:1; } .hero .mid{ flex:1; min-width:0; } .hero b{ font:900 .8em 'Noto Sans TC'; }
+  .hp{ height:.7em; background:rgba(255,255,255,.18); border-radius:.4em; overflow:hidden; margin:.25em 0 .1em; } .hp i{ display:block; height:100%; background:linear-gradient(90deg,#E0453A,#FF8A5C); }
+  .hero{ overflow:hidden; z-index:3; } .hero b{ white-space:nowrap; } .hero small{ font:700 .62em 'Fredoka','Noto Sans TC'; opacity:.9; white-space:nowrap; } .tag2{ font:700 .72em 'Fredoka','Noto Sans TC'; background:rgba(255,255,255,.14); border-radius:.8em; padding:.15em .4em; white-space:nowrap; font-size:.64em; }
+  .tgt{ outline:3px solid #FFD166; outline-offset:2px; animation:pulse .7s infinite alternate; cursor:pointer; } @keyframes pulse{ to{ outline-color:#FF6B3A; } }
+  .board{ position:absolute; left:3%; right:3%; display:flex; gap:.5em; justify-content:center; align-items:center; }
+  .slot{ width:6.6em; height:100%; border-radius:.8em; border:2px dashed rgba(255,255,255,.14); display:flex; align-items:center; justify-content:center; position:relative; }
+  .min{ width:100%; height:100%; border-radius:.8em; background:linear-gradient(180deg,#FFF3DC,#E8D2A8); box-shadow:0 .2em 0 #8A6A3A; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--ink); position:relative; }
+  .min .em{ font-size:2.1em; line-height:1; } .min .nm{ font:900 .62em 'Noto Sans TC'; margin-top:.1em; }
+  .min .a,.min .h{ position:absolute; bottom:-.4em; font:900 .85em 'Fredoka'; color:#fff; border-radius:.8em; padding:.05em .45em; box-shadow:0 .1em 0 rgba(0,0,0,.4); } .min .a{ left:-.3em; background:#D9482B; } .min .h{ right:-.3em; background:#2E9C5E; }
+  .mine .min{ background:linear-gradient(180deg,#E4F2FF,#B9D6F0); box-shadow:0 .2em 0 #4A78A8; }
+  #lg{ position:absolute; left:3%; right:3%; top:37.5%; height:4%; text-align:center; color:#FFE9B8; font:700 .74em 'Noto Sans TC'; display:flex; align-items:center; justify-content:center; text-shadow:0 .1em .2em rgba(0,0,0,.7); }
+  #dt{ pointer-events:none; position:absolute; left:3%; right:3%; top:69.5%; height:6%; background:rgba(0,0,0,.5); color:#fff; border-radius:.7em; padding:.2em .7em; font:500 .7em 'Noto Sans TC'; display:flex; align-items:center; line-height:1.3; }
+  #hand{ position:absolute; left:2%; right:2%; bottom:1.2%; height:22%; display:flex; justify-content:center; align-items:flex-end; }
+  .c2{ width:3.9em; height:5.7em; margin:0 -.15em; border-radius:.55em; background:linear-gradient(180deg,#FFF9E8,#F0DDB4); box-shadow:0 .15em 0 #8A6A3A, 0 .4em .8em rgba(0,0,0,.4); color:var(--ink); position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; border:0; padding:0; transition:transform .12s; }
+  .c2 .co{ position:absolute; left:-.25em; top:-.35em; width:1.6em; height:1.6em; border-radius:50%; background:linear-gradient(180deg,#5FB4E8,#2A78B8); color:#fff; font:900 .85em 'Fredoka'; display:flex; align-items:center; justify-content:center; box-shadow:0 .1em 0 #1B4F78; }
+  .c2 .em{ font-size:1.7em; line-height:1; } .c2 .nm{ font:900 .62em 'Noto Sans TC'; margin-top:.15em; } .c2 .vl{ font:900 .9em 'Fredoka'; margin-top:.1em; }
+  .c2.atk{ border-top:.4em solid #D9482B; } .c2.blk{ border-top:.4em solid #3F7FC9; } .c2.heal{ border-top:.4em solid #3FA06A; } .c2.min{ border-top:.4em solid #E08A2A; } .c2.ut{ border-top:.4em solid #8E6BFF; }
+  .c2.sel{ transform:translateY(-1.2em) scale(1.08); z-index:3; box-shadow:0 0 0 3px #FFD166, 0 .6em 1em rgba(0,0,0,.5); } .c2.no{ filter:grayscale(.85) brightness(.75); }
+  #endb{ border:0; border-radius:.8em; padding:.45em .8em; font:900 .78em 'Noto Sans TC'; color:#fff; background:linear-gradient(180deg,#FF9A5C,#D9482B); box-shadow:0 .2em 0 #8E2A14; white-space:nowrap; } #endb:disabled{ background:#777; box-shadow:0 .2em 0 #444; }
+  .fl{ position:absolute; left:50%; top:30%; transform:translateX(-50%); font:900 1.4em 'Fredoka'; pointer-events:none; text-shadow:0 .08em .15em rgba(0,0,0,.8); animation:fl .9s ease-out forwards; z-index:15; } @keyframes fl{ to{ transform:translate(-50%,-1.6em); opacity:0; } }
+  .shake{ animation:sh .3s; } @keyframes sh{ 25%{ transform:translateX(-.25em); } 75%{ transform:translateX(.25em); } }
+  .cgrid .cc small{ font-size:.9em; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <div class="felt"></div>
+  <div id="hud">
+    <a id="bk" href="index.html">‹ 大廳</a>
+    <div id="sp">—</div>
+    <span class="pill" id="sc">第 1 回合</span>
+    <button id="mb" aria-label="選單">☰</button>
+  </div>
+  <div id="oh" class="hero" style="top:9%;height:10%"></div>
+  <div id="ob" class="board" style="top:20.5%;height:16%"></div>
+  <div id="lg">—</div>
+  <div id="pb" class="board mine" style="top:42%;height:16%"></div>
+  <div id="ph" class="hero" style="top:59.5%;height:9.5%"></div>
+  <div id="dt"></div>
+  <div id="hand"></div>
+  <div id="hint" style="display:none"></div>
+  <div id="toast"></div>
+
+  <div class="ov show" id="menu"><div class="card">
+    <h1>🃏 紙牌決鬥</h1><p id="mst">★ 0 / 30</p>
+    <div class="grid" id="grid"></div>
+    <p>出牌、召喚、擊敗十位對手,每贏一場就解鎖新卡牌</p>
+    <div class="row"><button class="bigbtn b" id="bc">📖 卡牌圖鑑</button><button class="bigbtn" id="cont">繼續</button></div>
+    <button class="bigbtn" id="snd" style="background:linear-gradient(180deg,#8A8F98,#5C6169);box-shadow:0 .24em 0 #3A3E44">音效:開</button>
+    <a class="bigbtn g full" href="index.html">回遊戲大廳</a>
+  </div></div>
+
+  <div class="ov" id="res"><div class="card">
+    <h2 id="rt">勝利!</h2><div class="bowl" id="rb">🏆</div><p id="rs"></p><div class="stars" id="rst">★★★</div>
+    <div class="brk" id="rk"></div><p id="rw"></p>
+    <div class="row"><button class="bigbtn" id="rn">下一關</button><button class="bigbtn b" id="rr">再戰一場</button></div>
+    <button class="bigbtn g full" id="rm">選擇對手</button>
+  </div></div>
+
+  <div class="ov" id="col"><div class="card">
+    <h1>📖 卡牌圖鑑</h1><p id="colp"></p><div class="cgrid" id="cg"></div>
+    <button class="bigbtn g full" id="colx">關閉</button>
+  </div></div>
+</div>
+<!--pl:start-->
+<style id="pl-css">
+html{-webkit-text-size-adjust:100%;overscroll-behavior:none}
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;animation:plIn .45s ease both}
+@keyframes plIn{from{opacity:0}to{opacity:1}}
+button,a,[role=button],canvas{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button{transition:transform .12s ease,filter .15s ease,box-shadow .15s ease}
+button:not(:disabled):hover{filter:brightness(1.07)}
+button:not(:disabled):active{transform:translateY(1px) scale(.975);filter:brightness(.96)}
+button:focus-visible,a:focus-visible{outline:3px solid rgba(255,255,255,.85);outline-offset:3px;box-shadow:0 0 0 6px rgba(0,0,0,.35)}
+canvas{touch-action:none}
+#pl-vig{position:fixed;inset:0;pointer-events:none;z-index:2147482000;background:radial-gradient(ellipse at 50% 45%,transparent 58%,rgba(0,0,0,.20) 100%)}
+#pl-back{position:fixed;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));z-index:2147482500;display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 12px 0 9px;border-radius:999px;font:700 12px/1 'Noto Sans TC',system-ui,sans-serif;letter-spacing:.06em;color:#fff;text-decoration:none;background:rgba(18,16,28,.55);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 3px 10px rgba(0,0,0,.3);opacity:.85;transition:opacity .15s,transform .12s}
+#pl-back:hover{opacity:1}#pl-back:active{transform:scale(.95)}
+#pl-splash{position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:#fff;transition:opacity .45s ease,visibility .45s}
+#pl-splash.off{opacity:0;visibility:hidden}
+#pl-splash b{font:900 clamp(26px,7vw,40px)/1.2 'Noto Serif TC','Noto Sans TC',serif;letter-spacing:.14em;text-shadow:0 4px 18px rgba(0,0,0,.45)}
+#pl-splash i{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.28);border-top-color:#fff;animation:plSp .8s linear infinite}
+#pl-splash small{font:500 11px 'Noto Sans TC',sans-serif;letter-spacing:.3em;opacity:.7}
+@keyframes plSp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){body{animation:none}#pl-splash i{animation:none}}
+</style>
+<script id="pl-js">
+(function(){
+ try{
+  var d=document,b=d.body,cs=getComputedStyle(b),bg=cs.backgroundColor;
+  if(!bg||bg==='rgba(0, 0, 0, 0)'){bg=getComputedStyle(d.documentElement).backgroundColor;}
+  if(!bg||bg==='rgba(0, 0, 0, 0)')bg='#1c1830';
+  var m=d.querySelector('meta[name=theme-color]');if(!m){m=d.createElement('meta');m.name='theme-color';d.head.appendChild(m);}m.content=bg;
+  var vp=d.querySelector('meta[name=viewport]');if(vp&&vp.content.indexOf('viewport-fit')<0)vp.content+=',viewport-fit=cover';
+  var v=d.createElement('div');v.id='pl-vig';b.appendChild(v);
+  if(!d.querySelector('a[href*="index.html"]')){var a=d.createElement('a');a.id='pl-back';a.href='index.html';a.setAttribute('aria-label','回遊戲大廳');a.innerHTML='<span aria-hidden="true">‹</span>大廳';b.appendChild(a);}
+  var s=d.createElement('div');s.id='pl-splash';s.style.background='radial-gradient(ellipse at 50% 30%,rgba(255,255,255,.16),transparent 60%),'+bg;
+  var t=(d.title||'').trim();s.innerHTML='<small>NOW LOADING</small><b></b><i></i>';s.querySelector('b').textContent=t;b.appendChild(s);
+  addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('button');if(t&&navigator.vibrate){try{navigator.vibrate(8);}catch(_){}}},true);
+  var done=false;function off(){if(done)return;done=true;s.classList.add('off');setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s);},600);}
+  if(d.readyState==='complete')setTimeout(off,350);else addEventListener('load',function(){setTimeout(off,350);});
+  setTimeout(off,1800);
+ }catch(e){}
+})();
+</script>
+<!--pl:end-->
+
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const CARDS={
+ knife:{n:'小刀',e:'🗡️',c:1,t:'atk',v:3,tg:1,x:'對目標造成 3 傷害'},
+ fire:{n:'火球',e:'🔥',c:2,t:'atk',v:5,tg:1,x:'對目標造成 5 傷害'},
+ bolt:{n:'雷擊',e:'⚡',c:3,t:'atk',v:8,tg:1,x:'對目標造成 8 傷害'},
+ poison:{n:'毒霧',e:'☠️',c:2,t:'aoe',v:2,x:'對所有敵人(含英雄)造成 2 傷害'},
+ guard:{n:'盾牌',e:'🛡️',c:1,t:'blk',v:3,x:'獲得 3 點護甲(下回合開始消失)'},
+ wall:{n:'鐵壁',e:'🏰',c:2,t:'blk',v:6,x:'獲得 6 點護甲(下回合開始消失)'},
+ herb:{n:'草藥',e:'🌿',c:1,t:'heal',v:3,x:'回復 3 點生命'},
+ holy:{n:'聖水',e:'💧',c:3,t:'heal',v:7,x:'回復 7 點生命'},
+ idea:{n:'靈感',e:'💡',c:1,t:'draw',v:2,x:'抽 2 張牌'},
+ med:{n:'冥想',e:'🧘',c:0,t:'en',v:1,x:'本回合能量 +1'},
+ rage:{n:'激勵',e:'📣',c:2,t:'rage',v:1,x:'我方所有隨從攻擊 +1'},
+ apprentice:{n:'學徒',e:'🧙',c:1,t:'min',a:2,h:2,x:'召喚 2/2 隨從'},
+ knight:{n:'騎士',e:'🤺',c:2,t:'min',a:3,h:3,x:'召喚 3/3 隨從'},
+ archer:{n:'弓手',e:'🏹',c:2,t:'min',a:2,h:3,r:1,x:'召喚 2/3 隨從,攻擊時不受反擊'},
+ giant:{n:'巨人',e:'🗿',c:4,t:'min',a:5,h:6,x:'召喚 5/6 隨從'},
+ dragon:{n:'火龍',e:'🐉',c:5,t:'min',a:6,h:5,bc:2,x:'召喚 6/5 隨從,登場時對敵方英雄造成 2 傷害'}
+};
+const BASE=['knife','guard','herb','apprentice','fire','knight','idea','archer','med'];
+const REW=['wall','poison','rage','bolt','holy','giant','dragon'];
+const OPP=[
+ {n:'見習法師',e:'🧙‍♂️',d:'剛學會火球,還常常烤焦自己的鬍子。',deck:{knife:3,guard:2,herb:2,apprentice:3,fire:1},hp:14,arm:0,dr:0,ping:0},
+ {n:'山賊',e:'🏴‍☠️',d:'靠數量取勝,一擁而上。',deck:{knife:3,knight:2,archer:2,guard:2,apprentice:2,fire:1},hp:16,arm:0,dr:0,ping:0},
+ {n:'鐵匠',e:'⚒️',d:'身上的護甲永遠比你的刀還硬。',deck:{guard:3,wall:2,knight:2,giant:1,knife:2,herb:1},hp:18,arm:2,dr:0,ping:0},
+ {n:'弓箭手',e:'🏹',d:'站得遠遠的,專挑你的隨從下手。',deck:{archer:2,apprentice:2,knife:3,fire:2,idea:1,guard:1},hp:18,arm:0,dr:0,ping:0},
+ {n:'修女',e:'⛪',d:'打不死的祝福,總是在最後回血。',deck:{herb:3,holy:2,guard:2,knife:2,apprentice:2,knight:2},hp:20,arm:2,dr:0,ping:0},
+ {n:'狂戰士',e:'😡',d:'激勵之後,每個隨從都像瘋了一樣。',deck:{rage:2,knight:3,apprentice:3,knife:3,fire:2},hp:22,arm:0,dr:0,ping:0},
+ {n:'毒藥師',e:'🧪',d:'毒霧一放,誰都別想站著。',deck:{poison:3,fire:2,bolt:1,guard:2,apprentice:2,idea:2,herb:1},hp:24,arm:0,dr:1,ping:0},
+ {n:'騎士團長',e:'🛡️',d:'重甲、巨人、激勵,穩紮穩打。',deck:{knight:3,giant:2,wall:2,guard:2,fire:2,herb:2,rage:1},hp:24,arm:2,dr:0,ping:0},
+ {n:'龍騎士',e:'🐲',d:'他的火龍一出場,就先咬你一口。',deck:{dragon:2,giant:2,bolt:2,fire:3,knight:2,guard:2,holy:1},hp:26,arm:0,dr:0,ping:0},
+ {n:'魔王',e:'👑',d:'所有的強牌他都有,終極考驗。',deck:{dragon:2,giant:2,bolt:3,fire:3,poison:2,holy:2,wall:2,knight:2,rage:1,idea:2},hp:26,arm:2,dr:0,ping:1}
+];
+let SV={stars:Array(10).fill(0),best:Array(10).fill(0),snd:1,tut:0};
+try{const s=JSON.parse(localStorage.getItem('cards_save')||'null');if(s&&typeof s==='object')SV=Object.assign(SV,s);}catch(e){}
+function save(){try{localStorage.setItem('cards_save',JSON.stringify(SV));}catch(e){}}
+const unlockedStage=()=>{let u=0;for(let i=0;i<10;i++){if(SV.stars[i]>0)u=i+1;else break;}return u;};
+const unlockedCards=(n)=>{const k=n==null?SV.stars.filter(x=>x>0).length:n;return BASE.concat(REW.slice(0,Math.min(REW.length,k)));};
+/* audio */
+let AC=null;
+function au(){if(!SV.snd)return null;try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC;}catch(e){return null;}}
+function beep(f,d,type,vol,to){const a=au();if(!a)return;try{const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,a.currentTime);if(to)o.frequency.exponentialRampToValueAtTime(to,a.currentTime+d);g.gain.setValueAtTime(vol||.15,a.currentTime);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+d);o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+d+.02);}catch(e){}}
+function mulb(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+/* ===== pure game logic ===== */
+function shuffle(a,r){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function pdeck(ids){const out=[];for(const id of ids){const c=CARDS[id].c;const n=id==='med'?1:c<=3?2:1;for(let k=0;k<n;k++)out.push(id);}return out;}
+function odeck(o){const out=[];for(const id in o.deck)for(let k=0;k<o.deck[id];k++)out.push(id);return out;}
+function side(deck,hp,r,nm,em){return {hp,max:hp,arm:0,en:0,mx:0,deck:shuffle(deck,r),disc:[],hand:[],bd:[],nm,em};}
+function newGame(i,seed,unl){
+ const r=mulb(seed||(Date.now()&0xffff)),o=OPP[i];
+ const st={r,i,turn:0,pt:0,cur:'p',over:null,ev:[],log:'',p:side(pdeck(unlockedCards(unl)),30,r,'你','🧑'),o:side(odeck(o),o.hp,r,o.n,o.e)};
+ draw(st,'p',3);draw(st,'o',3);return st;
+}
+function draw(st,w,n){const s=st[w];for(let k=0;k<n;k++){if(!s.deck.length){s.deck=shuffle(s.disc,st.r);s.disc=[];}if(!s.deck.length)return;const c=s.deck.pop();if(s.hand.length<6)s.hand.push(c);else s.disc.push(c);}}
+const foe=w=>w==='p'?'o':'p';
+function chk(st){if(st.over)return;if(st.o.hp<=0)st.over='p';else if(st.p.hp<=0)st.over='o';}
+function hitHero(st,w,v,pierce){const s=st[w];let d=v;if(!pierce&&s.arm>0){const a=Math.min(s.arm,d);s.arm-=a;d-=a;}s.hp-=d;st.ev.push({t:'dmg',w,i:-1,v:v});chk(st);}
+function hitMin(st,w,i,v){const m=st[w].bd[i];if(!m)return;m.h-=v;st.ev.push({t:'dmg',w,i,v});}
+function sweep(st){for(const w of ['p','o']){st[w].bd=st[w].bd.filter(m=>m.h>0);}}
+function startTurn(st,w){
+ const s=st[w],o=OPP[st.i];
+ st.cur=w;s.mx=Math.min(6,s.mx+1);s.en=s.mx;s.arm=0;
+ if(w==='p')st.pt++;
+ st.turn++;
+ const fat=st.pt-9;if(fat>0){hitHero(st,w,fat,true);if(st.over)return;}
+ draw(st,w,2+(w==='o'?o.dr:0));
+ if(w==='o'){if(o.arm)s.arm=o.arm;if(o.ping){hitHero(st,'p',o.ping,true);}}
+ if(st.over)return;
+ // minion attacks
+ const E=st[foe(w)];
+ for(const m of s.bd.slice()){
+  if(st.over)break;if(m.h<=0)continue;
+  const ti=E.bd.findIndex(x=>x.h>0);
+  if(ti>=0){const t=E.bd[ti];t.h-=m.a;st.ev.push({t:'dmg',w:foe(w),i:ti,v:m.a});if(!m.r){m.h-=t.a;st.ev.push({t:'dmg',w,i:s.bd.indexOf(m),v:t.a});}}
+  else hitHero(st,foe(w),m.a);
+ }
+ sweep(st);chk(st);
+}
+function canPlay(st,w,hi){const s=st[w],id=s.hand[hi];if(id==null)return false;const c=CARDS[id];if(c.c>s.en)return false;if(c.t==='min'&&s.bd.length>=3)return false;return true;}
+function play(st,w,hi,tgt){ // tgt: -1 hero, >=0 enemy minion idx
+ if(st.over||!canPlay(st,w,hi))return false;
+ const s=st[w],E=st[foe(w)],id=s.hand[hi],c=CARDS[id];
+ if(c.tg){if(tgt==null)return false;if(tgt>=0&&!E.bd[tgt])return false;}
+ s.hand.splice(hi,1);s.disc.push(id);s.en-=c.c;
+ st.log=(w==='p'?'你':s.nm)+'使用 '+c.e+c.n;
+ if(c.t==='atk'){if(tgt<0)hitHero(st,foe(w),c.v);else hitMin(st,foe(w),tgt,c.v);}
+ else if(c.t==='aoe'){hitHero(st,foe(w),c.v);E.bd.forEach((m,i)=>hitMin(st,foe(w),i,c.v));}
+ else if(c.t==='blk'){s.arm+=c.v;st.ev.push({t:'blk',w,v:c.v});}
+ else if(c.t==='heal'){const h=Math.min(c.v,s.max-s.hp);s.hp+=h;st.ev.push({t:'heal',w,v:h});}
+ else if(c.t==='draw'){draw(st,w,c.v);}
+ else if(c.t==='en'){s.en+=c.v;}
+ else if(c.t==='rage'){s.bd.forEach(m=>m.a+=c.v);}
+ else if(c.t==='min'){s.bd.push({id,a:c.a,h:c.h,r:c.r||0});if(c.bc)hitHero(st,foe(w),c.bc);}
+ sweep(st);chk(st);return true;
+}
+/* AI (used for the opponent, and as the test-bot for the player) */
+function aiPick(st,w){
+ const s=st[w],E=st[foe(w)];let best=null,bs=-1;
+ const eatk=E.bd.reduce((a,m)=>a+m.a,0);
+ s.hand.forEach((id,hi)=>{
+  if(!canPlay(st,w,hi))return;const c=CARDS[id];let sc=0,tg=null;
+  if(c.t==='atk'){
+   const lethal=c.v>=E.hp+E.arm;
+   if(lethal){sc=1000;tg=-1;}
+   else{
+    let bm=-1,bv=-1;E.bd.forEach((m,i)=>{if(c.v>=m.h){const v=m.a+m.h+2;if(v>bv){bv=v;bm=i;}}});
+    if(bm>=0&&bv>=4){sc=6+bv;tg=bm;}else{sc=3+c.v*.9+(E.hp<=c.v*2.5?4:0);tg=-1;if(E.bd.length&&!bv<0){}}
+   }
+  }else if(c.t==='aoe'){sc=2+E.bd.filter(m=>m.h<=c.v).length*4+E.bd.length*1.5+(E.hp<=8?3:0);}
+  else if(c.t==='min'){sc=7+c.a+c.h*.6+(c.bc?2:0);if(s.bd.length===0)sc+=3;}
+  else if(c.t==='blk'){const thr=eatk+(E.bd.length?0:0);sc=thr>0?3+Math.min(c.v,thr)*.8:(s.hp<=10?3:.5);}
+  else if(c.t==='heal'){const miss=s.max-s.hp;sc=miss>=c.v?4+(s.hp<=10?6:0):miss>0?1.5:-1;}
+  else if(c.t==='draw'){sc=s.hand.length<=3?5:2;}
+  else if(c.t==='en'){sc=s.hand.some((x,j)=>j!==hi&&CARDS[x].c===s.en+1)?6:-1;}
+  else if(c.t==='rage'){sc=s.bd.length>=2?5+s.bd.length:s.bd.length===1?2:-1;}
+  sc+=c.c*.3; // prefer using more energy
+  if(sc>bs&&sc>0){bs=sc;best={hi,tg};}
+ });
+ return best;
+}
+function aiTurnSync(st,w){startTurn(st,w);let g=0;while(!st.over&&g++<12){const a=aiPick(st,w);if(!a)break;play(st,w,a.hi,a.tg);}}
+function simGame(i,seed,unl){const st=newGame(i,seed,unl);let g=0;while(!st.over&&g++<80){aiTurnSync(st,'p');if(st.over)break;aiTurnSync(st,'o');if(st.pt>=30){st.over=st.p.hp>=st.o.hp?'p':'o';}}return {win:st.over==='p',pt:st.pt,hp:st.p.hp};}
+
+/* ===== UI ===== */
+const sleep=ms=>new Promise(r=>setTimeout(r,UI.fast?0:ms));
+const UI={st:null,sel:-1,busy:false,fast:false,mode:'menu'};
+function el(h){const d=document.createElement('div');d.innerHTML=h;return d.firstChild;}
+function heroHtml(w,s,showEnd){
+ const hp=Math.max(0,s.hp);
+ return `<span class="av">${s.em}</span><div class="mid"><b>${s.nm}</b><div class="hp"><i style="width:${hp/s.max*100}%"></i></div><small>❤ ${hp} / ${s.max}${s.arm?'  🛡️'+s.arm:''}</small></div>`+
+  (w==='p'?`<span class="tag2">⚡ ${s.en}/${s.mx}</span><button id="endb" ${UI.busy||UI.st.over?'disabled':''}>結束回合</button>`:`<span class="tag2">🂠${s.hand.length} ⚡${s.mx}</span>`);
+}
+function boardHtml(w,s){
+ let h='';for(let i=0;i<3;i++){const m=s.bd[i];h+=`<div class="slot" data-w="${w}" data-i="${i}">`+(m?`<div class="min ${w==='o'&&UI.sel>=0&&CARDS[UI.st.p.hand[UI.sel]]&&CARDS[UI.st.p.hand[UI.sel]].tg?'tgt':''}" id="${w}-m${i}" data-w="${w}" data-i="${i}"><span class="em">${CARDS[m.id].e}</span><span class="nm">${CARDS[m.id].n}</span><span class="a">${m.a}</span><span class="h">${m.h}</span></div>`:'')+'</div>';}
+ return h;
+}
+function cardVal(c){return c.t==='min'?c.a+'/'+c.h:c.t==='atk'||c.t==='aoe'||c.t==='blk'||c.t==='heal'||c.t==='draw'||c.t==='en'||c.t==='rage'?(c.t==='blk'?'+'+c.v:c.v):'';}
+function render(){
+ const st=UI.st;if(!st)return;
+ $('oh').innerHTML=heroHtml('o',st.o);$('ph').innerHTML=heroHtml('p',st.p);
+ const sc=UI.sel>=0&&CARDS[st.p.hand[UI.sel]]&&CARDS[st.p.hand[UI.sel]].tg;
+ $('oh').classList.toggle('tgt',!!sc);
+ $('ob').innerHTML=boardHtml('o',st.o);$('pb').innerHTML=boardHtml('p',st.p);
+ $('hand').innerHTML=st.p.hand.map((id,i)=>{const c=CARDS[id],ok=canPlay(st,'p',i)&&!UI.busy&&!st.over;return `<button class="c2 ${c.t==='atk'||c.t==='aoe'?'atk':c.t==='blk'?'blk':c.t==='heal'?'heal':c.t==='min'?'min':'ut'} ${UI.sel===i?'sel':''} ${ok?'':'no'}" data-h="${i}"><span class="co">${c.c}</span><span class="em">${c.e}</span><span class="nm">${c.n}</span><span class="vl">${cardVal(c)}</span></button>`;}).join('');
+ const sel=UI.sel>=0?CARDS[st.p.hand[UI.sel]]:null;
+ $('dt').textContent=sel?sel.e+' '+sel.n+'('+sel.c+'⚡):'+sel.x+(sel.tg?' ➜ 點敵人出牌':' ➜ 再點一次出牌'):(UI.busy?'對手回合…':'點手牌選取、再點出牌;攻擊牌選好後點敵人。可用能量 ⚡'+st.p.en);
+ $('lg').textContent=st.log||'—';$('sc').textContent='第 '+Math.max(1,st.pt)+' 回合';
+}
+function popups(){
+ const st=UI.st;const evs=st.ev;st.ev=[];
+ for(const e of evs){
+  const t=e.t==='dmg'||e.t==='blk'||e.t==='heal'?(e.i>=0?$((e.w)+'-m'+e.i):$(e.w==='p'?'ph':'oh')):null;if(!t)continue;
+  if(e.t==='dmg'&&e.v<=0)continue;
+  const f=el(`<span class="fl" style="color:${e.t==='dmg'?'#FF6B5A':e.t==='heal'?'#7CFFB0':'#7FD6FF'}">${e.t==='dmg'?'−':'+'}${e.v}</span>`);t.style.position='relative';t.appendChild(f);setTimeout(()=>f.remove(),900);
+  if(e.t==='dmg'){t.classList.add('shake');setTimeout(()=>t.classList.remove('shake'),300);beep(e.i>=0?240:180,.09,'square',.08,120);}
+  else if(e.t==='heal')beep(780,.12,'sine',.1);else beep(520,.08,'triangle',.08);
+ }
+}
+async function flush(ms){render();popups();await sleep(ms||600);}
+function pClick(e){
+ const st=UI.st;if(!st||UI.busy||st.over||UI.mode!=='play')return;
+ const c=e.target.closest('.c2');
+ if(c){const i=+c.dataset.h;
+  if(UI.sel===i){const cd=CARDS[st.p.hand[i]];if(!cd.tg&&canPlay(st,'p',i)){doPlay(i,null);}else UI.sel=-1;}
+  else{UI.sel=i;beep(500,.04,'triangle',.06);}
+  if(!SV.tut){SV.tut=1;save();$('hint').style.display='none';}
+  render();return;}
+ if(e.target.closest('#endb')){endTurn();return;}
+ if(UI.sel>=0){const cd=CARDS[st.p.hand[UI.sel]];
+  if(cd&&cd.tg){const m=e.target.closest('.min[data-w="o"]');
+   if(m){doPlay(UI.sel,+m.dataset.i);return;}
+   if(e.target.closest('#oh')){doPlay(UI.sel,-1);return;}}
+  UI.sel=-1;render();}
+}
+async function doPlay(hi,tg){
+ const st=UI.st;if(!canPlay(st,'p',hi)){UI.sel=-1;render();return;}
+ UI.sel=-1;play(st,'p',hi,tg);await flush(450);if(st.over)finish();
+}
+async function endTurn(){
+ const st=UI.st;if(UI.busy||st.over)return;UI.busy=true;UI.sel=-1;render();
+ await sleep(250);
+ startTurn(st,'o');st.log='對手回合';await flush(800);
+ let g=0;while(!st.over&&g++<12){const a=aiPick(st,'o');if(!a)break;play(st,'o',a.hi,a.tg);await flush(850);}
+ if(!st.over){if(st.pt>=30){st.over=st.p.hp>=st.o.hp?'p':'o';}else{startTurn(st,'p');st.log='你的回合';await flush(800);}}
+ UI.busy=false;render();if(st.over)finish();
+}
+function load(i,seed){
+ UI.st=newGame(i,seed);UI.sel=-1;UI.busy=false;UI.mode='play';UI.i=i;
+ $('sp').textContent=(i+1)+'. '+OPP[i].n;
+ ['menu','res','col'].forEach(x=>$(x).classList.remove('show'));
+ startTurn(UI.st,'p');UI.st.log='對手:'+OPP[i].e+OPP[i].n+'  ・  你先攻';render();
+ const h=$('hint');if(!SV.tut){h.innerHTML='<b>點手牌</b>選取,<b>再點一次</b>出牌;<br>攻擊牌選取後,點<b>敵人</b>出牌。<br>用完能量就按<b>結束回合</b>。';h.style.display='block';}else h.style.display='none';
+}
+function finish(){
+ const st=UI.st,i=UI.i,win=st.over==='p';UI.mode='over';
+ let stars=0;if(win){stars=st.pt<=9&&st.p.hp>=15?3:st.pt<=12?2:1;}
+ const first=win&&!(SV.stars[i]>0);
+ if(win){SV.stars[i]=Math.max(SV.stars[i]||0,stars);SV.best[i]=SV.best[i]?Math.min(SV.best[i],st.pt):st.pt;}save();
+ $('rt').textContent=win?(i===9?'魔王倒下!':'勝利!'):'敗北…';$('rb').textContent=win?'🏆':OPP[i].e;
+ $('rs').textContent=OPP[i].e+OPP[i].n+'  ・  '+(win?['','險勝','乾淨俐落','完美決鬥!'][stars]:'再調整一下策略');
+ $('rst').innerHTML=[1,2,3].map(k=>k<=stars?'★':'<span class="off">★</span>').join('');
+ $('rk').innerHTML=`<div>回合<b>${st.pt}</b></div><div>剩餘生命<b>${Math.max(0,st.p.hp)}</b></div><div>對手生命<b>${Math.max(0,st.o.hp)}</b></div>`;
+ const rc=first&&i<REW.length?CARDS[REW[i]]:null;$('rw').textContent=rc?'🎁 獲得新卡 '+rc.e+rc.n+':'+rc.x:(win?'3★:9 回合內獲勝且生命 ≥ 15 ・ 2★:12 回合內獲勝':'');
+ $('rn').style.display=(win&&i<9)?'block':'none';
+ render();setTimeout(()=>$('res').classList.add('show'),UI.fast?0:600);
+ beep(win?660:200,.3,'sine',.15);if(win)setTimeout(()=>beep(880,.3,'sine',.15),160);
+}
+function openMenu(){
+ UI.mode='menu';$('hint').style.display='none';
+ const g=$('grid');g.innerHTML='';let tot=0;const un=unlockedStage();
+ for(let i=0;i<10;i++){tot+=SV.stars[i]||0;const b=document.createElement('button');b.className='lv';b.disabled=i>un;
+  b.innerHTML='<b>'+(i+1)+'</b><i>'+(i>un?'🔒':'★'.repeat(SV.stars[i]||0)||'·')+'</i>';b.onclick=()=>load(i);g.appendChild(b);}
+ $('mst').textContent='★ '+tot+' / 30 ・ 卡牌 '+unlockedCards().length+' / 16';
+ $('res').classList.remove('show');$('col').classList.remove('show');$('menu').classList.add('show');
+}
+function openCol(){
+ const un=unlockedCards(),ids=Object.keys(CARDS);
+ $('cg').innerHTML=ids.map(id=>{const c=CARDS[id],ok=un.indexOf(id)>=0;return `<div class="cc ${ok?'':'no'}"><span class="e">${c.e}</span><span><b>${ok?c.n+' ('+c.c+'⚡)':'???'}</b><small>${ok?c.x:'擊敗更多對手解鎖'}</small></span></div>`;}).join('');
+ $('colp').textContent='已收集 '+un.length+' / '+ids.length+' 張卡牌';$('col').classList.add('show');
+}
+$('mb').onclick=openMenu;$('cont').onclick=()=>load(Math.min(9,unlockedStage()));
+$('rn').onclick=()=>load(Math.min(9,UI.i+1));$('rr').onclick=()=>load(UI.i);$('rm').onclick=openMenu;
+$('bc').onclick=openCol;$('colx').onclick=()=>$('col').classList.remove('show');
+$('snd').onclick=()=>{SV.snd=SV.snd?0:1;save();$('snd').textContent='音效:'+(SV.snd?'開':'關');if(SV.snd)beep(600,.1);};
+$('snd').textContent='音效:'+(SV.snd?'開':'關');
+$('wrap').addEventListener('click',pClick);
+addEventListener('keydown',e=>{if(UI.mode!=='play'||UI.busy)return;if(e.key==='Enter'||e.key==='e')endTurn();else if(e.key>='1'&&e.key<='6'){const i=+e.key-1;if(UI.st.p.hand[i]!=null){UI.sel=UI.sel===i?-1:i;render();}}});
+UI.st=newGame(0,1);openMenu();
+window.__CD={UI,SV,CARDS,OPP,newGame,startTurn,play,aiPick,aiTurnSync,simGame,load,unlockedCards,render,endTurn,doPlay,finish};
+})();
+</script>
+</body>
+</html>
