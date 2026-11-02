@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>湯頭大師</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#2A0F0A; --cream:#FFF3DC; --ink:#4A2A1A; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ margin:0; height:100%; background:var(--bg); font-family:'Noto Sans TC',system-ui,sans-serif; overflow:hidden; color:var(--ink); }
+  body{ display:flex; align-items:center; justify-content:center; background:radial-gradient(ellipse at 50% 0%, #7A2A18 0%, #170805 75%); }
+  .wrap{ position:relative; width:min(100vw, calc(100vh * 0.5625)); aspect-ratio:360/640; max-height:100vh; border-radius:18px; overflow:hidden; background:#2A0F0A; box-shadow:0 24px 70px rgba(0,0,0,.6), 0 0 0 3px rgba(255,170,80,.3); user-select:none; -webkit-user-select:none; font-size:calc(min(100vw, 100vh * 0.5625) / 24); }
+  canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; }
+  button{ font-family:inherit; cursor:pointer; }
+  #hud{ position:absolute; left:0; right:0; top:0; height:8.2%; display:flex; align-items:center; gap:.4em; padding:0 .6em; z-index:5; color:#fff; pointer-events:none; }
+  #hud > *{ pointer-events:auto; }
+  #bk{ color:#fff; text-decoration:none; font:700 .78em 'Noto Sans TC'; background:rgba(0,0,0,.4); border-radius:1em; padding:.4em .7em; }
+  .pill{ font:700 .88em 'Fredoka','Noto Sans TC',sans-serif; background:rgba(0,0,0,.45); border-radius:1em; padding:.25em .65em; pointer-events:none; white-space:nowrap; }
+  #sp{ flex:1; text-align:center; font:700 .85em 'Noto Sans TC'; text-shadow:0 .1em .2em rgba(0,0,0,.6); }
+  #mb{ width:2em; height:2em; border:0; border-radius:50%; background:rgba(0,0,0,.45); color:#fff; font:900 .95em sans-serif; }
+  #hint{ position:absolute; left:50%; top:15%; transform:translateX(-50%); z-index:4; background:rgba(0,0,0,.66); color:#fff; font:700 .74em 'Noto Sans TC'; padding:.45em 1em; border-radius:1em; pointer-events:none; display:none; text-align:center; line-height:1.5; width:86%; }
+  .ov{ position:absolute; inset:0; z-index:20; display:none; align-items:center; justify-content:center; padding:1.1em; background:rgba(20,6,3,.82); backdrop-filter:blur(2px); text-align:center; }
+  .ov.show{ display:flex; }
+  .card{ width:100%; max-width:21.5em; background:var(--cream); border-radius:1.1em; padding:1em; box-shadow:0 .35em 0 #C98A3A, 0 1em 2em rgba(0,0,0,.5); display:flex; flex-direction:column; gap:.55em; max-height:96%; overflow:auto; }
+  .card h1{ margin:0; font:900 1.45em 'Noto Sans TC'; color:#B8321E; letter-spacing:.08em; }
+  .card h2{ margin:0; font:900 1.6em 'Noto Sans TC'; color:#D9602A; }
+  .card p{ margin:0; font-size:.8em; color:#7A4A38; }
+  .grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:.4em; }
+  .lv{ border:0; border-radius:.7em; background:linear-gradient(180deg,#FF9A5C,#D9482B); color:#fff; padding:.4em 0 .3em; box-shadow:0 .2em 0 #8E2A14; display:flex; flex-direction:column; align-items:center; line-height:1.1; }
+  .lv b{ font:700 1.15em 'Fredoka',sans-serif; } .lv i{ font-style:normal; font-size:.6em; color:#FFE27A; min-height:1.1em; }
+  .lv:disabled{ background:linear-gradient(180deg,#C9C0B6,#A59D92); box-shadow:0 .2em 0 #7C766C; color:#eee; cursor:default; } .lv:disabled i{ color:#eee; }
+  .stars{ font-size:2em; letter-spacing:.1em; color:#F5B731; text-shadow:0 .06em 0 #B07A00; } .stars .off{ color:#D8CDB4; text-shadow:none; }
+  .row{ display:flex; gap:.5em; } .row > *{ flex:1; }
+  .bigbtn{ border:0; border-radius:.9em; padding:.7em .4em; font:900 .92em 'Noto Sans TC'; letter-spacing:.06em; color:#fff; background:linear-gradient(180deg,#FF9A5C,#D9482B); box-shadow:0 .24em 0 #8E2A14; text-decoration:none; display:block; text-align:center; }
+  .bigbtn.b{ background:linear-gradient(180deg,#5FB4E8,#2A78B8); box-shadow:0 .24em 0 #1B4F78; } .bigbtn.g{ background:linear-gradient(180deg,#B9946A,#8A6240); box-shadow:0 .24em 0 #5A3A1C; } .bigbtn.full{ width:100%; }
+  .bowl{ font-size:3em; line-height:1.1; }
+  .brk{ display:grid; grid-template-columns:repeat(3,1fr); gap:.4em; } .brk div{ background:#fff; border-radius:.7em; padding:.4em .2em; font-size:.72em; } .brk b{ display:block; font:700 1.5em 'Fredoka',sans-serif; color:#D9602A; }
+  .cgrid{ display:grid; grid-template-columns:repeat(2,1fr); gap:.4em; text-align:left; }
+  .cc{ background:#fff; border-radius:.7em; padding:.45em .55em; font-size:.72em; line-height:1.3; display:flex; gap:.5em; align-items:center; } .cc .e{ font-size:2.1em; line-height:1; } .cc small{ color:#8A6A5E; display:block; } .cc.no .e{ filter:grayscale(1) brightness(.2); opacity:.5; } .cc.gold{ background:linear-gradient(180deg,#FFF3C4,#FFE08A); }
+  #toast{ position:absolute; left:50%; top:24%; transform:translateX(-50%); z-index:30; background:rgba(0,0,0,.72); color:#fff; padding:.45em 1em; border-radius:1em; font:700 .85em 'Noto Sans TC'; display:none; white-space:nowrap; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="cv"></canvas>
+  <div id="hud">
+    <a id="bk" href="index.html">‹ 大廳</a>
+    <div id="sp">—</div>
+    <span class="pill" id="sc">0 分</span>
+    <button id="mb" aria-label="選單">☰</button>
+  </div>
+  <div id="hint"></div>
+  <div id="toast"></div>
+
+  <div class="ov show" id="menu"><div class="card">
+    <h1>🍲 湯頭大師</h1><p id="mst">★ 0 / 30</p>
+    <div class="grid" id="grid"></div>
+    <p>控制火候、抓準下料時機、最後調出客人要的鹹度</p>
+    <div class="row"><button class="bigbtn b" id="bc">📖 湯頭圖鑑</button><button class="bigbtn" id="cont">繼續</button></div>
+    <button class="bigbtn" id="snd" style="background:linear-gradient(180deg,#8A8F98,#5C6169);box-shadow:0 .24em 0 #3A3E44">音效:開</button>
+    <a class="bigbtn g full" href="index.html">回遊戲大廳</a>
+  </div></div>
+
+  <div class="ov" id="res"><div class="card">
+    <h2 id="rt">好湯!</h2><div class="bowl" id="rb">🍜</div><p id="rs"></p><div class="stars" id="rst">★★★</div>
+    <div class="brk" id="rk"></div>
+    <div class="row"><button class="bigbtn" id="rn">下一關</button><button class="bigbtn b" id="rr">重做</button></div>
+    <button class="bigbtn g full" id="rm">選擇湯品</button>
+  </div></div>
+
+  <div class="ov" id="col"><div class="card">
+    <h1>📖 湯頭圖鑑</h1><p id="colp"></p><div class="cgrid" id="cg"></div>
+    <button class="bigbtn g full" id="colx">關閉</button>
+  </div></div>
+</div>
+<!--pl:start-->
+<style id="pl-css">
+html{-webkit-text-size-adjust:100%;overscroll-behavior:none}
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;animation:plIn .45s ease both}
+@keyframes plIn{from{opacity:0}to{opacity:1}}
+button,a,[role=button],canvas{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button{transition:transform .12s ease,filter .15s ease,box-shadow .15s ease}
+button:not(:disabled):hover{filter:brightness(1.07)}
+button:not(:disabled):active{transform:translateY(1px) scale(.975);filter:brightness(.96)}
+button:focus-visible,a:focus-visible{outline:3px solid rgba(255,255,255,.85);outline-offset:3px;box-shadow:0 0 0 6px rgba(0,0,0,.35)}
+canvas{touch-action:none}
+#pl-vig{position:fixed;inset:0;pointer-events:none;z-index:2147482000;background:radial-gradient(ellipse at 50% 45%,transparent 58%,rgba(0,0,0,.20) 100%)}
+#pl-back{position:fixed;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));z-index:2147482500;display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 12px 0 9px;border-radius:999px;font:700 12px/1 'Noto Sans TC',system-ui,sans-serif;letter-spacing:.06em;color:#fff;text-decoration:none;background:rgba(18,16,28,.55);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 3px 10px rgba(0,0,0,.3);opacity:.85;transition:opacity .15s,transform .12s}
+#pl-back:hover{opacity:1}#pl-back:active{transform:scale(.95)}
+#pl-splash{position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:#fff;transition:opacity .45s ease,visibility .45s}
+#pl-splash.off{opacity:0;visibility:hidden}
+#pl-splash b{font:900 clamp(26px,7vw,40px)/1.2 'Noto Serif TC','Noto Sans TC',serif;letter-spacing:.14em;text-shadow:0 4px 18px rgba(0,0,0,.45)}
+#pl-splash i{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.28);border-top-color:#fff;animation:plSp .8s linear infinite}
+#pl-splash small{font:500 11px 'Noto Sans TC',sans-serif;letter-spacing:.3em;opacity:.7}
+@keyframes plSp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){body{animation:none}#pl-splash i{animation:none}}
+</style>
+<script id="pl-js">
+(function(){
+ try{
+  var d=document,b=d.body,cs=getComputedStyle(b),bg=cs.backgroundColor;
+  if(!bg||bg==='rgba(0, 0, 0, 0)'){bg=getComputedStyle(d.documentElement).backgroundColor;}
+  if(!bg||bg==='rgba(0, 0, 0, 0)')bg='#1c1830';
+  var m=d.querySelector('meta[name=theme-color]');if(!m){m=d.createElement('meta');m.name='theme-color';d.head.appendChild(m);}m.content=bg;
+  var vp=d.querySelector('meta[name=viewport]');if(vp&&vp.content.indexOf('viewport-fit')<0)vp.content+=',viewport-fit=cover';
+  var v=d.createElement('div');v.id='pl-vig';b.appendChild(v);
+  if(!d.querySelector('a[href*="index.html"]')){var a=d.createElement('a');a.id='pl-back';a.href='index.html';a.setAttribute('aria-label','回遊戲大廳');a.innerHTML='<span aria-hidden="true">‹</span>大廳';b.appendChild(a);}
+  var s=d.createElement('div');s.id='pl-splash';s.style.background='radial-gradient(ellipse at 50% 30%,rgba(255,255,255,.16),transparent 60%),'+bg;
+  var t=(d.title||'').trim();s.innerHTML='<small>NOW LOADING</small><b></b><i></i>';s.querySelector('b').textContent=t;b.appendChild(s);
+  addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('button');if(t&&navigator.vibrate){try{navigator.vibrate(8);}catch(_){}}},true);
+  var done=false;function off(){if(done)return;done=true;s.classList.add('off');setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s);},600);}
+  if(d.readyState==='complete')setTimeout(off,350);else addEventListener('load',function(){setTimeout(off,350);});
+  setTimeout(off,1800);
+ }catch(e){}
+})();
+</script>
+<!--pl:end-->
+
+<script>
+(()=>{
+'use strict';
+const W=360,H=640;
+const $=id=>document.getElementById(id);
+const cv=$('cv'),ctx=cv.getContext('2d'),wrap=$('wrap');
+const ING=[['蔥花','🧅'],['青菜','🥬'],['香菇','🍄'],['白蘿蔔','🥕'],['辣椒','🌶️'],['排骨','🍖'],['蒜頭','🧄'],['鮮蝦','🍤'],['蛤蠣','🐚'],['雞肉','🍗'],['牛肉','🥩'],['雞蛋','🥚'],['檸檬','🍋']];
+const SOUP=[
+ {n:'蔥花清湯',e:'🍜',col:'#EADFB4',sh:[0,1,2,6],d:'清澈見底,最考驗火候的入門湯。'},
+ {n:'蛤蠣湯',e:'🐚',col:'#E9E0C6',sh:[8,6,0,1],d:'蛤蠣一開口,鮮味就出來了。'},
+ {n:'蘿蔔排骨湯',e:'🥕',col:'#E6C58E',sh:[5,3,0,2],d:'慢火燉出甘甜,家的味道。'},
+ {n:'台南牛肉湯',e:'🥩',col:'#DDAA78',sh:[10,0,6,1],d:'清晨現切牛肉,燙一下就上桌。'},
+ {n:'豚骨拉麵',e:'🍥',col:'#F1E6D2',sh:[5,0,2,6,11],d:'白濁濃郁,火候不能斷。'},
+ {n:'藥燉排骨',e:'🍖',col:'#8A5232',sh:[5,2,6,3,0],d:'中藥香氣滿溢,火太大就苦。'},
+ {n:'麻辣鍋底',e:'🌶️',col:'#C2301F',sh:[4,10,1,6,2],d:'紅通通的一鍋,辣得過癮。'},
+ {n:'酸辣湯',e:'🍋',col:'#B8602E',sh:[4,12,11,2,0],d:'酸、辣、鮮三者平衡。'},
+ {n:'佛跳牆',e:'🏺',col:'#A8702C',sh:[7,8,2,5,9],d:'聞香下馬,講究層層下料。'},
+ {n:'國宴雞湯',e:'🍗',col:'#F0D98C',sh:[9,2,6,0,3],d:'琥珀金黃,大師的最後考驗。'}
+];
+const TASTE=['清淡','適中','重口'];
+const LV=['小火','中火','大火'],LT=[.2,.55,1.05],LC=['#7FD6FF','#FFC83A','#FF6B3A'];
+function P(i){
+ return {D:34+2.2*i,n:4+(i>>1),amp:Math.min(.17,.07+.014*i),per:11-.6*i,zw:.12-.007*i,spd:.55+.08*i,wd:.17-.011*i};
+}
+const MAXPTS=i=>50+8*P(i).n+30;
+let SV={unlock:0,stars:Array(10).fill(0),best:Array(10).fill(0),snd:1,tut:0};
+try{const s=JSON.parse(localStorage.getItem('soup_save')||'null');if(s&&typeof s==='object')SV=Object.assign(SV,s);}catch(e){}
+function save(){try{localStorage.setItem('soup_save',JSON.stringify(SV));}catch(e){}}
+
+/* audio */
+let AC=null;
+function au(){if(!SV.snd)return null;try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC;}catch(e){return null;}}
+function beep(f,d,type,vol,to){const a=au();if(!a)return;try{const o=a.createOscillator(),g=a.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,a.currentTime);if(to)o.frequency.exponentialRampToValueAtTime(to,a.currentTime+d);g.gain.setValueAtTime(vol||.15,a.currentTime);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+d);o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+d+.02);}catch(e){}}
+function vib(n){try{if(navigator.vibrate)navigator.vibrate(n);}catch(e){}}
+function mulb(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+/* state */
+const G={i:0,state:'menu',t:0,P:null,ev:[],T:.3,lvl:0,heat:0,oflow:0,pen:0,ipts:0,spts:0,hits:{p:0,o:0,m:0,w:0},shift:0,ph:0,salt:null,sm:0,sx:0,fx:[],pop:[],bub:[],steam:[],drop:[],endT:0,res:null,shelf:[],flash:0};
+function zc(t){
+ const p=G.P;let v=.55+p.amp*Math.sin(6.283*t/p.per+G.ph);
+ for(const e of G.ev){if(e.done&&e.at!=null&&t>=e.at){const k=Math.exp(-(t-e.at)/4);v+=e.sg*.1*k;}}
+ return Math.max(.3,Math.min(.8,v));
+}
+function load(i){
+ const p=P(i),r=mulb(500+i*97);
+ G.i=i;G.P=p;G.state='cook';G.t=0;G.T=.3;G.lvl=0;G.heat=0;G.oflow=0;G.pen=0;G.ipts=0;G.spts=0;G.hits={p:0,o:0,m:0,w:0};G.ph=r()*6.283;
+ const sh=SOUP[i].sh;G.shelf=sh.slice();
+ G.ev=[];let last=-1;
+ for(let k=0;k<p.n;k++){
+  const t=5+k*((p.D-11)/Math.max(1,p.n-1));let id;do{id=sh[Math.floor(r()*sh.length)];}while(id===last&&sh.length>1);last=id;
+  G.ev.push({k,t,id,done:false,miss:false,at:null,sg:r()<.5?-1:1});
+ }
+ G.salt={c:.25+r()*.5,w:p.wd,spd:p.spd,taste:0};G.salt.taste=G.salt.c<.38?0:G.salt.c>.62?2:1;
+ G.sm=0;G.sx=0;G.fx=[];G.pop=[];G.bub=[];G.steam=[];G.drop=[];G.res=null;G.endT=0;G.flash=0;
+ $('sp').textContent=(i+1)+'. '+SOUP[i].n;setHUD();
+ ['menu','res','col'].forEach(x=>$(x).classList.remove('show'));
+ const h=$('hint');if(!SV.tut){h.innerHTML='① 點<b>小/中/大火</b>,讓溫度針停在<b>綠色區</b><br>② 圈縮到食材上時,點它下料!';h.style.display='block';}else h.style.display='none';
+}
+function pts(){return Math.max(0,Math.round(50*G.heat+G.ipts+G.spts-G.pen));}
+function setHUD(){$('sc').textContent=pts()+' 分';}
+function toast(t,ms){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast._t);toast._t=setTimeout(()=>e.style.display='none',ms||1300);}
+function pop(x,y,t,c){G.pop.push({x,y,t,c:c||'#fff',life:1.1});}
+
+/* actions */
+function setFire(l){if(G.state!=='cook')return;if(G.lvl!==l){G.lvl=l;beep(300+l*120,.08,'square',.07);vib(6);}hideHint();}
+function hideHint(){if(!SV.tut){SV.tut=1;save();}$('hint').style.display='none';}
+function shelfX(j,m){return (j+.5)*W/m;}
+function tapIng(id){
+ if(G.state!=='cook')return;hideHint();
+ const t=G.t;let best=null,bd=9;
+ for(const e of G.ev){if(e.done||e.miss)continue;const d=Math.abs(e.t-t);if(d<.7&&d<bd){bd=d;best=e;}}
+ const j=G.shelf.indexOf(id),x=shelfX(j,G.shelf.length);
+ if(best&&best.id===id){
+  best.done=true;best.at=t;const pf=bd<=.25;
+  G.ipts+=pf?8:5;G.hits[pf?'p':'o']++;
+  pop(x,545,pf?'完美 +8':'不錯 +5',pf?'#7CFFB0':'#FFE27A');
+  G.drop.push({id,x:90+Math.random()*60+40,y:130,vy:0,life:2});
+  beep(pf?880:620,.14,'sine',.18);if(pf)setTimeout(()=>beep(1180,.14,'sine',.16),80);vib(pf?[10,20,10]:8);
+ }else{
+  G.pen+=3;G.hits.w++;pop(x,545,'放錯 −3','#FF8A7A');beep(170,.12,'square',.09,110);vib(20);G.flash=.25;
+ }
+ setHUD();
+}
+function tapSalt(){
+ if(G.state!=='salt')return;
+ const s=G.salt,d=Math.abs(G.sm-s.c);let pc;
+ if(d<=s.w/2)pc=.75+.25*(1-d/(s.w/2));else pc=Math.max(0,.75*(1-(d-s.w/2)/(s.w*1.5)));
+ G.spts=Math.round(30*pc);G.state='sprinkle';G.endT=0;G.sx=G.sm;
+ for(let k=0;k<26;k++)G.fx.push({x:W/2+(Math.random()-.5)*50,y:150,vx:(Math.random()-.5)*60,vy:60+Math.random()*120,life:1,c:'#fff'});
+ beep(900,.1,'triangle',.15);setTimeout(()=>beep(d<=s.w/2?1180:520,.2,'sine',.18),120);
+ pop(W/2,470,d<=s.w/2?'剛剛好! +'+G.spts:(G.sm<s.c?'太淡了 +':'太鹹了 +')+G.spts,d<=s.w/2?'#7CFFB0':'#FFB07A');setHUD();
+}
+function finishCook(){G.state='salt';G.sm=0;G.saltT=0;toast('客人要「'+TASTE[G.salt.taste]+'」的鹹度!抓準時機撒鹽',1800);beep(520,.12,'triangle',.12);}
+
+/* update */
+function saltPos(){const ph=(G.saltT*G.salt.spd)%1;return ph<.5?ph*2:2-ph*2;}
+function update(dt){
+ const p=G.P;
+ if(G.state==='cook'){
+  G.t+=dt;
+  const L=LT[G.lvl];G.T+=(L-G.T)*(1-Math.exp(-.8*dt));G.T=Math.max(0,Math.min(1,G.T));
+  const z=zc(G.t),d=Math.abs(G.T-z);
+  const rate=d<p.zw?1:d<p.zw*1.6?.2:0;
+  G.heat=Math.min(1,G.heat+rate*dt/(p.D*.85));
+  if(G.T>.93)G.oflow+=dt;else G.oflow=Math.max(0,G.oflow-dt*.6);
+  for(const e of G.ev){if(!e.done&&!e.miss&&G.t>e.t+.7){e.miss=true;G.hits.m++;pop(shelfX(G.shelf.indexOf(e.id),G.shelf.length),545,'錯過!','#FF8A7A');beep(150,.12,'sine',.08,100);}}
+  if(G.oflow>=3){endStage(true);return;}
+  if(G.t>=p.D)finishCook();
+  setHUD();
+ }else if(G.state==='salt'){G.saltT+=dt;G.sm=saltPos();}
+ else if(G.state==='sprinkle'){G.endT+=dt;if(G.endT>1.4){endStage(false);return;}}
+ // fx (all states)
+ const T=G.T;
+ if(G.state!=='menu'&&Math.random()<dt*(6+T*34)){G.bub.push({x:70+Math.random()*180,y:340+Math.random()*30,r:2+Math.random()*4,vy:-(18+T*40),life:1});}
+ if(Math.random()<dt*(2+T*10)){G.steam.push({x:90+Math.random()*140,y:255,vx:(Math.random()-.5)*14,vy:-(20+Math.random()*20),r:6+Math.random()*6,life:1});}
+ for(const b of G.bub){b.y+=b.vy*dt;b.life-=dt*1.4;}G.bub=G.bub.filter(b=>b.life>0&&b.y>262);
+ for(const s of G.steam){s.x+=s.vx*dt;s.y+=s.vy*dt;s.r+=dt*10;s.life-=dt*.55;}G.steam=G.steam.filter(s=>s.life>0);
+ for(const d of G.drop){d.vy+=520*dt;d.y+=d.vy*dt;if(d.y>285&&!d.sp){d.sp=1;for(let k=0;k<8;k++)G.fx.push({x:d.x,y:285,vx:(Math.random()-.5)*110,vy:-60-Math.random()*90,life:.8,c:'#fff'});}d.life-=dt;}G.drop=G.drop.filter(d=>d.life>0&&d.y<330);
+ for(const f of G.fx){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=260*dt;f.life-=dt*1.3;}G.fx=G.fx.filter(f=>f.life>0);
+ for(const q of G.pop){q.y-=26*dt;q.life-=dt;}G.pop=G.pop.filter(q=>q.life>0);
+ if(G.flash>0)G.flash-=dt;
+}
+function endStage(over){
+ const i=G.i,mx=MAXPTS(i),sc=pts(),pc=sc/mx;
+ const st=over?0:pc>=.92?3:pc>=.78?2:pc>=.6?1:0,pass=st>0;
+ G.state='over';$('toast').style.display='none';
+ if(pass){SV.stars[i]=Math.max(SV.stars[i]||0,st);SV.unlock=Math.max(SV.unlock,Math.min(9,i+1));}
+ SV.best[i]=Math.max(SV.best[i]||0,Math.round(pc*100));save();
+ $('rt').textContent=over?'湯溢出來了!':pass?(i===9?'湯頭大師!':'好湯!'):'差一點!';
+ $('rb').textContent=over?'💦':SOUP[i].e;
+ $('rs').textContent=over?'火開太大,持續沸騰會溢鍋。':'完成度 '+Math.round(pc*100)+'%'+(pass?'  ・ '+['','客人點頭說還不錯','客人連喝兩碗','客人喝完還想外帶!'][st]:'  ・ 滿分的 60% 才算過關');
+ $('rst').innerHTML=[1,2,3].map(k=>k<=st?'★':'<span class="off">★</span>').join('');
+ $('rk').innerHTML=`<div>火候<b>${Math.round(50*G.heat)}</b>/50</div><div>下料<b>${Math.max(0,G.ipts-G.pen)}</b>/${8*G.P.n}</div><div>調味<b>${G.spts}</b>/30</div>`;
+ $('rn').style.display=(pass&&i<9)?'block':'none';
+ setTimeout(()=>{$('res').classList.add('show');},300);
+ beep(pass?660:200,.3,'sine',.15);if(pass)setTimeout(()=>beep(880,.3,'sine',.15),160);
+}
+
+/* menu */
+function openMenu(){
+ G.state='menu';$('hint').style.display='none';
+ const g=$('grid');g.innerHTML='';let tot=0;
+ for(let i=0;i<10;i++){tot+=SV.stars[i]||0;const b=document.createElement('button');b.className='lv';b.disabled=i>SV.unlock;
+  b.innerHTML='<b>'+(i+1)+'</b><i>'+(i>SV.unlock?'🔒':'★'.repeat(SV.stars[i]||0)||'·')+'</i>';b.onclick=()=>load(i);g.appendChild(b);}
+ $('mst').textContent='★ '+tot+' / 30';
+ $('res').classList.remove('show');$('col').classList.remove('show');$('menu').classList.add('show');
+}
+function openCol(){
+ let n=0;$('cg').innerHTML=SOUP.map((s,i)=>{const ok=(SV.stars[i]||0)>0,gd=(SV.stars[i]||0)>=3;if(ok)n++;
+  return `<div class="cc ${ok?'':'no'} ${gd?'gold':''}"><span class="e">${s.e}</span><span><b>${ok?s.n:'???'}</b><small>${ok?s.d:'過關後解鎖'}</small>${gd?'<small>★★★ 大師級</small>':''}</span></div>`;}).join('');
+ $('colp').textContent='已收集 '+n+' / 10 款湯頭';$('col').classList.add('show');
+}
+$('mb').onclick=()=>{if(G.state==='cook'||G.state==='salt'||G.state==='sprinkle'||G.state==='over'||G.state==='menu')openMenu();};
+$('cont').onclick=()=>load(Math.min(9,SV.unlock));
+$('rn').onclick=()=>load(Math.min(9,G.i+1));$('rr').onclick=()=>load(G.i);$('rm').onclick=openMenu;
+$('bc').onclick=openCol;$('colx').onclick=()=>$('col').classList.remove('show');
+$('snd').onclick=()=>{SV.snd=SV.snd?0:1;save();$('snd').textContent='音效:'+(SV.snd?'開':'關');if(SV.snd)beep(600,.1);};
+$('snd').textContent='音效:'+(SV.snd?'開':'關');
+
+/* layout & input */
+let DPR=1;
+function resize(){DPR=Math.min(2.5,window.devicePixelRatio||1);const r=wrap.getBoundingClientRect();cv.width=Math.round(r.width*DPR);cv.height=Math.round(r.height*DPR);}
+addEventListener('resize',resize);
+const FB=[[22,486,100,52],[130,486,100,52],[238,486,100,52]];
+function pt(e){const r=cv.getBoundingClientRect();return [(e.clientX-r.left)/r.width*W,(e.clientY-r.top)/r.height*H];}
+cv.addEventListener('pointerdown',e=>{
+ const [x,y]=pt(e);
+ if(G.state==='cook'){
+  if(y>=470&&y<=548){for(let l=0;l<3;l++){const b=FB[l];if(x>=b[0]&&x<=b[0]+b[2]&&y>=b[1]-10&&y<=b[1]+b[3]+6){setFire(l);return;}}}
+  if(y>=552){const m=G.shelf.length,j=Math.floor(x/(W/m));if(j>=0&&j<m)tapIng(G.shelf[j]);}
+ }else if(G.state==='salt'){if(y>=470)tapSalt();}
+});
+addEventListener('keydown',e=>{
+ if(e.repeat)return;
+ if(G.state==='cook'){
+  if(e.key==='1')setFire(0);else if(e.key==='2')setFire(1);else if(e.key==='3')setFire(2);
+  else if(e.key==='ArrowLeft')setFire(Math.max(0,G.lvl-1));else if(e.key==='ArrowRight')setFire(Math.min(2,G.lvl+1));
+  else if(e.key==='q'||e.key==='w'||e.key==='e'||e.key==='r'||e.key==='t'){const j='qwert'.indexOf(e.key);if(j<G.shelf.length)tapIng(G.shelf[j]);}
+ }else if(G.state==='salt'&&(e.key===' '||e.key==='Enter')){e.preventDefault();tapSalt();}
+});
+
+/* render */
+function rr(x,X,Y,w,h,r){x.beginPath();x.moveTo(X+r,Y);x.arcTo(X+w,Y,X+w,Y+h,r);x.arcTo(X+w,Y+h,X,Y+h,r);x.arcTo(X,Y+h,X,Y,r);x.arcTo(X,Y,X+w,Y,r);x.closePath();}
+function mix(c1,c2,k){const a=parseInt(c1.slice(1),16),b=parseInt(c2.slice(1),16);const f=s=>Math.round(((a>>s)&255)*(1-k)+((b>>s)&255)*k);return 'rgb('+f(16)+','+f(8)+','+f(0)+')';}
+function render(){
+ const x=ctx;x.setTransform(cv.width/W,0,0,cv.height/H,0,0);x.clearRect(0,0,W,H);
+ const S=SOUP[G.i],now=performance.now()/1000;
+ // background wall
+ let g=x.createLinearGradient(0,0,0,420);g.addColorStop(0,'#4A1A10');g.addColorStop(1,'#7A3A20');x.fillStyle=g;x.fillRect(0,0,W,420);
+ x.fillStyle='rgba(255,255,255,.05)';for(let k=0;k<9;k++)x.fillRect(0,60+k*40,W,2);
+ // lanterns
+ for(const lx of [34,326]){x.fillStyle='#3A1A10';x.fillRect(lx-1,0,2,50);x.fillStyle='#E0402A';x.beginPath();x.ellipse(lx,70,16,20,0,0,6.283);x.fill();x.fillStyle='rgba(255,220,120,.35)';x.beginPath();x.ellipse(lx-4,64,6,10,0,0,6.283);x.fill();x.fillStyle='#FFD166';x.fillRect(lx-7,48,14,4);x.fillRect(lx-7,88,14,4);}
+ // sign
+ x.fillStyle='rgba(0,0,0,.28)';rr(x,96,96,168,26,13);x.fill();x.fillStyle='#FFE9B8';x.font='900 14px "Noto Sans TC"';x.textAlign='center';x.fillText(S.n+' '+S.e,180,114);
+ // counter
+ g=x.createLinearGradient(0,410,0,640);g.addColorStop(0,'#9A6232');g.addColorStop(1,'#4A2A14');x.fillStyle=g;x.fillRect(0,410,W,230);x.fillStyle='#C98A4A';x.fillRect(0,408,W,6);
+ const T=G.T,lvF=G.state==='cook'?G.lvl:0;
+ // stove + flame
+ x.fillStyle='#2A2A2E';rr(x,70,388,200,26,6);x.fill();
+ const fl=G.state==='cook'||G.state==='salt'||G.state==='sprinkle'?(G.state==='cook'?[.35,.65,1][G.lvl]:.4):0;
+ for(let k=0;k<7;k++){const fx=88+k*27,h=(8+22*fl)*(.8+.3*Math.sin(now*14+k*1.7));x.fillStyle=k%2?'#FF9A3A':'#FF6B3A';x.beginPath();x.moveTo(fx-9,388);x.quadraticCurveTo(fx-6,388-h*.6,fx,388-h);x.quadraticCurveTo(fx+6,388-h*.6,fx+9,388);x.fill();x.fillStyle='#FFE27A';x.beginPath();x.moveTo(fx-4,388);x.quadraticCurveTo(fx-2,388-h*.4,fx,388-h*.6);x.quadraticCurveTo(fx+2,388-h*.4,fx+4,388);x.fill();}
+ // pot
+ x.fillStyle='#8A9099';x.beginPath();x.moveTo(60,262);x.lineTo(280,262);x.lineTo(262,372);x.quadraticCurveTo(170,388,78,372);x.closePath();
+ g=x.createLinearGradient(60,0,280,0);g.addColorStop(0,'#6A7078');g.addColorStop(.35,'#B8BEC6');g.addColorStop(1,'#5A6068');x.fillStyle=g;x.fill();
+ x.fillStyle='#555B63';x.fillRect(46,290,18,10);x.fillRect(276,290,18,10);
+ x.fillStyle='#D0D5DB';x.beginPath();x.ellipse(170,262,110,16,0,0,6.283);x.fill();
+ const sc=mix('#3A2A1A',S.col,Math.min(1,.35+G.heat*.65+(G.state==='cook'?0:.0)));x.fillStyle=sc;x.beginPath();x.ellipse(170,265,100,12,0,0,6.283);x.fill();
+ x.save();x.beginPath();x.ellipse(170,265,100,12,0,0,6.283);x.clip();
+ for(const b of G.bub){x.globalAlpha=Math.max(0,b.life)*.8;x.fillStyle='rgba(255,255,255,.7)';x.beginPath();x.arc(b.x,262+(b.y-340)*.3+4,b.r*.7,0,6.283);x.fill();}x.restore();x.globalAlpha=1;
+ // ingredient drops
+ x.font='24px sans-serif';x.textAlign='center';for(const d of G.drop){x.fillText(ING[d.id][1],d.x,d.y);}
+ // steam
+ for(const s of G.steam){x.globalAlpha=Math.max(0,s.life)*.28;x.fillStyle='#fff';x.beginPath();x.arc(s.x,s.y,s.r,0,6.283);x.fill();}x.globalAlpha=1;
+ // thermometer
+ const tx=318,ty0=130,ty1=400,th=ty1-ty0;
+ x.fillStyle='rgba(0,0,0,.4)';rr(x,tx-14,ty0-8,28,th+28,14);x.fill();
+ x.fillStyle='#F4EBDD';rr(x,tx-7,ty0,14,th,7);x.fill();
+ const z=G.state==='cook'?zc(G.t):zc(0),zw=G.P?G.P.zw:.15;
+ const zy0=ty1-(z+zw)*th,zy1=ty1-(z-zw)*th;
+ x.fillStyle='rgba(60,200,110,.55)';x.fillRect(tx-7,zy0,14,zy1-zy0);x.strokeStyle='#2E9C5E';x.lineWidth=1.5;x.strokeRect(tx-9,zy0,18,zy1-zy0);
+ const inz=Math.abs(T-z)<zw;
+ x.fillStyle=T>.93?'#E0402A':inz?'#FFC83A':'#FF8A3A';rr(x,tx-5,ty1-T*th,10,T*th,5);x.fill();
+ x.fillStyle=T>.93?'#E0402A':'#FFC83A';x.beginPath();x.arc(tx,ty1+6,9,0,6.283);x.fill();
+ x.fillStyle='#fff';x.font='700 10px "Noto Sans TC"';x.fillText('火候',tx,ty0-14);
+ x.fillStyle='#E0402A';x.fillRect(tx-10,ty1-.93*th,20,2);
+ if(G.oflow>0){x.fillStyle='rgba(224,64,42,.9)';x.font='900 11px "Noto Sans TC"';x.fillText('溢鍋!',tx,ty1+36);}
+ // status bars
+ x.fillStyle='rgba(0,0,0,.4)';rr(x,22,436,316,20,10);x.fill();
+ g=x.createLinearGradient(22,0,338,0);g.addColorStop(0,'#FFB347');g.addColorStop(1,'#FF5E3A');x.fillStyle=g;if(G.heat>0){rr(x,24,438,Math.max(16,312*G.heat),16,8);x.fill();}
+ x.fillStyle='#fff';x.font='700 11px "Noto Sans TC"';x.textAlign='left';x.fillText('鮮味 '+Math.round(G.heat*100)+'%',32,450);
+ x.textAlign='right';if(G.P&&G.state==='cook')x.fillText(Math.max(0,Math.ceil(G.P.D-G.t))+' 秒',330,450);
+ if(G.oflow>0){x.fillStyle='rgba(224,64,42,.95)';x.fillRect(22,458,316*Math.min(1,G.oflow/3),4);}
+ x.textAlign='center';
+ // controls
+ if(G.state==='cook'){
+  for(let l=0;l<3;l++){const b=FB[l],on=G.lvl===l;g=x.createLinearGradient(0,b[1],0,b[1]+b[3]);if(on){g.addColorStop(0,LC[l]);g.addColorStop(1,mix('#000000','#FFFFFF',.0));}else{g.addColorStop(0,'#5A3A24');g.addColorStop(1,'#3A2414');}
+   x.fillStyle=on?LC[l]:g;rr(x,b[0],b[1],b[2],b[3],14);x.fill();x.strokeStyle=on?'#fff':'rgba(255,255,255,.2)';x.lineWidth=on?3:1.5;x.stroke();
+   x.fillStyle=on?'#3A1A10':'#E8D2B8';x.font='900 17px "Noto Sans TC"';x.fillText(['🔥','🔥🔥','🔥🔥🔥'][l].slice(0,2*(l+1)>6?6:2*(l+1)),b[0]+b[2]/2,b[1]+23);x.font='700 12px "Noto Sans TC"';x.fillText(LV[l],b[0]+b[2]/2,b[1]+42);}
+  // shelf
+  const m=G.shelf.length;
+  x.fillStyle='rgba(0,0,0,.3)';x.fillRect(0,558,W,82);
+  // next event banner
+  let nx=null;for(const e of G.ev){if(!e.done&&!e.miss){nx=e;break;}}
+  for(let j=0;j<m;j++){
+   const id=G.shelf[j],cx=shelfX(j,m),cy=598;
+   const act=G.ev.find(e=>!e.done&&!e.miss&&e.id===id&&e.t-G.t<3&&e.t-G.t>-.7);
+   x.fillStyle=act?'#FFF3DC':'#E8D8BC';rr(x,cx-26,cy-28,52,52,12);x.fill();
+   x.font='28px sans-serif';x.fillStyle='#000';x.fillText(ING[id][1],cx,cy+8);
+   x.font='700 10px "Noto Sans TC"';x.fillStyle='#FFE9B8';x.fillText(ING[id][0],cx,cy+37);
+   if(act){const dt=act.t-G.t,k=Math.max(0,Math.min(1,dt/3)),r=27+34*k,pf=Math.abs(dt)<=.25,okw=Math.abs(dt)<=.7;
+    x.lineWidth=4;x.strokeStyle=pf?'#7CFFB0':okw?'#FFE27A':'#FFFFFF';x.globalAlpha=dt<0?.8:.95;x.beginPath();x.arc(cx,cy-2,r,0,6.283);x.stroke();x.globalAlpha=1;
+    x.lineWidth=2;x.strokeStyle='rgba(255,255,255,.55)';x.beginPath();x.arc(cx,cy-2,29,0,6.283);x.stroke();}
+  }
+  if(nx){const dt=nx.t-G.t;if(dt<6){x.fillStyle='rgba(0,0,0,.5)';rr(x,96,126,168,24,12);x.fill();x.fillStyle='#fff';x.font='700 12px "Noto Sans TC"';x.fillText('下一道:'+ING[nx.id][1]+' '+ING[nx.id][0]+(dt>0?'  '+dt.toFixed(1)+'s':''),180,142);}}
+  if(G.flash>0){x.fillStyle='rgba(255,60,40,'+(G.flash*.6)+')';x.fillRect(0,0,W,H);}
+ }else if(G.state==='salt'||G.state==='sprinkle'){
+  const s=G.salt;x.fillStyle='rgba(0,0,0,.45)';rr(x,22,478,316,60,14);x.fill();
+  const bx=40,bw=280,by=506;x.fillStyle='#F4EBDD';rr(x,bx,by,bw,14,7);x.fill();
+  x.fillStyle='rgba(60,200,110,.9)';rr(x,bx+bw*(s.c-s.w/2),by-2,bw*s.w,18,6);x.fill();
+  const m=G.state==='salt'?G.sm:G.sx;x.fillStyle='#E0402A';x.beginPath();x.moveTo(bx+bw*m,by-6);x.lineTo(bx+bw*m-7,by-16);x.lineTo(bx+bw*m+7,by-16);x.closePath();x.fill();x.fillRect(bx+bw*m-2,by-6,4,26);
+  x.fillStyle='#fff';x.font='700 11px "Noto Sans TC"';x.textAlign='left';x.fillText('淡',30,534);x.textAlign='right';x.fillText('鹹',330,534);x.textAlign='center';x.fillText('客人要「'+TASTE[s.taste]+'」',180,494);
+  if(G.state==='salt'){g=x.createLinearGradient(0,560,0,624);g.addColorStop(0,'#FFF3DC');g.addColorStop(1,'#E8D2A8');x.fillStyle=g;rr(x,22,560,316,64,16);x.fill();x.fillStyle='#B8321E';x.font='900 22px "Noto Sans TC"';x.fillText('🧂 撒鹽!',180,600);}
+ }
+ // fx
+ for(const f of G.fx){x.globalAlpha=Math.max(0,f.life);x.fillStyle=f.c;x.beginPath();x.arc(f.x,f.y,2.2,0,6.283);x.fill();}x.globalAlpha=1;
+ x.font='900 14px "Noto Sans TC",sans-serif';x.textAlign='center';
+ for(const q of G.pop){x.globalAlpha=Math.max(0,Math.min(1,q.life));x.fillStyle='rgba(0,0,0,.6)';x.fillText(q.t,q.x+1,q.y+1);x.fillStyle=q.c;x.fillText(q.t,q.x,q.y);}x.globalAlpha=1;
+}
+let lastT=0;
+function loop(ts){const dt=Math.min(.05,(ts-lastT)/1000||0);lastT=ts;if(G.state!=='menu'&&G.state!=='over')update(dt);else update2(dt);render();requestAnimationFrame(loop);}
+function update2(dt){const sv=G.state;G.state='menu';update(dt);G.state=sv;}
+
+/* init */
+resize();G.P=P(0);load(0);openMenu();
+requestAnimationFrame(loop);
+window.__ST={G,SV,SOUP,P,MAXPTS,load,update,zc,tapIng,tapSalt,setFire,pts,openMenu,
+ simStage(i,sk,seed){ // bot: sk = timing std-dev in seconds
+  const r=mulb(seed||1);const gs=()=>{let u=0,v=0;while(!u)u=r();while(!v)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(6.283*v);};
+  load(i);G._bn=0;const plan=G.ev.map(e=>({e,at:e.t+gs()*sk}));let guard=0,saltAim=null;
+  while(G.state!=='over'&&guard++<4000){
+   const dt=1/30;
+   if(G.state==='cook'){
+    if(!(G._bn>G.t)){const zz=zc(G.t),d=zz-G.T;let l=1;if(d>.045&&G.T<.88)l=2;else if(d<-.045)l=0;setFire(l);G._bn=G.t+Math.max(.1,.35+gs()*sk*.4);}
+    for(const q of plan){if(!q.e.done&&!q.e.miss&&!q.fired&&G.t>=q.at){q.fired=true;tapIng(q.e.id);}}
+   }else if(G.state==='salt'){
+    if(saltAim==null)saltAim=G.salt.c+gs()*sk*.1;
+    const m=saltPos(),nm=((G.saltT+dt)*G.salt.spd%1)<.5?((G.saltT+dt)*G.salt.spd%1)*2:2-((G.saltT+dt)*G.salt.spd%1)*2;
+    if((m-saltAim)*(nm-saltAim)<=0&&G.saltT>.2)tapSalt();
+   }
+   update(dt);
+  }
+  return {pct:pts()/MAXPTS(i),over:G.oflow>=3,hits:G.hits,heat:G.heat};
+ }};
+})();
+</script>
+</body>
+</html>
