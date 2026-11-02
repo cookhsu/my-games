@@ -31,7 +31,21 @@
   .info h2{ margin:4px 0 0; font-family:'Noto Serif TC',serif; font-weight:600; font-size:22px; line-height:1.3; }
   .info p{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.7; }
   .go{ margin-top:auto; padding-top:10px; font-size:14px; font-weight:700; color:var(--ink); }
-  footer{ margin-top:48px; padding-top:20px; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; color:var(--muted); font-size:13px; }
+  .visits{ margin-top:48px; border:1px solid var(--line); border-radius:16px; background:linear-gradient(180deg,var(--card),#141210); padding:22px 22px 18px; }
+  .visits h3{ margin:0 0 4px; font-family:'Noto Serif TC',serif; font-weight:600; font-size:18px; letter-spacing:2px; color:var(--gold); }
+  .visits .sub{ margin:0 0 16px; font-size:12.5px; color:var(--muted); }
+  .vstats{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .vstat{ border-left:2px solid var(--gold); padding:2px 0 2px 12px; min-width:0; }
+  .vstat b{ display:block; font-family:'Noto Serif TC',serif; font-size:30px; line-height:1.15; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .vstat span{ font-size:12.5px; color:var(--muted); }
+  .vchart{ display:flex; align-items:flex-end; gap:8px; height:72px; margin-top:18px; }
+  .vchart i{ flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:4px; height:100%; font-style:normal; font-size:11px; color:var(--muted); }
+  .vchart i em{ display:block; width:100%; min-height:3px; border-radius:4px 4px 0 0; background:#4a4034; font-style:normal; }
+  .vchart i.now em{ background:var(--gold); }
+  .vme{ margin:16px 0 0; padding-top:12px; border-top:1px dashed var(--line); font-size:12.5px; color:var(--muted); }
+  .vme[hidden],.vglobal[hidden]{ display:none; }
+  @media (max-width:520px){ .visits{ padding:18px 14px 14px; } .vstat b{ font-size:22px; } .vstat{ padding-left:9px; } }
+  footer{ margin-top:32px; padding-top:20px; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; color:var(--muted); font-size:13px; }
   @media (max-width:520px){ .wrap{ padding:48px 18px 40px; } .deck{ grid-template-columns:repeat(2,1fr); gap:14px; } .info h2{ font-size:18px; } .info p{ font-size:12.5px; } }
   @media (prefers-reduced-motion:reduce){ a.card,.icon{ transition:none; } a.card:hover,a.card:focus-visible,a.card:hover .icon{ transform:none; } }
 
@@ -263,10 +277,23 @@
   </main>
   <div class="empty" id="empty">這個分類還沒有遊戲</div>
 
+  <section class="visits" aria-label="來訪紀錄">
+    <h3>來訪紀錄</h3>
+    <p class="sub" id="vsub">統計中…</p>
+    <div class="vglobal" id="vglobal" hidden>
+      <div class="vstats">
+        <div class="vstat"><b id="vTotal">0</b><span>累計訪客</span></div>
+        <div class="vstat"><b id="vToday">0</b><span>今日訪客</span></div>
+        <div class="vstat"><b id="vViews">0</b><span>總瀏覽量</span></div>
+      </div>
+      <div class="vchart" id="vchart" aria-label="近 7 日每日訪客"></div>
+    </div>
+    <p class="vme" id="vme" hidden></p>
+  </section>
+
   <footer>
     <span>手機與電腦皆可遊玩</span>
     <span>遊戲內的喇叭按鈕可開關音樂</span>
-    <span id="visitors" hidden></span>
   </footer>
 </div>
 <script>
@@ -297,14 +324,41 @@
 })();
 </script>
 <script>
-// 訪客統計：同一個瀏覽器只計一次（隨機 id 存在 localStorage，不含任何個資）
+// 來訪紀錄：同一個瀏覽器用隨機 id 辨識（存在 localStorage，不含任何個資）
 (function(){
-  var el = document.getElementById('visitors'); if (!el) return; var id = null;
-  try { id = localStorage.getItem('lobby_vid'); if (!id){ id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)); localStorage.setItem('lobby_vid', id); } } catch (e) { id = null; }
+  var $ = function(i){ return document.getElementById(i); };
+  var id = null, me = { n: 1, first: null };
+  function today(){ var d = new Date(Date.now() + 8 * 3600e3); return d.toISOString().slice(0, 10); }
+  try {
+    id = localStorage.getItem('lobby_vid');
+    if (!id){ id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)); localStorage.setItem('lobby_vid', id); }
+    var rec = JSON.parse(localStorage.getItem('lobby_me') || 'null') || { n: 0, first: today(), last: '' };
+    if (rec.last !== today()){ rec.n++; rec.last = today(); }
+    localStorage.setItem('lobby_me', JSON.stringify(rec)); me = rec;
+  } catch (e) { id = id || null; }
+  var vme = $('vme');
+  if (me.first){ vme.textContent = '你是第 ' + me.n + ' 天來玩 · 第一次來是 ' + me.first.replace(/-/g, '/'); vme.hidden = false; }
+  function count(el, to){
+    if (matchMedia('(prefers-reduced-motion:reduce)').matches || to < 2){ el.textContent = to.toLocaleString(); return; }
+    var t0 = performance.now();
+    (function f(t){ var k = Math.min(1, (t - t0) / 900); el.textContent = Math.round(to * (1 - Math.pow(1 - k, 3))).toLocaleString(); if (k < 1) requestAnimationFrame(f); })(t0);
+  }
+  function show(j){
+    $('vsub').textContent = '每個瀏覽器同一天只算一位訪客';
+    count($('vTotal'), j.total); count($('vToday'), j.today); count($('vViews'), j.views || 0);
+    var mx = Math.max.apply(null, j.last7.map(function(x){ return x.n; }).concat([1])), box = $('vchart'); box.innerHTML = '';
+    j.last7.forEach(function(x, k){
+      var c = document.createElement('i'); if (k === j.last7.length - 1) c.className = 'now';
+      c.title = x.d + '：' + x.n + ' 位';
+      c.innerHTML = '<em style="height:' + Math.max(3, Math.round(x.n / mx * 48)) + 'px"></em>' + x.d.slice(5).replace('-', '/');
+      box.appendChild(c);
+    });
+    $('vglobal').hidden = false;
+  }
   fetch('/api/visit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) })
     .then(function(r){ return r.json(); })
-    .then(function(j){ if (j && j.ok){ el.textContent = '累計 ' + j.total + ' 位訪客 · 今日新訪客 ' + j.today; el.hidden = false; } })
-    .catch(function(){});
+    .then(function(j){ if (j && j.ok) show(j); else $('vsub').textContent = '全站統計尚未啟用'; })
+    .catch(function(){ $('vsub').textContent = '全站統計暫時讀不到'; });
 })();
 </script>
 </body>
