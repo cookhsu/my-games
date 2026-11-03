@@ -43,6 +43,15 @@ h1{background:linear-gradient(180deg,#F4FFD0,#B6F24A 55%,#58B81E);-webkit-backgr
 .pc{position:relative;overflow:hidden;animation:pop .35s ease backwards}.pc::before{content:"";position:absolute;left:0;top:0;bottom:0;width:.3em;background:var(--lime)}
 .pc:nth-child(2){animation-delay:.06s}.pc:nth-child(3){animation-delay:.12s}@keyframes pop{from{transform:scale(.85);opacity:0}}
 @media (prefers-reduced-motion:reduce){.ov .big,.fd i{animation:none}}
+
+/* ===== v3 ===== */
+.btn.ghost{min-width:0;padding:.5em 1.4em;font-size:.95em;background:var(--p2);color:var(--ink);box-shadow:0 .2em 0 #08191B}.btn.ghost::after{display:none}
+.row .stat{min-width:4.2em;padding:.5em .6em}
+.pc.gold{background:linear-gradient(180deg,#7A6514,#3F3409);box-shadow:0 .25em 0 #1d1804}.pc.gold::before{background:var(--gold)}.pc.gold em{background:#fff3b0}
+.achg{display:grid;grid-template-columns:repeat(3,1fr);gap:.5em;width:100%;max-width:23em}
+.ac{background:var(--p1);border-radius:.9em;padding:.55em .3em;font-size:.72em;opacity:.5;filter:grayscale(.8)}
+.ac.on{opacity:1;filter:none;background:linear-gradient(180deg,var(--p2),var(--p1));box-shadow:inset 0 0 0 1px rgba(182,242,74,.55)}
+.ac i{font-style:normal;font-size:2em;display:block}.ac b{display:block;font-size:1.1em}.ac span{color:var(--mut);display:block;font-size:.9em;line-height:1.3}
 </style>
 </head>
 <body>
@@ -54,14 +63,16 @@ h1{background:linear-gradient(180deg,#F4FFD0,#B6F24A 55%,#58B81E);-webkit-backgr
   <div class="ov" id="menu"><div class="fd" data-fd></div>
     <div class="big">🐍</div>
     <h1>蛇蛇進化</h1>
-    <p>吃蘋果變長,<b style="color:#B6F24A">每吃 4 顆就能進化</b>:穿牆、磁鐵、護盾、破岩…<br>但場上的<b style="color:#FF5A6E">岩石</b>也會越來越多。<br>連續吃到蘋果可累積<b style="color:#FFD54A">連擊倍率</b>!</p>
+    <p>吃蘋果變長,<b style="color:#B6F24A">每吃 4 顆就能進化</b>;每 10 顆闖進<b style="color:#8FE3FF">新區域</b>,毒蘑菇、巨石、雷擊接連登場。<br>連擊吃滿 ×5 再吃 3 顆,<b style="color:#FFB347">狂熱無敵</b>!完成下方<b style="color:#7DF9C0">任務</b>拿獎勵。</p>
     <button class="btn" id="startBtn">開始遊戲</button>
-    <div class="row"><span class="pill">最高分 <span id="best">0</span></span><span class="pill">最長 <span id="bestL">0</span> 節</span></div>
+    <div class="row"><span class="pill">最高分 <span id="best">0</span></span><span class="pill">最長 <span id="bestL">0</span> 節</span><span class="pill">最遠 區域 <span id="bestZ">1</span></span></div>
+    <button class="btn ghost" id="achBtn">🏅 勳章 <span id="achN">0/12</span></button>
     <p style="font-size:.75em">手機:在畫面上滑動轉向 ・ 電腦:方向鍵 / WASD</p>
   </div>
   <div class="ov hidden" id="perk"><div class="fd" data-fd></div><h2>🧬 選擇進化</h2><p id="perkt"></p><div class="pcs" id="pcs"></div></div>
+  <div class="ov hidden" id="ach"><div class="fd" data-fd></div><h2>🏅 勳章</h2><div class="achg" id="achg"></div><button class="btn" id="achBack">返回</button></div>
   <div class="ov hidden" id="over"><div class="fd" data-fd></div><div class="big">💥</div><h2 id="oT">撞到了!</h2>
-    <div class="row"><div class="stat">分數<b id="oS">0</b></div><div class="stat">長度<b id="oL">0</b></div><div class="stat">進化<b id="oP">0</b></div></div>
+    <div class="row"><div class="stat">分數<b id="oS">0</b></div><div class="stat">長度<b id="oL">0</b></div><div class="stat">進化<b id="oP">0</b></div><div class="stat">區域<b id="oZ">1</b></div></div>
     <p id="oN"></p><button class="btn" id="again">再來一次</button><a class="btn" href="index.html" style="min-width:0;padding:.5em 1.4em;font-size:.95em;background:var(--p2);color:var(--ink);box-shadow:none">回大廳</a></div>
 </div>
 <script>
@@ -69,72 +80,240 @@ h1{background:linear-gradient(180deg,#F4FFD0,#B6F24A 55%,#58B81E);-webkit-backgr
 'use strict';
 function $(i){return document.getElementById(i);}
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(e){return null;}}
-var W=360,H=600,CS=20,CW=18,CH=28,OY=40;
+var W=360,H=600,CS=20,CW=18,CH=27,OY=40,ZS=10;
 var cv=$('cv'),ctx=cv.getContext('2d'),dpr=Math.min(window.devicePixelRatio||1,2);cv.width=W*dpr;cv.height=H*dpr;
-var best=parseInt(store('sn_best'))||0,bestL=parseInt(store('sn_len'))||0;$('best').textContent=best;$('bestL').textContent=bestL;
-var FAST=false,AC=null;
-function beep(f,d,t,v,s){if(FAST)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();var o=AC.createOscillator(),g=AC.createGain(),n=AC.currentTime;o.type=t||'triangle';o.frequency.setValueAtTime(f,n);if(s)o.frequency.exponentialRampToValueAtTime(s,n+d);g.gain.setValueAtTime(v||.04,n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(AC.destination);o.start();o.stop(n+d);}catch(e){}}
+var best=parseInt(store('sn_best'))||0,bestL=parseInt(store('sn_len'))||0;
+var S=(function(){var s=null;try{s=JSON.parse(store('sn_save2')||'null');}catch(e){}s=s||{};s.ach=s.ach||{};s.tot=s.tot||{};['apples','gold','smash','runs'].forEach(function(k){s.tot[k]=+s.tot[k]||0;});s.bz=+s.bz||0;return s;})();
+function saveS(){store('sn_save2',JSON.stringify(S));}
+var FAST=false,AC_=null;
+function beep(f,d,t,v,s){if(FAST)return;try{AC_=AC_||new (window.AudioContext||window.webkitAudioContext)();var o=AC_.createOscillator(),g=AC_.createGain(),n=AC_.currentTime;o.type=t||'triangle';o.frequency.setValueAtTime(f,n);if(s)o.frequency.exponentialRampToValueAtTime(s,n+d);g.gain.setValueAtTime(v||.04,n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(AC_.destination);o.start();o.stop(n+d);}catch(e){}}
+function arp(a){if(FAST)return;a.forEach(function(f,i){setTimeout(function(){beep(f,.12,'triangle',.05,f*1.4);},i*70);});}
+function vib(p){if(FAST)return;try{if(navigator.vibrate)navigator.vibrate(p);}catch(e){}}
 
+/* ---------- 區域 ---------- */
+var ZN=[
+ {n:'草原',h:'吃蘋果、避開岩石',a:'#103032',b:'#0F2C2E',e:'182,242,74'},
+ {n:'毒沼',h:'🍄 毒蘑菇會讓你縮短',a:'#1A2A30',b:'#16262B',e:'170,120,255'},
+ {n:'岩崩谷',h:'🪨 小心橫衝直撞的巨石',a:'#2A2724',b:'#242220',e:'230,170,100'},
+ {n:'雷雨原',h:'⚡ 黃色警示處會被雷劈',a:'#16222F',b:'#121D29',e:'255,236,120'},
+ {n:'霓虹夜',h:'全部危險一起來!',a:'#241431',b:'#1F1129',e:'255,90,200'},
+ {n:'熔岩洞',h:'越來越快,撐住!',a:'#2E1714',b:'#28120F',e:'255,120,60'},
+ {n:'星空',h:'你已是蛇界傳說',a:'#12163A',b:'#0F1332',e:'140,170,255'},
+ {n:'蛇神殿',h:'無盡挑戰',a:'#2C2610',b:'#262009',e:'255,213,74'}
+];
+/* ---------- 進化 ---------- */
 var PK={
  wrap:{i:'🌀',n:'穿牆術',d:'撞牆不會死,從另一邊出來',max:1},
  magnet:{i:'🧲',n:'蘋果磁鐵',d:'附近的蘋果會自己靠過來',max:3},
- shield:{i:'🛡️',n:'護身鱗片',d:'+1 次免死(撞到自己/岩石/牆)',max:9},
- smash:{i:'🔨',n:'鐵頭功',d:'+3 次直接撞碎岩石',max:9},
+ shield:{i:'🛡️',n:'護身鱗片',d:'+1 次免死,擋下後自動彈開轉向',max:9},
+ smash:{i:'🔨',n:'鐵頭功',d:'+3 次直接撞碎岩石/巨石',max:9},
  trim:{i:'✂️',n:'瘦身',d:'立刻縮短 4 節(最短 3 節)',max:9},
  slow:{i:'🐢',n:'慢動作',d:'移動速度 -12%',max:3},
  score2:{i:'💰',n:'黃金胃',d:'吃蘋果得分 ×2',max:1},
- combo:{i:'🔥',n:'連擊延長',d:'連擊時間 +1.5 秒',max:3}
+ combo:{i:'🔥',n:'連擊延長',d:'連擊時間 +1.5 秒',max:3},
+ fire:{i:'🐲',n:'火焰吐息',d:'吃蘋果時燒掉附近的岩石(等級越高越多)',max:3},
+ detox:{i:'🧪',n:'解毒體質',d:'毒蘑菇不再縮短,吃了反而 +40 分',max:1},
+ rod:{i:'🗼',n:'避雷針',d:'閃電不會傷到你',max:1}
 };
+var SY={
+ rush:{i:'💎',n:'財神到',d:'磁鐵 × 黃金胃:金蘋果更常出現、停留更久',need:function(){return G.P.magnet&&G.P.score2;}},
+ iron:{i:'🏰',n:'鋼鐵之軀',d:'護盾 × 鐵頭功:每次護盾擋下攻擊,多送 1 次破岩',need:function(){return G.had.shield&&G.had.smash;}},
+ warp2:{i:'🌌',n:'時空跳躍',d:'穿牆術 × 連擊延長:每次穿牆 +20 分並延長連擊',need:function(){return G.P.wrap&&G.P.combo;}},
+ inferno:{i:'🌋',n:'地獄龍',d:'火焰吐息 Lv2 × 鐵頭功:燒岩範圍加倍,狂熱只需 2 顆',need:function(){return G.P.fire>=2&&G.had.smash;}}
+};
+function pinfo(k){return PK[k]||SY[k];}
+/* ---------- 任務 / 勳章 ---------- */
+var MS=[
+ {k:'apples',g:6,t:'吃 6 顆蘋果',r:150,z:0},{k:'apples',g:12,t:'吃 12 顆蘋果',r:300,z:0},
+ {k:'gold',g:1,t:'吃 1 顆金蘋果',r:200,z:0},{k:'smash',g:2,t:'碎掉 2 顆岩石',r:150,z:0},
+ {k:'c4',g:1,t:'達成 ×4 連擊',r:200,z:0},{k:'blue',g:1,t:'吃 1 顆冰藍莓',r:150,z:0},
+ {k:'zone',g:1,t:'進入下一個區域',r:300,z:0},{k:'fever',g:1,t:'觸發狂熱',r:400,z:0},
+ {k:'dodge',g:3,t:'躲過 3 次落石/雷擊',r:300,z:2}
+];
+function tot(k){return S.tot[k]+G.st[k];}
+var AC=[
+ {id:'first',i:'🧬',n:'初次進化',d:'選擇一次進化',t:function(){return G.picks>=1;}},
+ {id:'c5',i:'🔥',n:'連擊大師',d:'連擊達 ×5',t:function(){return G.combo>=5;}},
+ {id:'fev',i:'🌈',n:'狂熱登場',d:'觸發一次狂熱',t:function(){return G.st.fever>=1;}},
+ {id:'len25',i:'📏',n:'長蛇',d:'身長達 25 節',t:function(){return G.sn.length>=25;}},
+ {id:'z2',i:'🪨',n:'闖進岩崩谷',d:'抵達 區域 3',t:function(){return G.z>=2;}},
+ {id:'z3',i:'⚡',n:'雷雨將至',d:'抵達 區域 4',t:function(){return G.z>=3;}},
+ {id:'sm10',i:'🔨',n:'碎石達人',d:'累計碎石 10 顆',t:function(){return tot('smash')>=10;}},
+ {id:'gold5',i:'⭐',n:'淘金客',d:'累計吃 5 顆金蘋果',t:function(){return tot('gold')>=5;}},
+ {id:'s3000',i:'💯',n:'三千分',d:'單局 3000 分',t:function(){return G.score>=3000;}},
+ {id:'clean',i:'🛡️',n:'完美無傷',d:'沒用護盾抵達 區域 3',t:function(){return G.z>=2&&G.shieldUsed===0;}},
+ {id:'m5',i:'🎯',n:'任務達人',d:'單局完成 5 個任務',t:function(){return G.mdone>=5;}},
+ {id:'a100',i:'🍎',n:'百果大王',d:'累計吃 100 顆蘋果',t:function(){return tot('apples')>=100;}}
+];
+function chkAch(){if(FAST)return;AC.forEach(function(a){if(!S.ach[a.id]&&a.t()){S.ach[a.id]=1;G.newAch.push(a.i+a.n);note('🏅 解鎖勳章:'+a.n);arp([660,880,1100]);saveS();}});}
+
 var G=null,running=false,paused=false,modal=false,acc=0,last=0,fx=[],shakeT=0;
 function R(n){return Math.floor(Math.random()*n);}
-function newGame(){var cx=Math.floor(CW/2),cy=Math.floor(CH/2);G={sn:[{x:cx,y:cy},{x:cx-1,y:cy},{x:cx-2,y:cy}],dir:{x:1,y:0},q:[],food:null,gold:null,rocks:[],score:0,eaten:0,grow:0,P:{},combo:1,comboT:0,over:false,t:0,picks:0,charge:{shield:0,smash:0},msg:'',msgT:0};placeFood();}
-function occ(x,y){for(var i=0;i<G.sn.length;i++)if(G.sn[i].x===x&&G.sn[i].y===y)return true;for(var j=0;j<G.rocks.length;j++)if(G.rocks[j].x===x&&G.rocks[j].y===y)return true;if(G.food&&G.food.x===x&&G.food.y===y)return true;if(G.gold&&G.gold.x===x&&G.gold.y===y)return true;return false;}
+function newGame(){var cx=Math.floor(CW/2),cy=Math.floor(CH/2);
+ G={sn:[{x:cx,y:cy},{x:cx-1,y:cy},{x:cx-2,y:cy}],dir:{x:1,y:0},q:[],food:null,gold:null,blue:null,rocks:[],poison:[],bw:[],bo:[],lw:[],
+  score:0,eaten:0,grow:0,P:{},had:{},combo:1,comboT:0,streak:0,maxCombo:1,fever:0,slowT:0,inv:0,flash:0,over:false,t:0,picks:0,
+  charge:{shield:0,smash:0},shieldUsed:0,msg:'',msgT:0,z:0,zn:0,zb:0,stepN:0,pT:3,bT:4,lT:3,why:'',
+  st:{apples:0,gold:0,smash:0,c4:0,blue:0,zone:0,fever:0,dodge:0},mdone:0,mi:null,lastM:-1,newAch:[],opts:null};
+ placeFood();nextMission();}
+function occ(x,y){var i;for(i=0;i<G.sn.length;i++)if(G.sn[i].x===x&&G.sn[i].y===y)return true;
+ var L=[G.rocks,G.poison,G.lw];for(var a=0;a<L.length;a++)for(i=0;i<L[a].length;i++)if(L[a][i].x===x&&L[a][i].y===y)return true;
+ if(G.food&&G.food.x===x&&G.food.y===y)return true;if(G.gold&&G.gold.x===x&&G.gold.y===y)return true;if(G.blue&&G.blue.x===x&&G.blue.y===y)return true;return false;}
 function freeCell(minHead){for(var t=0;t<200;t++){var x=R(CW),y=R(CH);if(!occ(x,y)&&(!minHead||Math.abs(x-G.sn[0].x)+Math.abs(y-G.sn[0].y)>=minHead))return {x:x,y:y};}
  for(var yy=0;yy<CH;yy++)for(var xx=0;xx<CW;xx++)if(!occ(xx,yy))return {x:xx,y:yy};return null;}
 function placeFood(){G.food=freeCell(0);}
-function interval(){return Math.max(.07,.16-G.eaten*.0014)*Math.pow(1.12,(G.P.slow||0))*1;}
-function note(s){G.msg=s;G.msgT=1.4;}
-function die(why){if(G.charge.shield>0){G.charge.shield--;note('🛡 護身鱗片擋下了!');beep(300,.2,'square',.05,600);shakeT=.2;return false;}G.over=true;running=false;endGame(why);return true;}
+function interval(){return Math.max(.07,.15-G.eaten*.0011)*Math.pow(1.12,(G.P.slow||0))*(G.slowT>0?1.6:1)*(G.fever>0?.88:1);}
+function note(s){G.msg=s;G.msgT=1.6;}
+function pop(x,y,s,c){if(FAST)return;fx.push({x:x,y:y,vx:0,vy:-38,l:.9,c:c,s:s});}
+function burst(cx,cy,c,n){if(FAST)return;for(var i=0;i<n;i++){var a=Math.random()*6.28,v=40+Math.random()*90;fx.push({x:cx*CS+CS/2,y:OY+cy*CS+CS/2,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.5,c:c});}}
+
+/* ---------- 任務 ---------- */
+function nextMission(){var canS=G.charge.smash>0||G.P.fire,pool=[];MS.forEach(function(m,i){if(m.z<=G.z&&i!==G.lastM&&(m.k!=='smash'||canS))pool.push(i);});
+ var i=pool[R(pool.length)];G.lastM=i;G.mi={i:i,base:G.st[MS[i].k],t:0};}
+function mprog(){return G.mi?Math.min(MS[G.mi.i].g,G.st[MS[G.mi.i].k]-G.mi.base):0;}
+function chkM(){if(!G.mi)return;var m=MS[G.mi.i];if(G.st[m.k]-G.mi.base>=m.g){G.score+=m.r;G.mdone++;var sh=G.mdone%2===0;if(sh)G.charge.shield++;
+  note('🎯 任務完成 +'+m.r+(sh?' 並獲得護盾!':''));var h=G.sn[0];pop(h.x*CS+CS/2,OY+h.y*CS-12,'🎯+'+m.r,'#7DF9C0');arp([523,659,784]);vib(25);nextMission();chkAch();}}
+
+/* ---------- 受傷 / 死亡 ---------- */
+function cellOK(x,y){if(x<0||x>=CW||y<0||y>=CH)return false;for(var j=0;j<G.rocks.length;j++)if(G.rocks[j].x===x&&G.rocks[j].y===y)return false;
+ for(var b=0;b<G.bo.length;b++)if(G.bo[b].x===x&&G.bo[b].y===y)return false;
+ for(var i=0;i<G.sn.length-1;i++)if(G.sn[i].x===x&&G.sn[i].y===y)return false;return true;}
+function deflect(){var h=G.sn[0],ds=[[1,0],[-1,0],[0,1],[0,-1]],c1=[],c2=[];
+ ds.forEach(function(d){if(d[0]===-G.dir.x&&d[1]===-G.dir.y)return;if(d[0]===G.dir.x&&d[1]===G.dir.y)return;var x=h.x+d[0],y=h.y+d[1];if(G.P.wrap){x=(x+CW)%CW;y=(y+CH)%CH;}if(cellOK(x,y))c1.push(d);});
+ if(!c1.length)ds.forEach(function(d){if(d[0]===-G.dir.x&&d[1]===-G.dir.y)return;var x=h.x+d[0],y=h.y+d[1];if(G.P.wrap){x=(x+CW)%CW;y=(y+CH)%CH;}if(cellOK(x,y))c2.push(d);});
+ var c=c1.length?c1:c2;if(c.length){var d=c[R(c.length)];G.dir={x:d[0],y:d[1]};}G.q=[];}
+function hit(why){
+ if(G.fever>0||G.inv>0){deflect();return false;}
+ if(G.charge.shield>0){G.charge.shield--;G.shieldUsed++;if(G.P.iron)G.charge.smash++;G.inv=.6;note('🛡 護身鱗片擋下了!');beep(300,.2,'square',.05,600);shakeT=.25;vib(30);burst(G.sn[0].x,G.sn[0].y,'#78C8FF',12);deflect();return false;}
+ G.over=true;G.why=why;running=false;
+ if(!FAST){G.sn.forEach(function(s,i){burst(s.x,s.y,i%2?'#B6F24A':'#3FCF6B',3);});vib(220);}
+ endGame(why);return true;}
+function cutAt(i){if(i<3)i=3;if(i>=G.sn.length)return;G.sn.length=i;G.grow=0;note('💥 身體被截斷!');shakeT=.3;beep(120,.25,'sawtooth',.07,50);vib(80);}
+function breakRock(j,msg){var r=G.rocks.splice(j,1)[0];burst(r.x,r.y,'#aab',10);G.st.smash++;if(msg)note(msg);beep(150,.15,'sawtooth',.06,60);shakeT=Math.max(shakeT,.15);vib(15);chkM();chkAch();}
+
+/* ---------- 前進一格 ---------- */
 function step(){
+ G.stepN++;
  if(G.q.length)G.dir=G.q.shift();
- var h=G.sn[0],nx=h.x+G.dir.x,ny=h.y+G.dir.y;
- if(nx<0||nx>=CW||ny<0||ny>=CH){if(G.P.wrap){nx=(nx+CW)%CW;ny=(ny+CH)%CH;}else{if(die('撞到牆壁'))return;nx=h.x;ny=h.y;stopHead();return;}}
- for(var j=0;j<G.rocks.length;j++){var r=G.rocks[j];if(r.x===nx&&r.y===ny){if(G.charge.smash>0){G.charge.smash--;G.rocks.splice(j,1);burst(nx,ny,'#aab',8);note('🔨 撞碎岩石!');beep(150,.15,'sawtooth',.06,60);shakeT=.15;break;}else{if(die('撞到岩石'))return;stopHead();return;}}}
+ var h=G.sn[0],nx=h.x+G.dir.x,ny=h.y+G.dir.y,wrapped=false,j,i;
+ if(nx<0||nx>=CW||ny<0||ny>=CH){if(G.P.wrap){nx=(nx+CW)%CW;ny=(ny+CH)%CH;wrapped=true;}else{hit('撞到牆壁');return;}}
+ for(j=0;j<G.rocks.length;j++){var r=G.rocks[j];if(r.x===nx&&r.y===ny){
+   if(G.fever>0||G.charge.smash>0){if(G.fever<=0)G.charge.smash--;breakRock(j,'🔨 撞碎岩石!');}else{hit('撞到岩石');return;}break;}}
+ for(j=0;j<G.bo.length;j++){var o=G.bo[j];if(o.x===nx&&o.y===ny){
+   if(G.fever>0||G.charge.smash>0){if(G.fever<=0)G.charge.smash--;G.bo.splice(j,1);burst(nx,ny,'#C9A27A',12);G.st.smash++;note('🔨 打碎巨石!');shakeT=.2;chkM();}else{hit('被巨石砸中');return;}break;}}
  var tail=G.sn[G.sn.length-1],willGrow=G.grow>0;
- for(var i=0;i<G.sn.length;i++){var s=G.sn[i];if(s.x===nx&&s.y===ny&&!(s===tail&&!willGrow)){if(die('咬到自己'))return;stopHead();return;}}
+ for(i=0;i<G.sn.length;i++){var s=G.sn[i];if(s.x===nx&&s.y===ny&&!(s===tail&&!willGrow)){hit('咬到自己');return;}}
  G.sn.unshift({x:nx,y:ny});
  if(willGrow)G.grow--;else G.sn.pop();
- if(G.food&&G.food.x===nx&&G.food.y===ny){eat(false);}
- else if(G.gold&&G.gold.x===nx&&G.gold.y===ny){eat(true);}
- if(G.P.magnet&&G.food){var d=Math.abs(G.food.x-nx)+Math.abs(G.food.y-ny);if(d<=2+G.P.magnet*2&&d>1){var dx=Math.sign(nx-G.food.x),dy=Math.sign(ny-G.food.y);var ax=Math.abs(nx-G.food.x)>=Math.abs(ny-G.food.y);var tx=G.food.x+(ax?dx:0),ty=G.food.y+(ax?0:dy);if(!occ(tx,ty)||(tx===nx&&ty===ny)){G.food.x=tx;G.food.y=ty;}}
-  if(G.food.x===nx&&G.food.y===ny)eat(false);}
+ if(wrapped&&G.P.warp2){G.score+=20;pop(nx*CS+CS/2,OY+ny*CS,'+20 🌌','#C9A0FF');if(G.comboT>0)G.comboT=Math.min(3+1.5*(G.P.combo||0),G.comboT+1.5);}
+ if(G.food&&G.food.x===nx&&G.food.y===ny)eat(false);
+ else if(G.gold&&G.gold.x===nx&&G.gold.y===ny)eat(true);
+ if(G.over)return;
+ if(G.blue&&G.blue.x===nx&&G.blue.y===ny)eatBlue();
+ for(i=G.poison.length-1;i>=0;i--)if(G.poison[i].x===nx&&G.poison[i].y===ny)eatPoison(i);
+ if(G.P.magnet&&G.food){var d=Math.abs(G.food.x-nx)+Math.abs(G.food.y-ny);if(d<=2+G.P.magnet*2&&d>1){var dx=Math.sign(nx-G.food.x),dy=Math.sign(ny-G.food.y);var ax=Math.abs(nx-G.food.x)>=Math.abs(ny-G.food.y);var tx_=G.food.x+(ax?dx:0),ty=G.food.y+(ax?0:dy);if(!occ(tx_,ty)||(tx_===nx&&ty===ny)){G.food.x=tx_;G.food.y=ty;}}
+  if(G.food&&G.food.x===nx&&G.food.y===ny)eat(false);}
+ if(G.stepN%2===0)boulderStep();
 }
-function stopHead(){}
-function eat(gold){var pts=(gold?50:10)*G.combo*(G.P.score2?2:1);G.score+=pts;G.eaten++;G.grow+=gold?3:1;G.comboT=3+1.5*(G.P.combo||0);G.combo=Math.min(5,G.combo+1);
- burst(G.sn[0].x,G.sn[0].y,gold?'#FFD54A':'#FF5A6E',10);beep(520+G.combo*60,.09,'triangle',.05,900);
+function startFever(){G.fever=6;G.streak=0;G.st.fever++;note('🔥 狂熱!6 秒無敵 ・ 分數 ×2');shakeT=.4;arp([392,523,659,784,1047]);vib([30,40,30,40,60]);chkM();chkAch();}
+function eat(gold){
+ var pts=(gold?50:10)*G.combo*(G.P.score2?2:1)*(G.fever>0?2:1);
+ G.score+=pts;G.eaten++;G.zn++;G.st.apples++;if(gold)G.st.gold++;G.grow+=gold?3:1;
+ G.comboT=3+1.5*(G.P.combo||0);
+ if(G.combo>=5){G.streak++;if(G.streak>=(G.P.inferno?2:3)&&G.fever<=0)startFever();}
+ else{G.combo++;if(G.combo===4)G.st.c4++;}
+ if(G.combo>G.maxCombo)G.maxCombo=G.combo;
+ var h=G.sn[0];burst(h.x,h.y,gold?'#FFD54A':'#FF5A6E',10+G.combo*2);
+ pop(h.x*CS+CS/2,OY+h.y*CS,'+'+pts,gold?'#FFD54A':(G.combo>=4?'#FFB347':'#fff'));
+ beep(460+Math.min(G.combo,6)*70,.09,'triangle',.05,900+G.combo*60);vib(gold?20:8);
+ if(G.combo>=5)shakeT=Math.max(shakeT,.07);
  if(gold)G.gold=null;else{G.food=null;placeFood();}
- if(G.eaten%3===0){var rk=freeCell(5);if(rk)G.rocks.push(rk);}
- if(G.eaten%7===0&&!G.gold){var gc=freeCell(3);if(gc){G.gold={x:gc.x,y:gc.y,t:7};}}
- if(G.eaten%4===0)openPerk();}
-function burst(cx,cy,c,n){if(FAST)return;for(var i=0;i<n;i++){var a=Math.random()*6.28,v=40+Math.random()*80;fx.push({x:cx*CS+CS/2,y:OY+cy*CS+CS/2,vx:Math.cos(a)*v,vy:Math.sin(a)*v,l:.5,c:c});}}
+ if(G.eaten%3===0&&G.rocks.length<14){var rk=freeCell(5);if(rk)G.rocks.push(rk);}
+ if(G.eaten%(G.P.rush?5:7)===0&&!G.gold){var gc=freeCell(3);if(gc){G.gold={x:gc.x,y:gc.y,t:G.P.rush?10:7};}}
+ if(G.eaten%9===0&&!G.blue){var bc=freeCell(3);if(bc){G.blue={x:bc.x,y:bc.y,t:9};}}
+ if(G.P.fire&&G.rocks.length){var rad=G.P.inferno?8:4,cnt=G.P.fire*(G.P.inferno?2:1),hh=G.sn[0],near=G.rocks.map(function(r,i){return {i:i,d:Math.abs(r.x-hh.x)+Math.abs(r.y-hh.y)};}).filter(function(o){return o.d<=rad;}).sort(function(a,b){return a.d-b.d;}).slice(0,cnt).sort(function(a,b){return b.i-a.i;});
+  if(near.length){near.forEach(function(o){breakRock(o.i,null);});note('🐲 火焰吐息!燒掉 '+near.length+' 顆岩石');}}
+ if(G.zn>=ZS)zoneUp();
+ chkM();chkAch();
+ if(G.eaten%4===0&&!G.over)openPerk();}
+function eatBlue(){G.blue=null;G.slowT=5;G.st.blue++;var cm=3+1.5*(G.P.combo||0);G.comboT=cm;var p=30*G.combo;G.score+=p;var h=G.sn[0];burst(h.x,h.y,'#8FE3FF',14);pop(h.x*CS+CS/2,OY+h.y*CS,'+'+p+' 🧊','#8FE3FF');note('🧊 冰藍莓!時間變慢 5 秒');beep(900,.18,'sine',.05,1300);vib(15);chkM();}
+function eatPoison(i){G.poison.splice(i,1);var h=G.sn[0];
+ if(G.P.detox||G.fever>0){G.score+=40;burst(h.x,h.y,'#C9A0FF',10);pop(h.x*CS+CS/2,OY+h.y*CS,'+40 🧪','#C9A0FF');beep(700,.1,'triangle',.05,1000);}
+ else{G.sn.length=Math.max(3,G.sn.length-3);G.grow=0;G.combo=1;G.comboT=0;G.streak=0;note('🍄 中毒!縮短 3 節、連擊中斷');burst(h.x,h.y,'#9B5DE5',14);shakeT=.2;beep(140,.3,'sawtooth',.06,70);vib(60);}}
+function zoneUp(){G.z++;G.zn=0;G.st.zone++;var bonus=100*G.z;G.score+=bonus;G.zb=2.4;
+ G.poison=[];G.bw=[];G.bo=[];G.lw=[];G.rocks=G.rocks.filter(function(_,i){return i%2===0;});
+ G.pT=Math.max(G.pT,3);G.bT=Math.max(G.bT,4.5);G.lT=Math.max(G.lT,4);
+ note('區域 '+(G.z+1)+' ・ '+ZN[G.z%8].n+'  +'+bonus);shakeT=.25;arp([440,554,659,880]);vib([20,30,20]);chkM();chkAch();}
 
-/* perks */
+/* ---------- 危險物 ---------- */
+function addBoulderWarn(){var h=G.sn[0],hor=Math.random()<.5,dir=Math.random()<.5?1:-1,w;
+ if(hor){var row=Math.random()<.5?Math.max(0,Math.min(CH-1,h.y+R(3)-1)):R(CH);w={x:dir>0?0:CW-1,y:row,dx:dir,dy:0,t:1.6};}
+ else{var col=Math.random()<.5?Math.max(0,Math.min(CW-1,h.x+R(3)-1)):R(CW);w={x:col,y:dir>0?0:CH-1,dx:0,dy:dir,t:1.6};}
+ G.bw.push(w);}
+function crush(b){
+ for(var j=G.rocks.length-1;j>=0;j--)if(G.rocks[j].x===b.x&&G.rocks[j].y===b.y){burst(b.x,b.y,'#aab',8);G.rocks.splice(j,1);}
+ var h=G.sn[0];
+ if(h.x===b.x&&h.y===b.y){if(G.fever>0||G.charge.smash>0){if(G.fever<=0)G.charge.smash--;G.st.smash++;note('🔨 打碎巨石!');burst(b.x,b.y,'#C9A27A',12);shakeT=.2;chkM();return true;}hit('被巨石砸中');return true;}
+ for(var i=1;i<G.sn.length;i++)if(G.sn[i].x===b.x&&G.sn[i].y===b.y){if(G.fever<=0)cutAt(i);return false;}
+ return false;}
+function boulderStep(){for(var k=G.bo.length-1;k>=0;k--){var b=G.bo[k];b.x+=b.dx;b.y+=b.dy;
+  if(b.x<0||b.x>=CW||b.y<0||b.y>=CH){G.bo.splice(k,1);G.st.dodge++;chkM();continue;}
+  if(crush(b))G.bo.splice(k,1);if(G.over)return;}}
+function addLight(){var h=G.sn[0],c=null;
+ if(Math.random()<.5){var k=3+R(4),x=h.x+G.dir.x*k,y=h.y+G.dir.y*k;if(x>=0&&x<CW&&y>=0&&y<CH&&!G.rocks.some(function(r){return r.x===x&&r.y===y;}))c={x:x,y:y};}
+ if(!c)c=freeCell(2);if(c)G.lw.push({x:c.x,y:c.y,t:1.25});}
+function strike(w){
+ G.flash=.16;shakeT=Math.max(shakeT,.18);beep(90,.25,'sawtooth',.07,40);burst(w.x,w.y,'#FFF3A0',14);vib(40);
+ var h=G.sn[0],safe=G.fever>0||G.P.rod;
+ if(h.x===w.x&&h.y===w.y){if(!safe){hit('被雷劈到');return;}G.st.dodge++;chkM();return;}
+ for(var i=1;i<G.sn.length;i++)if(G.sn[i].x===w.x&&G.sn[i].y===w.y){if(!safe)cutAt(i);else{G.st.dodge++;chkM();}return;}
+ G.st.dodge++;chkM();
+ if(!occ(w.x,w.y)&&G.rocks.length<18)G.rocks.push({x:w.x,y:w.y});}
+function upd(dt){
+ G.t+=dt;var i;
+ if(G.comboT>0){G.comboT-=dt;if(G.comboT<=0){G.combo=1;G.streak=0;}}
+ if(G.gold){G.gold.t-=dt;if(G.gold.t<=0)G.gold=null;}
+ if(G.blue){G.blue.t-=dt;if(G.blue.t<=0)G.blue=null;}
+ for(i=G.poison.length-1;i>=0;i--){G.poison[i].t-=dt;if(G.poison[i].t<=0)G.poison.splice(i,1);}
+ if(G.fever>0){G.fever-=dt;if(G.fever<=0){G.fever=0;note('狂熱結束');}}
+ if(G.slowT>0)G.slowT-=dt;if(G.inv>0)G.inv-=dt;if(G.msgT>0)G.msgT-=dt;if(G.zb>0)G.zb-=dt;
+ if(G.mi){G.mi.t+=dt;if(G.mi.t>50){note('任務超時,換新任務');nextMission();}}
+ var z=G.z;
+ if(z>=1){G.pT-=dt;if(G.pT<=0){G.pT=Math.max(2,6-z*.5);if(G.poison.length<Math.min(9,2+z)){var c=freeCell(3);if(c){c.t=16;G.poison.push(c);}}}}
+ if(z>=2){G.bT-=dt;if(G.bT<=0){G.bT=Math.max(3.2,8-z*.8);if(G.bw.length+G.bo.length<(z>=7?4:z>=5?3:2))addBoulderWarn();}}
+ if(z>=3){G.lT-=dt;if(G.lT<=0){G.lT=Math.max(.8,4.2-(z-3)*.5);addLight();if(z>=6)addLight();}}
+ for(i=G.bw.length-1;i>=0;i--){var w=G.bw[i];w.t-=dt;if(w.t<=0){G.bw.splice(i,1);var b={x:w.x,y:w.y,dx:w.dx,dy:w.dy};G.bo.push(b);if(crush(b))G.bo.splice(G.bo.indexOf(b),1);if(G.over)return;}}
+ for(i=G.lw.length-1;i>=0;i--){var l=G.lw[i];l.t-=dt;if(l.t<=0){G.lw.splice(i,1);strike(l);if(G.over)return;}}
+}
+
+/* ---------- 進化選單 ---------- */
 function openPerk(){var pool=[];Object.keys(PK).forEach(function(k){var c=(k==='shield'||k==='smash'||k==='trim')?0:(G.P[k]||0);if(c<PK[k].max)pool.push(k);});
- var pick=[];while(pick.length<3&&pool.length)pick.push(pool.splice(R(pool.length),1)[0]);G.opts=pick;
+ var pick=[];while(pick.length<3&&pool.length)pick.push(pool.splice(R(pool.length),1)[0]);
+ var av=Object.keys(SY).filter(function(k){return !G.P[k]&&SY[k].need();});if(av.length)pick[0]=av[R(av.length)];
+ G.opts=pick;
  if(FAST)return;modal=true;var box=$('pcs');box.innerHTML='';
- pick.forEach(function(k,idx){var b=document.createElement('button');b.className='pc';var lv=(k==='shield'||k==='smash'||k==='trim')?'':(G.P[k]?'<em>Lv'+(G.P[k]+1)+'</em>':'<em>NEW</em>');b.innerHTML='<i>'+PK[k].i+'</i><div><b>'+PK[k].n+lv+'</b><span>'+PK[k].d+'</span></div>';b.onclick=function(){choosePerk(idx);};box.appendChild(b);});
+ pick.forEach(function(k,idx){var sy=!!SY[k],b=document.createElement('button');b.className='pc'+(sy?' gold':'');var lv=sy?'<em>合體進化</em>':((k==='shield'||k==='smash'||k==='trim')?'':(G.P[k]?'<em>Lv'+(G.P[k]+1)+'</em>':'<em>NEW</em>'));b.innerHTML='<i>'+pinfo(k).i+'</i><div><b>'+pinfo(k).n+lv+'</b><span>'+pinfo(k).d+'</span></div>';b.onclick=function(){choosePerk(idx);};box.appendChild(b);});
  $('perkt').textContent='已吃 '+G.eaten+' 顆,長度 '+G.sn.length;$('perk').classList.remove('hidden');}
 function choosePerk(i){var k=G.opts[i];if(!k)return;G.picks++;
- if(k==='shield')G.charge.shield++;else if(k==='smash')G.charge.smash+=3;
+ if(k==='shield'){G.charge.shield++;G.had.shield=1;}else if(k==='smash'){G.charge.smash+=3;G.had.smash=1;}
  else if(k==='trim'){var n=Math.max(0,Math.min(4,G.sn.length-3));G.sn.length-=n;G.grow=0;}
- else G.P[k]=(G.P[k]||0)+1;
- G.opts=null;modal=false;if(!FAST)$('perk').classList.add('hidden');beep(780,.15,'triangle',.05,1200);}
+ else if(SY[k])G.P[k]=1;else G.P[k]=(G.P[k]||0)+1;
+ G.opts=null;modal=false;if(!FAST){$('perk').classList.add('hidden');chkAch();}beep(780,.15,'triangle',.05,1200);}
 
-function endGame(why){var len=G.sn.length,nb=false;if(!FAST){if(G.score>best){best=G.score;store('sn_best',String(best));nb=true;}if(len>bestL){bestL=len;store('sn_len',String(bestL));}
- $('best').textContent=best;$('bestL').textContent=bestL;$('oT').textContent=why+'!';$('oS').textContent=G.score;$('oL').textContent=len;$('oP').textContent=G.picks;$('oN').textContent=nb?'🎉 新的最高分!':'';
- beep(160,.4,'sawtooth',.06,50);setTimeout(function(){$('over').classList.remove('hidden');},500);}}
+/* ---------- 結束 ---------- */
+function endGame(why){var len=G.sn.length,nb=false;
+ if(FAST)return;
+ if(G.score>best){best=G.score;store('sn_best',String(best));nb=true;}if(len>bestL){bestL=len;store('sn_len',String(bestL));}
+ chkAch();
+ ['apples','gold','smash'].forEach(function(k){S.tot[k]+=G.st[k];});S.tot.runs++;if(G.z>S.bz)S.bz=G.z;saveS();
+ renderMenuStats();
+ $('oT').textContent=why+'!';$('oS').textContent=G.score;$('oL').textContent=len;$('oP').textContent=G.picks;$('oZ').textContent=G.z+1;
+ var lines=[];if(nb)lines.push('🎉 新的最高分!');lines.push('完成任務 '+G.mdone+' 個 ・ 最高連擊 ×'+G.maxCombo+(G.st.fever?' ・ 狂熱 '+G.st.fever+' 次':''));if(G.newAch.length)lines.push('🏅 新勳章:'+G.newAch.join('、'));
+ $('oN').innerHTML=lines.join('<br>');
+ beep(160,.4,'sawtooth',.06,50);setTimeout(function(){$('over').classList.remove('hidden');},650);}
+function renderMenuStats(){$('best').textContent=best;$('bestL').textContent=bestL;$('bestZ').textContent=S.bz+1;var n=AC.filter(function(a){return S.ach[a.id];}).length;$('achN').textContent=n+'/'+AC.length;}
+function renderAch(){var g=$('achg');g.innerHTML='';AC.forEach(function(a){var d=document.createElement('div');d.className='ac'+(S.ach[a.id]?' on':'');d.innerHTML='<i>'+a.i+'</i><b>'+a.n+'</b><span>'+a.d+'</span>';g.appendChild(d);});}
 
-/* input */
+/* ---------- 操作 ---------- */
 function turn(dx,dy){if(!running||paused||modal)return;var ref=G.q.length?G.q[G.q.length-1]:G.dir;if(ref.x===dx&&ref.y===dy)return;if(ref.x===-dx&&ref.y===-dy&&G.sn.length>1)return;if(G.q.length<2)G.q.push({x:dx,y:dy});}
 document.addEventListener('keydown',function(e){var k=e.key;var m={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0],W:[0,-1],S:[0,1],A:[-1,0],D:[1,0]}[k];if(m){turn(m[0],m[1]);e.preventDefault();}if(k===' '||k==='p'||k==='Escape')togglePause();});
 var tp=null;
@@ -144,50 +323,77 @@ cv.addEventListener('pointerup',function(){tp=null;});cv.addEventListener('point
 function togglePause(){if(!running||modal)return;paused=!paused;$('pause').textContent=paused?'▶':'❚❚';}
 $('pause').onclick=togglePause;
 document.addEventListener('visibilitychange',function(){if(document.hidden&&running&&!paused&&!modal)togglePause();});
-function start(){newGame();running=true;paused=false;modal=false;acc=0;fx=[];$('menu').classList.add('hidden');$('over').classList.add('hidden');$('perk').classList.add('hidden');$('pause').textContent='❚❚';beep(500,.1);}
+function start(){newGame();running=true;paused=false;modal=false;acc=0;fx=[];$('menu').classList.add('hidden');$('over').classList.add('hidden');$('perk').classList.add('hidden');$('ach').classList.add('hidden');$('pause').textContent='❚❚';note('吃蘋果進化!完成下方任務拿獎勵');beep(500,.1);}
 $('startBtn').onclick=start;$('again').onclick=start;
+$('achBtn').onclick=function(){renderAch();$('ach').classList.remove('hidden');};
+$('achBack').onclick=function(){$('ach').classList.add('hidden');};
+renderMenuStats();
 
-/* draw */
+/* ---------- 繪製 ---------- */
 function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 var FONT='"Fredoka","Noto Sans TC",sans-serif';
 function tx(s,x,y,sz,c,al){ctx.font='700 '+sz+'px '+FONT;ctx.textAlign=al||'center';ctx.textBaseline='middle';ctx.fillStyle=c;ctx.fillText(s,x,y);}
 function draw(){
+ var Z=ZN[G.z%8],fev=G.fever>0;
  ctx.setTransform(dpr,0,0,dpr,0,0);if(shakeT>0)ctx.translate((Math.random()-.5)*5,(Math.random()-.5)*5);
  ctx.fillStyle='#0C1F22';ctx.fillRect(0,0,W,H);
- for(var y=0;y<CH;y++)for(var x=0;x<CW;x++){ctx.fillStyle=((x+y)&1)?'#103032':'#0F2C2E';ctx.fillRect(x*CS,OY+y*CS,CS,CS);}
- ctx.strokeStyle=G.P.wrap?'rgba(120,200,255,.5)':'rgba(182,242,74,.4)';ctx.setLineDash(G.P.wrap?[6,6]:[]);ctx.lineWidth=2;ctx.strokeRect(1,OY+1,W-2,CH*CS-2);ctx.setLineDash([]);
+ for(var y=0;y<CH;y++)for(var x=0;x<CW;x++){ctx.fillStyle=((x+y)&1)?Z.a:Z.b;ctx.fillRect(x*CS,OY+y*CS,CS,CS);}
+ ctx.strokeStyle=fev?'hsl('+((G.t*400)%360)+',90%,60%)':(G.P.wrap?'rgba(120,200,255,.5)':'rgba('+Z.e+',.45)');ctx.setLineDash(G.P.wrap?[6,6]:[]);ctx.lineWidth=fev?4:2;ctx.strokeRect(1,OY+1,W-2,CH*CS-2);ctx.setLineDash([]);
+ // 巨石預警車道
+ G.bw.forEach(function(w){var a=.15+.15*Math.sin(G.t*14);ctx.fillStyle='rgba(255,90,70,'+a+')';if(w.dx)ctx.fillRect(0,OY+w.y*CS,W,CS);else ctx.fillRect(w.x*CS,OY,CS,CH*CS);
+  tx(w.dx>0?'▶▶':w.dx<0?'◀◀':w.dy>0?'▼':'▲',w.x*CS+CS/2,OY+w.y*CS+CS/2,12,'#FF8A7A');});
+ // 雷擊預警
+ G.lw.forEach(function(w){var a=.5+.5*Math.sin(G.t*20),x=w.x*CS,y=OY+w.y*CS;ctx.fillStyle='rgba(255,236,120,'+(.15+a*.25)+')';ctx.fillRect(x,y,CS,CS);ctx.strokeStyle='rgba(255,236,120,'+(.5+a*.5)+')';ctx.lineWidth=2;ctx.strokeRect(x+1,y+1,CS-2,CS-2);tx('⚡',x+CS/2,y+CS/2+1,12,'#FFE45A');});
  G.rocks.forEach(function(r){var x=r.x*CS,y=OY+r.y*CS;ctx.fillStyle='#4A5A62';rr(x+1,y+2,CS-2,CS-2,5);ctx.fill();ctx.fillStyle='#7C8E98';rr(x+1,y+1,CS-2,CS-4,5);ctx.fill();ctx.fillStyle='rgba(255,255,255,.25)';rr(x+4,y+4,6,3,2);ctx.fill();});
+ G.poison.forEach(function(p){var cx=p.x*CS+CS/2,cy=OY+p.y*CS+CS/2,bl=p.t<4&&((G.t*8)|0)%2;if(bl)return;ctx.fillStyle='rgba(155,93,229,.22)';ctx.beginPath();ctx.arc(cx,cy,CS*.75,0,6.3);ctx.fill();ctx.fillStyle='#E8E0F0';ctx.fillRect(cx-2.5,cy,5,CS*.32);ctx.fillStyle='#9B5DE5';ctx.beginPath();ctx.ellipse(cx,cy,CS*.42,CS*.32,0,Math.PI,0);ctx.closePath();ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(cx-3,cy-3,1.8,0,6.3);ctx.arc(cx+3,cy-2,1.4,0,6.3);ctx.fill();});
+ if(G.blue){var bx=G.blue.x*CS+CS/2,by=OY+G.blue.y*CS+CS/2,bp=1+Math.sin(G.t*7)*.1;if(!(G.blue.t<3&&((G.t*8)|0)%2)){ctx.fillStyle='rgba(143,227,255,.25)';ctx.beginPath();ctx.arc(bx,by,CS*.85*bp,0,6.3);ctx.fill();ctx.fillStyle='#4FC3F7';ctx.beginPath();ctx.arc(bx,by,CS*.36*bp,0,6.3);ctx.fill();tx('❄',bx,by+1,11,'#fff');}}
  if(G.food){var fx_=G.food.x*CS+CS/2,fy=OY+G.food.y*CS+CS/2,pu=1+Math.sin(G.t*6)*.08;ctx.fillStyle='rgba(255,90,110,.25)';ctx.beginPath();ctx.arc(fx_,fy,CS*.8*pu,0,6.3);ctx.fill();ctx.fillStyle='#FF4D63';ctx.beginPath();ctx.arc(fx_,fy+1,CS*.38*pu,0,6.3);ctx.fill();ctx.fillStyle='#3FCF6B';ctx.beginPath();ctx.ellipse(fx_+3,fy-CS*.36,4,2.2,-.6,0,6.3);ctx.fill();ctx.fillStyle='rgba(255,255,255,.6)';ctx.beginPath();ctx.arc(fx_-3,fy-2,2,0,6.3);ctx.fill();}
  if(G.gold){var gx=G.gold.x*CS+CS/2,gy=OY+G.gold.y*CS+CS/2,gp=1+Math.sin(G.t*10)*.15;ctx.fillStyle='rgba(255,213,74,'+(.25+.15*Math.sin(G.t*10))+')';ctx.beginPath();ctx.arc(gx,gy,CS*.95*gp,0,6.3);ctx.fill();ctx.fillStyle='#FFD54A';ctx.beginPath();ctx.arc(gx,gy,CS*.4*gp,0,6.3);ctx.fill();tx('★',gx,gy+1,12,'#B07A00');}
+ G.bo.forEach(function(b){var cx=b.x*CS+CS/2,cy=OY+b.y*CS+CS/2;ctx.fillStyle='rgba(120,90,60,.3)';ctx.beginPath();ctx.arc(cx-b.dx*CS*.7,cy-b.dy*CS*.7,CS*.5,0,6.3);ctx.fill();ctx.fillStyle='#6B4F36';ctx.beginPath();ctx.arc(cx,cy+1,CS*.62,0,6.3);ctx.fill();ctx.fillStyle='#9C7A55';ctx.beginPath();ctx.arc(cx-1,cy-1,CS*.55,0,6.3);ctx.fill();ctx.fillStyle='rgba(255,255,255,.22)';ctx.beginPath();ctx.arc(cx-4,cy-5,3,0,6.3);ctx.fill();ctx.strokeStyle='#5A4129';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cx-3,cy+1);ctx.lineTo(cx+2,cy-2);ctx.lineTo(cx+5,cy+3);ctx.stroke();});
  // snake
- ctx.save();ctx.shadowColor='rgba(182,242,74,.55)';ctx.shadowBlur=14;
- var n=G.sn.length;for(var i=n-1;i>=0;i--){var s=G.sn[i],x=s.x*CS,y=OY+s.y*CS,t=i/Math.max(1,n-1);var c1=Math.round(182-t*130),c2=Math.round(242-t*40),c3=Math.round(74+t*40);ctx.fillStyle='rgb('+c1+','+c2+','+c3+')';rr(x+1,y+1,CS-2,CS-2,i===0?7:6);ctx.fill();if(i>0){ctx.fillStyle='rgba(255,255,255,.14)';rr(x+3,y+3,CS-6,4,2);ctx.fill();}}
+ ctx.save();ctx.shadowColor=fev?'hsl('+((G.t*400)%360)+',100%,60%)':'rgba(182,242,74,.55)';ctx.shadowBlur=fev?20:14;
+ var n=G.sn.length;for(var i=n-1;i>=0;i--){var s=G.sn[i],x=s.x*CS,y=OY+s.y*CS,t=i/Math.max(1,n-1);
+  if(fev)ctx.fillStyle='hsl('+((G.t*400+i*22)%360)+',90%,60%)';else{var c1=Math.round(182-t*130),c2=Math.round(242-t*40),c3=Math.round(74+t*40);ctx.fillStyle='rgb('+c1+','+c2+','+c3+')';}
+  if(G.inv>0&&((G.t*20)|0)%2)ctx.globalAlpha=.45;
+  rr(x+1,y+1,CS-2,CS-2,i===0?7:6);ctx.fill();ctx.globalAlpha=1;if(i>0){ctx.fillStyle='rgba(255,255,255,.14)';rr(x+3,y+3,CS-6,4,2);ctx.fill();}}
  ctx.restore();
  var h=G.sn[0],hx=h.x*CS+CS/2,hy=OY+h.y*CS+CS/2,d=G.dir,px=-d.y,py=d.x;
  ctx.fillStyle='#fff';[-1,1].forEach(function(sg){ctx.beginPath();ctx.arc(hx+d.x*3+px*4*sg,hy+d.y*3+py*4*sg,3,0,6.3);ctx.fill();});ctx.fillStyle='#10302A';[-1,1].forEach(function(sg){ctx.beginPath();ctx.arc(hx+d.x*4+px*4*sg,hy+d.y*4+py*4*sg,1.6,0,6.3);ctx.fill();});
  if(G.charge.shield>0){ctx.strokeStyle='rgba(120,200,255,.85)';ctx.lineWidth=2;ctx.beginPath();ctx.arc(hx,hy,CS*.85,0,6.3);ctx.stroke();}
- fx.forEach(function(p){ctx.globalAlpha=Math.max(0,p.l*2);ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,2.5,0,6.3);ctx.fill();});ctx.globalAlpha=1;
- var vg=ctx.createRadialGradient(W/2,H/2,H*.28,W/2,H/2,H*.75);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,10,12,.55)');ctx.fillStyle=vg;ctx.fillRect(0,OY,W,CH*CS);
+ fx.forEach(function(p){ctx.globalAlpha=Math.max(0,Math.min(1,p.l*(p.s?1.4:2)));if(p.s){tx(p.s,p.x,p.y,15,p.c);}else{ctx.fillStyle=p.c;ctx.beginPath();ctx.arc(p.x,p.y,2.5,0,6.3);ctx.fill();}});ctx.globalAlpha=1;
+ var vg=ctx.createRadialGradient(W/2,H/2,H*.28,W/2,H/2,H*.75);vg.addColorStop(0,fev?'rgba(255,120,0,0)':'rgba(0,0,0,0)');vg.addColorStop(1,fev?'rgba(120,40,0,.5)':'rgba(0,10,12,.55)');ctx.fillStyle=vg;ctx.fillRect(0,OY,W,CH*CS);
+ if(G.flash>0){ctx.fillStyle='rgba(255,255,230,'+Math.min(.5,G.flash*4)+')';ctx.fillRect(0,OY,W,CH*CS);}
+ if(G.zb>0){ctx.globalAlpha=Math.min(1,G.zb);tx('區域 '+(G.z+1),W/2,OY+80,16,'#EAFBF0');tx(Z.n,W/2,OY+116,40,'rgb('+Z.e+')');tx(Z.h,W/2,OY+154,13,'#EAFBF0');ctx.globalAlpha=1;}
  // HUD
- ctx.setTransform(dpr,0,0,dpr,0,0);var hg=ctx.createLinearGradient(0,0,0,OY);hg.addColorStop(0,'#16403F');hg.addColorStop(1,'#0B2326');ctx.fillStyle=hg;ctx.fillRect(0,0,W,OY);ctx.fillStyle='rgba(182,242,74,.35)';ctx.fillRect(0,OY-1,W,1);
- tx(String(G.score),W/2,15,22,'#B6F24A');tx('長度 '+G.sn.length+'  ・  吃 '+G.eaten,W/2,32,10,'#8DB8B0');
- if(G.combo>1&&G.comboT>0){tx('×'+G.combo,W-62,16,16,'#FFD54A','right');ctx.fillStyle='rgba(255,213,74,.25)';ctx.fillRect(W-120,OY-3,120,3);ctx.fillStyle='#FFD54A';ctx.fillRect(W-120,OY-3,120*Math.min(1,G.comboT/(3+1.5*(G.P.combo||0))),3);}
- var ic='';if(G.charge.shield)ic+='🛡'+G.charge.shield+' ';if(G.charge.smash)ic+='🔨'+G.charge.smash+' ';if(ic)tx(ic,70,32,10,'#EAFBF0','left');
- var pi=Object.keys(G.P).map(function(k){return PK[k].i;}).join('');if(pi)tx(pi,W-70,32,10,'#fff','right');
- if(G.msgT>0){ctx.globalAlpha=Math.min(1,G.msgT*2);tx(G.msg,W/2,OY+30,14,'#FFD54A');ctx.globalAlpha=1;}
+ ctx.setTransform(dpr,0,0,dpr,0,0);var hg=ctx.createLinearGradient(0,0,0,OY);hg.addColorStop(0,'#16403F');hg.addColorStop(1,'#0B2326');ctx.fillStyle=hg;ctx.fillRect(0,0,W,OY);ctx.fillStyle='rgba('+Z.e+',.45)';ctx.fillRect(0,OY-1,W,1);
+ tx(String(G.score),W/2,15,22,'#B6F24A');
+ if(fev)tx('🔥 狂熱 '+G.fever.toFixed(1)+'s ・ 無敵 ×2',W/2,32,10,'#FFB347');else tx('長度 '+G.sn.length+'  ・  吃 '+G.eaten,W/2,32,10,'#8DB8B0');
+ var cmx=3+1.5*(G.P.combo||0);
+ if(G.combo>1&&G.comboT>0){tx('×'+G.combo,W-62,16,16,'#FFD54A','right');ctx.fillStyle='rgba(255,213,74,.25)';ctx.fillRect(W-120,OY-3,120,3);ctx.fillStyle=G.combo>=5?'#FF8A3D':'#FFD54A';ctx.fillRect(W-120,OY-3,120*Math.min(1,G.comboT/cmx),3);
+  if(G.combo>=5&&!fev){for(var q=0;q<3;q++){ctx.fillStyle=q<G.streak?'#FF8A3D':'rgba(255,138,61,.25)';ctx.beginPath();ctx.arc(W-100+q*9,16,3,0,6.3);ctx.fill();}}}
+ var ic='';if(G.charge.shield)ic+='🛡'+G.charge.shield+' ';if(G.charge.smash)ic+='🔨'+G.charge.smash+' ';if(G.slowT>0)ic+='🧊'+Math.ceil(G.slowT)+' ';if(ic)tx(ic,70,32,10,'#EAFBF0','left');
+ var pi=Object.keys(G.P).map(function(k){return pinfo(k).i;}).join('');if(pi)tx(pi,W-70,32,10,'#fff','right');
+ if(G.msgT>0){ctx.globalAlpha=Math.min(1,G.msgT*2);tx(G.msg,W/2,OY+30,13,'#FFD54A');ctx.globalAlpha=1;}
+ // 下方目標列
+ var y0=OY+CH*CS;ctx.fillStyle='#0B2326';ctx.fillRect(0,y0,W,H-y0);ctx.fillStyle='rgba('+Z.e+',.35)';ctx.fillRect(0,y0,W,1);
+ tx('區域 '+(G.z+1)+' '+Z.n,8,y0+8,10,'rgb('+Z.e+')','left');ctx.fillStyle='rgba(255,255,255,.12)';ctx.fillRect(8,y0+15,96,3);ctx.fillStyle='rgb('+Z.e+')';ctx.fillRect(8,y0+15,96*Math.min(1,G.zn/ZS),3);
+ if(G.mi){var m=MS[G.mi.i],pg=mprog();tx('🎯 '+m.t+'  '+pg+'/'+m.g+'  +'+m.r,W-8,y0+8,10,'#EAFBF0','right');ctx.fillStyle='rgba(255,255,255,.12)';ctx.fillRect(130,y0+15,W-138,3);ctx.fillStyle='#7DF9C0';ctx.fillRect(130,y0+15,(W-138)*pg/m.g,3);}
  if(paused){ctx.fillStyle='rgba(8,22,24,.7)';ctx.fillRect(0,0,W,H);tx('暫停中',W/2,H/2-8,26,'#EAFBF0');tx('點一下畫面繼續',W/2,H/2+22,12,'#8DB8B0');}
 }
 function loop(ts){var dt=Math.min(.05,(ts-last)/1000||0);last=ts;
- if(running&&!paused&&!modal&&!G.over){G.t+=dt;acc+=dt;var iv=interval(),g=0;while(acc>=iv&&g++<4&&running){acc-=iv;step();}
-  if(G.comboT>0){G.comboT-=dt;if(G.comboT<=0)G.combo=1;}
-  if(G.gold){G.gold.t-=dt;if(G.gold.t<=0)G.gold=null;}if(G.msgT>0)G.msgT-=dt;}
- if(shakeT>0)shakeT-=dt;fx.forEach(function(p){p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=dt;});fx=fx.filter(function(p){return p.l>0;});
+ if(running&&!paused&&!modal&&!G.over){acc+=dt;var iv=interval(),g=0;while(acc>=iv&&g++<4&&running){acc-=iv;step();}
+  if(running&&!G.over)upd(dt);}
+ if(shakeT>0)shakeT-=dt;if(G.flash>0)G.flash-=dt;fx.forEach(function(p){p.x+=p.vx*dt;p.y+=p.vy*dt;p.l-=dt;});fx=fx.filter(function(p){return p.l>0;});
  draw();requestAnimationFrame(loop);}
 [].forEach.call(document.querySelectorAll('[data-fd]'),function(el){for(var i=0;i<12;i++){var e=document.createElement('i');e.textContent=['🍎','🐍','⭐','🪨','🛡️','🧲'][i%6];e.style.left=(Math.random()*95)+'%';e.style.fontSize=(1.4+Math.random()*1.6)+'em';e.style.animationDuration=(9+Math.random()*10)+'s';e.style.animationDelay=(-Math.random()*16)+'s';el.appendChild(e);}});
 newGame();requestAnimationFrame(loop);
 
-/* bot for testing */
-function botDir(){var h=G.sn[0],blocked={};G.sn.forEach(function(s,i){if(i<G.sn.length-1||G.grow>0)blocked[s.x+','+s.y]=1;});G.rocks.forEach(function(r){if(!G.charge.smash)blocked[r.x+','+r.y]=1;});
+/* ---------- 測試用機器人 ---------- */
+function botDir(){var h=G.sn[0],blocked={};G.sn.forEach(function(s,i){if(i<G.sn.length-1||G.grow>0)blocked[s.x+','+s.y]=1;});
+ if(!(G.charge.smash||G.fever>0))G.rocks.forEach(function(r){blocked[r.x+','+r.y]=1;});
+ if(!(G.P.detox||G.fever>0))G.poison.forEach(function(r){blocked[r.x+','+r.y]=1;});
+ G.bo.forEach(function(b){blocked[b.x+','+b.y]=1;blocked[(b.x+b.dx)+','+(b.y+b.dy)]=1;blocked[(b.x+2*b.dx)+','+(b.y+2*b.dy)]=1;});
+ if(!(G.P.rod||G.fever>0))G.lw.forEach(function(w){if(w.t<.9)blocked[w.x+','+w.y]=1;});
  var tg=G.gold||G.food,dirs=[[1,0],[-1,0],[0,1],[0,-1]];function ok(x,y){if(G.P.wrap){x=(x+CW)%CW;y=(y+CH)%CH;}return x>=0&&x<CW&&y>=0&&y<CH&&!blocked[x+','+y];}
  function nb(x,y,d){var a=x+d[0],b=y+d[1];if(G.P.wrap){a=(a+CW)%CW;b=(b+CH)%CH;}return [a,b];}
  var prev={},qd=[[h.x,h.y]],seen={};seen[h.x+','+h.y]=1;var found=null;
@@ -196,9 +402,10 @@ function botDir(){var h=G.sn[0],blocked={};G.sn.forEach(function(s,i){if(i<G.sn.
  var cand=[];dirs.forEach(function(d){if(d[0]===-G.dir.x&&d[1]===-G.dir.y)return;var p=nb(h.x,h.y,d);if(ok(p[0],p[1]))cand.push(d);});
  if(first){for(var i=0;i<cand.length;i++){var p=nb(h.x,h.y,cand[i]);if(p[0]===first[0]&&p[1]===first[1])return cand[i];}}
  return cand.length?cand[R(cand.length)]:null;}
-window.__sn={perk:function(){openPerk();},get:function(){return {over:G.over,score:G.score,len:G.sn.length,eaten:G.eaten,rocks:G.rocks.length,P:G.P,ch:G.charge,modal:modal};},start:start,turn:turn,
- sim:function(n,cap){FAST=true;var out=[];for(var g=0;g<n;g++){newGame();running=true;modal=false;var c=0;while(!G.over&&c++<cap){if(G.opts){choosePerk(R(G.opts.length));}var d=botDir();if(d){G.dir=G.dir;G.q=[{x:d[0],y:d[1]}];}step();if(G.comboT>0){G.comboT-=interval();if(G.comboT<=0)G.combo=1;}if(G.gold){G.gold.t-=interval();if(G.gold.t<=0)G.gold=null;}}
-   out.push({score:G.score,len:G.sn.length,eaten:G.eaten,over:G.over,ticks:c});}FAST=false;running=false;newGame();return out;}};
+window.__sn={perk:function(){openPerk();},G:function(){return G;},draw:draw,upd:upd,step:step,choose:choosePerk,
+ get:function(){return {over:G.over,score:G.score,len:G.sn.length,eaten:G.eaten,rocks:G.rocks.length,P:G.P,ch:G.charge,modal:modal,z:G.z,fever:G.fever,mi:G.mi,mdone:G.mdone};},start:start,turn:turn,
+ sim:function(n,cap){FAST=true;var out=[];for(var g=0;g<n;g++){newGame();running=true;modal=false;var c=0;while(!G.over&&c++<cap){if(G.opts)choosePerk(R(G.opts.length));var d=botDir();if(d)G.q=[{x:d[0],y:d[1]}];step();if(!G.over)upd(interval());}
+   out.push({score:G.score,len:G.sn.length,eaten:G.eaten,z:G.z,over:G.over,why:G.why,ticks:c,fev:G.st.fever,m:G.mdone,sm:G.st.smash});}FAST=false;running=false;newGame();return out;}};
 })();
 </script>
 <!--pl:start-->
@@ -266,7 +473,7 @@ html.dv-mob body{min-height:100dvh}
 <aside id="dv-r" aria-label="其他遊戲"><small>換一款玩</small><span id="dv-more"></span><a class="all" href="index.html">回遊戲大廳 · 共 40 款</a></aside>
 <script id="dv-js">
 (function(){
- var LIST=[["paper-glider.html", "飛行躲避", "紙飛機大冒險", "讓紙飛機穿過桌上林立的鉛筆縫隙。"], ["rooftop-cat.html", "無盡跑酷", "屋頂貓跑酷", "夕陽屋頂上狂奔，跳過障礙、低頭鑽過飛鳥。"], ["chick-relay.html", "節奏跑酷", "小雞接力賽", "三條跑道三隻小雞，跟著鼓點跳過障礙、撿種子，烏⁠鴉來了千萬別跳"], ["ink-sword.html", "武俠", "墨劍江湖", "水墨風武俠動作：三連斬、輕功閃身、劍氣絕招，闖五章擊敗兩大魔頭"], ["boba-survivors.html", "倖存", "珍奶突圍", "化身珍珠奶茶，自動攻擊、撿珍珠升級，撐過 5 分鐘冰塊與方糖大軍"], ["drift-bend.html", "賽車漂移", "彎道漂移", "按住漂移鍵甩過彎道、放開噴出加速，十條賽道對決對手車手，收集十輛愛車"], ["star-raid.html", "太空射擊", "星艦突襲", "自動連射的太空射擊，撿道具升級武器，還要打倒巨型母艦。"], ["game.html", "即時操作", "夜蔓 貪食蛇", "連擊、衝刺、護盾與果實雨，還能和 AI 紅蛇對戰、解鎖蛇皮膚。"], ["snake-evolve.html", "街機", "蛇蛇進化", "貪吃蛇加上進化系統：穿牆、磁鐵、護盾、破岩，連吃蘋果衝高連擊"], ["tile-breaker.html", "打磚塊", "花磚打磚塊", "用木槳接住彈珠，敲碎整面馬賽克花磚牆。"], ["candy-pachinko.html", "物理彈射", "糖果彈珠台", "瞄準發射彈珠，在糖果釘子間亂彈，把橘色糖果全部打光就過關"], ["ring-toss.html", "街機經典", "夜市套圈圈", "按住瞄準、圈縮到最小時放手，套中熊貓、泰迪熊和金鑽，十個攤位等你挑戰"], ["pearl-catch.html", "接料反應", "珍珠接接樂", "用杯子接住珍珠和布丁，閃開會讓你變淡的冰塊。"], ["hoop-shot.html", "投籃機", "夜光籃球機", "往後拉、放開投籃，空心球加時間，連進有加分"], ["penalty-kings.html", "足球", "點球大師", "滑向球門射點球與任意球，繞過人牆、騙過守門員"], ["pool-hall.html", "運動競技", "八號球撞球", "巡迴賽挑戰六位對手，賺金幣買球桿與球檯，先清完自己的球再打進黑 8"], ["table-tennis.html", "運動競技", "極速桌球", "拖曳球拍回擊，揮得越快越有力，還能殺球，挑戰四級對手或無盡對拉"], ["mini-golf.html", "運動競技", "迷你高爾夫", "往後拉、放手推桿，十二個球場有沙坑、水池、風車、傳送門，桿數越少星越多"], ["dart-bar.html", "酒吧競技", "飛鏢酒吧", "按住瞄準、放開射鏢，三輪對決十位酒客，風、旋轉靶和昏暗燈光都是考驗"], ["lantern-rhythm.html", "節奏點擊", "燈籠節拍", "燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。"], ["garden-whack.html", "反應力", "菜園保衛戰", "限時 30 秒，把冒出土堆的小偷趕跑。"], ["steamer-stack.html", "抓時機", "蒸籠疊疊樂", "抓準時機放下蒸籠，疊得越準越高。"], ["cake-defense.html", "塔防", "蛋糕保衛戰", "擺放糖果槍、冰棒與爆米花砲塔，擋下偷吃生日蛋糕的螞蟻大軍"], ["dice-dungeon.html", "策略", "骰運地下城", "擲骰子、把點數放進技能卡，看穿怪物意圖，闖過 10 層地下城擊倒魔王"], ["magnet-miner.html", "冒險", "磁鐵礦工", "放下磁鐵吸金塊和鑽石，再深入一層，還是收線入袋？小心炸彈全炸光"], ["cat-cafe.html", "放置經營", "貓咪咖啡館", "點咖啡機賺錢，僱用貓咪店員，離線也繼續營業，再開分店"], ["fishing.html", "策略與經營", "深海釣手", "放線下海、左右閃避水母，釣起二十四種魚，賺錢升級漁具，把圖鑑收集滿"], ["soup-master.html", "策略經營", "湯頭大師", "用火候、下料時機和最後一撮鹽，熬出客人心中的那碗好湯，十種湯頭等你收集"], ["ink-gomoku.html", "對弈", "水墨五子棋", "墨黑對朱紅，橫直斜任一方向先連成五子者勝。"], ["xiangqi.html", "棋類對弈", "楚河漢界", "中國象棋對電腦，三種難度，還有悔棋與提示。"], ["macaron2048.html", "滑動合併", "馬卡龍 2048", "把相同口味的馬卡龍疊在一起，疊出最大的一顆。"], ["star-match.html", "記憶配對", "星圖配對", "翻開夜空卡片，用最少步數找出所有星座對子。"], ["tetris.html", "方塊消除", "方塊風暴", "經典俄羅斯方塊，暫存、預覽、瞬降，還有衝刺 40 行挑戰。"], ["meow-mover.html", "益智解謎", "喵喵搬運工", "推箱子解謎，58 個關卡，推木箱到貓腳印上，拿滿三顆星。"], ["tidal-sweeper.html", "邏輯推理", "潮間帶排雷", "退潮的沙灘藏著海膽，用數字推理出牠們的位置。"], ["shadow-cat-detective.html", "推理", "影子貓偵探", "五隻貓七嘴八舌，只有一隻在說謊。聽完口供，找出偷東西的真兇"], ["idiom-code.html", "棋牌益智", "四字密碼", "成語版猜字遊戲，看提示從十二個字裡湊出四字成語，六次機會，每天一題"], ["card-duel.html", "卡牌對戰", "紙牌決鬥", "用能量打出火球、護甲與隨從，擊敗十位對手，每贏一場就解鎖新卡牌"], ["bubble-wave.html", "鏡頭互動", "泡泡派對", "打開鏡頭，用揮手在空中打破飄上來的泡泡。"], ["halloween-booth.html", "鏡頭變臉", "萬聖變臉亭", "開鏡頭在臉上貼萬聖節貼紙，拍成圖片傳給朋友"]];
+ var LIST=[["paper-glider.html", "飛行躲避", "紙飛機大冒險", "讓紙飛機穿過桌上林立的鉛筆縫隙。"], ["rooftop-cat.html", "無盡跑酷", "屋頂貓跑酷", "夕陽屋頂上狂奔，跳過障礙、低頭鑽過飛鳥。"], ["chick-relay.html", "節奏跑酷", "小雞接力賽", "三條跑道三隻小雞，跟著鼓點跳過障礙、撿種子，烏⁠鴉來了千萬別跳"], ["ink-sword.html", "武俠", "墨劍江湖", "水墨風武俠動作：三連斬、輕功閃身、劍氣絕招，闖五章擊敗兩大魔頭"], ["boba-survivors.html", "倖存", "珍奶突圍", "化身珍珠奶茶，自動攻擊、撿珍珠升級，撐過 5 分鐘冰塊與方糖大軍"], ["drift-bend.html", "賽車漂移", "彎道漂移", "按住漂移鍵甩過彎道、放開噴出加速，十條賽道對決對手車手，收集十輛愛車"], ["star-raid.html", "太空射擊", "星艦突襲", "自動連射的太空射擊，撿道具升級武器，還要打倒巨型母艦。"], ["game.html", "即時操作", "夜蔓 貪食蛇", "連擊、衝刺、護盾與果實雨，還能和 AI 紅蛇對戰、解鎖蛇皮膚。"], ["snake-evolve.html", "街機", "蛇蛇進化", "貪吃蛇進化版：每 10 顆闖新區域，毒蘑菇、巨石、雷擊來襲；連擊吃滿進入狂熱無敵，還有任務與 12 枚勳章。"], ["tile-breaker.html", "打磚塊", "花磚打磚塊", "12 關闖關，接道具、炸彈連鎖、連擊倍率，還有三場花磚守衛 Boss 戰。"], ["candy-pachinko.html", "物理彈射", "糖果彈珠台", "瞄準發射彈珠，在糖果釘子間亂彈，把橘色糖果全部打光就過關"], ["ring-toss.html", "街機經典", "夜市套圈圈", "按住瞄準、圈縮到最小時放手，套中熊貓、泰迪熊和金鑽，十個攤位等你挑戰"], ["pearl-catch.html", "接料反應", "珍珠接接樂", "用杯子接住珍珠和布丁，閃開會讓你變淡的冰塊。"], ["hoop-shot.html", "投籃機", "夜光籃球機", "往後拉、放開投籃，空心球加時間，連進有加分"], ["penalty-kings.html", "足球", "點球大師", "滑向球門射點球與任意球，繞過人牆、騙過守門員"], ["pool-hall.html", "運動競技", "八號球撞球", "巡迴賽挑戰六位對手，賺金幣買球桿與球檯，先清完自己的球再打進黑 8"], ["table-tennis.html", "運動競技", "極速桌球", "拖曳球拍回擊，揮得越快越有力，還能殺球，挑戰四級對手或無盡對拉"], ["mini-golf.html", "運動競技", "迷你高爾夫", "往後拉、放手推桿，十二個球場有沙坑、水池、風車、傳送門，桿數越少星越多"], ["dart-bar.html", "酒吧競技", "飛鏢酒吧", "按住瞄準、放開射鏢，三輪對決十位酒客，風、旋轉靶和昏暗燈光都是考驗"], ["lantern-rhythm.html", "節奏點擊", "燈籠節拍", "燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。"], ["garden-whack.html", "反應力", "菜園保衛戰", "限時 30 秒，把冒出土堆的小偷趕跑。"], ["steamer-stack.html", "抓時機", "蒸籠疊疊樂", "抓準時機放下蒸籠，疊得越準越高。"], ["cake-defense.html", "塔防", "蛋糕保衛戰", "擺放糖果槍、冰棒與爆米花砲塔，擋下偷吃生日蛋糕的螞蟻大軍"], ["dice-dungeon.html", "策略", "骰運地下城", "擲骰子、把點數放進技能卡，看穿怪物意圖，闖過 10 層地下城擊倒魔王"], ["magnet-miner.html", "冒險", "磁鐵礦工", "放下磁鐵吸金塊和鑽石，再深入一層，還是收線入袋？小心炸彈全炸光"], ["cat-cafe.html", "放置經營", "貓咪咖啡館", "點咖啡機賺錢，僱用貓咪店員，離線也繼續營業，再開分店"], ["fishing.html", "策略與經營", "深海釣手", "放線下海、左右閃避水母，釣起二十四種魚，賺錢升級漁具，把圖鑑收集滿"], ["soup-master.html", "策略經營", "湯頭大師", "用火候、下料時機和最後一撮鹽，熬出客人心中的那碗好湯，十種湯頭等你收集"], ["ink-gomoku.html", "對弈", "水墨五子棋", "墨黑對朱紅，橫直斜任一方向先連成五子者勝。"], ["xiangqi.html", "棋類對弈", "楚河漢界", "中國象棋對電腦，三種難度，還有悔棋與提示。"], ["macaron2048.html", "滑動合併", "馬卡龍 2048", "把相同口味的馬卡龍疊在一起，疊出最大的一顆。"], ["star-match.html", "記憶配對", "星圖配對", "翻開夜空卡片，用最少步數找出所有星座對子。"], ["tetris.html", "方塊消除", "方塊風暴", "經典方塊加強版：T-Spin、背對背、道具方塊與風暴灰磚，另有衝刺與 8 個任務挑戰。"], ["meow-mover.html", "益智解謎", "喵喵搬運工", "推箱子解謎，58 個關卡，推木箱到貓腳印上，拿滿三顆星。"], ["tidal-sweeper.html", "邏輯推理", "潮間帶排雷", "退潮的沙灘藏著海膽，用數字推理出牠們的位置。"], ["shadow-cat-detective.html", "推理", "影子貓偵探", "五隻貓七嘴八舌，只有一隻在說謊。聽完口供，找出偷東西的真兇"], ["idiom-code.html", "棋牌益智", "四字密碼", "成語版猜字遊戲，看提示從十二個字裡湊出四字成語，六次機會，每天一題"], ["card-duel.html", "卡牌對戰", "紙牌決鬥", "用能量打出火球、護甲與隨從，擊敗十位對手，每贏一場就解鎖新卡牌"], ["bubble-wave.html", "鏡頭互動", "泡泡派對", "打開鏡頭，用揮手在空中打破飄上來的泡泡。"], ["halloween-booth.html", "鏡頭變臉", "萬聖變臉亭", "開鏡頭在臉上貼萬聖節貼紙，拍成圖片傳給朋友"]];
  var d=document,de=d.documentElement,b=d.body,me=(location.pathname.split('/').pop()||'');
  var mq=matchMedia('(min-width:900px) and (hover:hover) and (pointer:fine)');
  var z=1,n=0,L=d.getElementById('dv-l'),R=d.getElementById('dv-r');
