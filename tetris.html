@@ -99,6 +99,21 @@
 .overlay h2{ font-size:clamp(22px,6.4vw,30px) !important; filter:drop-shadow(0 0 14px rgba(120,160,255,.7)); }
 .stat .v.bump{ animation:vbump .3s ease; display:inline-block; } @keyframes vbump{ 40%{ transform:scale(1.3); color:#fff; } }
 .board-wrap{ border-radius:10px; }
+  .seg.four{ display:grid; grid-template-columns:1fr 1fr; border-radius:16px; width:100%; max-width:250px; }
+  .seg.four button{ padding:8px 6px; font-size:12.5px; }
+  .mdesc{ min-height:34px; max-width:240px; font-size:12px !important; }
+  .mis{ display:grid; grid-template-columns:repeat(8,1fr); gap:4px; width:100%; max-width:250px; }
+  .mis[hidden]{ display:none; }
+  .mis button{ font:900 12px 'Orbitron',sans-serif; color:var(--txt); background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16); border-radius:8px; padding:6px 0; cursor:pointer; }
+  .mis button.sel{ background:linear-gradient(180deg,#8DF0FF,#38C0EA); color:#05141C; }
+  .mis button.lock{ opacity:.35; cursor:not-allowed; }
+  .row2{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  .btn.ghost{ background:rgba(255,255,255,.1); color:var(--txt); box-shadow:none; border:1px solid rgba(255,255,255,.2); padding:10px 16px; font-size:12px; }
+  .achl{ width:100%; max-width:250px; max-height:330px; overflow:auto; display:flex; flex-direction:column; gap:6px; text-align:left; }
+  .achl div{ display:flex; gap:10px; align-items:center; background:rgba(255,255,255,.06); border-radius:10px; padding:6px 10px; font-size:11.5px; color:var(--dim); line-height:1.4; }
+  .achl div.on{ background:rgba(88,225,255,.16); color:#fff; }
+  .achl b{ display:block; font-size:13px; color:inherit; }
+  .keys.small{ font-size:11px; line-height:1.85; padding:6px 12px; }
 </style>
 </head>
 <body>
@@ -119,19 +134,23 @@
         <canvas id="board" width="280" height="560" aria-label="俄羅斯方塊盤面"></canvas>
         <div class="overlay" id="startOv">
           <h2>BLOCK STORM</h2>
-          <div class="seg" role="group" aria-label="模式">
+          <div class="seg four" role="group" aria-label="模式">
             <button type="button" data-mode="marathon" aria-pressed="true">經典無盡</button>
             <button type="button" data-mode="sprint" aria-pressed="false">衝刺 40 行</button>
+            <button type="button" data-mode="storm" aria-pressed="false">風暴模式</button>
+            <button type="button" data-mode="mission" aria-pressed="false">任務挑戰</button>
           </div>
-          <div class="keys">
-            <kbd>←</kbd><kbd>→</kbd> 移動　<kbd>↓</kbd> 加速<br>
-            <kbd>↑</kbd>/<kbd>X</kbd> 順轉　<kbd>Z</kbd> 逆轉<br>
+          <p class="mdesc" id="modeDesc"></p>
+          <div class="mis" id="misGrid" hidden></div>
+          <div class="keys small">
+            <kbd>←</kbd><kbd>→</kbd> 移動　<kbd>↓</kbd> 加速　<kbd>↑</kbd>/<kbd>X</kbd> 順轉　<kbd>Z</kbd> 逆轉<br>
             <kbd>空白</kbd> 瞬降　<kbd>C</kbd> 暫存　<kbd>P</kbd> 暫停
           </div>
-          <button class="btn" id="startBtn">開始</button>
+          <div class="row2"><button class="btn" id="startBtn">開始</button><button class="btn ghost" id="achBtn" type="button">成就</button></div>
         </div>
         <div class="overlay hidden" id="pauseOv"><h2>暫停</h2><button class="btn" id="resumeBtn">繼續</button></div>
-        <div class="overlay hidden" id="overOv"><h2 id="overTitle">GAME OVER</h2><p id="overText"></p><button class="btn" id="againBtn">再來一局</button></div>
+        <div class="overlay hidden" id="overOv"><h2 id="overTitle">GAME OVER</h2><p id="overText"></p><div class="row2"><button class="btn" id="againBtn">再來一局</button><button class="btn ghost" id="menuBtn" type="button">選模式</button></div></div>
+        <div class="overlay hidden" id="achOv"><h2>成就</h2><div class="achl" id="achList"></div><button class="btn ghost" id="achBack" type="button">返回</button></div>
       </div>
       <div class="side">
         <div class="box"><span class="l">暫存 HOLD</span><canvas id="hold" width="80" height="64"></canvas></div>
@@ -151,7 +170,7 @@
       <button data-a="hold" class="sm" aria-label="暫存">暫存</button>
     </div>
   </div>
-  <p class="hint">消除越多行得分越高：一次消四行（Tetris）最爆分，連續消行還有連擊加成。<br>手機可在盤面上左右滑動移動、點一下旋轉、快速下滑瞬降。</p>
+  <p class="hint">一次消四行（TETRIS）、T 方塊旋轉卡位（T-Spin）和全清盤面都有大量加分，連續做到還有背對背加成。<br>風暴模式有道具方塊（炸彈、閃電、冰凍、金星），但也會被往上頂灰磚；任務挑戰共 8 關。<br>手機可在盤面上左右滑動移動、點一下旋轉、快速下滑瞬降。</p>
 
 <script>
 (function(){
@@ -175,15 +194,44 @@
     L: [[0,0,1],[1,1,1],[0,0,0]]
   };
   var TYPES = ['I', 'O', 'T', 'S', 'Z', 'J', 'L'];
+  COLORS.G = '#69718F';
+  var SPK = { B:{ i:'💣', n:'炸彈' }, L:{ i:'⚡', n:'閃電' }, I:{ i:'❄️', n:'冰凍' }, S:{ i:'⭐', n:'金星' } };
+  var SPKEYS = ['B', 'L', 'I', 'S'];
+  var JLSTZ = { '01':[[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]], '10':[[0,0],[1,0],[1,-1],[0,2],[1,2]], '12':[[0,0],[1,0],[1,-1],[0,2],[1,2]], '21':[[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]], '23':[[0,0],[1,0],[1,1],[0,-2],[1,-2]], '32':[[0,0],[-1,0],[-1,-1],[0,2],[-1,2]], '30':[[0,0],[-1,0],[-1,-1],[0,2],[-1,2]], '03':[[0,0],[1,0],[1,1],[0,-2],[1,-2]] };
+  var IKICK = { '01':[[0,0],[-2,0],[1,0],[-2,-1],[1,2]], '10':[[0,0],[2,0],[-1,0],[2,1],[-1,-2]], '12':[[0,0],[-1,0],[2,0],[-1,2],[2,-1]], '21':[[0,0],[1,0],[-2,0],[1,-2],[-2,1]], '23':[[0,0],[2,0],[-1,0],[2,1],[-1,-2]], '32':[[0,0],[-2,0],[1,0],[-2,-1],[1,2]], '30':[[0,0],[1,0],[-2,0],[1,-2],[-2,1]], '03':[[0,0],[-1,0],[2,0],[-1,2],[2,-1]] };
+  var ACH = [
+    ['tetris','🧱','四行爆破','一次消 4 行（TETRIS）'],
+    ['tspin','🌀','旋轉高手','用 T 方塊旋轉卡位消行（T-Spin）'],
+    ['combo6','🔥','連擊狂熱','達成 6 連擊'],
+    ['pc','💎','完美清空','把整個盤面清到一塊不剩'],
+    ['lv10','🚀','等級 10','在經典或風暴模式升到 10 級'],
+    ['sprint','⏱️','閃電手','衝刺 40 行在 2 分鐘內完成'],
+    ['storm','🌪️','風暴倖存者','風暴模式存活超過 3 分鐘'],
+    ['missions','🏆','任務大師','通關全部 8 個任務']
+  ];
+  var MISSIONS = [
+    { n:'暖身', d:'消除 8 行', g:{ lines:8 } },
+    { n:'挖礦', d:'清掉底部 6 行灰磚', g:{ dig:1 }, garbage:6 },
+    { n:'連擊王', d:'達成 4 連擊', g:{ combo:4 } },
+    { n:'四行爆破', d:'用 TETRIS 一次消 4 行 2 次', g:{ tetris:2 } },
+    { n:'旋轉大師', d:'做出 1 次 T-Spin 消行', g:{ tspin:1 }, garbage:3 },
+    { n:'限時衝刺', d:'75 秒內消 20 行', g:{ lines:20 }, time:75, startLevel:3 },
+    { n:'深層挖掘', d:'清掉底部 10 行灰磚', g:{ dig:1 }, garbage:10, startLevel:3 },
+    { n:'風暴降臨', d:'在風暴中消 30 行', g:{ lines:30 }, storm:1 }
+  ];
 
-  var mode = 'marathon';
+  var mode = 'marathon', selMission = 0, meta = { ach:{}, unlocked:1, best:{}, stormBest:0 };
   var bestScore = 0, bestTime = 0, musicOn = true;
   try {
-    var m0 = localStorage.getItem('bs_mode'); if (m0 === 'sprint' || m0 === 'marathon') mode = m0;
+    var m0 = localStorage.getItem('bs_mode'); if (m0 === 'sprint' || m0 === 'marathon' || m0 === 'storm' || m0 === 'mission') mode = m0;
+    var mt = JSON.parse(localStorage.getItem('bs_meta') || 'null'); if (mt && typeof mt === 'object'){ meta.ach = mt.ach || {}; meta.unlocked = Math.max(1, mt.unlocked | 0); meta.best = mt.best || {}; meta.stormBest = mt.stormBest | 0; }
     bestScore = parseInt(localStorage.getItem('bs_best'), 10) || 0;
     bestTime = parseInt(localStorage.getItem('bs_sprint'), 10) || 0;
     var mv = localStorage.getItem('bs_music'); if (mv !== null) musicOn = (mv === '1');
   } catch (e) { /* ignore */ }
+
+  function saveMeta(){ try { localStorage.setItem('bs_meta', JSON.stringify(meta)); } catch (e) { /* ignore */ } }
+  selMission = Math.min(meta.unlocked, MISSIONS.length) - 1;
 
   // ---------- 音效 / 音樂 ----------
   var ac = null, master = null, noiseBuf = null;
@@ -226,9 +274,16 @@
     else if (n === 'drop') { tone(220, 0.14, 'sine', 0.12, 0, 60); noise(0.1, 0.1, 1200); }
     else if (n === 'clear'){
       var base = [523, 587, 659, 784, 1047];
-      for (var i = 0; i < Math.min(5, 2 + k); i++) tone(base[i] * (k >= 4 ? 1 : 1), 0.14, 'square', 0.05, i * 0.06);
+      var up = Math.pow(1.0595, Math.min(12, Math.max(0, combo))); for (var i = 0; i < Math.min(5, 2 + k); i++) tone(base[i] * up, 0.14, 'square', 0.05, i * 0.06);
       if (k >= 4) { noise(0.35, 0.12, 800); tone(1568, 0.3, 'triangle', 0.06, 0.3); }
     }
+    else if (n === 'tspin'){ [392, 523, 659, 880, 1175].forEach(function(f, i){ tone(f, 0.12, 'sawtooth', 0.04, i * 0.05); }); noise(0.2, 0.08, 1800); }
+    else if (n === 'boom'){ tone(150, 0.3, 'sine', 0.14, 0, 40); noise(0.3, 0.14, 500); }
+    else if (n === 'pc'){ [523, 659, 784, 1047, 1319, 1568, 2093].forEach(function(f, i){ tone(f, 0.18, 'triangle', 0.06, i * 0.06); }); }
+    else if (n === 'rumble'){ tone(90, 0.35, 'sawtooth', 0.08, 0, 45); noise(0.25, 0.1, 400); }
+    else if (n === 'ice'){ [1568, 1319, 1047, 784].forEach(function(f, i){ tone(f, 0.1, 'sine', 0.05, i * 0.05); }); }
+    else if (n === 'star'){ tone(1047, 0.08, 'triangle', 0.06); tone(1568, 0.14, 'triangle', 0.06, 0.07); }
+    else if (n === 'ach'){ [784, 988, 1319, 1568].forEach(function(f, i){ tone(f, 0.16, 'triangle', 0.06, i * 0.08); }); }
     else if (n === 'level') [659, 784, 988, 1319].forEach(function(f, i){ tone(f, 0.12, 'triangle', 0.06, i * 0.07); });
     else if (n === 'over') [392, 349, 311, 262, 196].forEach(function(f, i){ tone(f, 0.3, 'sawtooth', 0.05, i * 0.16); });
     else if (n === 'win') [523, 659, 784, 1047, 1319, 1568].forEach(function(f, i){ tone(f, 0.2, 'triangle', 0.06, i * 0.09); });
@@ -272,7 +327,8 @@
   };
 
   // ---------- 遊戲狀態 ----------
-  var grid, cur, queue, holdT, canHold, score, lines, level, combo, b2b, over, paused, running;
+  var grid, sp, cur, queue, holdT, canHold, score, lines, level, combo, b2b, over, paused, running;
+  var iceT = 0, stormT = 0, lastHole = -1, baseLevel = 1, msn = null, tspinN = 0, tetrisN = 0, maxCombo = 0, toasts = [], mTick = 0;
   var acc, lockT, resets, soft, clearing, parts, shake, flashMsg, elapsed, bag, raf, lastTs, pulse;
   var held = { left: false, right: false }, dasT = 0, arrT = 0, lastDir = 0;
   var trail = null, lockFlash = null, stars = [], sprites = {}, rings = [], dangerT = 0;
@@ -293,7 +349,7 @@
     for (var i = b.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = b[i]; b[i] = b[j]; b[j] = t; }
     bag = bag.concat(b);
   }
-  function pull(){ if (bag.length < 8) refill(); return bag.shift(); }
+  function pull(){ if (bag.length < 8) refill(); var t = bag.shift(), k = null; if ((mode === 'storm' || (msn && msn.def.storm)) && Math.random() < 0.16) k = SPKEYS[Math.floor(Math.random() * SPKEYS.length)]; return { t:t, k:k }; }
   function rotCW(m){ var n = m.length, r = [], y, x; for (y = 0; y < n; y++) r.push(new Array(n)); for (y = 0; y < n; y++) for (x = 0; x < n; x++) r[x][n - 1 - y] = m[y][x]; return r; }
   function rotCCW(m){ return rotCW(rotCW(rotCW(m))); }
   function collide(m, px, py){
@@ -305,9 +361,10 @@
     }
     return false;
   }
-  function makePiece(t){
-    var m = SHAPES[t].map(function(r){ return r.slice(); });
-    return { t: t, m: m, x: Math.floor((W - m.length) / 2), y: t === 'I' ? -1 : 0 };
+  function makePiece(o){
+    var t = o.t, m = SHAPES[t].map(function(r){ return r.slice(); }), s = m.map(function(r){ return r.map(function(){ return null; }); });
+    if (o.k){ var cs = []; for (var yy = 0; yy < m.length; yy++) for (var xx = 0; xx < m.length; xx++) if (m[yy][xx]) cs.push([yy, xx]); var c = cs[Math.floor(Math.random() * cs.length)]; s[c[0]][c[1]] = o.k; }
+    return { t: t, m: m, s: s, k0: o.k || null, rot: 0, spin: false, kick: 0, x: Math.floor((W - m.length) / 2), y: t === 'I' ? -1 : 0 };
   }
   function spawn(){
     cur = makePiece(queue.shift()); queue.push(pull());
@@ -315,11 +372,22 @@
     if (collide(cur.m, cur.x, cur.y)) gameOver(false);
   }
   function resetState(){
-    grid = newGrid(); bag = []; queue = []; holdT = null; canHold = true; score = 0; lines = 0; level = 1; combo = -1; b2b = false;
+    grid = newGrid(); sp = newGrid(); bag = []; queue = []; holdT = null; canHold = true; score = 0; lines = 0; level = 1; combo = -1; b2b = false;
     over = false; paused = false; acc = 0; lockT = 0; resets = 0; soft = false; clearing = null; parts = []; shake = 0; flashMsg = null; elapsed = 0; pulse = 0;
     held.left = held.right = false; trail = null; lockFlash = null; rings = [];
+    modeSetup();
     for (var i = 0; i < 4; i++) queue.push(pull());
     spawn(); updateHud();
+  }
+  function stormInterval(){ return Math.max(6, 20 - (level - 1) * 1.1); }
+  function modeSetup(){
+    iceT = 0; lastHole = -1; baseLevel = 1; msn = null; tspinN = 0; tetrisN = 0; maxCombo = 0; toasts = []; mTick = 0;
+    if (mode === 'mission'){
+      var d = MISSIONS[selMission]; msn = { def:d, idx:selMission, done:false };
+      baseLevel = d.startLevel || 1; level = baseLevel;
+      for (var i = 0; i < (d.garbage || 0); i++){ var hole = Math.floor(Math.random() * W), y = H - 1 - i; for (var x = 0; x < W; x++) grid[y][x] = x === hole ? null : 'G'; }
+    }
+    stormT = stormInterval();
   }
   function interval(){ return Math.max(50, 800 * Math.pow(0.84, level - 1)); }
   function ghostY(){ var y = cur.y; while (!collide(cur.m, cur.x, y + 1)) y++; return y; }
@@ -328,22 +396,24 @@
 
   function move(dx){
     if (!cur || clearing || over || paused) return false;
-    if (!collide(cur.m, cur.x + dx, cur.y)){ cur.x += dx; touchLock(); sfx('move'); return true; }
+    if (!collide(cur.m, cur.x + dx, cur.y)){ cur.x += dx; cur.spin = false; touchLock(); sfx('move'); return true; }
     return false;
   }
   function rotate(dir){
     if (!cur || clearing || over || paused || cur.t === 'O') return;
-    var nm = dir > 0 ? rotCW(cur.m) : rotCCW(cur.m);
-    var kicks = cur.t === 'I' ? [[0,0],[-1,0],[1,0],[-2,0],[2,0],[0,-1],[0,-2]] : [[0,0],[-1,0],[1,0],[0,-1],[-1,-1],[1,-1],[-2,0],[2,0]];
-    for (var i = 0; i < kicks.length; i++){
-      if (!collide(nm, cur.x + kicks[i][0], cur.y + kicks[i][1])){
-        cur.m = nm; cur.x += kicks[i][0]; cur.y += kicks[i][1]; touchLock(); sfx('rot'); return;
+    var from = cur.rot, to = (from + (dir > 0 ? 1 : 3)) % 4;
+    var nm = dir > 0 ? rotCW(cur.m) : rotCCW(cur.m), ns = dir > 0 ? rotCW(cur.s) : rotCCW(cur.s);
+    var tbl = (cur.t === 'I' ? IKICK : JLSTZ)[from + '' + to];
+    for (var i = 0; i < tbl.length; i++){
+      var kx = tbl[i][0], ky = -tbl[i][1];
+      if (!collide(nm, cur.x + kx, cur.y + ky)){
+        cur.m = nm; cur.s = ns; cur.x += kx; cur.y += ky; cur.rot = to; cur.spin = true; cur.kick = i; touchLock(); sfx('rot'); return;
       }
     }
   }
   function doHold(){
     if (!cur || clearing || over || paused || !canHold) return;
-    var t = cur.t;
+    var t = { t: cur.t, k: cur.k0 };
     if (holdT){ cur = makePiece(holdT); } else { cur = makePiece(queue.shift()); queue.push(pull()); }
     holdT = t; canHold = false; acc = 0; lockT = 0; resets = 0; sfx('hold');
     if (collide(cur.m, cur.x, cur.y)) gameOver(false);
@@ -354,19 +424,27 @@
     var cols = [], topY = H;
     for (var yy = 0; yy < cur.m.length; yy++) for (var xx = 0; xx < cur.m.length; xx++) if (cur.m[yy][xx]){ if (cols.indexOf(cur.x + xx) < 0) cols.push(cur.x + xx); topY = Math.min(topY, cur.y + yy); }
     if (d > 0) trail = { cols: cols, y0: Math.max(0, topY), y1: topY + d, color: COLORS[cur.t], t: 0.28 };
-    score += d * 2; cur.y = gy; shake = 0.12;
+    score += d * 2; cur.y = gy; if (d > 0) cur.spin = false; shake = 0.12;
     for (var i = 0; i < 6; i++) addPart((cur.x + 1 + Math.random() * 2) * CELL, (cur.y + 3) * CELL, COLORS[cur.t]);
     sfx('drop'); lockPiece();
   }
   function addPart(x, y, color){
     parts.push({ x: x, y: y, vx: (Math.random() - 0.5) * 160, vy: -Math.random() * 120 - 20, life: 0.6, max: 0.6, color: color });
   }
+  function detectTSpin(){
+    if (!cur || cur.t !== 'T' || !cur.spin) return null;
+    var cx = cur.x, cy = cur.y;
+    var c = [[0,0],[2,0],[0,2],[2,2]].map(function(p){ var x = cx + p[0], y = cy + p[1]; return (x < 0 || x >= W || y >= H || (y >= 0 && grid[y][x])) ? 1 : 0; });
+    if (c[0] + c[1] + c[2] + c[3] < 3) return null;
+    var fr = [[0,1],[1,3],[2,3],[0,2]][cur.rot];
+    return (c[fr[0]] + c[fr[1]] === 2 || cur.kick === 4) ? 'full' : 'mini';
+  }
   function lockPiece(){
-    var out = false;
+    var out = false, ts = detectTSpin();
     for (var y = 0; y < cur.m.length; y++) for (var x = 0; x < cur.m.length; x++){
       if (!cur.m[y][x]) continue;
       var gx = cur.x + x, gy = cur.y + y;
-      if (gy < 0) out = true; else grid[gy][gx] = cur.t;
+      if (gy < 0) out = true; else { grid[gy][gx] = cur.t; sp[gy][gx] = cur.s[y][x] || null; }
     }
     var lc = [];
     for (var ly = 0; ly < cur.m.length; ly++) for (var lx = 0; lx < cur.m.length; lx++) if (cur.m[ly][lx]) lc.push({ x: cur.x + lx, y: cur.y + ly });
@@ -375,31 +453,61 @@
     if (out){ cur = null; gameOver(false); return; }
     var full = [];
     for (var r = 0; r < H; r++) if (grid[r].every(function(c){ return c; })) full.push(r);
-    if (full.length){ clearing = { rows: full, t: 0 }; cur = null; sfx('clear', full.length); }
-    else { combo = -1; cur = null; spawn(); }
+    if (full.length){ clearing = { rows: full, t: 0, spin: ts }; cur = null; sfx(ts ? 'tspin' : 'clear', full.length); }
+    else {
+      combo = -1;
+      if (ts){ var g0 = (ts === 'full' ? 400 : 100) * level; score += g0; flashMsg = { text: (ts === 'full' ? 'T-SPIN' : 'T-SPIN MINI') + '\n+' + g0, t: 1 }; sfx('tspin', 0); shake = 0.15; }
+      cur = null; spawn();
+    }
     updateHud();
   }
+  function toast(t){ toasts.push({ t: t, life: 2.4 }); }
+  function unlockA(id){
+    if (meta.ach[id]) return; meta.ach[id] = 1; saveMeta(); sfx('ach');
+    for (var i = 0; i < ACH.length; i++) if (ACH[i][0] === id){ toast(ACH[i][1] + ' 成就解鎖：' + ACH[i][2]); break; }
+  }
   function finishClear(){
-    var rows = clearing.rows, n = rows.length;
+    var rows = clearing.rows.slice(), n = rows.length, spin = clearing.spin, i;
+    // 特殊方塊效果
+    var extra = {}, ex = 0, starPts = 0, iceOn = false, boomed = false;
+    rows.forEach(function(r){
+      for (var x = 0; x < W; x++){
+        var k = sp[r][x]; if (!k) continue;
+        var cx = (x + 0.5) * CELL, cy = (r + 0.5) * CELL;
+        if (k === 'B'){ boomed = true; rings.push({ x: cx, y: cy, r: 8, t: 0.5 });
+          for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++){ var yy = r + dy, xx = x + dx; if (yy >= 0 && yy < H && xx >= 0 && xx < W && rows.indexOf(yy) < 0 && grid[yy][xx]) extra[yy * 100 + xx] = 1; } }
+        else if (k === 'L'){ boomed = true; for (var y2 = 0; y2 < H; y2++) if (rows.indexOf(y2) < 0 && grid[y2][x]) extra[y2 * 100 + x] = 1; for (var q = 0; q < 14; q++) addPart(cx, q * CELL * 1.4, '#FFE066'); }
+        else if (k === 'I') iceOn = true;
+        else if (k === 'S'){ starPts += 500 * level; for (var q2 = 0; q2 < 10; q2++) addPart(cx, cy, '#FFD45E'); sfx('star'); }
+      }
+    });
+    Object.keys(extra).forEach(function(key){ var yy = Math.floor(key / 100), xx = key % 100; for (var q = 0; q < 3; q++) addPart((xx + .5) * CELL, (yy + .5) * CELL, COLORS[grid[yy][xx]] || '#fff'); grid[yy][xx] = null; sp[yy][xx] = null; ex++; });
+    if (boomed){ sfx('boom'); shake = Math.max(shake, 0.3); }
+    if (iceOn){ iceT = 12; sfx('ice'); toast('❄️ 冰凍！重力減半、風暴暫停 12 秒'); }
     rows.forEach(function(r){
       for (var x = 0; x < W; x++) for (var k = 0; k < 4; k++) addPart((x + 0.5) * CELL, (r + 0.5) * CELL, COLORS[grid[r][x]] || '#fff');
     });
-    rows.sort(function(a, b){ return b - a; }).forEach(function(r){ grid.splice(r, 1); });
-    for (var i = 0; i < n; i++){ var row = []; for (var x2 = 0; x2 < W; x2++) row.push(null); grid.unshift(row); }
-    var base = [0, 100, 300, 500, 800][n];
-    var gain = base * level;
-    var tetris = n === 4;
-    if (tetris && b2b){ gain = Math.floor(gain * 1.5); }
-    combo++;
-    if (combo > 0) gain += 50 * combo * level;
-    b2b = tetris ? true : b2b && false;
-    score += gain; lines += n;
-    flashMsg = { text: (['', '單行', '雙行', '三行', 'TETRIS!'][n]) + (combo > 0 ? '  連擊 ×' + combo : '') + '\n+' + gain, t: 1.1 };
-    if (n === 4){ shake = 0.3; rings.push({ x: W * CELL / 2, y: (rows[0] + 1) * CELL, r: 10, t: 0.6 }); }
-    var nl = 1 + Math.floor(lines / 10);
+    rows.sort(function(a, b){ return b - a; }).forEach(function(r){ grid.splice(r, 1); sp.splice(r, 1); });
+    for (i = 0; i < n; i++){ var row = [], row2 = []; for (var x2 = 0; x2 < W; x2++){ row.push(null); row2.push(null); } grid.unshift(row); sp.unshift(row2); }
+    var tsp = !!spin, base = tsp ? (spin === 'full' ? [400, 800, 1200, 1600, 0][n] : [100, 200, 400, 0, 0][n]) : [0, 100, 300, 500, 800][n];
+    var gain = base * level, hard = n === 4 || (tsp && n > 0), b2bHit = hard && b2b;
+    if (b2bHit) gain = Math.floor(gain * 1.5);
+    combo++; if (combo > 0) gain += 50 * combo * level;
+    b2b = hard;
+    gain += ex * 20 * level + starPts;
+    var pc = grid.every(function(r){ return r.every(function(c){ return !c; }); });
+    if (pc){ gain += 2000 * level; sfx('pc'); for (i = 0; i < 3; i++) rings.push({ x: W * CELL / 2, y: H * CELL / 2, r: 10 + i * 30, t: 0.8 }); shake = 0.4; unlockA('pc'); }
+    score += gain; lines += n; if (combo > maxCombo) maxCombo = combo; if (n === 4) tetrisN++; if (tsp) tspinN++;
+    var nm = tsp ? ('T-SPIN' + (spin === 'mini' ? ' MINI' : '') + ' ' + ['', '單行', '雙行', '三行'][n]) : ['', '單行', '雙行', '三行', 'TETRIS!'][n];
+    flashMsg = { text: nm + (b2bHit ? '\nBACK-TO-BACK ×1.5' : '') + (combo > 0 ? '\n連擊 ×' + combo : '') + (pc ? '\n💎 完美清空 +' + (2000 * level) : '') + (ex ? '\n道具爆破 ' + ex + ' 格' : '') + '\n+' + gain, t: 1.2 };
+    if (n === 4 || (tsp && n >= 2)){ shake = 0.3; rings.push({ x: W * CELL / 2, y: (rows[rows.length - 1] + 1) * CELL, r: 10, t: 0.6 }); }
+    if (mode === 'storm') stormT = Math.min(stormInterval(), stormT + 1.2 * n);
+    var nl = baseLevel + Math.floor(lines / 10);
     if (nl > level){ level = nl; lvFlash = .9; sfx('level'); flashMsg.text += '\n等級 ' + level; }
+    if (n === 4) unlockA('tetris'); if (tsp) unlockA('tspin'); if (combo >= 6) unlockA('combo6'); if (level >= 10 && (mode === 'marathon' || mode === 'storm')) unlockA('lv10');
     clearing = null; updateHud();
     if (mode === 'sprint' && lines >= 40){ gameOver(true); return; }
+    if (msn && checkMission()) return;
     spawn();
   }
   var lvFlash = 0;
@@ -407,9 +515,11 @@
   function updateHud(){
     [[scoreEl, score], [linesEl, lines], [levelEl, level]].forEach(function(q){ if (q[0].textContent !== String(q[1])){ q[0].textContent = q[1]; q[0].classList.remove('bump'); void q[0].offsetWidth; q[0].classList.add('bump'); } }); applyTheme();
     if (mode === 'sprint'){ bestLabel.textContent = '最快'; bestEl.textContent = bestTime ? fmtTime(bestTime) : '--'; }
+    else if (mode === 'storm'){ bestLabel.textContent = '風暴最高'; bestEl.textContent = meta.stormBest; }
+    else if (mode === 'mission'){ bestLabel.textContent = '已通關'; bestEl.textContent = Math.min(MISSIONS.length, meta.unlocked - 1) + '/' + MISSIONS.length; }
     else { bestLabel.textContent = '最高'; bestEl.textContent = bestScore; }
   }
-  function gameOver(win){
+  function gameOverBase(win){
     over = true; running = false; music.stop(); shake = 0.3;
     var t = '', nb = false;
     if (mode === 'sprint'){
@@ -425,6 +535,57 @@
     $('overText').innerHTML = t;
     sfx(win ? 'win' : 'over'); updateHud();
     setTimeout(function(){ overOv.classList.remove('hidden'); }, 500);
+  }
+
+  function gameOver(win){
+    if (over) return;
+    if (mode === 'marathon' || mode === 'sprint'){ gameOverBase(win); if (mode === 'sprint' && win && elapsed <= 120000) unlockA('sprint'); return; }
+    over = true; running = false; music.stop(); shake = 0.3;
+    var t = '', title = win ? 'CLEAR!' : 'GAME OVER';
+    if (mode === 'storm'){
+      var nb = score > meta.stormBest; if (nb){ meta.stormBest = score; saveMeta(); }
+      if (elapsed >= 180000) unlockA('storm');
+      t = '撐了 ' + fmtTime(elapsed) + '<br>分數 ' + score + '　行數 ' + lines + '　等級 ' + level + (nb ? '<br>刷新風暴紀錄！' : '');
+    } else {
+      var d = msn.def;
+      if (win){
+        var prev = meta.best[msn.idx], nb2 = !prev || elapsed < prev; if (nb2) meta.best[msn.idx] = Math.floor(elapsed);
+        meta.unlocked = Math.max(meta.unlocked, Math.min(MISSIONS.length + 1, msn.idx + 2)); saveMeta();
+        title = 'MISSION CLEAR'; t = '任務「' + d.n + '」完成！<br>用時 ' + fmtTime(elapsed) + (nb2 ? '　新紀錄！' : '') + (msn.idx + 1 < MISSIONS.length ? '<br>已解鎖下一個任務' : '<br>全部任務通關！');
+        if (meta.unlocked > MISSIONS.length) unlockA('missions');
+      } else t = (msn.timeout ? '時間到！' : '堆太高了。') + '<br>目標：' + d.d + '（' + missionProgress() + '）';
+    }
+    $('overTitle').textContent = title; $('overText').innerHTML = t; sfx(win ? 'win' : 'over'); updateHud(); refreshMenu();
+    setTimeout(function(){ overOv.classList.remove('hidden'); }, 500);
+  }
+  function missionProgress(){
+    var g = msn.def.g;
+    if (g.lines) return '消行 ' + Math.min(lines, g.lines) + '/' + g.lines;
+    if (g.dig){ var n = 0; for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) if (grid[y][x] === 'G') n++; return '灰磚剩 ' + n + ' 格'; }
+    if (g.combo) return '最高連擊 ' + Math.max(0, maxCombo) + '/' + g.combo;
+    if (g.tetris) return 'TETRIS ' + tetrisN + '/' + g.tetris;
+    if (g.tspin) return 'T-Spin ' + tspinN + '/' + g.tspin;
+    return '';
+  }
+  function checkMission(){
+    if (!msn || msn.done || over) return false;
+    var g = msn.def.g, ok = false;
+    if (g.lines) ok = lines >= g.lines;
+    else if (g.dig){ ok = true; for (var y = 0; y < H && ok; y++) for (var x = 0; x < W; x++) if (grid[y][x] === 'G'){ ok = false; break; } }
+    else if (g.combo) ok = maxCombo >= g.combo;
+    else if (g.tetris) ok = tetrisN >= g.tetris;
+    else if (g.tspin) ok = tspinN >= g.tspin;
+    if (ok){ msn.done = true; gameOver(true); return true; }
+    return false;
+  }
+  function pushGarbage(){
+    if (grid[0].some(function(c){ return c; })){ gameOver(false); return; }
+    grid.shift(); sp.shift();
+    var hole = (lastHole >= 0 && Math.random() < 0.6) ? lastHole : Math.floor(Math.random() * W); lastHole = hole;
+    var row = [], row2 = []; for (var x = 0; x < W; x++){ row.push(x === hole ? null : 'G'); row2.push(null); }
+    grid.push(row); sp.push(row2);
+    if (cur){ var guard = 0; while (collide(cur.m, cur.x, cur.y) && guard++ < 4) cur.y--; if (collide(cur.m, cur.x, cur.y)){ gameOver(false); return; } }
+    shake = 0.25; sfx('rumble'); updateHud();
   }
 
   // ---------- 繪圖 ----------
@@ -466,6 +627,7 @@
     g.globalAlpha = 1;
   }
   function drawMini(g, t, cx, cy, size, dim){
+    var sk = null; if (t && typeof t === 'object'){ sk = t.k; t = t.t; }
     if (!t) return;
     var m = SHAPES[t], minX = 9, maxX = -1, minY = 9, maxY = -1, x, y;
     for (y = 0; y < m.length; y++) for (x = 0; x < m.length; x++) if (m[y][x]){ minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); }
@@ -473,6 +635,22 @@
     g.save(); g.shadowColor = COLORS[t]; g.shadowBlur = dim ? 0 : 9;
     for (y = minY; y <= maxY; y++) for (x = minX; x <= maxX; x++) if (m[y][x]) cell(g, cx - w / 2 + (x - minX) * size, cy - h / 2 + (y - minY) * size, size, COLORS[t], dim ? 0.35 : 1);
     g.restore();
+    if (sk){ g.font = '11px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(SPK[sk].i, cx + w / 2 + 2, cy - h / 2 - 2); }
+  }
+  function glyph(g, k, x, y, size){
+    g.save(); g.shadowBlur = 0; g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.arc(x + size / 2, y + size / 2, size * 0.36, 0, 6.3); g.fill();
+    g.font = Math.round(size * 0.58) + 'px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#000'; g.fillText(SPK[k].i, x + size / 2, y + size / 2 + 1); g.restore();
+  }
+  function drawExtras(BW, BH){
+    var accent = themeColor();
+    if (iceT > 0){ ctx.fillStyle = 'rgba(120,200,255,' + (0.08 + 0.04 * Math.sin(pulse * 4)).toFixed(3) + ')'; ctx.fillRect(0, 0, BW, BH); }
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.font = "700 12px 'Orbitron','Noto Sans TC',sans-serif";
+    var ty = 6;
+    function line(t, col){ ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(5,7,20,.9)'; ctx.strokeText(t, 6, ty); ctx.fillStyle = col || 'rgba(232,236,255,.95)'; ctx.fillText(t, 6, ty); ty += 16; }
+    if (running && msn){ line('任務 ' + (msn.idx + 1) + '：' + msn.def.n, '#FFD45E'); line(missionProgress()); if (msn.def.time){ var left = Math.max(0, msn.def.time - elapsed / 1000); line('⏱ ' + left.toFixed(1) + ' 秒', left < 10 ? '#FF7A7A' : null); } }
+    if (running && (mode === 'storm' || (msn && msn.def.storm))){ var iv2 = stormInterval(), fr = Math.max(0, Math.min(1, stormT / iv2)), warn = stormT < 2.5 && iceT <= 0; ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(0, BH - 5, BW, 5); ctx.fillStyle = warn ? (Math.floor(pulse * 10) % 2 ? '#FF5252' : '#FFB3B3') : (iceT > 0 ? '#8FD3FF' : '#FF9A5E'); ctx.fillRect(0, BH - 5, BW * fr, 5); if (mode === 'storm') line('🌪 風暴 ' + Math.ceil(stormT) + ' 秒', warn ? '#FF7A7A' : '#FFB27A'); else line('🌪 風暴 ' + Math.ceil(stormT) + ' 秒', warn ? '#FF7A7A' : '#FFB27A'); }
+    if (running && iceT > 0) line('❄ 冰凍 ' + Math.ceil(iceT) + ' 秒', '#9FDCFF');
+    if (toasts.length){ var tt = toasts[0], al = Math.min(1, tt.life * 2); ctx.globalAlpha = al; ctx.fillStyle = 'rgba(8,12,40,.92)'; ctx.strokeStyle = accent; ctx.lineWidth = 1.5; rr(ctx, 14, BH - 70, BW - 28, 28, 14); ctx.fill(); ctx.stroke(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = "700 12px 'Noto Sans TC',sans-serif"; ctx.fillStyle = '#FFE08A'; ctx.fillText(tt.t, BW / 2, BH - 56); ctx.globalAlpha = 1; }
   }
   function draw(){
     var BW = W * CELL, BH = H * CELL, x, y, i;
@@ -516,6 +694,7 @@
     for (y = 0; y < H; y++) for (x = 0; x < W; x++){
       var c = grid[y][x]; if (!c) continue;
       cell(ctx, x * CELL, y * CELL, CELL, COLORS[c]);
+      if (sp[y][x]) glyph(ctx, sp[y][x], x * CELL, y * CELL, CELL);
     }
     if (lockFlash){
       ctx.fillStyle = '#FFFFFF'; ctx.globalAlpha = Math.max(0, lockFlash.t / 0.22) * 0.55;
@@ -547,6 +726,7 @@
       for (y = 0; y < cur.m.length; y++) for (x = 0; x < cur.m.length; x++){
         if (!cur.m[y][x] || cur.y + y < 0) continue;
         cell(ctx, (cur.x + x) * CELL, (cur.y + y) * CELL, CELL, COLORS[cur.t]);
+        if (cur.s[y][x]) glyph(ctx, cur.s[y][x], (cur.x + x) * CELL, (cur.y + y) * CELL, CELL);
       }
       ctx.restore();
     }
@@ -561,7 +741,7 @@
     ctx.shadowBlur = 0; ctx.globalAlpha = 1;
     if (flashMsg){
       ctx.globalAlpha = Math.min(1, flashMsg.t * 2); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      var ls = flashMsg.text.split('\n'), yy = 200 - (1.1 - flashMsg.t) * 30, isT = flashMsg.text.indexOf('TETRIS') === 0;
+      var ls = flashMsg.text.split('\n'), yy = 200 - (1.1 - flashMsg.t) * 30, isT = /^(TETRIS|T-SPIN)/.test(flashMsg.text);
       ls.forEach(function(l, i2){
         ctx.font = (i2 === 0 ? "900 26px 'Orbitron','Noto Sans TC'," : "700 16px 'Orbitron','Noto Sans TC',") + 'sans-serif';
         ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(5,7,20,.9)'; ctx.strokeText(l, BW / 2, yy + i2 * 30);
@@ -571,6 +751,7 @@
       });
       ctx.globalAlpha = 1;
     }
+    drawExtras(BW, BH);
     if (mode === 'sprint' && running){
       ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.font = "700 13px 'Orbitron',sans-serif"; ctx.fillStyle = 'rgba(232,236,255,.9)';
       ctx.fillText(fmtTime(elapsed) + '  ' + lines + '/40', 6, 6);
@@ -582,39 +763,48 @@
   }
 
   // ---------- 主迴圈 ----------
-  function loop(ts){
-    if (!lastTs) lastTs = ts;
-    var dt = Math.min(0.05, (ts - lastTs) / 1000); lastTs = ts; pulse += dt;
+  function frame(dt){
+    pulse += dt;
     if (running && !paused && !over){
       elapsed += dt * 1000;
+      if (iceT > 0) iceT -= dt;
+      if (!clearing){
+        if (mode === 'storm' || (msn && msn.def.storm)){ if (iceT <= 0){ stormT -= dt; if (stormT <= 0){ stormT = stormInterval(); pushGarbage(); } } }
+        if (msn && msn.def.time && elapsed / 1000 > msn.def.time && !over){ msn.timeout = true; gameOver(false); }
+      }
       if (clearing){
         clearing.t += dt; if (clearing.t >= 0.28) finishClear();
-      } else if (cur){
-        // DAS / ARR
+      } else if (cur && !over){
         var dir = held.left && !held.right ? -1 : (held.right && !held.left ? 1 : 0);
         if (dir !== lastDir){ lastDir = dir; dasT = 0; arrT = 0; }
         else if (dir){
           dasT += dt;
           if (dasT > 0.16){ arrT += dt; while (arrT >= 0.04){ arrT -= 0.04; if (!move(dir)) break; } }
         }
-        var iv = soft ? Math.min(interval(), 800) / 20 : interval();
+        var iv = (soft ? Math.min(interval(), 800) / 20 : interval()) * (iceT > 0 && !soft ? 2 : 1);
         if (onGround()){
           lockT += dt; acc = 0;
           if (lockT >= 0.5){ lockPiece(); }
         } else {
           acc += dt * 1000;
-          while (acc >= iv && cur && !collide(cur.m, cur.x, cur.y + 1)){ cur.y++; acc -= iv; if (soft) score += 1; }
+          while (acc >= iv && cur && !collide(cur.m, cur.x, cur.y + 1)){ cur.y++; cur.spin = false; acc -= iv; if (soft) score += 1; }
           if (soft) scoreEl.textContent = score;
         }
       }
     }
     for (var i = parts.length - 1; i >= 0; i--){ var p = parts[i]; p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 500 * dt; if (p.life <= 0) parts.splice(i, 1); }
     if (flashMsg){ flashMsg.t -= dt; if (flashMsg.t <= 0) flashMsg = null; }
+    if (toasts.length){ toasts[0].life -= dt; if (toasts[0].life <= 0) toasts.shift(); }
     if (lvFlash > 0) lvFlash -= dt;
     if (trail){ trail.t -= dt; if (trail.t <= 0) trail = null; }
     if (lockFlash){ lockFlash.t -= dt; if (lockFlash.t <= 0) lockFlash = null; }
     for (var ri = rings.length - 1; ri >= 0; ri--){ rings[ri].t -= dt; rings[ri].r += 260 * dt; if (rings[ri].t <= 0) rings.splice(ri, 1); }
     if (shake > 0) shake -= dt;
+  }
+  function loop(ts){
+    if (!lastTs) lastTs = ts;
+    var dt = Math.min(0.05, (ts - lastTs) / 1000); lastTs = ts;
+    frame(dt);
     draw();
     raf = requestAnimationFrame(loop);
   }
@@ -627,7 +817,7 @@
   }
   function startGame(){
     getAc();
-    startOv.classList.add('hidden'); overOv.classList.add('hidden'); pauseOv.classList.add('hidden');
+    startOv.classList.add('hidden'); overOv.classList.add('hidden'); pauseOv.classList.add('hidden'); $('achOv').classList.add('hidden');
     resetState(); running = true; pauseBtn.textContent = '⏸'; music.start();
   }
   document.addEventListener('keydown', function(e){
@@ -688,14 +878,30 @@
   $('againBtn').addEventListener('click', startGame);
   $('resumeBtn').addEventListener('click', function(){ setPaused(false); });
   pauseBtn.addEventListener('click', function(){ if (running) setPaused(!paused); });
-  document.querySelectorAll('.seg button').forEach(function(b){
-    b.addEventListener('click', function(){
-      mode = b.dataset.mode;
-      try { localStorage.setItem('bs_mode', mode); } catch (e) { /* ignore */ }
-      document.querySelectorAll('.seg button').forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
-      updateHud();
+  var MODE_DESC = { marathon:'經典玩法，越消越快，挑戰最高分。', sprint:'盡快消除 40 行，比誰最快。', storm:'隨機出現道具方塊；每隔一段時間會從底部頂上一行灰磚，消行可以延後。', mission:'依序通關 8 個任務，每個任務目標都不同。' };
+  function refreshMenu(){
+    var g = $('misGrid'); g.innerHTML = '';
+    MISSIONS.forEach(function(m, i){
+      var b = document.createElement('button'); b.type = 'button'; var lock = i >= meta.unlocked; b.className = (i === selMission ? 'sel ' : '') + (lock ? 'lock' : ''); b.textContent = lock ? '🔒' : (i + 1);
+      b.setAttribute('aria-label', '任務 ' + (i + 1) + '：' + m.n + (lock ? '（未解鎖）' : ''));
+      b.addEventListener('click', function(){ if (lock) return; selMission = i; refreshMenu(); });
+      g.appendChild(b);
     });
-  });
+    var d = MODE_DESC[mode];
+    if (mode === 'mission'){ var m = MISSIONS[selMission]; d = '任務 ' + (selMission + 1) + '「' + m.n + '」：' + m.d + (meta.best[selMission] ? '（最佳 ' + fmtTime(meta.best[selMission]) + '）' : ''); }
+    $('modeDesc').textContent = d; g.hidden = mode !== 'mission';
+    var n = 0; ACH.forEach(function(a){ if (meta.ach[a[0]]) n++; }); $('achBtn').textContent = '成就 ' + n + '/' + ACH.length;
+    var l = $('achList'); l.innerHTML = ''; ACH.forEach(function(a){ var e = document.createElement('div'); if (meta.ach[a[0]]) e.className = 'on'; e.innerHTML = '<span style="font-size:20px">' + a[1] + '</span><span><b>' + a[2] + (meta.ach[a[0]] ? ' ✓' : '') + '</b>' + a[3] + '</span>'; l.appendChild(e); });
+  }
+  function setMode(m){
+    mode = m; try { localStorage.setItem('bs_mode', mode); } catch (e) { /* ignore */ }
+    document.querySelectorAll('.seg button').forEach(function(x){ x.setAttribute('aria-pressed', String(x.dataset.mode === mode)); });
+    refreshMenu(); updateHud();
+  }
+  document.querySelectorAll('.seg button').forEach(function(b){ b.addEventListener('click', function(){ setMode(b.dataset.mode); }); });
+  $('achBtn').addEventListener('click', function(){ startOv.classList.add('hidden'); $('achOv').classList.remove('hidden'); });
+  $('achBack').addEventListener('click', function(){ $('achOv').classList.add('hidden'); startOv.classList.remove('hidden'); });
+  $('menuBtn').addEventListener('click', function(){ overOv.classList.add('hidden'); running = false; over = false; resetState(); refreshMenu(); startOv.classList.remove('hidden'); });
   function refreshMusicBtn(){ musicBtn.textContent = musicOn ? '🔊' : '🔇'; musicBtn.setAttribute('aria-pressed', String(musicOn)); }
   musicBtn.addEventListener('click', function(){
     musicOn = !musicOn;
@@ -704,10 +910,17 @@
     refreshMusicBtn();
   });
 
-  document.querySelectorAll('.seg button').forEach(function(x){ x.setAttribute('aria-pressed', String(x.dataset.mode === mode)); });
   refreshMusicBtn();
+  window.__BS = {
+    st: function(){ return { grid: grid, sp: sp, cur: cur, score: score, lines: lines, level: level, combo: combo, b2b: b2b, iceT: iceT, stormT: stormT, mode: mode, msn: msn, over: over, running: running, clearing: !!clearing, tspinN: tspinN, queue: queue, meta: meta, elapsed: elapsed, flash: flashMsg && flashMsg.text }; },
+    start: function(m, mi){ mode = m; if (mi != null) selMission = mi; startGame(); cancelAnimationFrame(raf); },
+    frame: frame, draw: draw, move: move, rotate: rotate, hard: hardDrop, hold: doHold, collide: collide, rotCW: rotCW, makePiece: makePiece,
+    setCur: function(t, x, y, rot, k){ cur = makePiece({ t: t, k: k || null }); for (var i = 0; i < rot; i++){ cur.m = rotCW(cur.m); cur.s = rotCW(cur.s); } cur.rot = rot; cur.x = x; cur.y = y; },
+    setGrid: function(rows){ grid = newGrid(); sp = newGrid(); rows.forEach(function(r, i){ var y = H - rows.length + i; for (var x = 0; x < W; x++){ var c = r.charAt(x); if (c !== '.'){ grid[y][x] = c === '#' ? 'G' : (c === 'x' ? 'J' : c); } } }); },
+    setSp: function(x, y, k){ sp[y][x] = k; }, setLevel: function(l){ level = l; }, get cur(){ return cur; }
+  };
   running = false; over = false; paused = false;
-  resetState();
+  resetState(); setMode(mode);
   raf = requestAnimationFrame(loop);
 })();
 </script>
@@ -776,7 +989,7 @@ html.dv-mob body{min-height:100dvh}
 <aside id="dv-r" aria-label="其他遊戲"><small>換一款玩</small><span id="dv-more"></span><a class="all" href="index.html">回遊戲大廳 · 共 40 款</a></aside>
 <script id="dv-js">
 (function(){
- var LIST=[["paper-glider.html", "飛行躲避", "紙飛機大冒險", "讓紙飛機穿過桌上林立的鉛筆縫隙。"], ["rooftop-cat.html", "無盡跑酷", "屋頂貓跑酷", "夕陽屋頂上狂奔，跳過障礙、低頭鑽過飛鳥。"], ["chick-relay.html", "節奏跑酷", "小雞接力賽", "三條跑道三隻小雞，跟著鼓點跳過障礙、撿種子，烏⁠鴉來了千萬別跳"], ["ink-sword.html", "武俠", "墨劍江湖", "水墨風武俠動作：三連斬、輕功閃身、劍氣絕招，闖五章擊敗兩大魔頭"], ["boba-survivors.html", "倖存", "珍奶突圍", "化身珍珠奶茶，自動攻擊、撿珍珠升級，撐過 5 分鐘冰塊與方糖大軍"], ["drift-bend.html", "賽車漂移", "彎道漂移", "按住漂移鍵甩過彎道、放開噴出加速，十條賽道對決對手車手，收集十輛愛車"], ["star-raid.html", "太空射擊", "星艦突襲", "自動連射的太空射擊，撿道具升級武器，還要打倒巨型母艦。"], ["game.html", "即時操作", "夜蔓 貪食蛇", "連擊、衝刺、護盾與果實雨，還能和 AI 紅蛇對戰、解鎖蛇皮膚。"], ["snake-evolve.html", "街機", "蛇蛇進化", "貪吃蛇加上進化系統：穿牆、磁鐵、護盾、破岩，連吃蘋果衝高連擊"], ["tile-breaker.html", "打磚塊", "花磚打磚塊", "用木槳接住彈珠，敲碎整面馬賽克花磚牆。"], ["candy-pachinko.html", "物理彈射", "糖果彈珠台", "瞄準發射彈珠，在糖果釘子間亂彈，把橘色糖果全部打光就過關"], ["ring-toss.html", "街機經典", "夜市套圈圈", "按住瞄準、圈縮到最小時放手，套中熊貓、泰迪熊和金鑽，十個攤位等你挑戰"], ["pearl-catch.html", "接料反應", "珍珠接接樂", "用杯子接住珍珠和布丁，閃開會讓你變淡的冰塊。"], ["hoop-shot.html", "投籃機", "夜光籃球機", "往後拉、放開投籃，空心球加時間，連進有加分"], ["penalty-kings.html", "足球", "點球大師", "滑向球門射點球與任意球，繞過人牆、騙過守門員"], ["pool-hall.html", "運動競技", "八號球撞球", "巡迴賽挑戰六位對手，賺金幣買球桿與球檯，先清完自己的球再打進黑 8"], ["table-tennis.html", "運動競技", "極速桌球", "拖曳球拍回擊，揮得越快越有力，還能殺球，挑戰四級對手或無盡對拉"], ["mini-golf.html", "運動競技", "迷你高爾夫", "往後拉、放手推桿，十二個球場有沙坑、水池、風車、傳送門，桿數越少星越多"], ["dart-bar.html", "酒吧競技", "飛鏢酒吧", "按住瞄準、放開射鏢，三輪對決十位酒客，風、旋轉靶和昏暗燈光都是考驗"], ["lantern-rhythm.html", "節奏點擊", "燈籠節拍", "燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。"], ["garden-whack.html", "反應力", "菜園保衛戰", "限時 30 秒，把冒出土堆的小偷趕跑。"], ["steamer-stack.html", "抓時機", "蒸籠疊疊樂", "抓準時機放下蒸籠，疊得越準越高。"], ["cake-defense.html", "塔防", "蛋糕保衛戰", "擺放糖果槍、冰棒與爆米花砲塔，擋下偷吃生日蛋糕的螞蟻大軍"], ["dice-dungeon.html", "策略", "骰運地下城", "擲骰子、把點數放進技能卡，看穿怪物意圖，闖過 10 層地下城擊倒魔王"], ["magnet-miner.html", "冒險", "磁鐵礦工", "放下磁鐵吸金塊和鑽石，再深入一層，還是收線入袋？小心炸彈全炸光"], ["cat-cafe.html", "放置經營", "貓咪咖啡館", "點咖啡機賺錢，僱用貓咪店員，離線也繼續營業，再開分店"], ["fishing.html", "策略與經營", "深海釣手", "放線下海、左右閃避水母，釣起二十四種魚，賺錢升級漁具，把圖鑑收集滿"], ["soup-master.html", "策略經營", "湯頭大師", "用火候、下料時機和最後一撮鹽，熬出客人心中的那碗好湯，十種湯頭等你收集"], ["ink-gomoku.html", "對弈", "水墨五子棋", "墨黑對朱紅，橫直斜任一方向先連成五子者勝。"], ["xiangqi.html", "棋類對弈", "楚河漢界", "中國象棋對電腦，三種難度，還有悔棋與提示。"], ["macaron2048.html", "滑動合併", "馬卡龍 2048", "把相同口味的馬卡龍疊在一起，疊出最大的一顆。"], ["star-match.html", "記憶配對", "星圖配對", "翻開夜空卡片，用最少步數找出所有星座對子。"], ["tetris.html", "方塊消除", "方塊風暴", "經典俄羅斯方塊，暫存、預覽、瞬降，還有衝刺 40 行挑戰。"], ["meow-mover.html", "益智解謎", "喵喵搬運工", "推箱子解謎，58 個關卡，推木箱到貓腳印上，拿滿三顆星。"], ["tidal-sweeper.html", "邏輯推理", "潮間帶排雷", "退潮的沙灘藏著海膽，用數字推理出牠們的位置。"], ["shadow-cat-detective.html", "推理", "影子貓偵探", "五隻貓七嘴八舌，只有一隻在說謊。聽完口供，找出偷東西的真兇"], ["idiom-code.html", "棋牌益智", "四字密碼", "成語版猜字遊戲，看提示從十二個字裡湊出四字成語，六次機會，每天一題"], ["card-duel.html", "卡牌對戰", "紙牌決鬥", "用能量打出火球、護甲與隨從，擊敗十位對手，每贏一場就解鎖新卡牌"], ["bubble-wave.html", "鏡頭互動", "泡泡派對", "打開鏡頭，用揮手在空中打破飄上來的泡泡。"], ["halloween-booth.html", "鏡頭變臉", "萬聖變臉亭", "開鏡頭在臉上貼萬聖節貼紙，拍成圖片傳給朋友"]];
+ var LIST=[["paper-glider.html", "飛行躲避", "紙飛機大冒險", "讓紙飛機穿過桌上林立的鉛筆縫隙。"], ["rooftop-cat.html", "無盡跑酷", "屋頂貓跑酷", "夕陽屋頂上狂奔，跳過障礙、低頭鑽過飛鳥。"], ["chick-relay.html", "節奏跑酷", "小雞接力賽", "三條跑道三隻小雞，跟著鼓點跳過障礙、撿種子，烏⁠鴉來了千萬別跳"], ["ink-sword.html", "武俠", "墨劍江湖", "水墨風武俠動作：三連斬、輕功閃身、劍氣絕招，闖五章擊敗兩大魔頭"], ["boba-survivors.html", "倖存", "珍奶突圍", "化身珍珠奶茶，自動攻擊、撿珍珠升級，撐過 5 分鐘冰塊與方糖大軍"], ["drift-bend.html", "賽車漂移", "彎道漂移", "按住漂移鍵甩過彎道、放開噴出加速，十條賽道對決對手車手，收集十輛愛車"], ["star-raid.html", "太空射擊", "星艦突襲", "自動連射的太空射擊，撿道具升級武器，還要打倒巨型母艦。"], ["game.html", "即時操作", "夜蔓 貪食蛇", "連擊、衝刺、護盾與果實雨，還能和 AI 紅蛇對戰、解鎖蛇皮膚。"], ["snake-evolve.html", "街機", "蛇蛇進化", "貪吃蛇加上進化系統：穿牆、磁鐵、護盾、破岩，連吃蘋果衝高連擊"], ["tile-breaker.html", "打磚塊", "花磚打磚塊", "12 關闖關，接道具、炸彈連鎖、連擊倍率，還有三場花磚守衛 Boss 戰。"], ["candy-pachinko.html", "物理彈射", "糖果彈珠台", "瞄準發射彈珠，在糖果釘子間亂彈，把橘色糖果全部打光就過關"], ["ring-toss.html", "街機經典", "夜市套圈圈", "按住瞄準、圈縮到最小時放手，套中熊貓、泰迪熊和金鑽，十個攤位等你挑戰"], ["pearl-catch.html", "接料反應", "珍珠接接樂", "用杯子接住珍珠和布丁，閃開會讓你變淡的冰塊。"], ["hoop-shot.html", "投籃機", "夜光籃球機", "往後拉、放開投籃，空心球加時間，連進有加分"], ["penalty-kings.html", "足球", "點球大師", "滑向球門射點球與任意球，繞過人牆、騙過守門員"], ["pool-hall.html", "運動競技", "八號球撞球", "巡迴賽挑戰六位對手，賺金幣買球桿與球檯，先清完自己的球再打進黑 8"], ["table-tennis.html", "運動競技", "極速桌球", "拖曳球拍回擊，揮得越快越有力，還能殺球，挑戰四級對手或無盡對拉"], ["mini-golf.html", "運動競技", "迷你高爾夫", "往後拉、放手推桿，十二個球場有沙坑、水池、風車、傳送門，桿數越少星越多"], ["dart-bar.html", "酒吧競技", "飛鏢酒吧", "按住瞄準、放開射鏢，三輪對決十位酒客，風、旋轉靶和昏暗燈光都是考驗"], ["lantern-rhythm.html", "節奏點擊", "燈籠節拍", "燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。"], ["garden-whack.html", "反應力", "菜園保衛戰", "限時 30 秒，把冒出土堆的小偷趕跑。"], ["steamer-stack.html", "抓時機", "蒸籠疊疊樂", "抓準時機放下蒸籠，疊得越準越高。"], ["cake-defense.html", "塔防", "蛋糕保衛戰", "擺放糖果槍、冰棒與爆米花砲塔，擋下偷吃生日蛋糕的螞蟻大軍"], ["dice-dungeon.html", "策略", "骰運地下城", "擲骰子、把點數放進技能卡，看穿怪物意圖，闖過 10 層地下城擊倒魔王"], ["magnet-miner.html", "冒險", "磁鐵礦工", "放下磁鐵吸金塊和鑽石，再深入一層，還是收線入袋？小心炸彈全炸光"], ["cat-cafe.html", "放置經營", "貓咪咖啡館", "點咖啡機賺錢，僱用貓咪店員，離線也繼續營業，再開分店"], ["fishing.html", "策略與經營", "深海釣手", "放線下海、左右閃避水母，釣起二十四種魚，賺錢升級漁具，把圖鑑收集滿"], ["soup-master.html", "策略經營", "湯頭大師", "用火候、下料時機和最後一撮鹽，熬出客人心中的那碗好湯，十種湯頭等你收集"], ["ink-gomoku.html", "對弈", "水墨五子棋", "墨黑對朱紅，橫直斜任一方向先連成五子者勝。"], ["xiangqi.html", "棋類對弈", "楚河漢界", "中國象棋對電腦，三種難度，還有悔棋與提示。"], ["macaron2048.html", "滑動合併", "馬卡龍 2048", "把相同口味的馬卡龍疊在一起，疊出最大的一顆。"], ["star-match.html", "記憶配對", "星圖配對", "翻開夜空卡片，用最少步數找出所有星座對子。"], ["tetris.html", "方塊消除", "方塊風暴", "經典方塊加強版：T-Spin、背對背、道具方塊與風暴灰磚，另有衝刺與 8 個任務挑戰。"], ["meow-mover.html", "益智解謎", "喵喵搬運工", "推箱子解謎，58 個關卡，推木箱到貓腳印上，拿滿三顆星。"], ["tidal-sweeper.html", "邏輯推理", "潮間帶排雷", "退潮的沙灘藏著海膽，用數字推理出牠們的位置。"], ["shadow-cat-detective.html", "推理", "影子貓偵探", "五隻貓七嘴八舌，只有一隻在說謊。聽完口供，找出偷東西的真兇"], ["idiom-code.html", "棋牌益智", "四字密碼", "成語版猜字遊戲，看提示從十二個字裡湊出四字成語，六次機會，每天一題"], ["card-duel.html", "卡牌對戰", "紙牌決鬥", "用能量打出火球、護甲與隨從，擊敗十位對手，每贏一場就解鎖新卡牌"], ["bubble-wave.html", "鏡頭互動", "泡泡派對", "打開鏡頭，用揮手在空中打破飄上來的泡泡。"], ["halloween-booth.html", "鏡頭變臉", "萬聖變臉亭", "開鏡頭在臉上貼萬聖節貼紙，拍成圖片傳給朋友"]];
  var d=document,de=d.documentElement,b=d.body,me=(location.pathname.split('/').pop()||'');
  var mq=matchMedia('(min-width:900px) and (hover:hover) and (pointer:fine)');
  var z=1,n=0,L=d.getElementById('dv-l'),R=d.getElementById('dv-r');
