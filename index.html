@@ -45,6 +45,7 @@
   .vme{ margin:16px 0 0; padding-top:12px; border-top:1px dashed var(--line); font-size:12.5px; color:var(--muted); }
   .vme[hidden],.vglobal[hidden]{ display:none; }
   @media (max-width:520px){ .visits{ padding:18px 14px 14px; } .vstat b{ font-size:22px; } .vstat{ padding-left:9px; } }
+  .lede span{ display:inline-block; }
   footer{ margin-top:32px; padding-top:20px; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; color:var(--muted); font-size:13px; }
   @media (max-width:520px){ .wrap{ padding:48px 18px 40px; } .deck{ grid-template-columns:repeat(2,1fr); gap:14px; } .info h2{ font-size:18px; } .info p{ font-size:12.5px; } }
   @media (prefers-reduced-motion:reduce){ a.card,.icon{ transition:none; } a.card:hover,a.card:focus-visible,a.card:hover .icon{ transform:none; } }
@@ -117,7 +118,7 @@
       <h1>遊戲大廳</h1>
     </div>
     <div>
-      <p>四十款各有性格的小遊戲，像收藏卡牌一樣攤開，挑一張就開玩。</p>
+      <p class="lede"><span>四十款各有性格的小遊戲，</span><span>像收藏卡牌一樣攤開，</span><span>挑一張就開玩。</span></p>
       <span class="count">共 40 款</span>
     </div>
   </header>
