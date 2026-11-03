@@ -476,5 +476,87 @@ canvas{ border-radius:10px !important; box-shadow:0 0 0 2px rgba(0,0,0,.18); }
 })();
 </script>
 <!--pl:end-->
+<!--dv:start-->
+<style id="dv-css">
+#dv-l,#dv-r{display:none}
+html.dv-desk #dv-l,html.dv-desk #dv-r{position:fixed;top:50%;transform:translateY(-50%);z-index:2147481500;flex-direction:column;gap:10px;box-sizing:border-box;padding:20px 20px 18px;border-radius:18px;color:#fff;font:500 13.5px/1.75 'Noto Sans TC',system-ui,sans-serif;background:rgba(14,12,22,.5);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 18px 44px rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .35s}
+html.dv-desk #dv-l.on,html.dv-desk #dv-r.on{display:flex;opacity:1;pointer-events:auto}
+#dv-l small,#dv-r small{font-size:11px;letter-spacing:.3em;opacity:.65}
+#dv-l b{font:900 24px/1.25 'Noto Serif TC','Noto Sans TC',serif;letter-spacing:.08em}
+#dv-l .t{align-self:flex-start;font-size:12px;letter-spacing:.2em;padding:1px 10px;border:1px solid rgba(255,255,255,.45);border-radius:999px}
+#dv-l p{margin:0;opacity:.85}
+#dv-l .k{margin:2px 0 0;padding-top:10px;border-top:1px dashed rgba(255,255,255,.22);font-size:12.5px;opacity:.78}
+#dv-fs{align-self:flex-start;font:700 13px 'Noto Sans TC',sans-serif;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:6px 14px;cursor:pointer}
+#dv-fs:hover{background:rgba(255,255,255,.24)}
+#dv-r a{display:block;color:#fff;text-decoration:none;padding:9px 12px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);transition:background .15s,transform .15s}
+#dv-r a:hover{background:rgba(255,255,255,.2);transform:translateX(3px)}
+#dv-r a b{display:block;font:700 15px/1.4 'Noto Serif TC','Noto Sans TC',serif}
+#dv-r a span{font-size:12px;opacity:.7}
+#dv-r .all{text-align:center;font-size:12.5px;padding:7px;background:none;border-style:dashed}
+html.dv-mob body{min-height:100dvh}
+</style>
+<aside id="dv-l" aria-label="遊戲資訊"><small>NOW PLAYING</small><b></b><span class="t"></span><p></p><div class="k">滑鼠點擊、拖曳即可操作；有支援鍵盤的遊戲，畫面內都有按鍵提示。</div><button id="dv-fs" type="button">⛶ 全螢幕</button></aside>
+<aside id="dv-r" aria-label="其他遊戲"><small>換一款玩</small><span id="dv-more"></span><a class="all" href="index.html">回遊戲大廳 · 共 40 款</a></aside>
+<script id="dv-js">
+(function(){
+ var LIST=[["paper-glider.html", "飛行躲避", "紙飛機大冒險", "讓紙飛機穿過桌上林立的鉛筆縫隙。"], ["rooftop-cat.html", "無盡跑酷", "屋頂貓跑酷", "夕陽屋頂上狂奔，跳過障礙、低頭鑽過飛鳥。"], ["chick-relay.html", "節奏跑酷", "小雞接力賽", "三條跑道三隻小雞，跟著鼓點跳過障礙、撿種子，烏⁠鴉來了千萬別跳"], ["ink-sword.html", "武俠", "墨劍江湖", "水墨風武俠動作：三連斬、輕功閃身、劍氣絕招，闖五章擊敗兩大魔頭"], ["boba-survivors.html", "倖存", "珍奶突圍", "化身珍珠奶茶，自動攻擊、撿珍珠升級，撐過 5 分鐘冰塊與方糖大軍"], ["drift-bend.html", "賽車漂移", "彎道漂移", "按住漂移鍵甩過彎道、放開噴出加速，十條賽道對決對手車手，收集十輛愛車"], ["star-raid.html", "太空射擊", "星艦突襲", "自動連射的太空射擊，撿道具升級武器，還要打倒巨型母艦。"], ["game.html", "即時操作", "夜蔓 貪食蛇", "連擊、衝刺、護盾與果實雨，還能和 AI 紅蛇對戰、解鎖蛇皮膚。"], ["snake-evolve.html", "街機", "蛇蛇進化", "貪吃蛇加上進化系統：穿牆、磁鐵、護盾、破岩，連吃蘋果衝高連擊"], ["tile-breaker.html", "打磚塊", "花磚打磚塊", "用木槳接住彈珠，敲碎整面馬賽克花磚牆。"], ["candy-pachinko.html", "物理彈射", "糖果彈珠台", "瞄準發射彈珠，在糖果釘子間亂彈，把橘色糖果全部打光就過關"], ["ring-toss.html", "街機經典", "夜市套圈圈", "按住瞄準、圈縮到最小時放手，套中熊貓、泰迪熊和金鑽，十個攤位等你挑戰"], ["pearl-catch.html", "接料反應", "珍珠接接樂", "用杯子接住珍珠和布丁，閃開會讓你變淡的冰塊。"], ["hoop-shot.html", "投籃機", "夜光籃球機", "往後拉、放開投籃，空心球加時間，連進有加分"], ["penalty-kings.html", "足球", "點球大師", "滑向球門射點球與任意球，繞過人牆、騙過守門員"], ["pool-hall.html", "運動競技", "八號球撞球", "巡迴賽挑戰六位對手，賺金幣買球桿與球檯，先清完自己的球再打進黑 8"], ["table-tennis.html", "運動競技", "極速桌球", "拖曳球拍回擊，揮得越快越有力，還能殺球，挑戰四級對手或無盡對拉"], ["mini-golf.html", "運動競技", "迷你高爾夫", "往後拉、放手推桿，十二個球場有沙坑、水池、風車、傳送門，桿數越少星越多"], ["dart-bar.html", "酒吧競技", "飛鏢酒吧", "按住瞄準、放開射鏢，三輪對決十位酒客，風、旋轉靶和昏暗燈光都是考驗"], ["lantern-rhythm.html", "節奏點擊", "燈籠節拍", "燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。"], ["garden-whack.html", "反應力", "菜園保衛戰", "限時 30 秒，把冒出土堆的小偷趕跑。"], ["steamer-stack.html", "抓時機", "蒸籠疊疊樂", "抓準時機放下蒸籠，疊得越準越高。"], ["cake-defense.html", "塔防", "蛋糕保衛戰", "擺放糖果槍、冰棒與爆米花砲塔，擋下偷吃生日蛋糕的螞蟻大軍"], ["dice-dungeon.html", "策略", "骰運地下城", "擲骰子、把點數放進技能卡，看穿怪物意圖，闖過 10 層地下城擊倒魔王"], ["magnet-miner.html", "冒險", "磁鐵礦工", "放下磁鐵吸金塊和鑽石，再深入一層，還是收線入袋？小心炸彈全炸光"], ["cat-cafe.html", "放置經營", "貓咪咖啡館", "點咖啡機賺錢，僱用貓咪店員，離線也繼續營業，再開分店"], ["fishing.html", "策略與經營", "深海釣手", "放線下海、左右閃避水母，釣起二十四種魚，賺錢升級漁具，把圖鑑收集滿"], ["soup-master.html", "策略經營", "湯頭大師", "用火候、下料時機和最後一撮鹽，熬出客人心中的那碗好湯，十種湯頭等你收集"], ["ink-gomoku.html", "對弈", "水墨五子棋", "墨黑對朱紅，橫直斜任一方向先連成五子者勝。"], ["xiangqi.html", "棋類對弈", "楚河漢界", "中國象棋對電腦，三種難度，還有悔棋與提示。"], ["macaron2048.html", "滑動合併", "馬卡龍 2048", "把相同口味的馬卡龍疊在一起，疊出最大的一顆。"], ["star-match.html", "記憶配對", "星圖配對", "翻開夜空卡片，用最少步數找出所有星座對子。"], ["tetris.html", "方塊消除", "方塊風暴", "經典俄羅斯方塊，暫存、預覽、瞬降，還有衝刺 40 行挑戰。"], ["meow-mover.html", "益智解謎", "喵喵搬運工", "推箱子解謎，58 個關卡，推木箱到貓腳印上，拿滿三顆星。"], ["tidal-sweeper.html", "邏輯推理", "潮間帶排雷", "退潮的沙灘藏著海膽，用數字推理出牠們的位置。"], ["shadow-cat-detective.html", "推理", "影子貓偵探", "五隻貓七嘴八舌，只有一隻在說謊。聽完口供，找出偷東西的真兇"], ["idiom-code.html", "棋牌益智", "四字密碼", "成語版猜字遊戲，看提示從十二個字裡湊出四字成語，六次機會，每天一題"], ["card-duel.html", "卡牌對戰", "紙牌決鬥", "用能量打出火球、護甲與隨從，擊敗十位對手，每贏一場就解鎖新卡牌"], ["bubble-wave.html", "鏡頭互動", "泡泡派對", "打開鏡頭，用揮手在空中打破飄上來的泡泡。"], ["halloween-booth.html", "鏡頭變臉", "萬聖變臉亭", "開鏡頭在臉上貼萬聖節貼紙，拍成圖片傳給朋友"]];
+ var d=document,de=d.documentElement,b=d.body,me=(location.pathname.split('/').pop()||'');
+ var mq=matchMedia('(min-width:900px) and (hover:hover) and (pointer:fine)');
+ var z=1,n=0,L=d.getElementById('dv-l'),R=d.getElementById('dv-r');
+ de.appendChild(L);de.appendChild(R);
+ var info=null;for(var i=0;i<LIST.length;i++)if(LIST[i][0]===me)info=LIST[i];
+ if(info){L.querySelector('b').textContent=info[2];L.querySelector('.t').textContent=info[1];L.querySelector('p').textContent=info[3];}
+ else{L.style.display='none';}
+ (function(){var o=LIST.filter(function(x){return x[0]!==me;}),pick=[];
+  while(pick.length<3&&o.length){pick.push(o.splice(Math.floor(Math.random()*o.length),1)[0]);}
+  d.getElementById('dv-more').innerHTML=pick.map(function(x){return '<a href="'+x[0]+'"><b>'+x[2]+'</b><span>'+x[1]+'</span></a>';}).join('');})();
+ var probe=d.createElement('div');probe.setAttribute('aria-hidden','true');probe.style.cssText='position:absolute;left:0;top:0;width:100px;height:4px;visibility:hidden;pointer-events:none';probe.id='dv-probe';b.appendChild(probe);
+ function conv(){if(z===1)return 1;var w=probe.getBoundingClientRect().width;return Math.abs(w-100*z)<Math.abs(w-100)?1:z;}
+ function box(){
+  var t=1e9,bt=-1e9,l=1e9,r=-1e9,sy=scrollY,sx=scrollX,f=conv();
+  for(var c=b.firstElementChild;c;c=c.nextElementSibling){
+   var tg=c.tagName;if(tg==='SCRIPT'||tg==='STYLE'||tg==='LINK'||tg==='ASIDE'||tg==='NOSCRIPT')continue;
+   if(/^(pl|dv)-/.test(c.id))continue;
+   var cs=getComputedStyle(c);if(cs.position==='fixed'||cs.display==='none')continue;
+   var q=c.getBoundingClientRect();if(q.width<2||q.height<2)continue;
+   t=Math.min(t,q.top*f+sy);bt=Math.max(bt,q.bottom*f+sy);l=Math.min(l,q.left*f+sx);r=Math.max(r,q.right*f+sx);
+  }
+  if(bt<0)return null;return{t:t,b:bt,l:l,r:r};
+ }
+ function place(bx){
+  var desk=mq.matches;de.classList.toggle('dv-desk',desk);de.classList.toggle('dv-mob',!desk);
+  if(!desk){L.classList.remove('on');R.classList.remove('on');return;}
+  var vw=innerWidth,gap=20,lw=Math.min(300,bx.l-gap*2),rw=Math.min(280,vw-bx.r-gap*2);
+  if(info&&lw>=190){L.style.width=lw+'px';L.style.left=(bx.l-gap-lw)+'px';L.classList.add('on');}else L.classList.remove('on');
+  if(rw>=190){R.style.width=rw+'px';R.style.left=(bx.r+gap)+'px';R.classList.add('on');}else R.classList.remove('on');
+ }
+ var lastKey='',noUp=false;
+ function apply(v,vh){z=v;if(z===1){b.style.zoom='';b.style.minHeight='';}else{b.style.zoom=String(z);b.style.minHeight=(vh/z)+'px';}}
+ function fit(force){
+  var desk=mq.matches,bx=box();if(!bx)return;
+  var vh=innerHeight,vw=innerWidth,h=(bx.b-bx.t)/z,w=(bx.r-bx.l)/z,key=Math.round(h/8)+','+Math.round(w/8),zmin=desk?.55:.78;
+  var over=de.scrollHeight>vh+2&&z>zmin+.01&&!(noUp&&z===1);
+  if(!force&&key===lastKey&&!over){place(bx);return;}
+  if(key!==lastKey)noUp=false;lastKey=key;
+  var nz;
+  if(desk){nz=Math.min(noUp?1:1.6,(vh-28)/h,(vw-48)/w);}else{nz=Math.min(1,vh/h);}
+  nz=Math.max(zmin,nz);if(Math.abs(nz-1)<(desk?.06:.015))nz=1;
+  apply(nz,vh);
+  for(var k=0;k<4;k++){var sh=de.scrollHeight;if(sh<=vh+2||z<=zmin)break;apply(Math.max(zmin,z*vh/sh*.995),vh);}
+  if(z>1&&de.scrollHeight>vh+2){noUp=true;apply(1,vh);}
+  place(box()||bx);
+ }
+ var tm=0;function soon(f){clearTimeout(tm);n=0;tm=setTimeout(function(){fit(f);},60);}
+ addEventListener('resize',function(){soon(true);});addEventListener('orientationchange',function(){soon(true);});
+ if(mq.addEventListener)mq.addEventListener('change',function(){soon(true);});
+ addEventListener('load',function(){fit(true);setTimeout(fit,500);setTimeout(fit,1600);});
+ setInterval(function(){if(!d.hidden&&n<40){n++;fit(false);}},1500);
+ fit(true);
+ var fs=d.getElementById('dv-fs');
+ fs.addEventListener('click',function(){try{if(d.fullscreenElement){d.exitFullscreen();}else{de.requestFullscreen();}}catch(e){}});
+ d.addEventListener('fullscreenchange',function(){fs.textContent=d.fullscreenElement?'✕ 離開全螢幕':'⛶ 全螢幕';soon(true);});
+})();
+</script>
+<!--dv:end-->
 </body>
 </html>
