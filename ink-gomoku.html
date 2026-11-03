@@ -57,7 +57,7 @@
 @keyframes spUp{ from{ opacity:0; transform:translateY(12px);} }
 .overlay h2,.overlay h3{ text-shadow:0 3px 0 rgba(0,0,0,.3), 0 8px 20px rgba(0,0,0,.35); }
 .btn,.primary,.play{ position:relative; overflow:hidden; transition:transform .1s ease, box-shadow .1s ease, filter .15s; }
-.btn::after,.primary::after,.play::after{ content:""; position:absolute; left:14%; right:14%; top:3px; height:32%; border-radius:99px; background:linear-gradient(180deg,rgba(255,255,255,.45),rgba(255,255,255,0)); pointer-events:none; }
+.btn::after,.primary::after{ content:""; position:absolute; left:14%; right:14%; top:3px; height:32%; border-radius:99px; background:linear-gradient(180deg,rgba(255,255,255,.45),rgba(255,255,255,0)); pointer-events:none; }
 #startBtn,#restartBtn,.primary,.overlay .btn:first-of-type{ animation:spPulse 2s ease-in-out infinite; }
 @keyframes spPulse{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.045);} }
 #startBtn::before,#restartBtn::before,.primary::before{ content:""; position:absolute; top:0; bottom:0; left:-45%; width:28%; background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent); transform:skewX(-20deg); animation:spShine 3s ease-in-out infinite; }
@@ -244,7 +244,7 @@
   function saveStats(){ try { localStorage.setItem('inkgomoku_stats', JSON.stringify(stats)); } catch (e) { /* ignore */ } }
 
   function finish(kind, line){
-    over = true; thinking = false; winLine = line || null; music.stop(); draw();
+    over = true; thinking = false; turnEl.innerHTML = kind === 'win' ? '<i class="dot ink"></i>你勝了' : kind === 'lose' ? '<i class="dot" style="background:#C8372D"></i>電腦勝' : '和局'; winLine = line || null; music.stop(); draw(); kick();
     var title, text;
     if (kind === 'win'){ stats.win++; title = '你贏了'; text = '連成五子，漂亮。可以把強度調高再挑戰一次。'; [523.25, 659.25, 783.99, 1046.5].forEach(function(f, i){ tone(f, 0.25, 'triangle', 0.07, i * 0.1); }); }
     else if (kind === 'lose'){ stats.lose++; title = '電腦贏了'; text = '朱紅連成五子。試試悔棋，或降低強度再來。'; tone(120, 0.5, 'sawtooth', 0.07); }
@@ -255,9 +255,9 @@
 
   function place(r, c, p){
     board[r][c] = p; moves.push({ r: r, c: c, p: p });
-    movesEl.textContent = moves.length; clack(p);
+    movesEl.textContent = moves.length; clack(p); dropT = performance.now();
     var line = fiveLine(r, c, p);
-    draw();
+    draw(); kick();
     if (line){ finish(p === 1 ? 'win' : 'lose', line); return true; }
     if (moves.length === N * N){ finish('draw'); return true; }
     return false;
@@ -282,44 +282,85 @@
     return inb(r, c) ? [r, c] : null;
   }
 
-  function stone(x, y, p, last){
-    var rad = GAP * 0.43;
-    ctx.beginPath(); ctx.arc(x + 1.5, y + 2, rad, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fill();
-    ctx.beginPath(); ctx.arc(x, y, rad, 0, Math.PI * 2);
-    var g = ctx.createRadialGradient(x - rad * .35, y - rad * .35, rad * .1, x, y, rad);
-    if (p === 1){ g.addColorStop(0, '#4A433D'); g.addColorStop(1, '#14110F'); } else { g.addColorStop(0, '#E4584C'); g.addColorStop(1, '#B02B22'); }
-    ctx.fillStyle = g; ctx.fill();
-    if (last){ ctx.beginPath(); ctx.arc(x, y, rad * .22, 0, Math.PI * 2); ctx.fillStyle = '#F1EADB'; ctx.fill(); }
+  var bgCache = null, dropT = 0, dropAt = null, raf = 0;
+  function buildBg(){
+    var c = document.createElement('canvas'); c.width = SIZE * dpr; c.height = SIZE * dpr; var g = c.getContext('2d'); g.scale(dpr, dpr);
+    g.fillStyle = '#241A14'; g.fillRect(0, 0, SIZE, SIZE);
+    var pg = g.createLinearGradient(0, 0, SIZE, SIZE); pg.addColorStop(0, '#F0E4C6'); pg.addColorStop(.5, '#E8DABA'); pg.addColorStop(1, '#DCCBA3');
+    g.fillStyle = pg; g.beginPath(); g.roundRect ? g.roundRect(5, 5, SIZE - 10, SIZE - 10, 6) : g.rect(5, 5, SIZE - 10, SIZE - 10); g.fill();
+    g.save(); g.clip();
+    var seed = 11; function rnd(){ seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+    for (var i = 0; i < 260; i++){ g.strokeStyle = 'rgba(140,110,60,' + (.03 + rnd() * .07) + ')'; g.lineWidth = .6; var x = rnd() * SIZE, y = rnd() * SIZE, l = 6 + rnd() * 18, an = rnd() * 6.28; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(an) * l, y + Math.sin(an) * l); g.stroke(); }
+    // ink wash mist
+    [[40, SIZE - 30, 130, .16], [SIZE - 20, 30, 110, .12], [SIZE * .55, SIZE + 10, 150, .1]].forEach(function(m){ var rg = g.createRadialGradient(m[0], m[1], 4, m[0], m[1], m[2]); rg.addColorStop(0, 'rgba(30,26,22,' + m[3] + ')'); rg.addColorStop(1, 'rgba(30,26,22,0)'); g.fillStyle = rg; g.fillRect(0, 0, SIZE, SIZE); });
+    // distant mountains bottom-left
+    g.fillStyle = 'rgba(30,26,22,.07)'; g.beginPath(); g.moveTo(0, SIZE); g.lineTo(0, SIZE - 46); g.lineTo(34, SIZE - 74); g.lineTo(60, SIZE - 52); g.lineTo(96, SIZE - 86); g.lineTo(140, SIZE - 40); g.lineTo(170, SIZE); g.fill();
+    g.restore();
+    // grid with slight ink variation
+    for (var k = 0; k < N; k++){
+      var q = PAD + k * GAP, edge = (k === 0 || k === N - 1);
+      g.strokeStyle = edge ? 'rgba(20,17,15,.92)' : 'rgba(20,17,15,.72)'; g.lineWidth = edge ? 1.8 : 1;
+      g.beginPath(); g.moveTo(PAD, q); g.lineTo(SIZE - PAD, q); g.stroke();
+      g.beginPath(); g.moveTo(q, PAD); g.lineTo(q, SIZE - PAD); g.stroke();
+    }
+    g.fillStyle = 'rgba(20,17,15,.88)';
+    [[3,3],[3,9],[9,3],[9,9],[6,6]].forEach(function(p){ g.beginPath(); g.arc(PAD + p[1] * GAP, PAD + p[0] * GAP, 3.6, 0, 6.3); g.fill(); });
+    // gold inner frame line
+    g.strokeStyle = 'rgba(217,180,90,.7)'; g.lineWidth = 1.2; g.strokeRect(5.5, 5.5, SIZE - 11, SIZE - 11);
+    // seal
+    g.fillStyle = 'rgba(200,55,45,.85)'; g.fillRect(SIZE - 40, SIZE - 36, 22, 22); g.fillStyle = '#F4E6C8'; g.font = "900 13px 'Noto Serif TC',serif"; g.textAlign = 'center'; g.fillText('墨', SIZE - 29, SIZE - 20);
+    return c;
   }
+  function stone(x, y, p, last, sc, al){
+    sc = sc || 1; al = al === undefined ? 1 : al;
+    var rad = GAP * 0.45 * sc;
+    ctx.save(); ctx.globalAlpha = al;
+    ctx.beginPath(); ctx.ellipse(x + 2, y + 3.2, rad, rad * .95, 0, 0, 6.3); ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fill();
+    var g = ctx.createRadialGradient(x - rad * .38, y - rad * .42, rad * .06, x, y, rad);
+    if (p === 1){ g.addColorStop(0, '#6A625B'); g.addColorStop(.35, '#2E2925'); g.addColorStop(1, '#0B0908'); } else { g.addColorStop(0, '#FF8F7E'); g.addColorStop(.4, '#D8392E'); g.addColorStop(1, '#8C1C14'); }
+    ctx.beginPath(); ctx.arc(x, y, rad, 0, 6.3); ctx.fillStyle = g; ctx.fill();
+    ctx.lineWidth = 1; ctx.strokeStyle = p === 1 ? 'rgba(255,255,255,.12)' : 'rgba(80,10,5,.5)'; ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(x - rad * .3, y - rad * .42, rad * .38, rad * .2, -.5, 0, 6.3); ctx.fillStyle = p === 1 ? 'rgba(255,255,255,.28)' : 'rgba(255,255,255,.4)'; ctx.fill();
+    if (last){ ctx.beginPath(); ctx.arc(x, y, rad * .3, 0, 6.3); ctx.lineWidth = 2; ctx.strokeStyle = p === 1 ? '#F4E6C8' : '#FFF1D0'; ctx.stroke(); }
+    ctx.restore();
+  }
+  function tick(){
+    raf = 0; draw();
+    var tt = performance.now();
+    if (tt - dropT < 520 || (over && winLine)) raf = requestAnimationFrame(tick);
+  }
+  function kick(){ if (!raf) raf = requestAnimationFrame(tick); }
 
   function draw(){
-    ctx.fillStyle = '#E9DDC0'; ctx.fillRect(0, 0, SIZE, SIZE);
-    ctx.strokeStyle = 'rgba(20,17,15,.75)'; ctx.lineWidth = 1;
-    for (var i = 0; i < N; i++){
-      var q = PAD + i * GAP;
-      ctx.beginPath(); ctx.moveTo(PAD, q); ctx.lineTo(SIZE - PAD, q); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(q, PAD); ctx.lineTo(q, SIZE - PAD); ctx.stroke();
-    }
-    ctx.fillStyle = 'rgba(20,17,15,.8)';
-    [[3,3],[3,9],[9,3],[9,9],[6,6]].forEach(function(p){ ctx.beginPath(); ctx.arc(PAD + p[1] * GAP, PAD + p[0] * GAP, 3, 0, Math.PI * 2); ctx.fill(); });
+    if (!bgCache) bgCache = buildBg();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, SIZE, SIZE); ctx.drawImage(bgCache, 0, 0, SIZE, SIZE);
     if (!board) return;
+    var tm = performance.now();
     if (hover && !over && !thinking && active && !board[hover[0]][hover[1]]){
-      ctx.globalAlpha = 0.35; stone(PAD + hover[1] * GAP, PAD + hover[0] * GAP, 1, false); ctx.globalAlpha = 1;
+      stone(PAD + hover[1] * GAP, PAD + hover[0] * GAP, 1, false, 1, .38);
     }
     var lastM = moves.length ? moves[moves.length - 1] : null;
     for (var r = 0; r < N; r++) for (var c = 0; c < N; c++){
-      if (board[r][c]) stone(PAD + c * GAP, PAD + r * GAP, board[r][c], lastM && lastM.r === r && lastM.c === c);
+      if (!board[r][c]) continue;
+      var isLast = lastM && lastM.r === r && lastM.c === c, sc = 1, al = 1, x = PAD + c * GAP, y = PAD + r * GAP;
+      if (isLast){ var t = Math.min(1, (tm - dropT) / 240); if (t < 1){ sc = 1 + (1 - t) * .45; al = .35 + t * .65; }
+        var rt = (tm - dropT) / 520; if (rt >= 0 && rt < 1){ ctx.strokeStyle = board[r][c] === 1 ? 'rgba(20,17,15,' + (.5 * (1 - rt)) + ')' : 'rgba(200,55,45,' + (.6 * (1 - rt)) + ')'; ctx.lineWidth = 2.5 * (1 - rt) + .5; ctx.beginPath(); ctx.arc(x, y, GAP * .45 + rt * GAP * .9, 0, 6.3); ctx.stroke(); } }
+      stone(x, y, board[r][c], isLast, sc, al);
     }
     if (winLine){
-      ctx.strokeStyle = '#D9B45A'; ctx.lineWidth = 3;
-      winLine.forEach(function(p){ ctx.beginPath(); ctx.arc(PAD + p[1] * GAP, PAD + p[0] * GAP, GAP * 0.5, 0, Math.PI * 2); ctx.stroke(); });
+      var pulse = .6 + .4 * Math.sin(tm / 160), a0 = winLine[0], a1 = winLine[0];
+      winLine.forEach(function(p){ if (p[1] < a0[1] || (p[1] === a0[1] && p[0] < a0[0])) a0 = p; if (p[1] > a1[1] || (p[1] === a1[1] && p[0] > a1[0])) a1 = p; });
+      ctx.save(); ctx.lineCap = 'round'; ctx.shadowColor = '#FFD76A'; ctx.shadowBlur = 16 * pulse; ctx.strokeStyle = 'rgba(255,215,106,' + (.55 + .35 * pulse) + ')'; ctx.lineWidth = 7;
+      ctx.beginPath(); ctx.moveTo(PAD + a0[1] * GAP, PAD + a0[0] * GAP); ctx.lineTo(PAD + a1[1] * GAP, PAD + a1[0] * GAP); ctx.stroke(); ctx.restore();
+      winLine.forEach(function(p){ ctx.strokeStyle = '#FFE9A0'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(PAD + p[1] * GAP, PAD + p[0] * GAP, GAP * (.5 + .05 * pulse), 0, 6.3); ctx.stroke(); });
     }
   }
 
   function newGame(){
     clearTimeout(aiTimer);
     board = []; for (var r = 0; r < N; r++){ board.push(new Array(N).fill(0)); }
-    moves = []; over = false; thinking = false; winLine = null; hover = null;
+    moves = []; over = false; thinking = false; winLine = null; hover = null; dropT = 0;
     movesEl.textContent = '0'; setTurn(1); updateRecord(); draw();
   }
 
@@ -380,6 +421,21 @@ canvas{touch-action:none}
 #pl-splash small{font:500 11px 'Noto Sans TC',sans-serif;letter-spacing:.3em;opacity:.7}
 @keyframes plSp{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){body{animation:none}#pl-splash i{animation:none}}
+
+/* ===== UI v3 (deep) ===== */
+body{ background:radial-gradient(ellipse 90% 50% at 50% -8%,rgba(200,55,45,.22),transparent 60%), radial-gradient(ellipse 80% 40% at 50% 110%,rgba(217,180,90,.1),transparent 60%), #151917 !important; }
+.marquee h1{ font-family:'Noto Serif TC',serif; text-shadow:0 2px 0 rgba(0,0,0,.5), 0 8px 24px rgba(200,55,45,.35); }
+.board{ background:linear-gradient(180deg,#2B312E,#1F2523) !important; border:1px solid #4A5651; }
+.frame{ padding:9px !important; background:linear-gradient(145deg,#6B4A2B,#3C2917 60%,#54391F) !important; box-shadow:inset 0 2px 0 rgba(255,225,170,.35), inset 0 -3px 0 rgba(0,0,0,.4), 0 8px 22px rgba(0,0,0,.45) !important; border-radius:14px !important; }
+.frame::after{ display:none !important; }
+canvas{ border-radius:6px !important; box-shadow:0 0 0 1px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.1); }
+.dot{ width:14px; height:14px; display:inline-block; border-radius:50%; margin-right:6px; vertical-align:-2px; box-shadow:0 2px 3px rgba(0,0,0,.5), inset -2px -2px 3px rgba(0,0,0,.4), inset 2px 2px 3px rgba(255,255,255,.3); }
+.dot.red{ animation:thk .8s ease-in-out infinite alternate; } @keyframes thk{ to{ transform:scale(.7); opacity:.6; } }
+.seg{ background:rgba(0,0,0,.25); padding:3px; gap:2px; border-color:#4A5651 !important; }
+.seg button{ border-radius:999px; transition:background .15s,color .15s; }
+.seg button[aria-pressed="true"]{ background:linear-gradient(#F6EEDB,#DDCFAA) !important; box-shadow:0 2px 0 rgba(0,0,0,.35); }
+.btn.ghost:hover{ background:rgba(255,255,255,.07); }
+.record{ text-align:center; margin-top:10px; font-size:12px; color:#A9B2AC; letter-spacing:.08em; }
 </style>
 <script id="pl-js">
 (function(){
