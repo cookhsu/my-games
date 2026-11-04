@@ -26,6 +26,8 @@ button{font-family:inherit;cursor:pointer;border:0}
 #scene{position:relative;height:6.8em;flex:none;overflow:hidden;color:#fff;display:flex;align-items:flex-end;padding:.6em .9em}
 #scene .em{position:absolute;right:.5em;bottom:-.2em;font-size:5.2em;line-height:1;opacity:.92;filter:drop-shadow(0 .2em 0 rgba(0,0,0,.3));animation:bob 4s ease-in-out infinite}
 #scene .hill{position:absolute;left:0;right:0;bottom:0;height:3em;background:linear-gradient(180deg,rgba(20,14,8,0),rgba(20,14,8,.65))}
+#scene .dps{position:absolute;left:.7em;top:.45em;right:.5em;display:flex;flex-wrap:wrap;gap:.25em;z-index:2;padding-left:5em}
+.dp{display:inline-block;background:rgba(15,10,6,.65);color:#F6DA91;border:1px solid rgba(217,164,65,.7);border-radius:99px;padding:.1em .6em;font:700 .68em 'Noto Sans TC';white-space:nowrap}
 #scene h2{margin:0;font-size:1.5em;position:relative;text-shadow:0 .1em .3em rgba(0,0,0,.6);letter-spacing:.12em}
 #scene p{margin:.15em 0 0;font-size:.76em;position:relative;opacity:.92;max-width:15em;line-height:1.5;text-shadow:0 1px 4px rgba(0,0,0,.7)}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-.25em)}}
@@ -131,8 +133,14 @@ var SK={
  f1:{n:'劈拳',t:'剛',mp:0,p:7,basic:1,d:'人人都會的直拳'},
  f2:{n:'推掌',t:'柔',mp:0,p:7,basic:1,d:'隨手一推'},
  f3:{n:'閃擊',t:'巧',mp:0,p:7,basic:1,d:'側身快打'},
- changquan:{n:'長拳',t:'剛',mp:4,p:15,d:'武館入門拳法,招式扎實'},
+ feibiao:{n:'飛鏢',t:'巧',mp:5,p:18,d:'鏢師看家本領,甩手一鏢又快又準'},
+ hubiao:{n:'護鏢棍法',t:'剛',mp:6,p:22,d:'走鏢護貨的棍法,守得穩也打得狠'},
+ lianzhu:{n:'連珠鏢',t:'巧',mp:10,p:32,d:'一手三鏢,首尾相連,密不透風'},
+ cuidu:{n:'淬毒鏢',t:'巧',mp:9,p:16,fx:'poison',d:'鏢上淬毒:之後 3 回合每回合對手再受毒傷'},
+ fenghou:{n:'一鏢封喉',t:'巧',mp:16,p:56,d:'龍門鏢局不傳絕技,一鏢既出,不留活口'},
+ changquan:{n:'長拳',t:'剛',mp:4,p:15,d:'鏢局入門拳法,招式扎實'},
  luohan:{n:'羅漢拳',t:'剛',mp:7,p:25,d:'少林拳法,勢大力沉'},
+ jingang:{n:'大力金剛掌',t:'剛',mp:10,p:34,d:'少林七十二絕技之一,掌力雄渾,威猛無匹'},
  yizhi:{n:'一指禪',t:'剛',mp:13,p:44,d:'一指之力,開碑裂石'},
  taiji:{n:'太極拳',t:'柔',mp:6,p:17,fx:'heal',d:'以柔克剛,出招時回復氣血'},
  taijijian:{n:'太極劍',t:'柔',mp:13,p:36,fx:'heal',d:'綿綿不絕,借力打力並回血'},
@@ -143,6 +151,7 @@ var SK={
  taomu:{n:'桃木劍法',t:'剛',mp:7,p:26,d:'茅山驅邪劍法,斬妖除魔'},
  zhenhun:{n:'鎮魂符',t:'柔',mp:8,p:18,fx:'reveal',d:'貼符定神:看穿對手下一招的起手'},
  wulei:{n:'五雷咒',t:'巧',mp:15,p:46,fx:'mana',d:'引雷入體,出招同時回復 6 點內力'},
+ qingshen:{n:'請神',t:'剛',mp:20,p:30,fx:'god',d:'請神上身:本招後 3 回合傷害 +30%、承受傷害減半'},
  hushen:{n:'護身符',t:'內',pass:1,d:'每級受到的傷害 -5%'},
  zui:{n:'醉拳',t:'巧',mp:7,p:23,fx:'sway',d:'東倒西歪卻招招刁鑽,出招時承受傷害 -40%'},
  lianhua:{n:'蓮花落',t:'柔',mp:5,p:19,fx:'mana',d:'邊唱邊打,出招同時回復 6 點內力'},
@@ -154,16 +163,16 @@ var SK={
  tiyun:{n:'梯雲縱',t:'內',pass:1,d:'每級 +6% 閃避'}
 };
 var SCH=[
- {id:'guan',m:{n:'趙鐵山',e:'🧔',t:'武館教頭',q:'「練武先練腿,腿穩了拳才穩。」',fee:15,req:{}}, n:'鎮上武館',e:'🥋',d:'教頭收費不貴,打好基礎',L:[
-  {s:'changquan',fee:40,req:{}},{s:'tiebu',fee:90,req:{body:5}}]},
- {id:'shaolin',m:{n:'慧明禪師',e:'👴',t:'少林住持',q:'「拳腳是皮毛,心定才是根本。」',fee:60,req:{fame:5}}, n:'少林寺',e:'🛕',d:'天下武功出少林',L:[
-  {s:'luohan',fee:150,req:{fame:8}},{s:'yijin',fee:275,req:{wit:8}},{s:'yizhi',fee:575,req:{sk:['luohan',3]}}]},
+ {id:'guan',m:{n:'趙鐵山',e:'🧔',t:'鏢局總鏢頭',q:'「練武先練腿,腿穩了拳才穩。」',fee:15,req:{}}, n:'龍門鏢局',e:'🥋',d:'鏢局收費不貴,走鏢練出的扎實基本功',L:[
+  {s:'changquan',fee:40,req:{}},{s:'feibiao',fee:90,req:{fame:3}},{s:'hubiao',fee:150,req:{fame:5}},{s:'tiebu',fee:90,req:{body:5}},{s:'lianzhu',fee:290,req:{fame:10,sk:['feibiao',3]}},{s:'cuidu',fee:350,req:{fame:15,sk:['feibiao',2]}},{s:'fenghou',fee:875,req:{fame:35,sk:['lianzhu',4]}}]},
+ {id:'shaolin',m:{n:'玄慈大師',e:'👴',t:'少林住持',q:'「拳腳是皮毛,心定才是根本。」',fee:60,req:{fame:5}}, n:'少林寺',e:'🛕',d:'天下武功出少林',L:[
+  {s:'luohan',fee:150,req:{fame:8}},{s:'jingang',fee:330,req:{fame:15,sk:['luohan',2]}},{s:'yijin',fee:275,req:{wit:8}},{s:'yizhi',fee:575,req:{sk:['luohan',3]}}]},
  {id:'wudang',m:{n:'清虛道長',e:'🧙',t:'武當長老',q:'「以柔克剛,不是不用力,是不與力爭。」',fee:60,req:{wit:7}}, n:'武當山',e:'☯️',d:'以柔克剛,四兩撥千斤',L:[
   {s:'taiji',fee:150,req:{wit:7,fame:8}},{s:'tiyun',fee:240,req:{wit:8}},{s:'taijijian',fee:540,req:{sk:['taiji',3]}}]},
  {id:'gaibang',m:{n:'九袋老丐',e:'🍶',t:'丐幫長老',q:'「英雄不問出身,有飯一起吃,有架一起打!」',fee:20,req:{fame:3}}, n:'丐幫分舵',e:'🥢',d:'天下第一大幫,英雄不問出身',L:[
   {s:'dagou',fee:110,req:{fame:5}},{s:'baijia',fee:125,req:{fame:5}},{s:'zui',fee:165,req:{fame:10}},{s:'lianhua',fee:140,req:{fame:12}},{s:'xianglong',fee:750,req:{fame:30,sk:['dagou',3]}},{s:'wugou',fee:690,req:{fame:35,sk:['dagou',4]}},{s:'kanglong',fee:1000,req:{fame:45,sk:['xianglong',3]}}]},
- {id:'maoshan',m:{n:'玄真道人',e:'🧓',t:'茅山掌門',q:'「符是死的,心是活的。心誠則靈。」',fee:60,req:{wit:7}}, n:'茅山派',e:'📿',d:'符籙道術,畫符驅邪、引雷鎮魔',L:[
-  {s:'zhenhun',fee:140,req:{wit:8}},{s:'hushen',fee:200,req:{wit:9}},{s:'taomu',fee:165,req:{fame:10}},{s:'wulei',fee:600,req:{wit:10,sk:['taomu',3]}}]},
+ {id:'maoshan',m:{n:'林英正',e:'🧓',t:'茅山掌門',q:'「符是死的,心是活的。心誠則靈。」',fee:60,req:{wit:7}}, n:'茅山派',e:'📿',d:'符籙道術,畫符驅邪、引雷鎮魔',L:[
+  {s:'zhenhun',fee:140,req:{wit:8}},{s:'hushen',fee:200,req:{wit:9}},{s:'taomu',fee:165,req:{fame:10}},{s:'wulei',fee:600,req:{wit:10,sk:['taomu',3]}},{s:'qingshen',fee:1000,req:{wit:11,fame:30,sk:['zhenhun',3]}}]},
  {id:'emei',m:{n:'靜心師太',e:'👩‍🦳',t:'峨嵋掌門',q:'「劍在手,更要在心,出劍之前先想清楚為何而劍。」',fee:60,req:{fame:8}}, n:'峨嵋金頂',e:'🌸',d:'劍法輕靈,女俠輩出',L:[
   {s:'yunv',fee:190,req:{fame:12}}]}
 ];
@@ -178,7 +187,7 @@ var EN=[
  {id:'hs',n:'華山劍客',e:'🗡️',hp:225,atk:22,acc:.8,w:{剛:.3,柔:.3,巧:.4},fame:40,coin:120,rf:14,tip:'劍法多變'},
  {id:'sage',n:'隱世高人',e:'🧓',hp:285,atk:25,acc:.76,w:{剛:.34,柔:.33,巧:.33},fame:55,coin:200,rf:18,tip:'深不可測'}
 ];
-var BOSS={id:'boss',n:'武林盟主·乾坤子',e:'👑',hp:400,atk:27,acc:.68,w:{剛:.34,柔:.33,巧:.33},tip:'江湖第一人'};
+var BOSS={id:'boss',n:'武林盟主·乾坤子',e:'👑',hp:520,atk:34,acc:.62,w:{剛:.34,柔:.33,巧:.33},tip:'江湖第一人'};
 var RANKS=[[0,'布衣百姓'],[10,'初出茅廬'],[25,'江湖好手'],[45,'一流高手'],[70,'一代宗師']];
 function rankOf(f){var r=RANKS[0][1];RANKS.forEach(function(x){if(f>=x[0])r=x[1];});return r;}
 function nextRank(f){for(var i=0;i<RANKS.length;i++)if(f<RANKS[i][0])return RANKS[i];return null;}
@@ -195,9 +204,12 @@ var ENDS={
 var S=null,F=null,sg=0;
 function newRun(){var m=getMeta();S={day:1,ap:3,coin:20,fame:0,body:3,wit:3+Math.min(3,m.runs||0),inner:0,hp:0,mp:0,sk:{},flags:{},tab:'village',tut:0,hungry:false,rain:false,fights:0,wins:0,labor:0,sits:0,hist:[]};S.hp=maxHP();S.mp=maxMP();}
 function lv(id){return S.sk[id]?S.sk[id].lv:0;}
-function maxHP(){return 50+S.body*5+lv('tiebu')*12+lv('baijia')*8;}
-function maxMP(){return 20+S.inner+lv('yijin')*10;}
-function dodge(){return lv('tiyun')*.06;}
+var MAXLV=10;
+function eff(id){var l=lv(id);return l<=5?l:5+(l-5)*.5;}
+function pw(l){return 1+.18*(Math.min(l,5)-1)+.1*Math.max(0,l-5);}
+function maxHP(){return 50+S.body*5+Math.round(eff('tiebu')*12+eff('baijia')*8);}
+function maxMP(){return 20+S.inner+Math.round(eff('yijin')*10);}
+function dodge(){return eff('tiyun')*.06;}
 function mpRegen(){return 3+(lv('yijin')?1+(lv('yijin')>=3?1:0):0);}
 function getMeta(){try{return JSON.parse(store('jh_meta'))||{};}catch(e){return {};}}
 function setMeta(m){store('jh_meta',JSON.stringify(m));}
@@ -250,15 +262,15 @@ function act(id){
  } else if(k==='join'){var sc=SCH.filter(function(c){return c.id===x;})[0],mm=sc.m;if(Ms()[x]||reqOK(mm.req)||S.coin<mm.fee)return;S.coin-=mm.fee;Ms()[x]={j:1,t:0,cd:-9};sfx.lv();vib(20);
   story(mm.e,mm.n+'收你為徒','<b>'+mm.t+'・'+mm.n+'</b>打量了你一番,緩緩點頭。<br>'+mm.q+'<br><br>從今天起你是「'+sc.n+'」的弟子:本門武功學費 <b>8 折</b>,也能隨時向師父<b>請益</b>。',function(){spend();save();render();},'拜見師父');return;
  } else if(k==='ask'){var sc2=SCH.filter(function(c){return c.id===x;})[0],ms=Ms()[x],m2=sc2.m;if(!ms||S.day-ms.cd<2)return;
-  var ks=sc2.L.map(function(l){return l.s;}).filter(function(id){return S.sk[id]&&S.sk[id].lv<5;}),t2;
+  var ks=sc2.L.map(function(l){return l.s;}).filter(function(id){return S.sk[id]&&S.sk[id].lv<MAXLV;}),t2;
   ms.cd=S.day;ms.t++;
-  if(ks.length){var kk=pick(ks),sk=S.sk[kk];sk.xp+=3;var need=sk.lv*2+1;t2=m2.n+'指點了「'+SK[kk].n+'」,經驗 +3';while(sk.xp>=need&&sk.lv<5){sk.xp-=need;sk.lv++;need=sk.lv*2+1;t2+='\n✨ 突破到 '+sk.lv+' 級!';sfx.lv();}}
+  if(ks.length){var kk=pick(ks),sk=S.sk[kk];sk.xp+=3;var need=sk.lv*2+1;t2=m2.n+'指點了「'+SK[kk].n+'」,經驗 +3';while(sk.xp>=need&&sk.lv<MAXLV){sk.xp-=need;sk.lv++;need=sk.lv*2+1;t2+='\n✨ 突破到 '+sk.lv+' 級!';sfx.lv();}}
   else{S.wit++;t2=m2.n+'講了一番心得,悟性 +1\n(學了本門武功,請益還能加經驗)';}
   if(ms.t%3===0){S.fame+=2;t2+='\n🎖 師父讚許,名聲 +2';}
   toast(m2.e+' '+t2+'\n'+m2.q,3200);sfx.ok();spend();
  } else if(k==='learn'){learn(x);return;
  } else if(k==='prac'){
-  var s=S.sk[x];if(!s){return;}if(s.lv>=5){toast('已臻化境');return;}
+  var s=S.sk[x];if(!s){return;}if(s.lv>=MAXLV){toast('已臻化境');return;}
   var gain=1+(S.wit>=10?1:0)+(Math.random()<S.wit*.02?1:0);s.xp+=gain;var need=s.lv*2+1,m3='💪 修練「'+SK[x].n+'」 經驗 +'+gain;
   if(s.xp>=need){s.xp-=need;s.lv++;m3='✨ 「'+SK[x].n+'」突破!升到 '+s.lv+' 級';sfx.lv();vib(20);}else sfx.ok();
   clampS();toast(m3);spend();
@@ -288,7 +300,7 @@ function wander(){
   story('🏔️','絕壁奇遇','你在斷崖山洞中發現一具枯骨,身旁石壁刻滿劍痕——<b>獨孤九劍</b>的劍意撲面而來!你苦思一日一夜,終於參透。',function(){S.sk.dugu={lv:1,xp:0};sfx.lv();done();});return;
  }
  if(roll<.22){var g=ri(15,32);S.coin+=g;toast('👛 路邊拾到錢袋,得 '+g+' 兩');sfx.ok();done();}
- else if(roll<.42){S.wit++;var ks=Object.keys(S.sk).filter(function(k){return !SK[k].pass&&S.sk[k].lv<5;});var t2='🧓 高人在茶棚指點了幾句,悟性 +1';if(ks.length){var kk=pick(ks);S.sk[kk].xp+=2;t2+='\n「'+SK[kk].n+'」經驗 +2';}toast(t2,2400);sfx.lv();done();}
+ else if(roll<.42){S.wit++;var ks=Object.keys(S.sk).filter(function(k){return !SK[k].pass&&S.sk[k].lv<MAXLV;});var t2='🧓 高人在茶棚指點了幾句,悟性 +1';if(ks.length){var kk=pick(ks);S.sk[kk].xp+=2;t2+='\n「'+SK[kk].n+'」經驗 +2';}toast(t2,2400);sfx.lv();done();}
  else if(roll<.66){story('🥷','山賊攔路','「此山是我開,此樹是我栽!」一名山賊攔住去路。',function(){fight(EN[1],function(win){if(win){var c=ri(15,30);S.coin+=c;S.fame+=2;S.wins++;toast('擊退山賊!搜得 '+c+' 兩、名聲 +2');}else loseFight();S.fights++;done();});},'迎戰');}
  else if(roll<.8){S.fame+=2;toast('🤝 結識了一位江湖朋友,名聲 +2');sfx.ok();done();}
  else if(roll<.9){var g3=ri(6,14);S.coin+=g3;toast('🏮 逛廟會幫人看攤,賺 '+g3+' 兩');done();}
@@ -303,11 +315,12 @@ function fight(en,cb,final){
 function nextIntent(){var w=F.en.w,r=Math.random(),c=0,t='剛';['剛','柔','巧'].forEach(function(k){c+=w[k];if(r>=c-w[k]&&r<c)t=k;});F.real=t;
  if(Math.random()<F.en.acc)F.tell=t;else{var o=['剛','柔','巧'].filter(function(k){return k!==t;});F.tell=pick(o);}}
 function rel(T,E){return BEATS[T]===E?1:BEATS[E]===T?-1:0;}
-function moveDmg(id,r){var k=SK[id],l=k.basic?1:lv(id),p=k.p*(1+.18*(l-1))+S.body*.6;return p*(r>0?1.6:r<0?.6:1)*rnd(.9,1.1);}
+function moveDmg(id,r){var k=SK[id],l=k.basic?1:lv(id),p=k.p*pw(l)+S.body*.6;return p*(r>0?1.6:r<0?.6:1)*rnd(.9,1.1);}
 function playerMove(id){
  if(!F||F.over)return;var k=SK[id];if(F.mp<k.mp)return;F.mp-=k.mp;
  var r=rel(k.t,F.real);if(k.fx==='pierce'&&r<0)r=0;
- var dmg=Math.round(moveDmg(id,r)),L=[];
+ var gOn=F.god>0,dmg=Math.round(moveDmg(id,r)*(gOn?1.3:1)),L=[];if(k.fx==='poison'){F.psn=3;F.psnD=Math.max(5,Math.round(k.p*pw(lv(id))*.45));L.push('☠️ 毒鏢命中,對手中毒!');}
+ if(k.fx==='god'){F.god=3;F.cast=true;L.push('🙏 請神上身!金光護體');}
  F.ehp=Math.max(0,F.ehp-dmg);
  var txt='你使出「'+k.n+'」,造成 '+dmg+' 傷害';if(r>0)txt+=' <克制!>';else if(r<0)txt+=' (被化解)';L.push(txt);
  flo(dmg+(r>0?'!':''),'enemy',r>0?'#FFD84A':'#fff');fx('eface','hit');r>0?sfx.big():sfx.hit();vib(r>0?25:10);
@@ -317,10 +330,12 @@ function playerMove(id){
  if(k.fx==='stun'){L.push('對手被你絆住,無法出招!');}
  else{
   var er=-rel(k.t,F.real);   // 敵人視角:er>0 敵克我
-  var ed=F.en.atk*1.3*rnd(.9,1.1)*(er>0?1.5:er<0?.5:1)-S.body*.3;ed=Math.max(1,Math.round(ed*(1-.05*lv('hushen'))*(k.fx==='sway'?.6:1)));
+  var ed=F.en.atk*1.3*rnd(.9,1.1)*(er>0?1.5:er<0?.5:1)-S.body*.3;ed=Math.max(1,Math.round(ed*(1-.05*eff('hushen'))*(k.fx==='sway'?.6:1)*(F.god>0?.5:1)));
   if(Math.random()<dodge()){L.push('🌀 你施展輕功閃過了攻擊!');flo('閃','me','#9BE8FF');}
   else{S.hp=Math.max(0,S.hp-ed);L.push(F.en.n+'的'+F.real+'招打來,你受到 '+ed+' 傷害'+(er>0?' <被剋制!>':er<0?' (被你化解)':''));flo('-'+ed,'me','#FF8A7A');fx('eface','atk');shake();er>0?sfx.big():sfx.blk();vib(15);}
  }
+ if(F.cast)F.cast=false;else if(F.god>0){F.god--;if(F.god===0)L.push('神明離體');}
+ if(F.psn>0){var pd=F.psnD;F.ehp=Math.max(0,F.ehp-pd);F.psn--;L.push('☠️ 毒發,對手再受 '+pd+' 傷害');flo('-'+pd,'enemy','#9BE86A');if(F.ehp<=0){F.log=F.log.concat(L);end(true);return;}}
  F.mp=Math.min(maxMP(),F.mp+mpRegen()+(k.fx==='mana'?6:0));
  F.log=F.log.concat(L).slice(-6);
  if(S.hp<=0){end(false);return;}
@@ -342,13 +357,13 @@ function drawFight(res){
  var e=F.en,h='';
  h+='<div class="en"><div class="ename"><span>'+e.n+'</span><small>'+e.tip+'</small></div>'+bar('hp',F.ehp,e.hp,'')+'<div style="text-align:center"><div class="eface" style="display:inline-block">'+e.e+'</div></div></div>';
  var pc=Math.round(e.acc*100);
- h+='<div class="intent"><div class="tt" style="background:'+TCOL[F.tell]+';color:'+TCOL[F.tell]+'"><span style="color:#fff">'+F.tell+'</span></div><div style="text-align:left"><b>對手起手:'+TICON[F.tell]+F.tell+'招</b><small>看穿度約 '+pc+'% ・ 柔克剛 ・ 剛克巧 ・ 巧克柔</small></div></div>';
+ h+='<div class="intent"><div class="tt" style="background:'+TCOL[F.tell]+';color:'+TCOL[F.tell]+'"><span style="color:#fff">'+F.tell+'</span></div><div style="text-align:left"><b>對手起手:'+TICON[F.tell]+F.tell+'招</b><small>'+(F.god>0?'✨神明附體 剩 '+F.god+' 回合 ・ ':'')+(F.psn>0?'☠️對手中毒 剩 '+F.psn+' 回合 ・ ':'')+'看穿度約 '+pc+'% ・ 柔克剛 ・ 剛克巧 ・ 巧克柔</small></div></div>';
  h+='<div id="flog">'+(F.log.length?F.log.slice(-4).map(function(l){return '<div>'+l.replace(/</g,'&lt;').replace(/&lt;(.*?)>/g,'<b style="color:#FFD84A">$1</b>')+'</div>';}).join(''):'<div>決一死戰!選擇與對手起手相剋的招式。</div>')+'</div>';
  h+='<div style="width:100%">'+bar('hp',S.hp,maxHP(),'氣血 ')+'<div style="height:.3em"></div>'+bar('mp',F.mp,maxMP(),'內力 ')+'</div>';
  h+='<div class="skills">';
  var ids=['f1','f2','f3'];Object.keys(S.sk).forEach(function(k){if(!SK[k].pass)ids.push(k);});
- ids.forEach(function(id){var k=SK[id],ok=F.mp>=k.mp&&!F.over,l=k.basic?'':' Lv'+lv(id),p=Math.round(k.p*(1+.18*((k.basic?1:lv(id))-1))+S.body*.6);
-  h+='<button class="sk '+k.t+'" data-m="'+id+'" '+(ok?'':'disabled')+'>'+TICON[k.t]+k.n+l+'<small>威力 '+p+(k.mp?' ・ 耗 '+k.mp:' ・ 免費')+(k.fx==='heal'?' ・ 回血':k.fx==='stun'?' ・ 絆':k.fx==='pierce'?' ・ 無懼':k.fx==='reveal'?' ・ 看穿':k.fx==='mana'?' ・ 回氣':k.fx==='sway'?' ・ 醉閃':'')+'</small></button>';});
+ ids.forEach(function(id){var k=SK[id],ok=F.mp>=k.mp&&!F.over,l=k.basic?'':' Lv'+lv(id),p=Math.round(k.p*pw(k.basic?1:lv(id))+S.body*.6);
+  h+='<button class="sk '+k.t+'" data-m="'+id+'" '+(ok?'':'disabled')+'>'+TICON[k.t]+k.n+l+'<small>威力 '+p+(k.mp?' ・ 耗 '+k.mp:' ・ 免費')+(k.fx==='heal'?' ・ 回血':k.fx==='stun'?' ・ 絆':k.fx==='pierce'?' ・ 無懼':k.fx==='reveal'?' ・ 看穿':k.fx==='mana'?' ・ 回氣':k.fx==='sway'?' ・ 醉閃':k.fx==='god'?' ・ 附體':k.fx==='poison'?' ・ 淬毒':'')+'</small></button>';});
  h+='<button class="sk wide" data-m="__give">'+(F.final?'認輸':'撤退(視為落敗)')+'</button></div>';
  if(res)h+='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);font:900 2.6em \'Noto Serif TC\';color:#FFD84A;letter-spacing:.2em;z-index:50">'+res+'</div>';
  $('fight').innerHTML=h;
@@ -359,6 +374,7 @@ var LOC={
  village:{n:'青石村',e:'🏘️',t:'炊煙裊裊,雞犬相聞。這裡是你出生的地方。',c:['#7FB0D8','#E8D2A4']},
  school:{n:'拜師學藝',e:'🏯',t:'江湖門派林立,有錢有名聲,師父才肯收你。',c:['#8A6A4A','#E0B87A']},
  jianghu:{n:'江湖',e:'⛰️',t:'擂台、懸賞、奇遇——名聲從這裡打出來。',c:['#4A6A7A','#C8A070']},
+ guide:{n:'武林志',e:'📖',t:'江湖各大門派、師父與武學一覽,想學什麼先來查查。',c:['#6A5A3A','#D8C090']},
  me:{n:'個人',e:'🧘',t:'檢視你的修為與江湖地位。',c:['#5A4A6A','#B8A0C8']}
 };
 function render(){
@@ -368,8 +384,9 @@ function render(){
  $('hud').innerHTML='<div class="r1"><span class="day serif">第 '+dd+' 天<small>'+rankOf(S.fame)+' ・ 名聲 '+S.fame+'</small></span><span class="ap" title="今日時辰">'+dots+'</span></div><div class="bars">'+bar('hp',S.hp,m,'氣')+bar('mp',S.mp,mm,'內')+'<span class="coin">💰'+S.coin+'</span></div>';
  var L=LOC[S.tab],hr=['#F4C98A','#B8D8F0','#E0774A'][3-Math.max(1,Math.min(3,S.ap))];
  $('scene').style.background='linear-gradient(180deg,'+hr+' 0%,'+L.c[1]+' 100%)';
- $('scene').innerHTML='<div class="em">'+L.e+'</div><div class="hill"></div><div style="position:relative"><h2 class="serif">'+L.n+'</h2><p>'+L.t+'</p></div>';
- $('tabs').innerHTML=[['village','🏘️','村莊'],['school','🥋','武學'],['jianghu','⚔️','江湖'],['me','📜','角色']].map(function(t){return '<button data-tab="'+t[0]+'" class="'+(S.tab===t[0]?'on':'')+'"><i>'+t[1]+'</i>'+t[2]+'</button>';}).join('');
+ var dis=SCH.filter(function(c){return Ms()[c.id];}).map(function(c){return '<span class="dp">'+c.e+' '+c.n+'弟子</span>';}).join('');
+ $('scene').innerHTML=(dis?'<div class="dps">'+dis+'</div>':'')+'<div class="em">'+L.e+'</div><div class="hill"></div><div style="position:relative"><h2 class="serif">'+L.n+'</h2><p>'+L.t+'</p></div>';
+ $('tabs').innerHTML=[['village','🏘️','村莊'],['school','🥋','武學'],['jianghu','⚔️','江湖'],['guide','📖','武林志'],['me','📜','角色']].map(function(t){return '<button data-tab="'+t[0]+'" class="'+(S.tab===t[0]?'on':'')+'"><i>'+t[1]+'</i>'+t[2]+'</button>';}).join('');
  $('panel').innerHTML=panel();
 }
 function A(id,ic,n,sub,tag,cls,dis){return '<button class="act" data-a="'+id+'" '+(dis?'disabled':'')+'><i>'+ic+'</i><div><b>'+n+'</b><small>'+sub+'</small></div>'+(tag?'<em class="'+(cls||'')+'">'+tag+'</em>':'')+'</button>';}
@@ -389,9 +406,9 @@ function panel(){
  } else if(S.tab==='school'){
   h+='<div class="sec">已學武功 ・ 修練</div>';
   var ks=Object.keys(S.sk);if(!ks.length)h+='<div class="card">還沒學任何武功。向下方的門派拜師吧!</div>';
-  ks.forEach(function(k){var s=S.sk[k],K=SK[k],need=s.lv*2+1;h+='<button class="act" data-a="prac:'+k+'" '+((noap||s.lv>=5)?'disabled':'')+'><i><span class="t T'+K.t+'">'+K.t+'</span></i><div><b>'+K.n+' Lv'+s.lv+(s.lv>=5?' (化境)':'')+'</b><small>'+K.d+(s.lv<5?'<br>經驗 '+s.xp+'/'+need:'')+'</small></div><em class="g">'+(s.lv>=5?'滿級':'修練')+'</em></button>';});
+  ks.forEach(function(k){var s=S.sk[k],K=SK[k],need=s.lv*2+1;h+='<button class="act" data-a="prac:'+k+'" '+((noap||s.lv>=MAXLV)?'disabled':'')+'><i><span class="t T'+K.t+'">'+K.t+'</span></i><div><b>'+K.n+' Lv'+s.lv+(s.lv>=MAXLV?' (化境)':'')+'</b><small>'+K.d+(s.lv<5?'<br>經驗 '+s.xp+'/'+need:'')+'</small></div><em class="g">'+(s.lv>=MAXLV?'滿級':'修練')+'</em></button>';});
   SCH.forEach(function(sc){
-   h+='<div class="school"><h3>'+sc.e+' '+sc.n+'<small>'+sc.d+'</small></h3>';
+   h+='<div class="school"><h3>'+sc.e+' '+sc.n+(Ms()[sc.id]?' <span class="dp" style="font-size:.7em;vertical-align:middle">✔ 我是弟子</span>':'')+'<small>'+sc.d+'</small></h3>';
    var mm=sc.m,ms=Ms()[sc.id];
    if(!ms){var why0=reqOK(mm.req);h+=A('join:'+sc.id,mm.e,'拜 '+mm.n+' 為師',mm.t+' ・ '+mm.q+(why0?'<br>🔒 '+why0:'<br>拜師禮 '+mm.fee+' 兩 ・ 入門後學費 8 折、可向師父請益'),why0?'🔒':'拜師','',noap||!!why0||S.coin<mm.fee);}
    else{var cd=Math.max(0,2-(S.day-ms.cd));h+=A('ask:'+sc.id,mm.e,'向 '+mm.n+' 請益',mm.t+'(弟子)・ 已請益 '+ms.t+' 次<br>'+(cd?'師父還在忙,'+cd+' 天後再來':'指點本門武功,經驗 +3'),cd?cd+'天':'請益','ok',noap||cd>0);}
@@ -406,9 +423,23 @@ function panel(){
   h+='<div class="sec">遊歷</div>';
   h+=A('wander','🧭','四處遊歷','撿錢、遇高人、山賊攔路、也可能有絕世奇遇','1 時辰','',noap);
   h+='<div class="sec">華山論劍</div>'+A('summit','👑','挑戰武林盟主·乾坤子',S.fame>=25?'準備好了就上華山!勝利即登頂結局;落敗只會受傷,可再來':'名聲 25 以上才有資格(現在 '+S.fame+')',S.fame>=25?'上華山':'🔒','red',noap||S.fame<25);
+ } else if(S.tab==='guide'){
+  var FXT={poison:'3 回合持續毒傷',god:'3 回合傷害 +30%、承受減半',heal:'出招回血',stun:'本回合對手無法還手',pierce:'被剋制時不吃虧',reveal:'看穿對手下一招',mana:'出招回復 6 內力',sway:'承受傷害 -40%'};
+  function rq(r){var a=[];if(r.fame)a.push('名聲 '+r.fame);if(r.body)a.push('體魄 '+r.body);if(r.wit)a.push('悟性 '+r.wit);if(r.sk)a.push('「'+SK[r.sk[0]].n+'」Lv'+r.sk[1]);return a.length?a.join('、'):'無';}
+  h+='<div class="card"><b>相剋口訣</b>:🔥剛 勝 ⚡巧 ・ ⚡巧 勝 💧柔 ・ 💧柔 勝 🔥剛。<br>拜入門派可享學費 8 折並向師父請益。名聲階級:'+RANKS.map(function(r){return r[1]+'('+r[0]+')';}).join(' → ')+'</div>';
+  SCH.forEach(function(sc){var joined=Ms()[sc.id];
+   h+='<div class="school"><h3>'+sc.e+' '+sc.n+'<small>'+sc.d+'</small></h3>';
+   h+='<div class="card" style="margin-bottom:.4em">'+sc.m.e+' <b>'+sc.m.n+'</b> ・ '+sc.m.t+(joined?' <b style="color:#7BE8B0">(你的師父)</b>':'')+'<br>'+sc.m.q+'<br>拜師:'+rq(sc.m.req)+' ・ 拜師禮 '+sc.m.fee+' 兩</div>';
+   sc.L.forEach(function(l){var K=SK[l.s],have=S.sk[l.s];
+    h+='<div class="card" style="margin-bottom:.4em"><span class="t T'+K.t+'" style="display:inline-block;font:900 .85em Noto Serif TC;color:#fff;border-radius:.4em;padding:0 .4em;margin-right:.3em">'+K.t+'</span><b>'+K.n+'</b>'+(have?' <span style="color:#7BE8B0">已學 Lv'+have.lv+'</span>':'')+'<br>'+K.d+'<br>'+(K.pass?'被動武功':'威力 '+K.p+' ・ 耗內力 '+K.mp+(K.fx?' ・ '+FXT[K.fx]:''))+'<br>條件:'+rq(l.req)+' ・ 學費 '+l.fee+' 兩</div>';});
+   h+='</div>';});
+  h+='<div class="school"><h3>🏔️ 隱藏武學<small>江湖傳聞</small></h3>';
+  h+=S.sk.dugu?'<div class="card"><b>獨孤九劍</b> <span style="color:#7BE8B0">已學 Lv'+S.sk.dugu.lv+'</span><br>'+SK.dugu.d+'<br>威力 '+SK.dugu.p+' ・ 耗內力 '+SK.dugu.mp+' ・ '+FXT.pierce+'</div>':'<div class="card"><b>？？？</b><br>傳聞深山絕壁有位前輩留下了絕世劍法。名聲夠高之後,多去「江湖」遊歷或許會有奇遇。</div>';
+  h+='</div>';
  } else {
   var nr=nextRank(S.fame);
   h+='<div class="card"><b>'+rankOf(S.fame)+'</b>(名聲 '+S.fame+')'+(nr?'<div class="prog"><i style="width:'+Math.min(100,S.fame/nr[0]*100)+'%"></i></div>下一階「'+nr[1]+'」需 '+nr[0]+' 名聲':'<br>已達武林之巔!')+'<br>江湖沒有期限,隨時可以在「江湖」分頁向盟主挑戰(名聲≥25)。想收手就歸隱。</div>';
+  var jn=SCH.filter(function(c){return Ms()[c.id];});h+='<div class="card"><b>師承門派</b><br>'+(jn.length?jn.map(function(c){return c.e+' '+c.n+'弟子 ・ 師父 '+c.m.n+'(請益 '+Ms()[c.id].t+' 次)';}).join('<br>'):'尚未拜師。到「武學」分頁拜入門派,學費 8 折、還能向師父請益。')+'</div>';
   h+='<div class="card">體魄 <b>'+S.body+'</b> ・ 悟性 <b>'+S.wit+'</b> ・ 內力上限 <b>'+maxMP()+'</b> ・ 氣血上限 <b>'+maxHP()+'</b><br>閃避 <b>'+Math.round(dodge()*100)+'%</b> ・ 戰鬥回氣 <b>'+mpRegen()+'</b>/回合 ・ 戰績 <b>'+S.wins+'</b> 勝 / '+S.fights+' 戰</div>';
   h+='<div class="card"><b>相剋口訣</b><br>🔥剛 勝 ⚡巧 ・ ⚡巧 勝 💧柔 ・ 💧柔 勝 🔥剛<br>戰鬥時看對手「起手」:出相剋的招傷害 ×1.6、承受 ×0.5;被剋則傷害 ×0.6、承受 ×1.5。高手會用虛招,看穿度會下降。</div>';
   h+='<div class="sec">武功</div>';var ks2=Object.keys(S.sk);if(!ks2.length)h+='<span class="pill">尚未習得</span>';ks2.forEach(function(k){h+='<span class="pill">'+TICON[SK[k].t==='內'?'柔':SK[k].t]+SK[k].n+' Lv'+S.sk[k].lv+'</span>';});
@@ -444,7 +475,7 @@ $('tabs').addEventListener('click',function(e){var b=e.target.closest('[data-tab
 $('fight').addEventListener('click',function(e){var b=e.target.closest('[data-m]');if(!b||b.disabled)return;if(b.dataset.m==='__give')giveUp();else playerMove(b.dataset.m);});
 function begin(){
  $('title').classList.remove('on');render();
- if(S.tut===0){S.tut=1;save();story('🌾','青石村','你是青石村的一個平凡百姓,每天挑水劈柴,日子清苦。<br>這天,賣菜的王大娘在村口被<b>幾個混混</b>糾纏——<br>你挽起袖子,第一次與人動手。',function(){fight(Object.assign({},EN[0],{e:'😠',n:'村口混混'}),function(win){if(win){S.fame+=3;S.coin+=15;toast('王大娘塞給你 15 兩謝禮!名聲 +3\n去「武學」拜師,學真正的武功吧',3000);S.tut=2;}else{S.hp=Math.round(maxHP()*.6);toast('被打了一頓…但王大娘趁機逃走了。\n去武館學點真功夫吧',3000);S.tut=2;}save();render();});},'出手');}
+ if(S.tut===0){S.tut=1;save();story('🌾','青石村','你是青石村的一個平凡百姓,每天挑水劈柴,日子清苦。<br>這天,賣菜的王大娘在村口被<b>幾個混混</b>糾纏——<br>你挽起袖子,第一次與人動手。',function(){fight(Object.assign({},EN[0],{e:'😠',n:'村口混混'}),function(win){if(win){S.fame+=3;S.coin+=15;toast('王大娘塞給你 15 兩謝禮!名聲 +3\n去「武學」拜師,學真正的武功吧',3000);S.tut=2;}else{S.hp=Math.round(maxHP()*.6);toast('被打了一頓…但王大娘趁機逃走了。\n去龍門鏢局學點真功夫吧',3000);S.tut=2;}save();render();});},'出手');}
 }
 $('btnNew').onclick=function(){newRun();begin();};
 $('btnCont').onclick=function(){try{S=JSON.parse(store('jh_run'));}catch(e){S=null;}if(!S){newRun();}begin();};
