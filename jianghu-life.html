@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>布衣江湖</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@600;900&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#16110C;--ink2:#241B13;--paper:#F1E6CF;--paper2:#E2D0A8;--red:#B3261E;--gold:#D9A441;--jade:#3E8E6A;--mut:#8C7A5E;--gang:#D9442B;--rou:#2FA39B;--qiao:#8A5AD8}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#0E0A07;overflow:hidden;font-family:'Noto Sans TC',system-ui,sans-serif;color:var(--ink);user-select:none;-webkit-user-select:none}
+body{display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 0%,#3A2A1A 0%,#0E0A07 72%)}
+button{font-family:inherit;cursor:pointer;border:0}
+.wrap{position:relative;width:min(100vw,calc(100vh*.5625));aspect-ratio:360/640;max-height:100vh;border-radius:18px;overflow:hidden;background:var(--ink);box-shadow:0 24px 70px rgba(0,0,0,.65),0 0 0 3px rgba(217,164,65,.3);font-size:calc(min(100vw,calc(100vh*.5625))/360*14);display:flex;flex-direction:column}
+.serif{font-family:'Noto Serif TC','Songti TC',serif}
+#back{position:absolute;left:.5em;top:.45em;z-index:25;font:700 .75em 'Noto Sans TC';color:#F1E6CF;background:rgba(0,0,0,.45);padding:.3em .8em;border-radius:99px;text-decoration:none}
+#hud{padding:.45em .7em .35em 5.4em;background:linear-gradient(180deg,#2C2014,#1B140D);color:var(--paper);display:flex;flex-direction:column;gap:.25em;border-bottom:1px solid rgba(217,164,65,.35)}
+#hud .r1{display:flex;align-items:center;justify-content:space-between;font-size:.82em}
+#hud .day{font-weight:900;letter-spacing:.08em}#hud .day small{color:var(--gold);font-weight:500;margin-left:.4em}
+.ap{display:flex;gap:.25em}.ap i{width:.8em;height:.8em;border-radius:50%;background:rgba(255,255,255,.15);border:1px solid rgba(217,164,65,.6)}.ap i.on{background:var(--gold);box-shadow:0 0 .5em var(--gold)}
+.bars{display:flex;gap:.5em;align-items:center;font-size:.72em}
+.bar{flex:1;height:1.1em;border-radius:99px;background:rgba(0,0,0,.5);position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.bar b{position:absolute;inset:0 auto 0 0;border-radius:99px;transition:width .35s}.bar.hp b{background:linear-gradient(180deg,#E86A4E,#B3261E)}.bar.mp b{background:linear-gradient(180deg,#6AB4E8,#2A6AB8)}
+.bar span{position:absolute;inset:0;text-align:center;line-height:1.1em;font-weight:700;color:#fff;text-shadow:0 1px 2px #000}
+.coin{white-space:nowrap;color:var(--gold);font-weight:700}
+#scene{position:relative;height:6.8em;flex:none;overflow:hidden;color:#fff;display:flex;align-items:flex-end;padding:.6em .9em}
+#scene .em{position:absolute;right:.5em;bottom:-.2em;font-size:5.2em;line-height:1;opacity:.92;filter:drop-shadow(0 .2em 0 rgba(0,0,0,.3));animation:bob 4s ease-in-out infinite}
+#scene .hill{position:absolute;left:0;right:0;bottom:0;height:3em;background:linear-gradient(180deg,rgba(20,14,8,0),rgba(20,14,8,.65))}
+#scene h2{margin:0;font-size:1.5em;position:relative;text-shadow:0 .1em .3em rgba(0,0,0,.6);letter-spacing:.12em}
+#scene p{margin:.15em 0 0;font-size:.76em;position:relative;opacity:.92;max-width:15em;line-height:1.5;text-shadow:0 1px 4px rgba(0,0,0,.7)}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-.25em)}}
+#panel{flex:1;overflow-y:auto;padding:.7em .7em .5em;background:linear-gradient(180deg,#2A1F14,#1D150E);scrollbar-width:none}
+#panel::-webkit-scrollbar{display:none}
+.sec{color:var(--gold);font:900 .8em 'Noto Serif TC',serif;letter-spacing:.2em;margin:.7em 0 .4em;display:flex;align-items:center;gap:.5em}.sec:first-child{margin-top:0}.sec::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(217,164,65,.5),transparent)}
+.act{display:flex;align-items:center;gap:.7em;width:100%;text-align:left;margin:0 0 .45em;padding:.6em .8em;border-radius:.8em;background:linear-gradient(180deg,var(--paper),var(--paper2));color:var(--ink);box-shadow:0 .22em 0 #8A6B35;position:relative}
+.act:active:not(:disabled){transform:translateY(.18em);box-shadow:0 .04em 0 #8A6B35}
+.act:disabled{opacity:.5;filter:grayscale(.6)}
+.act i{font-style:normal;font-size:1.7em;width:1.3em;text-align:center}
+.act div{flex:1;min-width:0}.act b{display:block;font-size:.95em}.act small{display:block;font-size:.72em;color:#6B5330;line-height:1.45}
+.act em{font-style:normal;font:700 .68em 'Noto Sans TC';background:var(--red);color:#fff;border-radius:99px;padding:.15em .6em;white-space:nowrap}
+.act em.g{background:#7A6A4A}.act em.ok{background:var(--jade)}
+.act .t{display:inline-block;font:900 .85em 'Noto Serif TC';color:#fff;border-radius:.4em;padding:0 .4em;margin-right:.3em}
+.T剛{background:var(--gang)}.T柔{background:var(--rou)}.T巧{background:var(--qiao)}.T內{background:#7A6A4A}
+.school{background:rgba(241,230,207,.07);border:1px solid rgba(217,164,65,.3);border-radius:.9em;padding:.55em .55em .2em;margin-bottom:.6em}
+.school h3{margin:0 0 .4em .2em;color:var(--paper);font:900 .95em 'Noto Serif TC';letter-spacing:.1em}.school h3 small{font:400 .72em 'Noto Sans TC';color:var(--mut);margin-left:.5em}
+.pill{display:inline-block;background:rgba(0,0,0,.35);color:var(--paper);border-radius:99px;padding:.2em .7em;font-size:.74em;margin:0 .3em .3em 0}
+.card{background:rgba(241,230,207,.08);border:1px solid rgba(217,164,65,.25);border-radius:.8em;padding:.6em .8em;color:var(--paper);font-size:.82em;line-height:1.7;margin-bottom:.5em}
+.card b{color:var(--gold)}
+.prog{height:.5em;border-radius:99px;background:rgba(0,0,0,.45);overflow:hidden;margin:.3em 0}.prog i{display:block;height:100%;background:linear-gradient(90deg,#D9A441,#F2D78A)}
+#tabs{display:flex;background:#120D08;border-top:1px solid rgba(217,164,65,.4);flex:none}
+#tabs button{flex:1;padding:.55em 0 .5em;background:none;color:#9C8A6C;font:700 .72em 'Noto Sans TC';display:flex;flex-direction:column;align-items:center;gap:.1em}
+#tabs button i{font-style:normal;font-size:1.6em;line-height:1}#tabs button.on{color:var(--gold);background:linear-gradient(180deg,rgba(217,164,65,.18),transparent)}
+#toast{position:absolute;left:50%;top:9.5em;transform:translate(-50%,-.5em);z-index:30;background:rgba(15,10,6,.92);color:var(--paper);border:1px solid var(--gold);padding:.55em 1em;border-radius:.8em;font-size:.82em;max-width:90%;text-align:center;line-height:1.6;opacity:0;pointer-events:none;transition:.25s;white-space:pre-line}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+.ov{position:absolute;inset:0;z-index:20;display:none;flex-direction:column;align-items:center;justify-content:center;padding:1.2em;text-align:center;background:radial-gradient(circle at 50% 30%,rgba(60,40,22,.97),rgba(12,8,5,.98));color:var(--paper);gap:.8em}
+.ov.on{display:flex;animation:fin .3s ease}@keyframes fin{from{opacity:0}}
+.ov h1{margin:0;font:900 3em 'Noto Serif TC',serif;letter-spacing:.25em;color:var(--gold);text-shadow:0 .06em 0 #6B2A1A,0 0 1em rgba(217,164,65,.4);padding-left:.25em}
+.ov h2{margin:0;font:900 1.7em 'Noto Serif TC',serif;letter-spacing:.15em;color:var(--gold)}
+.ov p{margin:0;font-size:.86em;line-height:1.85;max-width:21em;color:#D8C9A8}
+.ov p b{color:var(--gold)}
+.big{font-size:3.6em;line-height:1;filter:drop-shadow(0 .1em .2em rgba(0,0,0,.6))}
+.btn{padding:.7em 2.2em;border-radius:99px;font:900 1.05em 'Noto Serif TC',serif;letter-spacing:.2em;color:#2A1205;background:linear-gradient(180deg,#F6DA91,#D9A441 55%,#A8741E);box-shadow:0 .28em 0 #6B4710;min-width:11em}
+.btn:active{transform:translateY(.22em);box-shadow:0 .06em 0 #6B4710}.btn.s{background:linear-gradient(180deg,#5A4630,#3A2C1C);color:var(--paper);box-shadow:0 .22em 0 #1A120A;font-size:.9em}
+.btn.red{background:linear-gradient(180deg,#E8624E,#B3261E);color:#fff;box-shadow:0 .28em 0 #6B130E}
+.row{display:flex;gap:.6em;flex-wrap:wrap;justify-content:center}
+/* fight */
+#fight{padding:.5em .7em .8em;justify-content:space-evenly;gap:.4em;background:radial-gradient(ellipse at 50% 15%,#4A3420,#120C07 75%)}
+#fight .en{margin-top:1.4em;width:100%}#fight .skills{margin-bottom:.2em}#fight #flog{min-height:6em}
+#fight .ename{font:900 1.1em 'Noto Serif TC';letter-spacing:.12em;display:flex;justify-content:space-between;align-items:baseline}#fight .ename small{font:500 .65em 'Noto Sans TC';color:var(--mut)}
+#fight .eface{font-size:4.6em;line-height:1.05;height:1.15em;transition:transform .12s}#fight .eface.hit{transform:translateX(.15em) scale(.94);filter:brightness(2)}
+#fight .eface.atk{transform:translateY(.25em) scale(1.12)}
+.intent{display:flex;align-items:center;justify-content:center;gap:.6em;background:rgba(0,0,0,.4);border:1px solid rgba(217,164,65,.4);border-radius:.8em;padding:.4em .6em;width:100%;font-size:.82em}
+.intent .tt{font:900 1.6em 'Noto Serif TC';color:#fff;width:1.6em;height:1.6em;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 .8em currentColor;animation:pulse 1s infinite}
+@keyframes pulse{50%{transform:scale(1.12)}}
+.intent small{color:#BCA98A;display:block;font-size:.8em}
+#flog{width:100%;min-height:4.6em;background:rgba(0,0,0,.35);border-radius:.7em;padding:.4em .7em;font-size:.76em;line-height:1.6;color:#E4D6B4;text-align:left}
+#flog div:last-child{color:#fff;font-weight:700}#flog div{opacity:.75}#flog div:last-child{opacity:1}
+.skills{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4em;width:100%}
+.sk{padding:.45em .2em;border-radius:.7em;color:#fff;font:700 .78em 'Noto Sans TC';line-height:1.35;box-shadow:0 .2em 0 rgba(0,0,0,.45);position:relative}
+.sk small{display:block;font-weight:400;font-size:.8em;opacity:.9}.sk:active:not(:disabled){transform:translateY(.15em)}.sk:disabled{opacity:.35}
+.sk.剛{background:linear-gradient(180deg,#EE6A4E,#B8321C)}.sk.柔{background:linear-gradient(180deg,#4AC4BB,#1F7F79)}.sk.巧{background:linear-gradient(180deg,#A77EF0,#6A3EB8)}
+.sk.wide{grid-column:span 3;background:linear-gradient(180deg,#5A4630,#3A2C1C);font-size:.72em}
+.float{position:absolute;font:900 1.6em 'Noto Serif TC';pointer-events:none;animation:fl .9s ease forwards;text-shadow:0 .05em .2em #000;z-index:40}
+@keyframes fl{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-2.5em)}}
+.shake{animation:sh .25s}@keyframes sh{20%{transform:translate(-.4em,.2em)}40%{transform:translate(.4em,-.2em)}60%{transform:translate(-.25em,0)}80%{transform:translate(.25em,0)}}
+.endtag{display:inline-block;background:rgba(217,164,65,.15);border:1px solid var(--gold);border-radius:.6em;padding:.2em .7em;margin:.15em;font-size:.78em}.endtag.no{opacity:.35;border-style:dashed}
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <a id="back" href="index.html">← 大廳</a>
+  <div id="hud"></div>
+  <div id="scene"></div>
+  <div id="panel"></div>
+  <nav id="tabs"></nav>
+  <div id="toast"></div>
+
+  <div class="ov on" id="title">
+    <div class="big">🏮</div>
+    <h1>布衣江湖</h1>
+    <p>你只是青石村裡一個平凡的百姓。<br>挑水劈柴、拜師學藝、闖擂台、攢名聲——<br><b>江湖沒有期限</b>——什麼時候去華山論劍,由你決定。</p>
+    <div class="row"><button class="btn" id="btnNew">開始江湖路</button><button class="btn s" id="btnCont" style="display:none">繼續上次</button></div>
+    <button class="btn s" id="btnEnds">🏅 結局收藏 <span id="endN"></span></button>
+  </div>
+  <div class="ov" id="story"><div class="big" id="stE">📜</div><h2 id="stT"></h2><p id="stP"></p><button class="btn" id="stB">好</button></div>
+  <div class="ov" id="fight"></div>
+  <div class="ov" id="end"><div class="big" id="enE"></div><h2 id="enT"></h2><p id="enP"></p><div class="row"><button class="btn" id="enAgain">再入江湖</button><button class="btn s" id="enTitle">回標題</button></div></div>
+  <div class="ov" id="ends"><h2>🏅 結局收藏</h2><div id="endList"></div><button class="btn" id="endsBack">返回</button></div>
+</div>
+<script>
+(function(){
+'use strict';
+function $(i){return document.getElementById(i);}
+function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v);}catch(e){return null;}}
+function R(n){return Math.floor(Math.random()*n);}
+function rnd(a,b){return a+Math.random()*(b-a);}
+function ri(a,b){return a+R(b-a+1);}
+function pick(a){return a[R(a.length)];}
+/* ---------- audio ---------- */
+var AC_=null,mute=false;
+function tone(f,d,t,v,s,dl){if(mute)return;try{AC_=AC_||new (window.AudioContext||window.webkitAudioContext)();var n=AC_.currentTime+(dl||0),o=AC_.createOscillator(),g=AC_.createGain();o.type=t||'triangle';o.frequency.setValueAtTime(f,n);if(s)o.frequency.exponentialRampToValueAtTime(Math.max(30,s),n+d);g.gain.setValueAtTime(v||.05,n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(AC_.destination);o.start(n);o.stop(n+d+.02);}catch(e){}}
+var sfx={ok:function(){tone(660,.1,'triangle',.05);tone(880,.12,'triangle',.05,null,.07);},hit:function(){tone(180,.12,'sawtooth',.07,70);tone(900,.04,'square',.04);},big:function(){tone(120,.3,'sawtooth',.09,50);tone(1200,.08,'square',.05);},
+ gong:function(){tone(110,1,'sine',.09,100);tone(220,.8,'triangle',.04,200);},lv:function(){[523,659,784,1047].forEach(function(f,i){tone(f,.18,'triangle',.06,null,i*.08);});},bad:function(){tone(200,.25,'sawtooth',.05,100);},
+ blk:function(){tone(1400,.05,'square',.05);tone(700,.1,'triangle',.05);}};
+function vib(p){try{if(navigator.vibrate)navigator.vibrate(p);}catch(e){}}
+
+/* ---------- 資料 ---------- */
+var BEATS={'柔':'剛','剛':'巧','巧':'柔'};   // key 克 value
+var TICON={'剛':'🔥','柔':'💧','巧':'⚡'},TCOL={'剛':'#D9442B','柔':'#2FA39B','巧':'#8A5AD8'};
+var SK={
+ f1:{n:'劈拳',t:'剛',mp:0,p:7,basic:1,d:'人人都會的直拳'},
+ f2:{n:'推掌',t:'柔',mp:0,p:7,basic:1,d:'隨手一推'},
+ f3:{n:'閃擊',t:'巧',mp:0,p:7,basic:1,d:'側身快打'},
+ changquan:{n:'長拳',t:'剛',mp:4,p:15,d:'武館入門拳法,招式扎實'},
+ luohan:{n:'羅漢拳',t:'剛',mp:7,p:25,d:'少林拳法,勢大力沉'},
+ yizhi:{n:'一指禪',t:'剛',mp:13,p:44,d:'一指之力,開碑裂石'},
+ taiji:{n:'太極拳',t:'柔',mp:6,p:17,fx:'heal',d:'以柔克剛,出招時回復氣血'},
+ taijijian:{n:'太極劍',t:'柔',mp:13,p:36,fx:'heal',d:'綿綿不絕,借力打力並回血'},
+ dagou:{n:'打狗棒法',t:'巧',mp:9,p:15,fx:'stun',d:'「絆」字訣:對手本回合無法還手'},
+ yunv:{n:'玉女劍法',t:'巧',mp:8,p:27,d:'劍走輕靈,招招刁鑽'},
+ xianglong:{n:'降龍十八掌',t:'剛',mp:16,p:54,d:'天下第一剛猛掌法'},
+ dugu:{n:'獨孤九劍',t:'巧',mp:12,p:48,fx:'pierce',d:'無招勝有招:被剋制時不吃虧'},
+ taomu:{n:'桃木劍法',t:'剛',mp:7,p:26,d:'茅山驅邪劍法,斬妖除魔'},
+ zhenhun:{n:'鎮魂符',t:'柔',mp:8,p:18,fx:'reveal',d:'貼符定神:看穿對手下一招的起手'},
+ wulei:{n:'五雷咒',t:'巧',mp:15,p:46,fx:'mana',d:'引雷入體,出招同時回復 6 點內力'},
+ hushen:{n:'護身符',t:'內',pass:1,d:'每級受到的傷害 -5%'},
+ zui:{n:'醉拳',t:'巧',mp:7,p:23,fx:'sway',d:'東倒西歪卻招招刁鑽,出招時承受傷害 -40%'},
+ lianhua:{n:'蓮花落',t:'柔',mp:5,p:19,fx:'mana',d:'邊唱邊打,出招同時回復 6 點內力'},
+ baijia:{n:'百家飯',t:'內',pass:1,d:'吃遍百家飯練出的硬底子:每級氣血上限 +8'},
+ wugou:{n:'天下無狗',t:'巧',mp:14,p:40,fx:'stun',d:'打狗棒絕招,封死對手所有去路,本回合無法還手'},
+ kanglong:{n:'亢龍有悔',t:'剛',mp:18,p:64,d:'降龍掌最強一式,威力驚人'},
+ tiebu:{n:'鐵布衫',t:'內',pass:1,d:'每級氣血上限 +12'},
+ yijin:{n:'易筋經',t:'內',pass:1,d:'每級內力上限 +10,每回合多回氣'},
+ tiyun:{n:'梯雲縱',t:'內',pass:1,d:'每級 +6% 閃避'}
+};
+var SCH=[
+ {id:'guan',m:{n:'趙鐵山',e:'🧔',t:'武館教頭',q:'「練武先練腿,腿穩了拳才穩。」',fee:15,req:{}}, n:'鎮上武館',e:'🥋',d:'教頭收費不貴,打好基礎',L:[
+  {s:'changquan',fee:40,req:{}},{s:'tiebu',fee:90,req:{body:5}}]},
+ {id:'shaolin',m:{n:'慧明禪師',e:'👴',t:'少林住持',q:'「拳腳是皮毛,心定才是根本。」',fee:60,req:{fame:5}}, n:'少林寺',e:'🛕',d:'天下武功出少林',L:[
+  {s:'luohan',fee:150,req:{fame:8}},{s:'yijin',fee:275,req:{wit:8}},{s:'yizhi',fee:575,req:{sk:['luohan',3]}}]},
+ {id:'wudang',m:{n:'清虛道長',e:'🧙',t:'武當長老',q:'「以柔克剛,不是不用力,是不與力爭。」',fee:60,req:{wit:7}}, n:'武當山',e:'☯️',d:'以柔克剛,四兩撥千斤',L:[
+  {s:'taiji',fee:150,req:{wit:7,fame:8}},{s:'tiyun',fee:240,req:{wit:8}},{s:'taijijian',fee:540,req:{sk:['taiji',3]}}]},
+ {id:'gaibang',m:{n:'九袋老丐',e:'🍶',t:'丐幫長老',q:'「英雄不問出身,有飯一起吃,有架一起打!」',fee:20,req:{fame:3}}, n:'丐幫分舵',e:'🥢',d:'天下第一大幫,英雄不問出身',L:[
+  {s:'dagou',fee:110,req:{fame:5}},{s:'baijia',fee:125,req:{fame:5}},{s:'zui',fee:165,req:{fame:10}},{s:'lianhua',fee:140,req:{fame:12}},{s:'xianglong',fee:750,req:{fame:30,sk:['dagou',3]}},{s:'wugou',fee:690,req:{fame:35,sk:['dagou',4]}},{s:'kanglong',fee:1000,req:{fame:45,sk:['xianglong',3]}}]},
+ {id:'maoshan',m:{n:'玄真道人',e:'🧓',t:'茅山掌門',q:'「符是死的,心是活的。心誠則靈。」',fee:60,req:{wit:7}}, n:'茅山派',e:'📿',d:'符籙道術,畫符驅邪、引雷鎮魔',L:[
+  {s:'zhenhun',fee:140,req:{wit:8}},{s:'hushen',fee:200,req:{wit:9}},{s:'taomu',fee:165,req:{fame:10}},{s:'wulei',fee:600,req:{wit:10,sk:['taomu',3]}}]},
+ {id:'emei',m:{n:'靜心師太',e:'👩‍🦳',t:'峨嵋掌門',q:'「劍在手,更要在心,出劍之前先想清楚為何而劍。」',fee:60,req:{fame:8}}, n:'峨嵋金頂',e:'🌸',d:'劍法輕靈,女俠輩出',L:[
+  {s:'yunv',fee:190,req:{fame:12}}]}
+];
+var EN=[
+ {id:'hun',n:'街頭混混',e:'😠',hp:40,atk:7,acc:1,w:{剛:.6,柔:.2,巧:.2},fame:0,coin:12,rf:2,tip:'愛亂揮拳(剛)'},
+ {id:'bandit',n:'山賊嘍囉',e:'🥷',hp:62,atk:9,acc:.97,w:{剛:.5,柔:.2,巧:.3},fame:0,coin:18,rf:3,tip:'亂打一通'},
+ {id:'escort',n:'鏢局趟子手',e:'💂',hp:85,atk:11,acc:.95,w:{剛:.65,柔:.2,巧:.15},fame:5,coin:26,rf:4,tip:'力氣大,愛用剛招'},
+ {id:'thief',n:'採花小賊',e:'🦹',hp:90,atk:12,acc:.92,w:{剛:.15,柔:.2,巧:.65},fame:10,coin:32,rf:5,tip:'身法飄忽(巧)'},
+ {id:'monk',n:'少林武僧',e:'🧘',hp:125,atk:14,acc:.9,w:{剛:.5,柔:.3,巧:.2},fame:15,coin:50,rf:7,tip:'剛柔並濟'},
+ {id:'wd',n:'武當弟子',e:'🧙',hp:135,atk:15,acc:.88,w:{剛:.2,柔:.6,巧:.2},fame:20,coin:56,rf:8,tip:'擅長柔勁'},
+ {id:'cult',n:'魔教護法',e:'👺',hp:185,atk:19,acc:.82,w:{剛:.35,柔:.1,巧:.55},fame:30,coin:90,rf:12,tip:'招式陰狠,虛招多'},
+ {id:'hs',n:'華山劍客',e:'🗡️',hp:225,atk:22,acc:.8,w:{剛:.3,柔:.3,巧:.4},fame:40,coin:120,rf:14,tip:'劍法多變'},
+ {id:'sage',n:'隱世高人',e:'🧓',hp:285,atk:25,acc:.76,w:{剛:.34,柔:.33,巧:.33},fame:55,coin:200,rf:18,tip:'深不可測'}
+];
+var BOSS={id:'boss',n:'武林盟主·乾坤子',e:'👑',hp:400,atk:27,acc:.68,w:{剛:.34,柔:.33,巧:.33},tip:'江湖第一人'};
+var RANKS=[[0,'布衣百姓'],[10,'初出茅廬'],[25,'江湖好手'],[45,'一流高手'],[70,'一代宗師']];
+function rankOf(f){var r=RANKS[0][1];RANKS.forEach(function(x){if(f>=x[0])r=x[1];});return r;}
+function nextRank(f){for(var i=0;i<RANKS.length;i++)if(f<RANKS[i][0])return RANKS[i];return null;}
+var ENDS={
+ nobody:{e:'🌾',n:'平凡一生',d:'你終究沒走出青石村太遠。江湖很大,而你選擇了安穩的日子。'},
+ novice:{e:'🎒',n:'江湖新秀',d:'你在江湖上闖出了小小名號,雖未登上華山,但故事才剛開始。'},
+ hero:{e:'🗡️',n:'一方俠客',d:'你闖出一方名號,在江湖上留下俠名,而後解甲歸田,守著青石村的炊煙過日子。'},
+ strong:{e:'🔥',n:'一流高手',d:'你已是名動一方的一流高手,卻始終沒向盟主挑戰。「他日再上華山」,成了江湖上最大的懸念。'},
+ lord:{e:'🏆',n:'武林盟主',d:'你擊敗乾坤子,從一介布衣走上武林之巔!青石村的人在村口放了三天鞭炮。'},
+ master:{e:'🐉',n:'一代宗師',d:'名震天下、武藝通神。你擊敗盟主後婉拒了盟主之位,回村種田——江湖上卻流傳了你一千年。'}
+};
+
+/* ---------- 狀態 ---------- */
+var S=null,F=null,sg=0;
+function newRun(){var m=getMeta();S={day:1,ap:3,coin:20,fame:0,body:3,wit:3+Math.min(3,m.runs||0),inner:0,hp:0,mp:0,sk:{},flags:{},tab:'village',tut:0,hungry:false,rain:false,fights:0,wins:0,labor:0,sits:0,hist:[]};S.hp=maxHP();S.mp=maxMP();}
+function lv(id){return S.sk[id]?S.sk[id].lv:0;}
+function maxHP(){return 50+S.body*5+lv('tiebu')*12+lv('baijia')*8;}
+function maxMP(){return 20+S.inner+lv('yijin')*10;}
+function dodge(){return lv('tiyun')*.06;}
+function mpRegen(){return 3+(lv('yijin')?1+(lv('yijin')>=3?1:0):0);}
+function getMeta(){try{return JSON.parse(store('jh_meta'))||{};}catch(e){return {};}}
+function setMeta(m){store('jh_meta',JSON.stringify(m));}
+function save(){if(S&&!S.over)store('jh_run',JSON.stringify(S));}
+function toast(s,ms){var t=$('toast');t.textContent=s;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(function(){t.classList.remove('on');},ms||1800);}
+function clampS(){S.hp=Math.max(0,Math.min(S.hp,maxHP()));S.mp=Math.max(0,Math.min(S.mp,maxMP()));}
+
+/* ---------- 時間 ---------- */
+function spend(){S.ap--;if(S.ap<=0){setTimeout(endDay,600);}}
+function endDay(){
+ if(!S||S.over||F)return;
+ var msg=[];
+ S.coin-=4;if(S.coin<0){S.coin=0;S.hungry=true;msg.push('囊中羞澀,餓著肚子睡下…');}else S.hungry=false;
+ S.day++;S.hp=maxHP();S.mp=maxMP();
+ var ap=3;if(S.hungry)ap--;S.rain=false;
+ if(Math.random()<.32){var ev=nightEvent();if(ev){msg.push(ev.t);if(ev.ap)ap+=ev.ap;}}
+ S.ap=Math.max(1,ap);
+ sfx.gong();
+ msg.unshift('第 '+S.day+' 天,氣血內力已恢復');
+ toast(msg.join('\n'),2600);save();render();
+}
+function nightEvent(){
+ var L=[
+  function(){if(S.coin>=25){var l=ri(8,16);S.coin-=l;return {t:'🥷 夜裡遭小偷,丟了 '+l+' 兩銀子'};}return null;},
+  function(){var g=ri(15,25);S.coin+=g;return {t:'🍶 一位俠客路過,贈你 '+g+' 兩銀子'};},
+  function(){S.fame++;return {t:'📣 村裡人都在誇你,名聲 +1'};},
+  function(){if(S.inner>=6){S.wit++;return {t:'💭 夢中頓悟,悟性 +1'};}return {t:'🌙 一夜好眠'};},
+  function(){return {t:'🌧️ 大雨滂沱,今天只能少做一件事',ap:-1};},
+  function(){return {t:'🍜 大娘送來熱湯,精神飽滿,今天多一個時辰',ap:1};}
+ ];
+ return pick(L)();
+}
+
+/* ---------- 行動 ---------- */
+function act(id){
+ if(!S||F)return;
+ var a=id.split(':'),k=a[0],x=a[1];
+ if(k==='sleep'){S.ap=0;endDay();return;}
+ if(S.ap<=0)return;
+ if(k==='fetch'||k==='chop'){
+  var g=k==='fetch'?ri(6,10):ri(8,12);S.coin+=g;S.labor++;var m='🪣 '+(k==='fetch'?'挑水':'劈柴')+',賺了 '+g+' 兩';
+  if(S.labor%3===0||Math.random()<.18){S.body++;m+=' ・ 體魄 +1';}
+  toast(m);sfx.ok();spend();
+ } else if(k==='study'){
+  if(S.coin<3){toast('身上連 3 文錢都沒有…');return;}S.coin-=3;S.wit++;toast('📖 旁聽秀才講課,悟性 +1');sfx.ok();spend();
+ } else if(k==='sit'){
+  var g2=3+(lv('yijin')?1:0);S.inner+=g2;S.sits++;var m2='🧘 打坐吐納,內力上限 +'+g2;if(S.sits%4===0){S.wit++;m2+=' ・ 悟性 +1';}toast(m2);sfx.ok();spend();
+ } else if(k==='heal'){
+  S.hp=Math.min(maxHP(),S.hp+Math.round(maxHP()*.6));S.mp=maxMP();toast('🌿 敷藥調息,氣血恢復大半');sfx.ok();spend();
+ } else if(k==='join'){var sc=SCH.filter(function(c){return c.id===x;})[0],mm=sc.m;if(Ms()[x]||reqOK(mm.req)||S.coin<mm.fee)return;S.coin-=mm.fee;Ms()[x]={j:1,t:0,cd:-9};sfx.lv();vib(20);
+  story(mm.e,mm.n+'收你為徒','<b>'+mm.t+'・'+mm.n+'</b>打量了你一番,緩緩點頭。<br>'+mm.q+'<br><br>從今天起你是「'+sc.n+'」的弟子:本門武功學費 <b>8 折</b>,也能隨時向師父<b>請益</b>。',function(){spend();save();render();},'拜見師父');return;
+ } else if(k==='ask'){var sc2=SCH.filter(function(c){return c.id===x;})[0],ms=Ms()[x],m2=sc2.m;if(!ms||S.day-ms.cd<2)return;
+  var ks=sc2.L.map(function(l){return l.s;}).filter(function(id){return S.sk[id]&&S.sk[id].lv<5;}),t2;
+  ms.cd=S.day;ms.t++;
+  if(ks.length){var kk=pick(ks),sk=S.sk[kk];sk.xp+=3;var need=sk.lv*2+1;t2=m2.n+'指點了「'+SK[kk].n+'」,經驗 +3';while(sk.xp>=need&&sk.lv<5){sk.xp-=need;sk.lv++;need=sk.lv*2+1;t2+='\n✨ 突破到 '+sk.lv+' 級!';sfx.lv();}}
+  else{S.wit++;t2=m2.n+'講了一番心得,悟性 +1\n(學了本門武功,請益還能加經驗)';}
+  if(ms.t%3===0){S.fame+=2;t2+='\n🎖 師父讚許,名聲 +2';}
+  toast(m2.e+' '+t2+'\n'+m2.q,3200);sfx.ok();spend();
+ } else if(k==='learn'){learn(x);return;
+ } else if(k==='prac'){
+  var s=S.sk[x];if(!s){return;}if(s.lv>=5){toast('已臻化境');return;}
+  var gain=1+(S.wit>=10?1:0)+(Math.random()<S.wit*.02?1:0);s.xp+=gain;var need=s.lv*2+1,m3='💪 修練「'+SK[x].n+'」 經驗 +'+gain;
+  if(s.xp>=need){s.xp-=need;s.lv++;m3='✨ 「'+SK[x].n+'」突破!升到 '+s.lv+' 級';sfx.lv();vib(20);}else sfx.ok();
+  clampS();toast(m3);spend();
+ } else if(k==='arena'){
+  var e=EN[+x];if(S.hp<=Math.round(maxHP()*.2)){toast('傷勢太重!先療傷再上場');return;}fight(e,function(win){if(win){S.beat=S.beat||{};var n=S.beat[e.id]||0,f=[1,.5,.25][n]||0,rf=f?Math.max(1,Math.round(e.rf*f)):0,rc=Math.round(e.coin*.65*Math.max(.3,1-.25*n));S.beat[e.id]=n+1;S.fame+=rf;S.coin+=rc;S.wins++;toast('🏆 擊敗 '+e.n+'!名聲 +'+rf+' ・ 銀 +'+rc+(n?'\n(重複挑戰,獎勵遞減)':''),2400);}else{loseFight();}S.fights++;spend();save();render();});return;
+ } else if(k==='wander'){wander();return;
+ } else if(k==='summit'){if(S.fame<25){toast('名聲 25 以上才有資格上華山');return;}startFinal();return;
+ } else if(k==='retire'){if(!act.rt||Date.now()-act.rt>3500){act.rt=Date.now();toast('確定要歸隱江湖嗎?\n3 秒內再按一次「歸隱」確認');return;}retire();return;}
+ clampS();save();render();
+}
+function loseFight(){S.hp=Math.max(1,Math.round(maxHP()*.25));var l=Math.min(S.coin,Math.round(S.coin*.15));S.coin-=l;if(S.fame>0)S.fame--;toast('💫 你敗下陣來…損失 '+l+' 兩、名聲 -1',2400);}
+function Ms(){S.mast=S.mast||{};return S.mast;}
+function schOf(id){var r=null;SCH.forEach(function(sc){sc.L.forEach(function(l){if(l.s===id)r=sc;});});return r;}
+function feeOf(l){var sc=null;SCH.forEach(function(c){if(c.L.indexOf(l)>=0)sc=c;});return Math.round(l.fee*(sc&&Ms()[sc.id]&&Ms()[sc.id].j?.8:1));}
+function reqOK(r){if(r.fame&&S.fame<r.fame)return '名聲需 '+r.fame;if(r.body&&S.body<r.body)return '體魄需 '+r.body;if(r.wit&&S.wit<r.wit)return '悟性需 '+r.wit;if(r.sk&&lv(r.sk[0])<r.sk[1])return '「'+SK[r.sk[0]].n+'」需 Lv'+r.sk[1];return '';}
+function learn(id){
+ var L=null;SCH.forEach(function(sc){sc.L.forEach(function(l){if(l.s===id)L=l;});});if(!L||S.sk[id])return;
+ var why=reqOK(L.req);if(why){toast(why);return;}var fee=feeOf(L);if(S.coin<fee){toast('學費不夠,需要 '+fee+' 兩');return;}
+ S.coin-=fee;S.sk[id]={lv:1,xp:0};sfx.lv();vib(20);toast('🎓 習得「'+SK[id].n+'」!\n回到「修練」多練幾次提升等級',2600);
+ if(SK[id].pass){clampS();}
+ spend();save();render();
+}
+function wander(){
+ S.ap;var roll=Math.random(),done=function(){spend();save();render();};
+ var canDugu=S.fame>=20&&!S.sk.dugu&&Math.random()<.45;
+ if(canDugu){
+  story('🏔️','絕壁奇遇','你在斷崖山洞中發現一具枯骨,身旁石壁刻滿劍痕——<b>獨孤九劍</b>的劍意撲面而來!你苦思一日一夜,終於參透。',function(){S.sk.dugu={lv:1,xp:0};sfx.lv();done();});return;
+ }
+ if(roll<.22){var g=ri(15,32);S.coin+=g;toast('👛 路邊拾到錢袋,得 '+g+' 兩');sfx.ok();done();}
+ else if(roll<.42){S.wit++;var ks=Object.keys(S.sk).filter(function(k){return !SK[k].pass&&S.sk[k].lv<5;});var t2='🧓 高人在茶棚指點了幾句,悟性 +1';if(ks.length){var kk=pick(ks);S.sk[kk].xp+=2;t2+='\n「'+SK[kk].n+'」經驗 +2';}toast(t2,2400);sfx.lv();done();}
+ else if(roll<.66){story('🥷','山賊攔路','「此山是我開,此樹是我栽!」一名山賊攔住去路。',function(){fight(EN[1],function(win){if(win){var c=ri(15,30);S.coin+=c;S.fame+=2;S.wins++;toast('擊退山賊!搜得 '+c+' 兩、名聲 +2');}else loseFight();S.fights++;done();});},'迎戰');}
+ else if(roll<.8){S.fame+=2;toast('🤝 結識了一位江湖朋友,名聲 +2');sfx.ok();done();}
+ else if(roll<.9){var g3=ri(6,14);S.coin+=g3;toast('🏮 逛廟會幫人看攤,賺 '+g3+' 兩');done();}
+ else{toast('🌫️ 山中迷路,一無所獲…');sfx.bad();done();}
+}
+
+/* ---------- 戰鬥 ---------- */
+function fight(en,cb,final){
+ F={en:en,ehp:en.hp,mp:S.mp,stun:0,cb:cb,final:!!final,log:[],t:0,real:'剛',tell:'剛',over:false};
+ nextIntent();drawFight();$('fight').classList.add('on');
+}
+function nextIntent(){var w=F.en.w,r=Math.random(),c=0,t='剛';['剛','柔','巧'].forEach(function(k){c+=w[k];if(r>=c-w[k]&&r<c)t=k;});F.real=t;
+ if(Math.random()<F.en.acc)F.tell=t;else{var o=['剛','柔','巧'].filter(function(k){return k!==t;});F.tell=pick(o);}}
+function rel(T,E){return BEATS[T]===E?1:BEATS[E]===T?-1:0;}
+function moveDmg(id,r){var k=SK[id],l=k.basic?1:lv(id),p=k.p*(1+.18*(l-1))+S.body*.6;return p*(r>0?1.6:r<0?.6:1)*rnd(.9,1.1);}
+function playerMove(id){
+ if(!F||F.over)return;var k=SK[id];if(F.mp<k.mp)return;F.mp-=k.mp;
+ var r=rel(k.t,F.real);if(k.fx==='pierce'&&r<0)r=0;
+ var dmg=Math.round(moveDmg(id,r)),L=[];
+ F.ehp=Math.max(0,F.ehp-dmg);
+ var txt='你使出「'+k.n+'」,造成 '+dmg+' 傷害';if(r>0)txt+=' <克制!>';else if(r<0)txt+=' (被化解)';L.push(txt);
+ flo(dmg+(r>0?'!':''),'enemy',r>0?'#FFD84A':'#fff');fx('eface','hit');r>0?sfx.big():sfx.hit();vib(r>0?25:10);
+ if(k.fx==='heal'){var h=Math.round(maxHP()*.08);S.hp=Math.min(maxHP(),S.hp+h);flo('+'+h,'me','#7BE8B0');L.push('回復 '+h+' 氣血');}
+ if(F.ehp<=0){F.log=F.log.concat(L);end(true);return;}
+ // 敵方出招
+ if(k.fx==='stun'){L.push('對手被你絆住,無法出招!');}
+ else{
+  var er=-rel(k.t,F.real);   // 敵人視角:er>0 敵克我
+  var ed=F.en.atk*1.3*rnd(.9,1.1)*(er>0?1.5:er<0?.5:1)-S.body*.3;ed=Math.max(1,Math.round(ed*(1-.05*lv('hushen'))*(k.fx==='sway'?.6:1)));
+  if(Math.random()<dodge()){L.push('🌀 你施展輕功閃過了攻擊!');flo('閃','me','#9BE8FF');}
+  else{S.hp=Math.max(0,S.hp-ed);L.push(F.en.n+'的'+F.real+'招打來,你受到 '+ed+' 傷害'+(er>0?' <被剋制!>':er<0?' (被你化解)':''));flo('-'+ed,'me','#FF8A7A');fx('eface','atk');shake();er>0?sfx.big():sfx.blk();vib(15);}
+ }
+ F.mp=Math.min(maxMP(),F.mp+mpRegen()+(k.fx==='mana'?6:0));
+ F.log=F.log.concat(L).slice(-6);
+ if(S.hp<=0){end(false);return;}
+ nextIntent();if(k.fx==='reveal'){F.tell=F.real;F.log.push('🔮 符光一閃,看穿了對手的下一招!');}drawFight();
+}
+function end(win){
+ F.over=true;S.mp=F.mp;S.hp=Math.max(win?1:0,S.hp);clampS();
+ var cb=F.cb,fin=F.final;
+ drawFight(win?'🏆 勝!':'💫 敗…');
+ setTimeout(function(){$('fight').classList.remove('on');var f=F;F=null;cb(win,f);},1100);
+}
+function giveUp(){if(!F||F.over)return;if(F.final&&!confirm0())return;S.hp=Math.max(1,S.hp);end(false);}
+function confirm0(){return true;}
+function flo(t,who,c){var el=$('fight');var d=document.createElement('div');d.className='float';d.textContent=t;d.style.color=c;d.style.left=(who==='enemy'?42+R(16):20+R(20))+'%';d.style.top=(who==='enemy'?'26%':'60%');el.appendChild(d);setTimeout(function(){if(d.parentNode)d.parentNode.removeChild(d);},900);}
+function fx(cls,n){var e=document.querySelector('#fight .'+cls);if(e){e.classList.remove(n);void e.offsetWidth;e.classList.add(n);setTimeout(function(){e.classList.remove(n);},160);}}
+function shake(){var w=$('wrap');w.classList.remove('shake');void w.offsetWidth;w.classList.add('shake');}
+function bar(cls,v,m,t){return '<div class="bar '+cls+'"><b style="width:'+Math.max(0,Math.min(100,v/m*100))+'%"></b><span>'+t+Math.round(v)+'/'+Math.round(m)+'</span></div>';}
+function drawFight(res){
+ var e=F.en,h='';
+ h+='<div class="en"><div class="ename"><span>'+e.n+'</span><small>'+e.tip+'</small></div>'+bar('hp',F.ehp,e.hp,'')+'<div style="text-align:center"><div class="eface" style="display:inline-block">'+e.e+'</div></div></div>';
+ var pc=Math.round(e.acc*100);
+ h+='<div class="intent"><div class="tt" style="background:'+TCOL[F.tell]+';color:'+TCOL[F.tell]+'"><span style="color:#fff">'+F.tell+'</span></div><div style="text-align:left"><b>對手起手:'+TICON[F.tell]+F.tell+'招</b><small>看穿度約 '+pc+'% ・ 柔克剛 ・ 剛克巧 ・ 巧克柔</small></div></div>';
+ h+='<div id="flog">'+(F.log.length?F.log.slice(-4).map(function(l){return '<div>'+l.replace(/</g,'&lt;').replace(/&lt;(.*?)>/g,'<b style="color:#FFD84A">$1</b>')+'</div>';}).join(''):'<div>決一死戰!選擇與對手起手相剋的招式。</div>')+'</div>';
+ h+='<div style="width:100%">'+bar('hp',S.hp,maxHP(),'氣血 ')+'<div style="height:.3em"></div>'+bar('mp',F.mp,maxMP(),'內力 ')+'</div>';
+ h+='<div class="skills">';
+ var ids=['f1','f2','f3'];Object.keys(S.sk).forEach(function(k){if(!SK[k].pass)ids.push(k);});
+ ids.forEach(function(id){var k=SK[id],ok=F.mp>=k.mp&&!F.over,l=k.basic?'':' Lv'+lv(id),p=Math.round(k.p*(1+.18*((k.basic?1:lv(id))-1))+S.body*.6);
+  h+='<button class="sk '+k.t+'" data-m="'+id+'" '+(ok?'':'disabled')+'>'+TICON[k.t]+k.n+l+'<small>威力 '+p+(k.mp?' ・ 耗 '+k.mp:' ・ 免費')+(k.fx==='heal'?' ・ 回血':k.fx==='stun'?' ・ 絆':k.fx==='pierce'?' ・ 無懼':k.fx==='reveal'?' ・ 看穿':k.fx==='mana'?' ・ 回氣':k.fx==='sway'?' ・ 醉閃':'')+'</small></button>';});
+ h+='<button class="sk wide" data-m="__give">'+(F.final?'認輸':'撤退(視為落敗)')+'</button></div>';
+ if(res)h+='<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5);font:900 2.6em \'Noto Serif TC\';color:#FFD84A;letter-spacing:.2em;z-index:50">'+res+'</div>';
+ $('fight').innerHTML=h;
+}
+
+/* ---------- 畫面 ---------- */
+var LOC={
+ village:{n:'青石村',e:'🏘️',t:'炊煙裊裊,雞犬相聞。這裡是你出生的地方。',c:['#7FB0D8','#E8D2A4']},
+ school:{n:'拜師學藝',e:'🏯',t:'江湖門派林立,有錢有名聲,師父才肯收你。',c:['#8A6A4A','#E0B87A']},
+ jianghu:{n:'江湖',e:'⛰️',t:'擂台、懸賞、奇遇——名聲從這裡打出來。',c:['#4A6A7A','#C8A070']},
+ me:{n:'個人',e:'🧘',t:'檢視你的修為與江湖地位。',c:['#5A4A6A','#B8A0C8']}
+};
+function render(){
+ if(!S)return;
+ var m=maxHP(),mm=maxMP(),dd=S.day;
+ var dots='';for(var i=0;i<3;i++)dots+='<i class="'+(i<S.ap?'on':'')+'"></i>';
+ $('hud').innerHTML='<div class="r1"><span class="day serif">第 '+dd+' 天<small>'+rankOf(S.fame)+' ・ 名聲 '+S.fame+'</small></span><span class="ap" title="今日時辰">'+dots+'</span></div><div class="bars">'+bar('hp',S.hp,m,'氣')+bar('mp',S.mp,mm,'內')+'<span class="coin">💰'+S.coin+'</span></div>';
+ var L=LOC[S.tab],hr=['#F4C98A','#B8D8F0','#E0774A'][3-Math.max(1,Math.min(3,S.ap))];
+ $('scene').style.background='linear-gradient(180deg,'+hr+' 0%,'+L.c[1]+' 100%)';
+ $('scene').innerHTML='<div class="em">'+L.e+'</div><div class="hill"></div><div style="position:relative"><h2 class="serif">'+L.n+'</h2><p>'+L.t+'</p></div>';
+ $('tabs').innerHTML=[['village','🏘️','村莊'],['school','🥋','武學'],['jianghu','⚔️','江湖'],['me','📜','角色']].map(function(t){return '<button data-tab="'+t[0]+'" class="'+(S.tab===t[0]?'on':'')+'"><i>'+t[1]+'</i>'+t[2]+'</button>';}).join('');
+ $('panel').innerHTML=panel();
+}
+function A(id,ic,n,sub,tag,cls,dis){return '<button class="act" data-a="'+id+'" '+(dis?'disabled':'')+'><i>'+ic+'</i><div><b>'+n+'</b><small>'+sub+'</small></div>'+(tag?'<em class="'+(cls||'')+'">'+tag+'</em>':'')+'</button>';}
+function panel(){
+ var h='',noap=S.ap<=0;
+ if(S.tab==='village'){
+  h+='<div class="sec">今日營生</div>';
+  h+=A('fetch','🪣','挑水','賺 6~10 兩 ・ 體魄慢慢變壯','1 時辰','',noap);
+  h+=A('chop','🪓','劈柴','賺 8~12 兩 ・ 體魄慢慢變壯','1 時辰','',noap);
+  h+='<div class="sec">修身養性</div>';
+  h+=A('study','📖','旁聽秀才講課','花 3 兩 ・ 悟性 +1(學武功要悟性)','1 時辰','',noap);
+  h+=A('sit','🧘','打坐吐納','內力上限 +'+(3+(lv('yijin')?1:0))+',每 4 次悟性 +1','1 時辰','',noap);
+  h+=A('heal','🌿','療傷調息','恢復 60% 氣血、內力全滿','1 時辰','',noap||(S.hp>=maxHP()&&S.mp>=maxMP()));
+  h+='<div class="sec">歇息</div>';
+  h+=A('sleep','🛏️','回家睡覺','結束今天(氣血內力全滿,明早花 4 兩伙食)','','ok');
+  if(S.tut<1)h+='<div class="card">💡 <b>新手提示</b>:每天有 3 個時辰。先打工湊 30 兩,去「武學」學<b>長拳</b>,再去「江湖」擂台闖名聲。</div>';
+ } else if(S.tab==='school'){
+  h+='<div class="sec">已學武功 ・ 修練</div>';
+  var ks=Object.keys(S.sk);if(!ks.length)h+='<div class="card">還沒學任何武功。向下方的門派拜師吧!</div>';
+  ks.forEach(function(k){var s=S.sk[k],K=SK[k],need=s.lv*2+1;h+='<button class="act" data-a="prac:'+k+'" '+((noap||s.lv>=5)?'disabled':'')+'><i><span class="t T'+K.t+'">'+K.t+'</span></i><div><b>'+K.n+' Lv'+s.lv+(s.lv>=5?' (化境)':'')+'</b><small>'+K.d+(s.lv<5?'<br>經驗 '+s.xp+'/'+need:'')+'</small></div><em class="g">'+(s.lv>=5?'滿級':'修練')+'</em></button>';});
+  SCH.forEach(function(sc){
+   h+='<div class="school"><h3>'+sc.e+' '+sc.n+'<small>'+sc.d+'</small></h3>';
+   var mm=sc.m,ms=Ms()[sc.id];
+   if(!ms){var why0=reqOK(mm.req);h+=A('join:'+sc.id,mm.e,'拜 '+mm.n+' 為師',mm.t+' ・ '+mm.q+(why0?'<br>🔒 '+why0:'<br>拜師禮 '+mm.fee+' 兩 ・ 入門後學費 8 折、可向師父請益'),why0?'🔒':'拜師','',noap||!!why0||S.coin<mm.fee);}
+   else{var cd=Math.max(0,2-(S.day-ms.cd));h+=A('ask:'+sc.id,mm.e,'向 '+mm.n+' 請益',mm.t+'(弟子)・ 已請益 '+ms.t+' 次<br>'+(cd?'師父還在忙,'+cd+' 天後再來':'指點本門武功,經驗 +3'),cd?cd+'天':'請益','ok',noap||cd>0);}
+   sc.L.forEach(function(l){var K=SK[l.s],have=S.sk[l.s],why=reqOK(l.req),fe=feeOf(l),dis=noap||!!have||!!why||S.coin<fe;
+    h+='<button class="act" data-a="learn:'+l.s+'" '+(dis?'disabled':'')+'><i><span class="t T'+K.t+'">'+K.t+'</span></i><div><b>'+K.n+'</b><small>'+K.d+(K.pass?'':' ・ 威力 '+K.p+' 耗 '+K.mp)+(have?'':'<br>'+(why?'🔒 '+why:'學費 '+fe+' 兩'+(fe<l.fee?'(弟子 8 折)':'')))+'</small></div><em class="'+(have?'ok':'')+'">'+(have?'已學':fe+'兩')+'</em></button>';});
+   h+='</div>';});
+  if(S.sk.dugu===undefined&&S.fame>=15)h+='<div class="card">📜 傳聞:深山絕壁有位前輩留下了絕世劍法… 多去「江湖」遊歷或許會有奇遇。</div>';
+ } else if(S.tab==='jianghu'){
+  h+='<div class="sec">擂台挑戰</div>';
+  EN.forEach(function(e,i){var ok=S.fame>=e.fame;if(!ok&&i>0&&S.fame<EN[i-1].fame)return;
+   h+=A('arena:'+i,e.e,e.n+(ok?'':' 🔒'),ok?e.tip+' ・ 氣血 '+e.hp:'名聲需 '+e.fame,ok?((S.beat||{})[e.id]>=3?'無名聲':'+'+Math.max(1,Math.round(e.rf*[1,.5,.25][(S.beat||{})[e.id]||0]))+'名'):'', 'g',noap||!ok);});
+  h+='<div class="sec">遊歷</div>';
+  h+=A('wander','🧭','四處遊歷','撿錢、遇高人、山賊攔路、也可能有絕世奇遇','1 時辰','',noap);
+  h+='<div class="sec">華山論劍</div>'+A('summit','👑','挑戰武林盟主·乾坤子',S.fame>=25?'準備好了就上華山!勝利即登頂結局;落敗只會受傷,可再來':'名聲 25 以上才有資格(現在 '+S.fame+')',S.fame>=25?'上華山':'🔒','red',noap||S.fame<25);
+ } else {
+  var nr=nextRank(S.fame);
+  h+='<div class="card"><b>'+rankOf(S.fame)+'</b>(名聲 '+S.fame+')'+(nr?'<div class="prog"><i style="width:'+Math.min(100,S.fame/nr[0]*100)+'%"></i></div>下一階「'+nr[1]+'」需 '+nr[0]+' 名聲':'<br>已達武林之巔!')+'<br>江湖沒有期限,隨時可以在「江湖」分頁向盟主挑戰(名聲≥25)。想收手就歸隱。</div>';
+  h+='<div class="card">體魄 <b>'+S.body+'</b> ・ 悟性 <b>'+S.wit+'</b> ・ 內力上限 <b>'+maxMP()+'</b> ・ 氣血上限 <b>'+maxHP()+'</b><br>閃避 <b>'+Math.round(dodge()*100)+'%</b> ・ 戰鬥回氣 <b>'+mpRegen()+'</b>/回合 ・ 戰績 <b>'+S.wins+'</b> 勝 / '+S.fights+' 戰</div>';
+  h+='<div class="card"><b>相剋口訣</b><br>🔥剛 勝 ⚡巧 ・ ⚡巧 勝 💧柔 ・ 💧柔 勝 🔥剛<br>戰鬥時看對手「起手」:出相剋的招傷害 ×1.6、承受 ×0.5;被剋則傷害 ×0.6、承受 ×1.5。高手會用虛招,看穿度會下降。</div>';
+  h+='<div class="sec">武功</div>';var ks2=Object.keys(S.sk);if(!ks2.length)h+='<span class="pill">尚未習得</span>';ks2.forEach(function(k){h+='<span class="pill">'+TICON[SK[k].t==='內'?'柔':SK[k].t]+SK[k].n+' Lv'+S.sk[k].lv+'</span>';});
+  h+='<div class="sec">其他</div><div class="row" style="justify-content:flex-start"><button class="btn s" id="btnMute" style="min-width:0;padding:.5em 1.4em">'+(mute?'🔇 音效關':'🔊 音效開')+'</button><button class="btn s" id="btnRetire" style="min-width:0;padding:.5em 1.4em">🏞️ 歸隱</button><button class="btn s" id="btnQuit" style="min-width:0;padding:.5em 1.4em">回標題</button></div>';
+ }
+ return h;
+}
+
+/* ---------- 故事 / 結局 ---------- */
+var stCb=null;
+function story(e,t,p,cb,btn){$('stE').textContent=e;$('stT').textContent=t;$('stP').innerHTML=p;$('stB').textContent=btn||'好';stCb=cb;$('story').classList.add('on');}
+$('stB').onclick=function(){$('story').classList.remove('on');var c=stCb;stCb=null;if(c)c();};
+function startFinal(){
+ story('⛰️','華山論劍','華山之巔,天下英雄齊聚。<br>你以<b>「'+rankOf(S.fame)+'」</b>之名報上姓名,武林盟主<b>乾坤子</b>緩緩起身:「來吧,讓老夫看看,青石村來的小子有幾分本事。」',function(){
+  S.hp=maxHP();S.mp=maxMP();
+  fight(BOSS,function(win){if(win){finish(S.fame>=70?'master':'lord',true);}else{S.hp=Math.max(1,Math.round(maxHP()*.25));toast('💫 不敵盟主,負傷下山…\n再練練,隨時可以回來挑戰',3000);spend();save();render();}},true);
+ },'登台');
+}
+function retire(){finish(S.fame<10?'nobody':S.fame<25?'novice':S.fame<45?'hero':'strong',false);}
+function finish(id,win){
+ S.over=true;store('jh_run','');
+ var m=getMeta();m.runs=(m.runs||0)+1;m.ends=m.ends||{};m.ends[id]=1;setMeta(m);
+ var E=ENDS[id];$('enE').textContent=E.e;$('enT').textContent=E.n;
+ $('enP').innerHTML=E.d+'<br><br>名聲 <b>'+S.fame+'</b> ・ 共歷 <b>'+S.day+'</b> 天 ・ 習得武功 <b>'+Object.keys(S.sk).length+'</b> 門 ・ 戰績 <b>'+S.wins+'</b> 勝<br>'+(m.runs<=3?'輪迴加成:下一世悟性 +1(最多 +3)':'');
+ $('end').classList.add('on');if(win)sfx.lv();else sfx.gong();
+}
+function drawEnds(){var m=getMeta(),e=m.ends||{},n=0,h='';Object.keys(ENDS).forEach(function(k){var has=e[k];if(has)n++;h+='<div class="card" style="text-align:left;'+(has?'':'opacity:.45')+'"><b>'+(has?ENDS[k].e+' '+ENDS[k].n:'❓ ？？？')+'</b><br>'+(has?ENDS[k].d:'尚未達成')+'</div>';});$('endList').innerHTML=h;$('endList').style.cssText='width:100%;max-height:60%;overflow:auto';return n;}
+function titleRefresh(){var has=store('jh_run');$('btnCont').style.display=has?'':'none';var m=getMeta(),n=m.ends?Object.keys(m.ends).length:0;$('endN').textContent=n+'/'+Object.keys(ENDS).length;}
+
+/* ---------- 事件 ---------- */
+$('panel').addEventListener('click',function(e){var b=e.target.closest('[data-a]');if(b&&!b.disabled){act(b.dataset.a);return;}if(e.target.id==='btnMute'){mute=!mute;store('jh_mute',mute?'1':'0');render();}if(e.target.id==='btnRetire'){act('retire');}if(e.target.id==='btnQuit'){save();$('title').classList.add('on');titleRefresh();}});
+$('tabs').addEventListener('click',function(e){var b=e.target.closest('[data-tab]');if(b){S.tab=b.dataset.tab;render();$('panel').scrollTop=0;}});
+$('fight').addEventListener('click',function(e){var b=e.target.closest('[data-m]');if(!b||b.disabled)return;if(b.dataset.m==='__give')giveUp();else playerMove(b.dataset.m);});
+function begin(){
+ $('title').classList.remove('on');render();
+ if(S.tut===0){S.tut=1;save();story('🌾','青石村','你是青石村的一個平凡百姓,每天挑水劈柴,日子清苦。<br>這天,賣菜的王大娘在村口被<b>幾個混混</b>糾纏——<br>你挽起袖子,第一次與人動手。',function(){fight(Object.assign({},EN[0],{e:'😠',n:'村口混混'}),function(win){if(win){S.fame+=3;S.coin+=15;toast('王大娘塞給你 15 兩謝禮!名聲 +3\n去「武學」拜師,學真正的武功吧',3000);S.tut=2;}else{S.hp=Math.round(maxHP()*.6);toast('被打了一頓…但王大娘趁機逃走了。\n去武館學點真功夫吧',3000);S.tut=2;}save();render();});},'出手');}
+}
+$('btnNew').onclick=function(){newRun();begin();};
+$('btnCont').onclick=function(){try{S=JSON.parse(store('jh_run'));}catch(e){S=null;}if(!S){newRun();}begin();};
+$('btnEnds').onclick=function(){drawEnds();$('ends').classList.add('on');};
+$('endsBack').onclick=function(){$('ends').classList.remove('on');};
+$('enAgain').onclick=function(){$('end').classList.remove('on');newRun();begin();};
+$('enTitle').onclick=function(){$('end').classList.remove('on');$('title').classList.add('on');titleRefresh();};
+mute=store('jh_mute')==='1';
+titleRefresh();
+window.__JH={S:function(){return S;},newRun:newRun,fight:fight,EN:EN,BOSS:BOSS,SK:SK,lv:lv,maxHP:maxHP,maxMP:maxMP,mpRegen:mpRegen,move:playerMove,F:function(){return F;},act:act,render:render,set:function(o){Object.assign(S,o);},
+ sim:function(loadout,body,enemy,n,noTell){var w=0,hpl=0;for(var g=0;g<n;g++){newRun();S.body=body;S.sk={};Object.keys(loadout).forEach(function(k){S.sk[k]={lv:loadout[k],xp:0};});S.hp=maxHP();S.mp=maxMP();
+   var done=false,res=null;F=null;fight(enemy,function(win){res=win;},false);
+   var guard=0;while(F&&!F.over&&guard++<80){var best=null,bs=-1;var ids=['f1','f2','f3'];Object.keys(S.sk).forEach(function(k){if(!SK[k].pass)ids.push(k);});
+    ids.forEach(function(id){var k=SK[id];if(F.mp<k.mp)return;var r=rel(k.t,F.tell),sc=moveDmg(id,r)*(k.fx==='stun'?1.5:1)+(r>0?20:0)-(r<0?30:0)+(k.fx==='heal'?8:0);if(sc>bs){bs=sc;best=id;}});playerMove(best);}
+   if(F&&F.over){/* end handled via timeout; read result */}
+   var ok=S.hp>0&&F&&F.ehp<=0;if(ok)w++;hpl+=S.hp;var el=document.getElementById('fight');if(el)el.classList.remove('on');F=null;}
+  return {win:w+'/'+n,hp:Math.round(hpl/n)};}};
+})();
+</script>
+<!--pl:start-->
+<style id="pl-css">
+html{-webkit-text-size-adjust:100%;overscroll-behavior:none}
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;animation:plIn .45s ease both}
+@keyframes plIn{from{opacity:0}to{opacity:1}}
+button,a,[role=button],canvas{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button{transition:transform .12s ease,filter .15s ease,box-shadow .15s ease}
+button:not(:disabled):hover{filter:brightness(1.07)}
+button:not(:disabled):active{transform:translateY(1px) scale(.975);filter:brightness(.96)}
+button:focus-visible,a:focus-visible{outline:3px solid rgba(255,255,255,.85);outline-offset:3px;box-shadow:0 0 0 6px rgba(0,0,0,.35)}
+canvas{touch-action:none}
+#pl-vig{position:fixed;inset:0;pointer-events:none;z-index:2147482000;background:radial-gradient(ellipse at 50% 45%,transparent 58%,rgba(0,0,0,.20) 100%)}
+#pl-back{position:fixed;left:max(8px,env(safe-area-inset-left));top:max(8px,env(safe-area-inset-top));z-index:2147482500;display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 12px 0 9px;border-radius:999px;font:700 12px/1 'Noto Sans TC',system-ui,sans-serif;letter-spacing:.06em;color:#fff;text-decoration:none;background:rgba(18,16,28,.55);border:1px solid rgba(255,255,255,.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);box-shadow:0 3px 10px rgba(0,0,0,.3);opacity:.85;transition:opacity .15s,transform .12s}
+#pl-back:hover{opacity:1}#pl-back:active{transform:scale(.95)}
+#pl-splash{position:fixed;inset:0;z-index:2147483000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:#fff;transition:opacity .45s ease,visibility .45s}
+#pl-splash.off{opacity:0;visibility:hidden}
+#pl-splash b{font:900 clamp(26px,7vw,40px)/1.2 'Noto Serif TC','Noto Sans TC',serif;letter-spacing:.14em;text-shadow:0 4px 18px rgba(0,0,0,.45)}
+#pl-splash i{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.28);border-top-color:#fff;animation:plSp .8s linear infinite}
+#pl-splash small{font:500 11px 'Noto Sans TC',sans-serif;letter-spacing:.3em;opacity:.7}
+@keyframes plSp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){body{animation:none}#pl-splash i{animation:none}}
+</style>
+<script id="pl-js">
+(function(){
+ try{
+  var d=document,b=d.body,cs=getComputedStyle(b),bg=cs.backgroundColor;
+  if(!bg||bg==='rgba(0, 0, 0, 0)'){bg=getComputedStyle(d.documentElement).backgroundColor;}
+  if(!bg||bg==='rgba(0, 0, 0, 0)')bg='#1c1830';
+  var m=d.querySelector('meta[name=theme-color]');if(!m){m=d.createElement('meta');m.name='theme-color';d.head.appendChild(m);}m.content=bg;
+  var vp=d.querySelector('meta[name=viewport]');if(vp&&vp.content.indexOf('viewport-fit')<0)vp.content+=',viewport-fit=cover';
+  var v=d.createElement('div');v.id='pl-vig';b.appendChild(v);
+  if(!d.querySelector('a[href*="index.html"]')){var a=d.createElement('a');a.id='pl-back';a.href='index.html';a.setAttribute('aria-label','回遊戲大廳');a.innerHTML='<span aria-hidden="true">‹</span>大廳';b.appendChild(a);}
+  var s=d.createElement('div');s.id='pl-splash';s.style.background='radial-gradient(ellipse at 50% 30%,rgba(255,255,255,.16),transparent 60%),'+bg;
+  var t=(d.title||'').trim();s.innerHTML='<small>NOW LOADING</small><b></b><i></i>';s.querySelector('b').textContent=t;b.appendChild(s);
+  addEventListener('click',function(e){var t=e.target&&e.target.closest&&e.target.closest('button');if(t&&navigator.vibrate){try{navigator.vibrate(8);}catch(_){}}},true);
+  var done=false;function off(){if(done)return;done=true;s.classList.add('off');setTimeout(function(){if(s.parentNode)s.parentNode.removeChild(s);},600);}
+  if(d.readyState==='complete')setTimeout(off,350);else addEventListener('load',function(){setTimeout(off,350);});
+  setTimeout(off,1800);
+ }catch(e){}
+})();
+</script>
+<!--pl:end-->
+<!--dv:start-->
+<style id="dv-css">
+#dv-l,#dv-r{display:none}
+html.dv-desk #dv-l,html.dv-desk #dv-r{position:fixed;top:50%;transform:translateY(-50%);z-index:2147481500;flex-direction:column;gap:10px;box-sizing:border-box;padding:20px 20px 18px;border-radius:18px;color:#fff;font:500 13.5px/1.75 'Noto Sans TC',system-ui,sans-serif;background:rgba(14,12,22,.5);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 18px 44px rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .35s}
+html.dv-desk #dv-l.on,html.dv-desk #dv-r.on{display:flex;opacity:1;pointer-events:auto}
+#dv-l small,#dv-r small{font-size:11px;letter-spacing:.3em;opacity:.65}
+#dv-l b{font:900 24px/1.25 'Noto Serif TC','Noto Sans TC',serif;letter-spacing:.08em}
+#dv-l .t{align-self:flex-start;font-size:12px;letter-spacing:.2em;padding:1px 10px;border:1px solid rgba(255,255,255,.45);border-radius:999px}
+#dv-l p{margin:0;opacity:.85}
+#dv-l .k{margin:2px 0 0;padding-top:10px;border-top:1px dashed rgba(255,255,255,.22);font-size:12.5px;opacity:.78}
+#dv-fs{align-self:flex-start;font:700 13px 'Noto Sans TC',sans-serif;color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:6px 14px;cursor:pointer}
+#dv-fs:hover{background:rgba(255,255,255,.24)}
+#dv-r a{display:block;color:#fff;text-decoration:none;padding:9px 12px;border-radius:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);transition:background .15s,transform .15s}
+#dv-r a:hover{background:rgba(255,255,255,.2);transform:translateX(3px)}
+#dv-r a b{display:block;font:700 15px/1.4 'Noto Serif TC','Noto Sans TC',serif}
+#dv-r a span{font-size:12px;opacity:.7}
+#dv-r .all{text-align:center;font-size:12.5px;padding:7px;background:none;border-style:dashed}
+html.dv-mob body{min-height:100dvh}
+</style>
+<aside id="dv-l" aria-label="遊戲資訊"><small>NOW PLAYING</small><b></b><span class="t"></span><p></p><div class="k">滑鼠點擊、拖曳即可操作；有支援鍵盤的遊戲，畫面內都有按鍵提示。</div><button id="dv-fs" type="button">⛶ 全螢幕</button></aside>
+<aside id="dv-r" aria-label="其他遊戲"><small>換一款玩</small><span id="dv-more"></span><a class="all" href="index.html">回遊戲大廳 · 共 41 款</a></aside>
+<script id="dv-js">
+(function(){
+ var LIST=[["paper-glider.html", "飛行躲避", "紙飛機大冒險", "讓紙飛機穿過桌上林立的鉛筆縫隙。"], ["rooftop-cat.html", "無盡跑酷", "屋頂貓跑酷", "夕陽屋頂上狂奔，跳過障礙、低頭鑽過飛鳥。"], ["chick-relay.html", "節奏跑酷", "小雞接力賽", "三條跑道三隻小雞，跟著鼓點跳過障礙、撿種子，烏⁠鴉來了千萬別跳"], ["ink-sword.html", "武俠", "墨劍江湖", "水墨風武俠動作：三連斬、輕功閃身、劍氣絕招，闖五章擊敗兩大魔頭"], ["boba-survivors.html", "倖存", "珍奶突圍", "化身珍珠奶茶，自動攻擊、撿珍珠升級，撐過 5 分鐘冰塊與方糖大軍"], ["drift-bend.html", "賽車漂移", "彎道漂移", "按住漂移鍵甩過彎道、放開噴出加速，十條賽道對決對手車手，收集十輛愛車"], ["star-raid.html", "太空射擊", "星艦突襲", "自動連射的太空射擊，撿道具升級武器，還要打倒巨型母艦。"], ["game.html", "即時操作", "夜蔓 貪食蛇", "連擊、衝刺、護盾與果實雨，還能和 AI 紅蛇對戰、解鎖蛇皮膚。"], ["snake-evolve.html", "街機", "蛇蛇進化", "貪吃蛇進化版：每 10 顆闖新區域，毒蘑菇、巨石、雷擊來襲；連擊吃滿進入狂熱無敵，還有任務與 12 枚勳章。"], ["tile-breaker.html", "打磚塊", "花磚打磚塊", "12 關闖關，接道具、炸彈連鎖、連擊倍率，還有三場花磚守衛 Boss 戰。"], ["candy-pachinko.html", "物理彈射", "糖果彈珠台", "瞄準發射彈珠，在糖果釘子間亂彈，把橘色糖果全部打光就過關"], ["ring-toss.html", "街機經典", "夜市套圈圈", "按住瞄準、圈縮到最小時放手，套中熊貓、泰迪熊和金鑽，十個攤位等你挑戰"], ["pearl-catch.html", "接料反應", "珍珠接接樂", "用杯子接住珍珠和布丁，閃開會讓你變淡的冰塊。"], ["hoop-shot.html", "投籃機", "夜光籃球機", "往後拉、放開投籃，空心球加時間，連進有加分"], ["penalty-kings.html", "足球", "點球大師", "滑向球門射點球與任意球，繞過人牆、騙過守門員"], ["pool-hall.html", "運動競技", "八號球撞球", "巡迴賽挑戰六位對手，賺金幣買球桿與球檯，先清完自己的球再打進黑 8"], ["table-tennis.html", "運動競技", "極速桌球", "拖曳球拍回擊、打旋轉球；巡迴賽挑戰 6 位個性對手拿星星，怒氣滿了還能放超級殺球。"], ["mini-golf.html", "運動競技", "迷你高爾夫", "往後拉、放手推桿，十二個球場有沙坑、水池、風車、傳送門，桿數越少星越多"], ["dart-bar.html", "酒吧競技", "飛鏢酒吧", "按住瞄準、放開射鏢，三輪對決十位酒客，風、旋轉靶和昏暗燈光都是考驗"], ["lantern-rhythm.html", "節奏點擊", "燈籠節拍", "燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。"], ["garden-whack.html", "反應力", "菜園保衛戰", "限時 30 秒，把冒出土堆的小偷趕跑。"], ["steamer-stack.html", "抓時機", "蒸籠疊疊樂", "抓準時機放下蒸籠，疊得越準越高。"], ["cake-defense.html", "塔防", "蛋糕保衛戰", "擺放糖果槍、冰棒與爆米花砲塔，擋下偷吃生日蛋糕的螞蟻大軍"], ["dice-dungeon.html", "策略", "骰運地下城", "擲骰子、把點數放進技能卡，看穿怪物意圖，闖過 10 層地下城擊倒魔王"], ["magnet-miner.html", "冒險", "磁鐵礦工", "放下磁鐵吸金塊和鑽石，再深入一層，還是收線入袋？小心炸彈全炸光"], ["cat-cafe.html", "放置經營", "貓咪咖啡館", "點咖啡機賺錢，僱用貓咪店員，離線也繼續營業，再開分店"], ["fishing.html", "策略與經營", "深海釣手", "放線下海、左右閃避水母，釣起二十四種魚，賺錢升級漁具，把圖鑑收集滿"], ["soup-master.html", "策略經營", "湯頭大師", "用火候、下料時機和最後一撮鹽，熬出客人心中的那碗好湯，十種湯頭等你收集"], ["jianghu-life.html", "武俠養成", "布衣江湖", "從村裡的老百姓開始，打工、拜師、練功、闖擂台；剛柔巧相剋對決，江湖沒有期限，準備好了就上華山論劍，結局共 6 種。"], ["ink-gomoku.html", "對弈", "水墨五子棋", "墨黑對朱紅，橫直斜任一方向先連成五子者勝。"], ["xiangqi.html", "棋類對弈", "楚河漢界", "中國象棋對電腦，三種難度，還有悔棋與提示。"], ["macaron2048.html", "滑動合併", "馬卡龍 2048", "把相同口味的馬卡龍疊在一起，疊出最大的一顆。"], ["star-match.html", "記憶配對", "星圖配對", "翻開夜空卡片，用最少步數找出所有星座對子。"], ["tetris.html", "方塊消除", "方塊風暴", "經典方塊加強版：T-Spin、背對背、道具方塊與風暴灰磚，另有衝刺與 8 個任務挑戰。"], ["meow-mover.html", "益智解謎", "喵喵搬運工", "推箱子解謎，58 個關卡，推木箱到貓腳印上，拿滿三顆星。"], ["tidal-sweeper.html", "邏輯推理", "潮間帶排雷", "退潮的沙灘藏著海膽，用數字推理出牠們的位置。"], ["shadow-cat-detective.html", "推理", "影子貓偵探", "五隻貓七嘴八舌，只有一隻在說謊。聽完口供，找出偷東西的真兇"], ["idiom-code.html", "棋牌益智", "四字密碼", "成語版猜字遊戲，看提示從十二個字裡湊出四字成語，六次機會，每天一題"], ["card-duel.html", "卡牌對戰", "紙牌決鬥", "用能量打出火球、護甲與隨從，擊敗十位對手，每贏一場就解鎖新卡牌"], ["bubble-wave.html", "鏡頭互動", "泡泡派對", "打開鏡頭，用揮手在空中打破飄上來的泡泡。"], ["halloween-booth.html", "鏡頭變臉", "萬聖變臉亭", "開鏡頭在臉上貼萬聖節貼紙，拍成圖片傳給朋友"]];
+ var d=document,de=d.documentElement,b=d.body,me=(location.pathname.split('/').pop()||'');
+ var mq=matchMedia('(min-width:900px) and (hover:hover) and (pointer:fine)');
+ var z=1,n=0,L=d.getElementById('dv-l'),R=d.getElementById('dv-r');
+ de.appendChild(L);de.appendChild(R);
+ var info=null;for(var i=0;i<LIST.length;i++)if(LIST[i][0]===me)info=LIST[i];
+ if(info){L.querySelector('b').textContent=info[2];L.querySelector('.t').textContent=info[1];L.querySelector('p').textContent=info[3];}
+ else{L.style.display='none';}
+ (function(){var o=LIST.filter(function(x){return x[0]!==me;}),pick=[];
+  while(pick.length<3&&o.length){pick.push(o.splice(Math.floor(Math.random()*o.length),1)[0]);}
+  d.getElementById('dv-more').innerHTML=pick.map(function(x){return '<a href="'+x[0]+'"><b>'+x[2]+'</b><span>'+x[1]+'</span></a>';}).join('');})();
+ var probe=d.createElement('div');probe.setAttribute('aria-hidden','true');probe.style.cssText='position:absolute;left:0;top:0;width:100px;height:4px;visibility:hidden;pointer-events:none';probe.id='dv-probe';b.appendChild(probe);
+ function conv(){if(z===1)return 1;var w=probe.getBoundingClientRect().width;return Math.abs(w-100*z)<Math.abs(w-100)?1:z;}
+ function box(){
+  var t=1e9,bt=-1e9,l=1e9,r=-1e9,sy=scrollY,sx=scrollX,f=conv();
+  for(var c=b.firstElementChild;c;c=c.nextElementSibling){
+   var tg=c.tagName;if(tg==='SCRIPT'||tg==='STYLE'||tg==='LINK'||tg==='ASIDE'||tg==='NOSCRIPT')continue;
+   if(/^(pl|dv)-/.test(c.id))continue;
+   var cs=getComputedStyle(c);if(cs.position==='fixed'||cs.display==='none')continue;
+   var q=c.getBoundingClientRect();if(q.width<2||q.height<2)continue;
+   t=Math.min(t,q.top*f+sy);bt=Math.max(bt,q.bottom*f+sy);l=Math.min(l,q.left*f+sx);r=Math.max(r,q.right*f+sx);
+  }
+  if(bt<0)return null;return{t:t,b:bt,l:l,r:r};
+ }
+ function place(bx){
+  var desk=mq.matches;de.classList.toggle('dv-desk',desk);de.classList.toggle('dv-mob',!desk);
+  if(!desk){L.classList.remove('on');R.classList.remove('on');return;}
+  var vw=innerWidth,gap=20,lw=Math.min(300,bx.l-gap*2),rw=Math.min(280,vw-bx.r-gap*2);
+  if(info&&lw>=190){L.style.width=lw+'px';L.style.left=(bx.l-gap-lw)+'px';L.classList.add('on');}else L.classList.remove('on');
+  if(rw>=190){R.style.width=rw+'px';R.style.left=(bx.r+gap)+'px';R.classList.add('on');}else R.classList.remove('on');
+ }
+ var lastKey='',noUp=false;
+ function apply(v,vh){z=v;if(z===1){b.style.zoom='';b.style.minHeight='';}else{b.style.zoom=String(z);b.style.minHeight=(vh/z)+'px';}}
+ function fit(force){
+  var desk=mq.matches,bx=box();if(!bx)return;
+  var vh=innerHeight,vw=innerWidth,h=(bx.b-bx.t)/z,w=(bx.r-bx.l)/z,key=Math.round(h/8)+','+Math.round(w/8),zmin=desk?.55:.78;
+  var over=de.scrollHeight>vh+2&&z>zmin+.01&&!(noUp&&z===1);
+  if(!force&&key===lastKey&&!over){place(bx);return;}
+  if(key!==lastKey)noUp=false;lastKey=key;
+  var nz;
+  if(desk){nz=Math.min(noUp?1:1.6,(vh-28)/h,(vw-48)/w);}else{nz=Math.min(1,vh/h);}
+  nz=Math.max(zmin,nz);if(Math.abs(nz-1)<(desk?.06:.015))nz=1;
+  apply(nz,vh);
+  for(var k=0;k<4;k++){var sh=de.scrollHeight;if(sh<=vh+2||z<=zmin)break;apply(Math.max(zmin,z*vh/sh*.995),vh);}
+  if(z>1&&de.scrollHeight>vh+2){noUp=true;apply(1,vh);}
+  place(box()||bx);
+ }
+ var tm=0;function soon(f){clearTimeout(tm);n=0;tm=setTimeout(function(){fit(f);},60);}
+ addEventListener('resize',function(){soon(true);});addEventListener('orientationchange',function(){soon(true);});
+ if(mq.addEventListener)mq.addEventListener('change',function(){soon(true);});
+ addEventListener('load',function(){fit(true);setTimeout(fit,500);setTimeout(fit,1600);});
+ setInterval(function(){if(!d.hidden&&n<40){n++;fit(false);}},1500);
+ fit(true);
+ var fs=d.getElementById('dv-fs');
+ fs.addEventListener('click',function(){try{if(d.fullscreenElement){d.exitFullscreen();}else{de.requestFullscreen();}}catch(e){}});
+ d.addEventListener('fullscreenchange',function(){fs.textContent=d.fullscreenElement?'✕ 離開全螢幕':'⛶ 全螢幕';soon(true);});
+})();
+</script>
+<!--dv:end-->
+</body>
+</html>
