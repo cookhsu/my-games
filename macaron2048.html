@@ -141,6 +141,7 @@
   }
 
   .tile-layer{
+    container-type:inline-size;
     position:absolute;
     top: 10px; left: 10px; right: 10px; bottom: 10px;
   }
@@ -254,6 +255,32 @@
   @media (prefers-reduced-motion: reduce){
     .btn, .music-btn, .tile{ transition: none; animation: none; }
   }
+  .sub{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 8px 10px; font-family:'Fredoka',sans-serif; font-size:13px; font-weight:600; color:var(--ink); }
+  #modeTag{ background:rgba(255,255,255,.4); border-radius:12px; padding:3px 10px; white-space:nowrap; }
+  #timer{ background:#E8749A; color:#fff; border-radius:12px; padding:3px 10px; min-width:52px; text-align:center; font-variant-numeric:tabular-nums; }
+  #timer.low{ background:#C0392B; animation:comboPop .5s ease infinite alternate; }
+  #combo{ flex:1; text-align:center; font-weight:700; color:var(--accent); min-height:20px; font-size:13px; }
+  #combo.fx{ animation:comboPop .45s ease; }
+  @keyframes comboPop{ 0%{ transform:scale(.6); opacity:0; } 45%{ transform:scale(1.18); opacity:1; } 100%{ transform:scale(1); } }
+  .tools{ display:flex; gap:8px; margin-top:12px; }
+  .tool{ flex:1; font-family:'Fredoka',sans-serif; font-weight:600; font-size:13px; color:var(--ink); background:var(--tray); border:none; border-radius:14px; padding:9px 4px; cursor:pointer; box-shadow:0 3px 0 rgba(0,0,0,.18); }
+  .tool b{ display:inline-block; min-width:18px; margin-left:4px; background:var(--accent); color:#fff; border-radius:9px; font-size:11px; padding:1px 5px; }
+  .tool:disabled{ opacity:.45; cursor:default; }
+  .tool.on{ outline:3px solid var(--accent); }
+  .missions{ margin-top:12px; background:rgba(255,255,255,.38); border-radius:14px; padding:8px 12px; font-size:12px; color:var(--ink); }
+  .missions:empty{ display:none; }
+  .missions .mrow{ display:flex; justify-content:space-between; gap:8px; padding:2px 0; }
+  .missions .mrow.done{ opacity:.55; text-decoration:line-through; }
+  .missions .rw{ white-space:nowrap; opacity:.8; }
+  .mtoast{ position:absolute; left:50%; top:14px; transform:translateX(-50%); z-index:6; background:rgba(90,59,66,.92); color:#FFF6EC; font-family:'Fredoka',sans-serif; font-weight:600; font-size:13px; padding:8px 16px; border-radius:18px; pointer-events:none; opacity:0; transition:opacity .25s; white-space:nowrap; }
+  .mtoast.show{ opacity:1; }
+  .tray-frame.hammer .tile{ cursor:crosshair; outline:2px dashed var(--accent); }
+  .modes{ display:flex; flex-direction:column; gap:10px; width:100%; max-width:230px; }
+  .modes .btn{ width:100%; padding-left:12px; padding-right:12px; }
+  .book{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; width:100%; }
+  .bk{ display:flex; flex-direction:column; align-items:center; gap:3px; font-size:10px; color:#F3DCE2; }
+  .bk i{ font-style:normal; width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Fredoka',sans-serif; font-weight:700; font-size:11px; box-shadow:inset 0 -3px 0 rgba(0,0,0,.15); }
+  .bk.no i{ background:rgba(255,255,255,.15); color:#F3DCE2; }
 /* ===== UI v2 (template) ===== */
 body{ position:relative; }
 .marquee{ margin-top:18px; }
@@ -299,25 +326,38 @@ body{ position:relative; }
       </div>
       <button class="music-btn" id="musicBtn" aria-label="切換背景音樂" aria-pressed="true">🔊</button>
       <div class="stat right">
-        <span class="label">最佳 BEST</span>
+        <span class="label" id="bestLbl">最佳 BEST</span>
         <span class="value" id="best">0</span>
       </div>
     </div>
 
+    <div class="sub"><span id="modeTag">經典</span><span id="timer" style="display:none">90</span><span id="combo"></span><button class="music-btn" id="bookBtn" aria-label="口味圖鑑" style="width:34px;height:34px;font-size:15px">📖</button></div>
+
     <div class="tray-frame" id="trayFrame">
+      <div class="mtoast" id="mtoast"></div>
       <div class="grid-bg" id="gridBg"></div>
       <div class="tile-layer" id="tileLayer"></div>
 
       <div class="overlay" id="startOverlay">
         <h2>準備開動！</h2>
-        <p>滑動螢幕或用方向鍵 / WASD 移動所有馬卡龍，相同口味碰在一起會合體升級</p>
-        <button class="btn" id="startBtn">開始遊戲</button>
+        <p>滑動移動所有馬卡龍，相同口味合體升級。連續合併有連擊加分，完成任務可得道具！</p>
+        <div class="modes">
+          <button class="btn" id="startBtn">🍰 經典模式</button>
+          <button class="btn" id="rushBtn">⏱ 限時甜點（90 秒）</button>
+          <button class="btn" id="dailyBtn">📅 每日挑戰</button>
+        </div>
       </div>
 
       <div class="overlay hidden" id="overOverlay">
-        <h2>盤子滿了！</h2>
+        <h2 id="overTitle">盤子滿了！</h2>
         <p id="finalScore">本局分數：0</p>
-        <button class="btn" id="restartBtn">再來一盤</button>
+        <div class="overlay-buttons"><button class="btn" id="restartBtn">再來一盤</button><button class="btn secondary" id="menuBtn">換模式</button></div>
+      </div>
+
+      <div class="overlay hidden" id="bookOverlay">
+        <h2>口味圖鑑</h2>
+        <div class="book" id="book"></div>
+        <button class="btn secondary" id="bookClose">關閉</button>
       </div>
 
       <div class="overlay hidden" id="winOverlay">
@@ -329,9 +369,16 @@ body{ position:relative; }
         </div>
       </div>
     </div>
+
+    <div class="tools" id="tools">
+      <button class="tool" id="toolUndo">↶ 撤銷<b>3</b></button>
+      <button class="tool" id="toolHammer">🔨 糖果槌<b>1</b></button>
+      <button class="tool" id="toolShuffle">🔀 洗牌<b>1</b></button>
+    </div>
+    <div class="missions" id="missions"></div>
   </div>
 
-  <p class="hint">桌機請按 <kbd>← ↑ → ↓</kbd> 或 <kbd>W A S D</kbd>　手機請直接在盤子上滑動</p>
+  <p class="hint">桌機請按 <kbd>← ↑ → ↓</kbd> 或 <kbd>W A S D</kbd>　手機請直接在盤子上滑動<br>連續合併有連擊加分 · 完成任務、做出 256 / 512 / 1024 可得道具</p>
 
 <script>
 (function(){
@@ -391,6 +438,72 @@ body{ position:relative; }
   }
 
   var grid, tiles, nextId, score, running, hasWon, keepPlayingAfterWin;
+  var mode = 'classic', rs = 0, streak = 0, moves = 0, snap = null, hammerMode = false, earned = {}, charges = { undo: 3, hammer: 1, shuffle: 1 }, mis = [], timeLeft = 90, maxTile = 0, tick = null, bookMax = 0, toastT = null, bookWasRunning = false;
+  var NAMES = { 2:'玫瑰', 4:'抹茶', 8:'薰衣草', 16:'香橙', 32:'蜜桃', 64:'覆盆莓', 128:'開心果', 256:'紫薯', 512:'藍莓', 1024:'蜂蜜', 2048:'巧克力', 4096:'黑松露', 8192:'金箔' };
+  var TOOLN = { undo:'↶ 撤銷', hammer:'🔨 糖果槌', shuffle:'🔀 洗牌' };
+  function flavorName(v){ return NAMES[v] || '傳說'; }
+  function R(){ rs = (rs + 0x6D2B79F5) | 0; var t = Math.imul(rs ^ rs >>> 15, 1 | rs); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }
+  function dailySeed(){ var d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+  function bestKey(){ return mode === 'rush' ? 'macaron2048_best_rush' : mode === 'daily' ? 'macaron2048_best_d' + dailySeed() : 'macaron2048_best'; }
+  function loadBest(){ best = 0; try { var v = localStorage.getItem(bestKey()); if (v) best = parseInt(v, 10) || 0; } catch (e) { /* ignore */ } bestEl.textContent = best; document.getElementById('bestLbl').textContent = mode === 'daily' ? '今日最佳' : mode === 'rush' ? '限時最佳' : '最佳 BEST'; }
+  try { bookMax = parseInt(localStorage.getItem('macaron2048_book'), 10) || 0; } catch (e) { bookMax = 0; }
+  function toast(msg){ var t = document.getElementById('mtoast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function(){ t.classList.remove('show'); }, 1800); }
+  function discover(v){ if (v > bookMax){ bookMax = v; try { localStorage.setItem('macaron2048_book', String(bookMax)); } catch (e) { /* ignore */ } if (v > 4) toast('📖 新口味解鎖：' + flavorName(v) + '！'); } }
+  function milestone(v){ var rw = { 256:'hammer', 512:'shuffle', 1024:'undo' }[v]; if (rw && !earned[v]){ earned[v] = 1; charges[rw]++; toast('做出 ' + v + '！獲得 ' + TOOLN[rw] + ' +1'); updateTools(); } }
+  var MIS_POOL = [
+    [{ k:'make', v:64, t:'做出 64 號馬卡龍' }, { k:'multi', v:2, t:'一次滑動合併 2 對' }, { k:'fast', v:64, n:45, t:'45 步內做出 64' }],
+    [{ k:'make', v:128, t:'做出 128 號馬卡龍' }, { k:'multi', v:3, t:'一次滑動合併 3 對' }, { k:'streak', v:5, t:'連續 5 次滑動都有合併' }],
+    [{ k:'make', v:256, t:'做出 256 號馬卡龍' }, { k:'score', v:3000, t:'分數達到 3000' }, { k:'streak', v:8, t:'連續 8 次滑動都有合併' }]
+  ];
+  var MIS_RW = ['undo', 'hammer', 'shuffle'];
+  function pickMissions(){ return MIS_POOL.map(function(arr, i){ var m = arr[Math.floor(R() * arr.length)]; return { k:m.k, v:m.v, n:m.n, t:m.t, done:false, rw:MIS_RW[i] }; }); }
+  function mEvent(kind, val){
+    var changed = false;
+    mis.forEach(function(m){ if (m.done) return; var ok = false;
+      if (m.k === 'make' && kind === 'make') ok = val >= m.v; else if (m.k === 'fast' && kind === 'make') ok = val >= m.v && moves <= m.n;
+      else if (m.k === 'multi' && kind === 'multi') ok = val >= m.v; else if (m.k === 'streak' && kind === 'streak') ok = val >= m.v; else if (m.k === 'score' && kind === 'score') ok = val >= m.v;
+      if (ok){ m.done = true; charges[m.rw]++; changed = true; toast('任務完成！獲得 ' + TOOLN[m.rw] + ' +1'); } });
+    if (changed){ renderMissions(); updateTools(); }
+  }
+  function renderMissions(){ var box = document.getElementById('missions'); box.innerHTML = ''; mis.forEach(function(m){ var d = document.createElement('div'); d.className = 'mrow' + (m.done ? ' done' : ''); d.innerHTML = '<span>' + (m.done ? '✓ ' : '◇ ') + m.t + '</span><span class="rw">' + TOOLN[m.rw] + '</span>'; box.appendChild(d); }); }
+  function updateTools(){
+    var map = { undo:'toolUndo', hammer:'toolHammer', shuffle:'toolShuffle' };
+    Object.keys(map).forEach(function(k){ var b = document.getElementById(map[k]); b.querySelector('b').textContent = charges[k]; b.disabled = !running || charges[k] <= 0 || (k === 'undo' && !snap); });
+    document.getElementById('toolHammer').classList.toggle('on', hammerMode);
+  }
+  function updateSub(){
+    var tag = mode === 'rush' ? '限時 ⏱' : mode === 'daily' ? '每日 ' + (new Date().getMonth() + 1) + '/' + new Date().getDate() : '經典';
+    document.getElementById('modeTag').textContent = tag; var t = document.getElementById('timer');
+    if (mode === 'rush'){ t.style.display = ''; t.textContent = Math.ceil(timeLeft) + 's'; t.classList.toggle('low', timeLeft <= 10); } else t.style.display = 'none';
+  }
+  function comboFx(mc, st, mult, gain){
+    var parts = []; if (mc > 1) parts.push(mc + ' 連合！'); if (st >= 2) parts.push('連擊 ×' + st); parts.push('+' + gain);
+    var c = document.getElementById('combo'); c.textContent = parts.join('  '); c.classList.remove('fx'); void c.offsetWidth; c.classList.add('fx');
+  }
+  function snapshot(){ return { grid: JSON.stringify(grid), tiles: JSON.stringify(tiles), nextId: nextId, score: score, rs: rs, streak: streak, moves: moves, mis: JSON.stringify(mis), charges: JSON.stringify(charges), earned: JSON.stringify(earned) }; }
+  function doUndo(){
+    if (!running || !snap || charges.undo <= 0) return; var q = snap;
+    grid = JSON.parse(q.grid); tiles = JSON.parse(q.tiles); nextId = q.nextId; score = q.score; rs = q.rs; streak = q.streak; moves = q.moves; mis = JSON.parse(q.mis); charges = JSON.parse(q.charges); earned = JSON.parse(q.earned);
+    charges.undo--; snap = null; scoreEl.textContent = score; tileLayer.innerHTML = ''; tileElements = {}; render(); updateTools(); renderMissions(); sfx(250, 0.12, 'sine', 0.05); document.getElementById('combo').textContent = '';
+  }
+  function setHammer(on){ hammerMode = on; trayFrame.classList.toggle('hammer', on); updateTools(); if (on) toast('點一顆馬卡龍把它敲掉'); }
+  function doShuffle(){
+    if (!running || charges.shuffle <= 0) return; var ids = Object.keys(tiles); if (!ids.length) return;
+    var cells = []; for (var r = 0; r < SIZE; r++) for (var c = 0; c < SIZE; c++) cells.push({ row: r, col: c });
+    for (var i = cells.length - 1; i > 0; i--){ var j = Math.floor(R() * (i + 1)); var tmp = cells[i]; cells[i] = cells[j]; cells[j] = tmp; }
+    grid = emptyGrid(); ids.forEach(function(id, k){ var t = tiles[id]; t.row = cells[k].row; t.col = cells[k].col; grid[t.row][t.col] = t.id; });
+    charges.shuffle--; snap = null; render(); updateTools(); sfx(380, 0.18, 'triangle', 0.05); if (!canMove()) gameOver();
+  }
+  tileLayer.addEventListener('click', function(e){
+    if (!hammerMode || !running) return; var el = e.target.closest('.tile'); if (!el) return; var id = el.dataset.id, t = tiles[id]; if (!t) return;
+    sparkle(t.row, t.col, getMetrics().size, flavorFor(t.value).bg); grid[t.row][t.col] = null; delete tiles[id]; if (el.parentNode) el.parentNode.removeChild(el); delete tileElements[id];
+    charges.hammer--; snap = null; setHammer(false); sfx(200, 0.15, 'square', 0.05);
+  });
+  function renderBook(){
+    var box = document.getElementById('book'); box.innerHTML = '';
+    [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096].forEach(function(v){ var f = flavorFor(v), d = document.createElement('div'), known = v <= bookMax; d.className = 'bk' + (known ? '' : ' no');
+      d.innerHTML = '<i style="' + (known ? 'background:' + f.bg + ';color:' + f.fg : '') + '">' + (known ? v : '?') + '</i><span>' + (known ? flavorName(v) : '???') + '</span>'; box.appendChild(d); });
+  }
   var tileElements = {};
 
   function withinBounds(cell){ return cell.row>=0 && cell.row<SIZE && cell.col>=0 && cell.col<SIZE; }
@@ -409,9 +522,9 @@ body{ position:relative; }
       }
     }
     if (empties.length === 0) return;
-    var spot = empties[Math.floor(Math.random()*empties.length)];
+    var spot = empties[Math.floor(R()*empties.length)];
     var id = nextId++;
-    var value = Math.random() < 0.9 ? 2 : 4;
+    var value = R() < 0.9 ? 2 : 4;
     tiles[id] = { id: id, row: spot.row, col: spot.col, value: value, pop:false, isNew:true };
     grid[spot.row][spot.col] = id;
   }
@@ -426,8 +539,14 @@ body{ position:relative; }
     hasWon = false;
     keepPlayingAfterWin = false;
     scoreEl.textContent = '0';
+    rs = (mode === 'daily') ? dailySeed() : ((Math.random() * 4294967296) | 0);
+    streak = 0; moves = 0; snap = null; hammerMode = false; trayFrame.classList.remove('hammer'); earned = {}; maxTile = 0; timeLeft = 90;
+    charges = { undo: 3, hammer: 1, shuffle: 1 };
+    mis = (mode === 'rush') ? [] : pickMissions();
+    document.getElementById('combo').textContent = '';
     addRandomTile();
     addRandomTile();
+    updateTools(); renderMissions(); updateSub();
   }
 
   function buildTraversal(vector){
@@ -441,10 +560,13 @@ body{ position:relative; }
   function move(direction){
     if (!running) return;
     var vector = VECTORS[direction];
+    if (hammerMode) setHammer(false);
+    var pre = snapshot();
     var trav = buildTraversal(vector);
     var moved = false;
     var mergedIds = {};
     var mergedThisMove = [];
+    var baseGain = 0;
 
     trav.rowOrder.forEach(function(row){
       trav.colOrder.forEach(function(col){
@@ -468,7 +590,7 @@ body{ position:relative; }
             targetTile.value *= 2;
             targetTile.pop = true;
             mergedIds[nextOcc] = true;
-            score += targetTile.value;
+            baseGain += targetTile.value;
             mergedThisMove.push(targetTile.value);
             delete tiles[id];
             var el = tileElements[id];
@@ -490,16 +612,28 @@ body{ position:relative; }
     });
 
     if (!moved) return;
+    snap = pre; moves++;
+    var mc = mergedThisMove.length;
+    if (mc){
+      streak++; var mult = 1 + 0.1 * Math.min(streak - 1, 10);
+      var gain = Math.round(baseGain * mult) + (mc > 1 ? 50 * (mc - 1) : 0);
+      score += gain; comboFx(mc, streak, mult, gain);
+      if (mode === 'rush') timeLeft = Math.min(120, timeLeft + mc);
+    } else { streak = 0; document.getElementById('combo').textContent = ''; }
+    mergedThisMove.forEach(function(v){ if (v > maxTile) maxTile = v; discover(v); milestone(v); mEvent('make', v); });
+    if (mc) mEvent('multi', mc);
+    mEvent('streak', streak);
 
     scoreEl.textContent = score;
     if (score > best){
       best = score;
       bestEl.textContent = best;
-      try { localStorage.setItem('macaron2048_best', String(best)); } catch (e) { /* ignore */ }
+      try { localStorage.setItem(bestKey(), String(best)); } catch (e) { /* ignore */ }
     }
 
     addRandomTile();
     render();
+    mEvent('score', score); updateTools(); updateSub();
 
     if (mergedThisMove.length){
       moveSfx();
@@ -508,7 +642,7 @@ body{ position:relative; }
       moveSfx();
     }
 
-    if (!hasWon && mergedThisMove.indexOf(2048) !== -1){
+    if (!hasWon && mode !== 'rush' && mergedThisMove.indexOf(2048) !== -1){
       hasWon = true;
       winSfx();
       winScoreEl.textContent = '本局分數：' + score;
@@ -547,18 +681,22 @@ body{ position:relative; }
     return { size: size, gap: gap };
   }
 
-  function positionEl(el, row, col, size){
-    var x = col * (size + 10);
-    var y = row * (size + 10);
-    el.style.width = size + 'px';
-    el.style.height = size + 'px';
-    el.style.transform = 'translate(' + x + 'px,' + y + 'px)';
-    el.style.fontSize = Math.max(13, size * (String(el.textContent).length > 3 ? 0.22 : 0.29)) + 'px';
+  /* 用百分比排版：不依賴量測，大廳自動縮放（zoom）或視窗改變都不會錯位 */
+  function positionEl(el, row, col){
+    var cell = 'calc((100% - 30px) / 4)';
+    el.style.width = cell;
+    el.style.height = cell;
+    el.style.transform = 'translate(calc(' + col + ' * (100% + 10px)), calc(' + row + ' * (100% + 10px)))';
+    el.style.fontSize = 'max(13px, calc((100cqw - 30px) / 4 * ' + (String(el.textContent).length > 3 ? 0.22 : 0.29) + '))';
   }
 
   function sparkle(row, col, size, color){
-    var cx = col * (size + 10) + size / 2, cy = row * (size + 10) + size / 2;
-    for (var i = 0; i < 8; i++){ var sp = document.createElement('span'); sp.className = 'spark'; var an = i * Math.PI / 4 + Math.random() * .4, d = size * (.45 + Math.random() * .3); sp.style.left = cx + 'px'; sp.style.top = cy + 'px'; sp.style.background = i % 2 ? '#FFF6D8' : color; sp.style.setProperty('--dx', Math.cos(an) * d + 'px'); sp.style.setProperty('--dy', Math.sin(an) * d + 'px'); tileLayer.appendChild(sp); (function(n){ setTimeout(function(){ if (n.parentNode) n.parentNode.removeChild(n); }, 650); })(sp); }
+    var u = '((100% - 30px) / 4)';
+    for (var i = 0; i < 8; i++){ var sp = document.createElement('span'); sp.className = 'spark'; var an = i * Math.PI / 4 + Math.random() * .4, d = (.45 + Math.random() * .3);
+      sp.style.left = 'calc(' + u + ' * ' + (col + 0.5) + ' + 10px * ' + col + ')'; sp.style.top = 'calc(' + u + ' * ' + (row + 0.5) + ' + 10px * ' + row + ')';
+      sp.style.background = i % 2 ? '#FFF6D8' : color;
+      sp.style.setProperty('--dx', 'calc((100cqw - 30px) / 4 * ' + (Math.cos(an) * d).toFixed(3) + ')'); sp.style.setProperty('--dy', 'calc((100cqw - 30px) / 4 * ' + (Math.sin(an) * d).toFixed(3) + ')');
+      tileLayer.appendChild(sp); (function(n){ setTimeout(function(){ if (n.parentNode) n.parentNode.removeChild(n); }, 650); })(sp); }
   }
 
   function render(){
@@ -570,10 +708,10 @@ body{ position:relative; }
       var flavor = flavorFor(tile.value);
       if (!el){
         el = document.createElement('div');
-        el.className = 'tile';
-        el.style.setProperty('--c', flavor.bg); el.dataset.v = tile.value;
+        el.className = 'tile'; el.dataset.id = id;
+        el.style.setProperty('--c', flavor.bg); el.dataset.v = tile.value; el.dataset.n = flavorName(tile.value);
         el.textContent = tile.value;
-        positionEl(el, tile.row, tile.col, m.size);
+        positionEl(el, tile.row, tile.col);
         tileLayer.appendChild(el);
         tileElements[id] = el;
         if (tile.isNew){
@@ -584,9 +722,9 @@ body{ position:relative; }
           tile.isNew = false;
         }
       } else {
-        positionEl(el, tile.row, tile.col, m.size);
+        positionEl(el, tile.row, tile.col);
         el.textContent = tile.value;
-        el.style.setProperty('--c', flavor.bg); el.dataset.v = tile.value;
+        el.style.setProperty('--c', flavor.bg); el.dataset.v = tile.value; el.dataset.n = flavorName(tile.value);
         if (tile.pop){ sparkle(tile.row, tile.col, m.size, flavor.bg);
           el.classList.remove('pop');
           void el.offsetWidth;
@@ -603,7 +741,7 @@ body{ position:relative; }
     Object.keys(tiles).forEach(function(id){
       var tile = tiles[id];
       var el = tileElements[id];
-      if (el) positionEl(el, tile.row, tile.col, m.size);
+      if (el) positionEl(el, tile.row, tile.col);
     });
   }
 
@@ -706,22 +844,31 @@ body{ position:relative; }
   };
   music.loadPref();
 
-  function gameOver(){
+  function gameOver(title){
     running = false;
     music.stop();
+    clearInterval(tick);
     loseSfx();
-    finalScoreEl.textContent = '本局分數：' + score;
+    document.getElementById('overTitle').textContent = (typeof title === 'string') ? title : '盤子滿了！';
+    finalScoreEl.textContent = '本局分數：' + score + '（最大 ' + maxTile + '）';
     overOverlay.classList.remove('hidden');
+    updateTools();
   }
 
-  function startGame(){
+  function startGame(m){
+    if (typeof m === 'string') mode = m;
     startOverlay.classList.add('hidden');
     overOverlay.classList.add('hidden');
     winOverlay.classList.add('hidden');
+    document.getElementById('bookOverlay').classList.add('hidden');
+    loadBest();
     resetState();
     render();
     running = true;
+    updateTools();
     music.start();
+    clearInterval(tick);
+    if (mode === 'rush'){ tick = setInterval(function(){ if (!running) return; timeLeft -= 0.1; if (timeLeft <= 0){ timeLeft = 0; updateSub(); gameOver('時間到！'); } else updateSub(); }, 100); }
   }
 
   function continuePlaying(){
@@ -761,9 +908,17 @@ body{ position:relative; }
 
   window.addEventListener('resize', repositionAll);
 
-  startBtn.addEventListener('click', startGame);
-  restartBtn.addEventListener('click', startGame);
-  winRestartBtn.addEventListener('click', startGame);
+  startBtn.addEventListener('click', function(){ startGame('classic'); });
+  document.getElementById('rushBtn').addEventListener('click', function(){ startGame('rush'); });
+  document.getElementById('dailyBtn').addEventListener('click', function(){ startGame('daily'); });
+  restartBtn.addEventListener('click', function(){ startGame(); });
+  winRestartBtn.addEventListener('click', function(){ startGame(); });
+  document.getElementById('menuBtn').addEventListener('click', function(){ overOverlay.classList.add('hidden'); startOverlay.classList.remove('hidden'); });
+  document.getElementById('toolUndo').addEventListener('click', doUndo);
+  document.getElementById('toolHammer').addEventListener('click', function(){ if (!running || charges.hammer <= 0) return; setHammer(!hammerMode); });
+  document.getElementById('toolShuffle').addEventListener('click', doShuffle);
+  document.getElementById('bookBtn').addEventListener('click', function(){ bookWasRunning = running; running = false; renderBook(); document.getElementById('bookOverlay').classList.remove('hidden'); });
+  document.getElementById('bookClose').addEventListener('click', function(){ document.getElementById('bookOverlay').classList.add('hidden'); running = bookWasRunning; updateTools(); });
   continueBtn.addEventListener('click', continuePlaying);
 
   var musicBtn = document.getElementById('musicBtn');
@@ -861,7 +1016,7 @@ html.dv-mob body{min-height:100dvh}
 <aside id="dv-r" aria-label="其他遊戲"><small>換一款玩</small><span id="dv-more"></span><a class="all" href="index.html">回遊戲大廳 · 共 40 款</a></aside>
 <script id="dv-js">
 (function(){
- var LIST=[["paper-glider.html", "飛行躲避", "紙飛機大冒險", "讓紙飛機穿過桌上林立的鉛筆縫隙。"], ["rooftop-cat.html", "無盡跑酷", "屋頂貓跑酷", "夕陽屋頂上狂奔，跳過障礙、低頭鑽過飛鳥。"], ["chick-relay.html", "節奏跑酷", "小雞接力賽", "三條跑道三隻小雞，跟著鼓點跳過障礙、撿種子，烏⁠鴉來了千萬別跳"], ["ink-sword.html", "武俠", "墨劍江湖", "水墨風武俠動作：三連斬、輕功閃身、劍氣絕招，闖五章擊敗兩大魔頭"], ["boba-survivors.html", "倖存", "珍奶突圍", "化身珍珠奶茶，自動攻擊、撿珍珠升級，撐過 5 分鐘冰塊與方糖大軍"], ["drift-bend.html", "賽車漂移", "彎道漂移", "按住漂移鍵甩過彎道、放開噴出加速，十條賽道對決對手車手，收集十輛愛車"], ["star-raid.html", "太空射擊", "星艦突襲", "自動連射的太空射擊，撿道具升級武器，還要打倒巨型母艦。"], ["game.html", "即時操作", "夜蔓 貪食蛇", "連擊、衝刺、護盾與果實雨，還能和 AI 紅蛇對戰、解鎖蛇皮膚。"], ["snake-evolve.html", "街機", "蛇蛇進化", "貪吃蛇加上進化系統：穿牆、磁鐵、護盾、破岩，連吃蘋果衝高連擊"], ["tile-breaker.html", "打磚塊", "花磚打磚塊", "用木槳接住彈珠，敲碎整面馬賽克花磚牆。"], ["candy-pachinko.html", "物理彈射", "糖果彈珠台", "瞄準發射彈珠，在糖果釘子間亂彈，把橘色糖果全部打光就過關"], ["ring-toss.html", "街機經典", "夜市套圈圈", "按住瞄準、圈縮到最小時放手，套中熊貓、泰迪熊和金鑽，十個攤位等你挑戰"], ["pearl-catch.html", "接料反應", "珍珠接接樂", "用杯子接住珍珠和布丁，閃開會讓你變淡的冰塊。"], ["hoop-shot.html", "投籃機", "夜光籃球機", "往後拉、放開投籃，空心球加時間，連進有加分"], ["penalty-kings.html", "足球", "點球大師", "滑向球門射點球與任意球，繞過人牆、騙過守門員"], ["pool-hall.html", "運動競技", "八號球撞球", "巡迴賽挑戰六位對手，賺金幣買球桿與球檯，先清完自己的球再打進黑 8"], ["table-tennis.html", "運動競技", "極速桌球", "拖曳球拍回擊，揮得越快越有力，還能殺球，挑戰四級對手或無盡對拉"], ["mini-golf.html", "運動競技", "迷你高爾夫", "往後拉、放手推桿，十二個球場有沙坑、水池、風車、傳送門，桿數越少星越多"], ["dart-bar.html", "酒吧競技", "飛鏢酒吧", "按住瞄準、放開射鏢，三輪對決十位酒客，風、旋轉靶和昏暗燈光都是考驗"], ["lantern-rhythm.html", "節奏點擊", "燈籠節拍", "燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。"], ["garden-whack.html", "反應力", "菜園保衛戰", "限時 30 秒，把冒出土堆的小偷趕跑。"], ["steamer-stack.html", "抓時機", "蒸籠疊疊樂", "抓準時機放下蒸籠，疊得越準越高。"], ["cake-defense.html", "塔防", "蛋糕保衛戰", "擺放糖果槍、冰棒與爆米花砲塔，擋下偷吃生日蛋糕的螞蟻大軍"], ["dice-dungeon.html", "策略", "骰運地下城", "擲骰子、把點數放進技能卡，看穿怪物意圖，闖過 10 層地下城擊倒魔王"], ["magnet-miner.html", "冒險", "磁鐵礦工", "放下磁鐵吸金塊和鑽石，再深入一層，還是收線入袋？小心炸彈全炸光"], ["cat-cafe.html", "放置經營", "貓咪咖啡館", "點咖啡機賺錢，僱用貓咪店員，離線也繼續營業，再開分店"], ["fishing.html", "策略與經營", "深海釣手", "放線下海、左右閃避水母，釣起二十四種魚，賺錢升級漁具，把圖鑑收集滿"], ["soup-master.html", "策略經營", "湯頭大師", "用火候、下料時機和最後一撮鹽，熬出客人心中的那碗好湯，十種湯頭等你收集"], ["ink-gomoku.html", "對弈", "水墨五子棋", "墨黑對朱紅，橫直斜任一方向先連成五子者勝。"], ["xiangqi.html", "棋類對弈", "楚河漢界", "中國象棋對電腦，三種難度，還有悔棋與提示。"], ["macaron2048.html", "滑動合併", "馬卡龍 2048", "把相同口味的馬卡龍疊在一起，疊出最大的一顆。"], ["star-match.html", "記憶配對", "星圖配對", "翻開夜空卡片，用最少步數找出所有星座對子。"], ["tetris.html", "方塊消除", "方塊風暴", "經典俄羅斯方塊，暫存、預覽、瞬降，還有衝刺 40 行挑戰。"], ["meow-mover.html", "益智解謎", "喵喵搬運工", "推箱子解謎，58 個關卡，推木箱到貓腳印上，拿滿三顆星。"], ["tidal-sweeper.html", "邏輯推理", "潮間帶排雷", "退潮的沙灘藏著海膽，用數字推理出牠們的位置。"], ["shadow-cat-detective.html", "推理", "影子貓偵探", "五隻貓七嘴八舌，只有一隻在說謊。聽完口供，找出偷東西的真兇"], ["idiom-code.html", "棋牌益智", "四字密碼", "成語版猜字遊戲，看提示從十二個字裡湊出四字成語，六次機會，每天一題"], ["card-duel.html", "卡牌對戰", "紙牌決鬥", "用能量打出火球、護甲與隨從，擊敗十位對手，每贏一場就解鎖新卡牌"], ["bubble-wave.html", "鏡頭互動", "泡泡派對", "打開鏡頭，用揮手在空中打破飄上來的泡泡。"], ["halloween-booth.html", "鏡頭變臉", "萬聖變臉亭", "開鏡頭在臉上貼萬聖節貼紙，拍成圖片傳給朋友"]];
+ var LIST=[["paper-glider.html", "飛行躲避", "紙飛機大冒險", "讓紙飛機穿過桌上林立的鉛筆縫隙。"], ["rooftop-cat.html", "無盡跑酷", "屋頂貓跑酷", "夕陽屋頂上狂奔，跳過障礙、低頭鑽過飛鳥。"], ["chick-relay.html", "節奏跑酷", "小雞接力賽", "三條跑道三隻小雞，跟著鼓點跳過障礙、撿種子，烏⁠鴉來了千萬別跳"], ["ink-sword.html", "武俠", "墨劍江湖", "水墨風武俠動作：三連斬、輕功閃身、劍氣絕招，闖五章擊敗兩大魔頭"], ["boba-survivors.html", "倖存", "珍奶突圍", "化身珍珠奶茶，自動攻擊、撿珍珠升級，撐過 5 分鐘冰塊與方糖大軍"], ["drift-bend.html", "賽車漂移", "彎道漂移", "按住漂移鍵甩過彎道、放開噴出加速，十條賽道對決對手車手，收集十輛愛車"], ["star-raid.html", "太空射擊", "星艦突襲", "自動連射的太空射擊，撿道具升級武器，還要打倒巨型母艦。"], ["game.html", "即時操作", "夜蔓 貪食蛇", "連擊、衝刺、護盾與果實雨，還能和 AI 紅蛇對戰、解鎖蛇皮膚。"], ["snake-evolve.html", "街機", "蛇蛇進化", "貪吃蛇進化版：每 10 顆闖新區域，毒蘑菇、巨石、雷擊來襲；連擊吃滿進入狂熱無敵，還有任務與 12 枚勳章。"], ["tile-breaker.html", "打磚塊", "花磚打磚塊", "12 關闖關，接道具、炸彈連鎖、連擊倍率，還有三場花磚守衛 Boss 戰。"], ["candy-pachinko.html", "物理彈射", "糖果彈珠台", "瞄準發射彈珠，在糖果釘子間亂彈，把橘色糖果全部打光就過關"], ["ring-toss.html", "街機經典", "夜市套圈圈", "按住瞄準、圈縮到最小時放手，套中熊貓、泰迪熊和金鑽，十個攤位等你挑戰"], ["pearl-catch.html", "接料反應", "珍珠接接樂", "用杯子接住珍珠和布丁，閃開會讓你變淡的冰塊。"], ["hoop-shot.html", "投籃機", "夜光籃球機", "往後拉、放開投籃，空心球加時間，連進有加分"], ["penalty-kings.html", "足球", "點球大師", "滑向球門射點球與任意球，繞過人牆、騙過守門員"], ["pool-hall.html", "運動競技", "八號球撞球", "巡迴賽挑戰六位對手，賺金幣買球桿與球檯，先清完自己的球再打進黑 8"], ["table-tennis.html", "運動競技", "極速桌球", "拖曳球拍回擊、打旋轉球；巡迴賽挑戰 6 位個性對手拿星星，怒氣滿了還能放超級殺球。"], ["mini-golf.html", "運動競技", "迷你高爾夫", "往後拉、放手推桿，十二個球場有沙坑、水池、風車、傳送門，桿數越少星越多"], ["dart-bar.html", "酒吧競技", "飛鏢酒吧", "按住瞄準、放開射鏢，三輪對決十位酒客，風、旋轉靶和昏暗燈光都是考驗"], ["lantern-rhythm.html", "節奏點擊", "燈籠節拍", "燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。"], ["garden-whack.html", "反應力", "菜園保衛戰", "限時 30 秒，把冒出土堆的小偷趕跑。"], ["steamer-stack.html", "抓時機", "蒸籠疊疊樂", "抓準時機放下蒸籠，疊得越準越高。"], ["cake-defense.html", "塔防", "蛋糕保衛戰", "擺放糖果槍、冰棒與爆米花砲塔，擋下偷吃生日蛋糕的螞蟻大軍"], ["dice-dungeon.html", "策略", "骰運地下城", "擲骰子、把點數放進技能卡，看穿怪物意圖，闖過 10 層地下城擊倒魔王"], ["magnet-miner.html", "冒險", "磁鐵礦工", "放下磁鐵吸金塊和鑽石，再深入一層，還是收線入袋？小心炸彈全炸光"], ["cat-cafe.html", "放置經營", "貓咪咖啡館", "點咖啡機賺錢，僱用貓咪店員，離線也繼續營業，再開分店"], ["fishing.html", "策略與經營", "深海釣手", "放線下海、左右閃避水母，釣起二十四種魚，賺錢升級漁具，把圖鑑收集滿"], ["soup-master.html", "策略經營", "湯頭大師", "用火候、下料時機和最後一撮鹽，熬出客人心中的那碗好湯，十種湯頭等你收集"], ["ink-gomoku.html", "對弈", "水墨五子棋", "墨黑對朱紅，橫直斜任一方向先連成五子者勝。"], ["xiangqi.html", "棋類對弈", "楚河漢界", "中國象棋對電腦，三種難度，還有悔棋與提示。"], ["macaron2048.html", "滑動合併", "馬卡龍 2048", "把相同口味的馬卡龍疊在一起，疊出最大的一顆。"], ["star-match.html", "記憶配對", "星圖配對", "翻開夜空卡片，用最少步數找出所有星座對子。"], ["tetris.html", "方塊消除", "方塊風暴", "經典方塊加強版：T-Spin、背對背、道具方塊與風暴灰磚，另有衝刺與 8 個任務挑戰。"], ["meow-mover.html", "益智解謎", "喵喵搬運工", "推箱子解謎，58 個關卡，推木箱到貓腳印上，拿滿三顆星。"], ["tidal-sweeper.html", "邏輯推理", "潮間帶排雷", "退潮的沙灘藏著海膽，用數字推理出牠們的位置。"], ["shadow-cat-detective.html", "推理", "影子貓偵探", "五隻貓七嘴八舌，只有一隻在說謊。聽完口供，找出偷東西的真兇"], ["idiom-code.html", "棋牌益智", "四字密碼", "成語版猜字遊戲，看提示從十二個字裡湊出四字成語，六次機會，每天一題"], ["card-duel.html", "卡牌對戰", "紙牌決鬥", "用能量打出火球、護甲與隨從，擊敗十位對手，每贏一場就解鎖新卡牌"], ["bubble-wave.html", "鏡頭互動", "泡泡派對", "打開鏡頭，用揮手在空中打破飄上來的泡泡。"], ["halloween-booth.html", "鏡頭變臉", "萬聖變臉亭", "開鏡頭在臉上貼萬聖節貼紙，拍成圖片傳給朋友"]];
  var d=document,de=d.documentElement,b=d.body,me=(location.pathname.split('/').pop()||'');
  var mq=matchMedia('(min-width:900px) and (hover:hover) and (pointer:fine)');
  var z=1,n=0,L=d.getElementById('dv-l'),R=d.getElementById('dv-r');
