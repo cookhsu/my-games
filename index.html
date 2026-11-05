@@ -122,7 +122,73 @@
   @keyframes fanR{ from{ transform:rotate(0) } }
   a.brandlink{ display:flex; }
   @media (prefers-reduced-motion:reduce){ .logo .cl,.logo .cr{ animation:none } }
+  /* ===== v3 UI refinement ===== */
+  :root{ --ease:cubic-bezier(.2,.8,.2,1); }
+  html{ scroll-behavior:smooth; scroll-padding-top:150px; }
+  body::before{ content:""; position:fixed; inset:0; pointer-events:none; z-index:0; background:radial-gradient(ellipse at 50% 120%,rgba(0,0,0,.55),transparent 60%); }
+  .wrap{ position:relative; z-index:1; }
+  header{ align-items:flex-end; }
+  header h1{ position:relative; }
+  header h1::after{ content:""; position:absolute; left:2px; bottom:-18px; width:96px; height:3px; border-radius:3px; background:linear-gradient(90deg,var(--gold),transparent); }
+  header p.lede{ border-left:2px solid rgba(201,166,107,.45); padding-left:16px; }
+  .count{ display:inline-flex; align-items:center; gap:8px; padding:5px 14px; border:1px solid rgba(201,166,107,.35); border-radius:999px; background:rgba(201,166,107,.08); font-size:13px; }
+  .count::before{ content:""; width:7px; height:7px; border-radius:50%; background:#6FD6A0; box-shadow:0 0 0 3px rgba(111,214,160,.2); }
+  /* sticky glass filter bar */
+  .bar{ position:sticky; top:0; z-index:30; margin:0 -28px 24px; padding:12px 28px 10px; isolation:isolate; }
+  .bar::before{ content:""; position:absolute; z-index:-1; top:0; bottom:0; left:50%; width:100vw; transform:translateX(-50%); background:linear-gradient(180deg,rgba(15,14,13,.9),rgba(15,14,13,.8)); backdrop-filter:blur(14px) saturate(1.3); -webkit-backdrop-filter:blur(14px) saturate(1.3); border-bottom:1px solid transparent; transition:border-color .25s,box-shadow .25s; }
+  .bar.stuck::before{ border-bottom-color:var(--line); box-shadow:0 12px 28px -12px rgba(0,0,0,.7); }
+  html,body{ overflow-x:clip; }
+  @media (min-width:900px){ .bar{ display:flex; align-items:center; gap:16px; } .bar .tools{ margin:0; flex:none; width:230px; } .bar .tools input{ max-width:none; } .bar .chips{ flex:1; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -webkit-mask-image:linear-gradient(90deg,#000 94%,transparent); mask-image:linear-gradient(90deg,#000 94%,transparent); padding:4px 30px 14px 4px; margin:-4px 0 -14px -4px; } .chip{ flex:none; } }
+  .bar .tools{ margin:0 0 10px; position:relative; }
+  .bar .tools::before{ content:"⌕"; position:absolute; left:16px; top:50%; transform:translateY(-52%); color:#8d8272; font-size:18px; pointer-events:none; }
+  .bar .tools input{ padding-left:42px; transition:border-color .2s,box-shadow .2s,background .2s; }
+  .bar .tools input:focus{ box-shadow:0 0 0 4px rgba(201,166,107,.15); background:rgba(255,255,255,.07); }
+  .bar .chips{ margin:0; }
+  .chip{ padding:8px 16px; font-size:13.5px; }
+  .chip:active{ transform:scale(.96); }
+  /* cards */
+  .deck{ gap:22px; }
+  a.card{ transition:transform .35s var(--ease),border-color .25s,box-shadow .35s var(--ease); }
+  a.card:hover,a.card:focus-visible{ transform:translateY(-6px); box-shadow:0 0 0 1px color-mix(in srgb,var(--c) 70%,transparent),0 26px 44px -14px color-mix(in srgb,var(--c) 45%,#000),0 8px 18px rgba(0,0,0,.5); }
+  a.card:active{ transform:translateY(-2px) scale(.99); }
+  .info{ gap:7px; padding:14px 8px 10px; }
+  .info h2{ font-size:21px; letter-spacing:.5px; }
+  .info p{ display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; min-height:calc(1.7em*3); }
+  .tag{ background:color-mix(in srgb,var(--c) 12%,transparent); border-color:color-mix(in srgb,var(--c) 55%,transparent); font-weight:500; }
+  .go{ display:inline-flex; align-items:center; gap:8px; padding-top:8px; font-size:13.5px; color:var(--muted); }
+  .go::after{ content:""; flex:1; height:1px; background:linear-gradient(90deg,var(--line),transparent); }
+  a.card:hover .go{ letter-spacing:1px; color:var(--c); }
+  /* section headings */
+  section.cat .sec{ gap:14px; margin-bottom:20px; padding-bottom:0; }
+  section.cat .sec span{ font-size:17px; letter-spacing:3px; color:var(--ink); font-family:'Noto Serif TC',serif; font-weight:900; }
+  section.cat .sec em{ padding:3px 10px; border:1px solid var(--line); border-radius:999px; background:rgba(255,255,255,.03); font-size:12px; white-space:nowrap; }
+  main#lobby{ gap:56px; }
+  /* featured cards */
+  a.fc:hover{ transform:translateY(-6px); }
+  a.fc .play{ transition:transform .25s var(--ease),box-shadow .25s; }
+  a.fc:hover .play{ transform:translateX(4px); box-shadow:0 6px 0 rgba(0,0,0,.28); }
+  /* back to top */
+  #toTop{ position:fixed; right:18px; bottom:18px; z-index:40; width:46px; height:46px; border-radius:50%; border:1px solid rgba(201,166,107,.45); background:rgba(26,23,20,.85); backdrop-filter:blur(10px); color:var(--gold); font-size:20px; line-height:1; cursor:pointer; box-shadow:0 10px 24px rgba(0,0,0,.5); opacity:0; transform:translateY(12px); pointer-events:none; transition:opacity .25s,transform .25s var(--ease); }
+  #toTop.on{ opacity:1; transform:none; pointer-events:auto; }
+  #toTop:hover{ background:var(--gold); color:#1B1510; }
+  /* reveal on scroll */
+  .rv{ opacity:0; transform:translateY(22px); transition:opacity .6s var(--ease),transform .6s var(--ease); }
+  .rv.in{ opacity:1; transform:none; }
+  footer{ margin-top:48px; }
+  @media (max-width:520px){
+    html{ scroll-padding-top:120px; }
+    .bar{ margin:0 -18px 18px; padding:10px 18px 8px; }
+    .bar .tools{ margin-bottom:8px; } .bar .tools input{ padding:9px 16px 9px 40px; font-size:13.5px; }
+    .info h2{ font-size:17px; } .info p{ -webkit-line-clamp:3; min-height:calc(1.7em*3); font-size:12.5px; }
+    .deck{ gap:12px; } main#lobby{ gap:40px; }
+    section.cat .sec span{ font-size:16px; letter-spacing:2px; }
+    header h1::after{ bottom:-14px; }
+    header p.lede{ padding-left:12px; }
+    #toTop{ right:12px; bottom:12px; }
+  }
+  @media (prefers-reduced-motion:reduce){ .rv{ opacity:1; transform:none; transition:none; } html{ scroll-behavior:auto; } a.card:hover,a.card:focus-visible{ transform:none; } }
 </style>
+
 </head>
 <body>
 <div class="wrap">
@@ -149,6 +215,7 @@
     </div>
   </section>
   <div class="sec">ALL GAMES ・ 全部遊戲</div>
+  <div class="bar" id="bar">
   <div class="tools"><input id="q" type="search" placeholder="搜尋遊戲名稱…" aria-label="搜尋遊戲"></div>
   <div class="chips" id="chips" role="tablist" aria-label="分類">
     <button class="chip on" data-g="all">全部 · 40</button>
@@ -160,6 +227,7 @@
     <button class="chip" data-g="strategy">🧠 策略與經營 · 6</button>
     <button class="chip" data-g="puzzle">🧩 棋牌益智 · 10</button>
     <button class="chip" data-g="camera">📷 鏡頭互動 · 2</button>
+  </div>
   </div>
 
   <main id="lobby">
@@ -374,6 +442,19 @@
     .then(function(r){ return r.json(); })
     .then(function(j){ if (j && j.ok) show(j); else $('vsub').textContent = '全站統計尚未啟用'; })
     .catch(function(){ $('vsub').textContent = '全站統計暫時讀不到'; });
+})();
+</script>
+<button id="toTop" aria-label="回到頂端">↑</button>
+<script>
+(function(){
+  try{
+    var bar=document.getElementById('bar'),top=document.getElementById('toTop');
+    function onS(){ var y=window.scrollY||0; if(bar) bar.classList.toggle('stuck',bar.getBoundingClientRect().top<=0.5&&y>40); if(top) top.classList.toggle('on',y>700); }
+    window.addEventListener('scroll',onS,{passive:true}); onS();
+    if(top) top.addEventListener('click',function(){ window.scrollTo({top:0,behavior:'smooth'}); });
+    var rv=[].slice.call(document.querySelectorAll('section.cat .sec,.visits,footer'));
+    if('IntersectionObserver' in window){ rv.forEach(function(e){ e.classList.add('rv'); }); var io=new IntersectionObserver(function(es){ es.forEach(function(x){ if(x.isIntersecting){ x.target.classList.add('in'); io.unobserve(x.target); } }); },{rootMargin:'0px 0px -6% 0px'}); rv.forEach(function(e){ io.observe(e); }); }
+  }catch(e){}
 })();
 </script>
 </body>
