@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <title>LED 節拍燈條</title>
 <style>
 :root{--bg:#07080d;--card:#10131c;--card2:#171b27;--line:rgba(255,255,255,.09);--txt:#F1F3F9;--dim:#98A1B8;--acc:#FFB454;--c0:#ff4d6d;--c1:#ffd93b;--c2:#39e06b;--c3:#3bd8ff}
@@ -15,7 +15,7 @@ canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block}
 .bar>*{pointer-events:auto}
 .pill{font:700 .86em 'Space Grotesk','Noto Sans TC',sans-serif;background:rgba(10,12,18,.66);border:1px solid var(--line);border-radius:1.2em;padding:.38em .85em;color:var(--txt);text-decoration:none;white-space:nowrap}
 .pill b{color:var(--acc)}
-.ib{width:2.7em;height:2.7em;border-radius:50%;border:1px solid var(--line);background:rgba(10,12,18,.7);color:var(--txt);display:grid;place-items:center;cursor:pointer;padding:0}
+.ib{width:2.5em;height:2.5em;border-radius:50%;border:1px solid var(--line);background:rgba(10,12,18,.7);color:var(--txt);display:grid;place-items:center;cursor:pointer;padding:0}
 .ib svg{width:1.3em;height:1.3em}
 .hpw{position:absolute;left:1em;right:1em;top:4em;height:.4em;border-radius:1em;background:rgba(255,255,255,.1);z-index:5;overflow:hidden}
 .hpw i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ff4d6d,#ffb454,#39e06b);transition:width .15s}
@@ -56,7 +56,7 @@ canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block}
   <div class="bar">
     <a class="pill" href="index.html">‹ 大廳</a>
     <span class="pill">分數 <b id="sc">0</b></span>
-    <button class="ib" id="menuBtn" aria-label="選曲"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <span style="display:flex;gap:.4em"><button class="ib" id="fsBtn" aria-label="全螢幕"><svg id="fsI" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button><button class="ib" id="menuBtn" aria-label="選曲"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></span>
   </div>
   <div class="hpw"><i id="hp"></i></div>
   <div class="lvl" id="lvl"></div>
@@ -121,6 +121,19 @@ function chart(i){
 }
 /* ===== 3D 場景 ===== */
 const cv=$('gl'),wrap=$('wrap');
+/* ===== 全螢幕與版面 ===== */
+const FSI_IN='<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',FSI_OUT='<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>';
+function layout(){const W=innerWidth,H=innerHeight;let w,h;if(W/H<=9/16){w=W;h=H;}else{h=H;w=H*9/16;}wrap.style.width=w+'px';wrap.style.height=h+'px';wrap.style.maxHeight='none';wrap.style.fontSize=(w/360*14)+'px';const full=!!(document.fullscreenElement||document.webkitFullscreenElement||document.body.classList.contains('pfs'));wrap.style.borderRadius=(full||W/H<=9/16)?'0':'18px';$('fsI').innerHTML=full?FSI_OUT:FSI_IN;}
+function isFS(){return !!(document.fullscreenElement||document.webkitFullscreenElement||document.body.classList.contains('pfs'));}
+function toggleFS(){const el=document.documentElement;
+ if(isFS()){if(document.body.classList.contains('pfs'))document.body.classList.remove('pfs');const x=document.exitFullscreen||document.webkitExitFullscreen;if(x&&(document.fullscreenElement||document.webkitFullscreenElement)){try{const r=x.call(document);if(r&&r.catch)r.catch(()=>{});}catch(e){}}size();return;}
+ const rq=el.requestFullscreen||el.webkitRequestFullscreen;
+ if(rq){try{const r=rq.call(el);if(r&&r.then)r.then(()=>{try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('portrait').catch(()=>{});}catch(e){}}).catch(()=>{document.body.classList.add('pfs');size();});}catch(e){document.body.classList.add('pfs');size();}}
+ else{document.body.classList.add('pfs');size();}
+}
+$('fsBtn').onclick=toggleFS;
+['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>size()));
+addEventListener('keydown',e=>{if(e.key==='f'&&e.shiftKey)toggleFS();});
 const rd=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true,powerPreference:'high-performance'});
 rd.setClearColor(0,0);rd.outputColorSpace=THREE.SRGBColorSpace;
 const sc=new THREE.Scene();sc.fog=new THREE.Fog(0x07080d,14,48);
@@ -212,7 +225,7 @@ const KM={d:0,f:1,j:2,k:3,arrowleft:0,arrowdown:1,arrowup:2,arrowright:3};
 addEventListener('keydown',e=>{if(e.repeat)return;const l=KM[e.key.toLowerCase()];if(l===undefined)return;padEls[l].classList.add('on');press(l);});
 addEventListener('keyup',e=>{const l=KM[e.key.toLowerCase()];if(l!==undefined)padEls[l].classList.remove('on');});
 /* ===== 相機 ===== */
-function size(){const r=wrap.getBoundingClientRect();rd.setPixelRatio(Math.min(2,devicePixelRatio||1));rd.setSize(r.width,r.height,false);cam.aspect=r.width/r.height;cam.position.set(0,5.4,8.2);cam.lookAt(0,0,-7.5);const d=cam.position.length(),tv=3.15/(d*cam.aspect);cam.fov=Math.min(80,2*Math.atan(tv)*180/Math.PI);cam.updateProjectionMatrix();}
+function size(){layout();const r=wrap.getBoundingClientRect();rd.setPixelRatio(Math.min(2,devicePixelRatio||1));rd.setSize(r.width,r.height,false);cam.aspect=r.width/r.height;cam.position.set(0,5.4,8.2);cam.lookAt(0,0,-7.5);const d=cam.position.length(),tv=3.15/(d*cam.aspect);cam.fov=Math.min(80,2*Math.atan(tv)*180/Math.PI);cam.updateProjectionMatrix();}
 addEventListener('resize',size);
 /* ===== 主迴圈 ===== */
 const col=new THREE.Color(),tmp=new THREE.Color(),LCc=LC.map(c=>new THREE.Color(c));
