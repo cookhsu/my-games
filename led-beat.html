@@ -234,7 +234,7 @@ addEventListener('resize',size);
 const col=new THREE.Color(),tmp=new THREE.Color(),LCc=LC.map(c=>new THREE.Color(c));
 let last=performance.now();
 function loop(ms){
- const dt=Math.min(.25,(ms-last)/1000);last=ms;const now=ms/1000;
+ const dt=Math.max(0,Math.min(.25,(ms-last)/1000));last=ms;const now=ms/1000;
  if(state==='play'){
   songT+=dt*TS;sched();
   const bp=songT/C.beat,bf=Math.floor(bp);if(bf!==lastBeat){lastBeat=bf;beatPulse=1;}

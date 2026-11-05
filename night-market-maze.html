@@ -338,7 +338,7 @@ $('fsBtn').onclick=toggleFS;
 addEventListener('resize',resize);
 /* ===== 主迴圈 ===== */
 let last=performance.now();
-function loop(ms){const dt=Math.min(.05,(ms-last)/1000);last=ms;if(G&&state!=='pause'&&state!=='menu'&&state!=='over')update(dt);else if(state==='menu'||state==='over'||state==='pause')anim+=dt;draw();requestAnimationFrame(loop);}
+function loop(ms){const dt=Math.max(0,Math.min(.05,(ms-last)/1000));last=ms;if(G&&state!=='pause'&&state!=='menu'&&state!=='over')update(dt);else if(state==='menu'||state==='over'||state==='pause')anim+=dt;draw();requestAnimationFrame(loop);}
 G=genMaze(4242);buildPaths();homeD=bfsHome();pearls=Array.from({length:H},()=>new Array(W).fill(0));resetPositions();
 for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(!G[y][x]&&x>0&&x<W-1&&!(y>=7&&y<=9&&x>=5&&x<=9))pearls[y][x]=1;
 resize();ui();requestAnimationFrame(loop);

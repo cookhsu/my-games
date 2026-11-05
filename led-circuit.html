@@ -211,7 +211,7 @@ const tmpC=new THREE.Color(),WHITE=new THREE.Color(1,1,1);
 function spawn(x,y,z,col,n){for(let i=0;i<n;i++){if(parts.length>=PMAX)parts.shift();const a=Math.random()*6.283,s=.6+Math.random()*1.8;parts.push({x,y,z,vx:Math.cos(a)*s,vy:1.6+Math.random()*2.4,vz:Math.sin(a)*s,l:1+Math.random()*.8,c:col});}}
 let last=performance.now(),celebrated=false;
 function loop(nowMs){
- const dt=Math.min(.05,(nowMs-last)/1000);last=nowMs;const now=nowMs/1000;
+ const dt=Math.max(0,Math.min(.05,(nowMs-last)/1000));last=nowMs;const now=nowMs/1000;
  camYaw+=(camYawT-camYaw)*Math.min(1,dt*6);if(!drag&&Math.abs(camYawT)>0)camYawT*=1-Math.min(1,dt*.6);
  placeCam(now);
  if(G){
