@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#07080d"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <title>LED 節拍燈條</title>
 <style>
 :root{--bg:#07080d;--card:#10131c;--card2:#171b27;--line:rgba(255,255,255,.09);--txt:#F1F3F9;--dim:#98A1B8;--acc:#FFB454;--c0:#ff4d6d;--c1:#ffd93b;--c2:#39e06b;--c3:#3bd8ff}
@@ -123,13 +123,16 @@ function chart(i){
 const cv=$('gl'),wrap=$('wrap');
 /* ===== 全螢幕與版面 ===== */
 const FSI_IN='<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',FSI_OUT='<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>';
-function layout(){const W=innerWidth,H=innerHeight;let w,h;if(W/H<=9/16){w=W;h=H;}else{h=H;w=H*9/16;}wrap.style.width=w+'px';wrap.style.height=h+'px';wrap.style.maxHeight='none';wrap.style.fontSize=(w/360*14)+'px';const full=!!(document.fullscreenElement||document.webkitFullscreenElement||document.body.classList.contains('pfs'));wrap.style.borderRadius=(full||W/H<=9/16)?'0':'18px';$('fsI').innerHTML=full?FSI_OUT:FSI_IN;}
+function layout(){const W=innerWidth,H=innerHeight;let w,h;if(W/H<=9/16){w=W;h=H;}else{h=H;w=H*9/16;}wrap.style.width=w+'px';wrap.style.height=h+'px';wrap.style.maxHeight='none';wrap.style.fontSize=(w/360*14)+'px';const full=!!(document.fullscreenElement||document.webkitFullscreenElement||document.body.classList.contains('pfs'));wrap.style.borderRadius=(full||W/H<=9/16)?'0':'18px';$('fsI').innerHTML=full?FSI_OUT:FSI_IN;$('fsBtn').style.display=standalone()?'none':'';}
+function standalone(){return !!(navigator.standalone||(window.matchMedia&&(matchMedia('(display-mode: fullscreen)').matches||matchMedia('(display-mode: standalone)').matches)));}
+let toastT=0;function toast(t){let e=document.getElementById('toast');if(!e){e=document.createElement('div');e.id='toast';e.style.cssText='position:absolute;left:1em;right:1em;top:5.2em;z-index:40;background:rgba(16,19,28,.96);border:1px solid rgba(255,255,255,.14);border-radius:1em;padding:.8em 1em;color:#F1F3F9;font-size:.85em;line-height:1.6;text-align:center;box-shadow:0 1em 2em rgba(0,0,0,.5);pointer-events:none';wrap.appendChild(e);}e.innerHTML=t;e.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>{e.style.display='none';},6000);}
+function pfsOn(){document.body.classList.add('pfs');size();if(/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1))toast('iPhone 的 Safari 不支援網頁全螢幕。<br>點下方「分享」→「加入主畫面」,<br>之後從桌面圖示開啟就是全螢幕。');else toast('此瀏覽器不支援全螢幕,已盡量撐滿畫面。');}
 function isFS(){return !!(document.fullscreenElement||document.webkitFullscreenElement||document.body.classList.contains('pfs'));}
 function toggleFS(){const el=document.documentElement;
  if(isFS()){if(document.body.classList.contains('pfs'))document.body.classList.remove('pfs');const x=document.exitFullscreen||document.webkitExitFullscreen;if(x&&(document.fullscreenElement||document.webkitFullscreenElement)){try{const r=x.call(document);if(r&&r.catch)r.catch(()=>{});}catch(e){}}size();return;}
  const rq=el.requestFullscreen||el.webkitRequestFullscreen;
- if(rq){try{const r=rq.call(el);if(r&&r.then)r.then(()=>{try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('portrait').catch(()=>{});}catch(e){}}).catch(()=>{document.body.classList.add('pfs');size();});}catch(e){document.body.classList.add('pfs');size();}}
- else{document.body.classList.add('pfs');size();}
+ if(rq){try{const r=rq.call(el);if(r&&r.then)r.then(()=>{try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('portrait').catch(()=>{});}catch(e){}}).catch(()=>{pfsOn();});}catch(e){pfsOn();}}
+ else{pfsOn();}
 }
 $('fsBtn').onclick=toggleFS;
 ['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>size()));
