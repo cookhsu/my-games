@@ -247,15 +247,15 @@ function release(){
  if(G.state!=='aim'||!G.hold)return;G.hold=false;
  const [rx,ry]=reticle();launch(rx+gauss()*1.2+G.wind.x,ry+gauss()*1.2+G.wind.y,'me');
 }
-const CFT=1.7;
+const CFT=1.35;
 function isFinalDart(sx,sy,who){
- if(G.mode==='301'){const w=who==='me'?0:1,tl=G.bt+CFT,[lx,ly]=toLocal(sx,sy,tl),p=scoreAt(lx,ly,boardAt(tl).sc).p;return remNow(w)-p===0;}
- return G.r===2&&((who==='me'&&G.d===2)||(who==='np'&&G.npcDone===2));
+ if(G.mode==='301'){const w=who==='me'?0:1,tl=G.bt+CFT,[lx,ly]=toLocal(sx,sy,tl),p=scoreAt(lx,ly,boardAt(tl).sc).p;if(remNow(w)-p===0)return true;}
+ return (who==='me'&&G.d===2)||(who==='np'&&G.npcDone===2);
 }
 function launch(sx,sy,who){
  const cine=isFinalDart(sx,sy,who);
  G.fl={t:0,sx,sy,who,cine,FT:cine?CFT:FT};G.state='fly';wrap.classList.toggle('cine',cine);
- if(cine){const tl=G.bt+CFT,[lx,ly]=toLocal(sx,sy,tl),b=boardAt(tl);G.fl.pre=scoreAt(lx,ly,b.sc);G.fl.lat=(sx-b.x);G.fl.vh=(sy-b.y)/(170*K*b.sc);G.fl.th=b.th;G.fl.bsc=b.sc;G.fl.fin=G.mode==='301'&&remNow(who==='me'?0:1)-G.fl.pre.p===0;beep(90,CFT*.55,'sine',.12,200);}
+ if(cine){const tl=G.bt+CFT,[lx,ly]=toLocal(sx,sy,tl),b=boardAt(tl);G.fl.pre=scoreAt(lx,ly,b.sc);G.fl.lat=(sx-b.x);G.fl.vh=(sy-b.y)/(170*K*b.sc);G.fl.th=b.th;G.fl.bsc=b.sc;G.fl.fin=(G.mode==='301'&&remNow(who==='me'?0:1)-G.fl.pre.p===0)||(G.mode==='cl'&&G.r===2);beep(90,CFT*.55,'sine',.12,200);}
  else{beep(300,.16,'triangle',.1,700);vib(6);}
 }
 function land(){
@@ -494,7 +494,7 @@ function drawCine(x){
  // letterbox + labels (not zoomed)
  x.save();x.globalAlpha=Math.max(0,A);x.fillStyle='#000';x.fillRect(0,0,W,54*A+0);x.fillRect(0,640-54*A,W,54);
  x.textAlign='center';x.font='900 17px "Noto Sans TC"';x.fillStyle=f.fin?'#FFD166':'#fff';
- x.fillText(f.fin?'🏁 決勝一鏢':'最後一鏢',W/2,36+Math.sin(t*10)*1.5);
+ x.fillText(f.fin?'🏁 決勝一鏢':'本輪最後一鏢',W/2,36+Math.sin(t*10)*1.5);
  x.font='700 11px "Noto Sans TC"';x.fillStyle='rgba(255,255,255,.65)';x.fillText(f.who==='me'?'你的飛鏢':OPP[G.i].e+' '+OPP[G.i].n+' 的飛鏢',W/2,610);
  if(u>fly+.04){const q=Math.min(1,(u-fly-.04)/.12),pr=f.pre,txt=pr.p===0?'未中':(pr.l||String(pr.p)),big=pr.p>=50?'#FFD166':pr.p>=40?'#7CFFB0':pr.p===0?'#FF8A7A':'#fff';
   x.save();x.translate(110,470);x.scale(.6+.4*q+(q<1?.2:0),.6+.4*q+(q<1?.2:0));x.font='900 34px "Noto Sans TC"';x.lineWidth=7;x.strokeStyle='rgba(0,0,0,.75)';x.strokeText(txt,0,0);x.fillStyle=big;x.fillText(txt,0,0);
