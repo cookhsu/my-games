@@ -82,7 +82,7 @@
       <div class="how"><i>閃</i><div><b>輕功閃身</b><span>瞬間位移並短暫無敵，閃過紅色預警</span></div></div>
       <div class="how"><i>氣</i><div><b>劍氣・絕招</b><span>出招累積內力；劍氣穿透遠攻，內力滿格可放「萬劍歸宗」</span></div></div>
     </div>
-    <div class="best" style="max-width:300px">電腦鍵盤：WASD 移動，J 斬，K 閃，L 劍氣，U 絕招</div>
+    <div class="best" style="max-width:300px">電腦鍵盤：WASD 移動，J 斬，K 閃，L 劍氣，U 絕招<br>閃身瞬間被攻擊命中＝「見切」：慢動作＋強化。連續擊敗敵人累積「連殺」倍率。</div>
     <button class="btn" id="howGo">出發！</button>
   </div>
   <div class="ov hidden" id="pauseOv">
@@ -102,6 +102,7 @@
     <div class="rank" id="rRank"></div>
     <div class="stats"><div class="stat"><b id="rCh">1</b><span>抵達章節</span></div><div class="stat"><b id="rKill">0</b><span>擊敗敵人</span></div></div>
     <div class="stats"><div class="stat"><b id="rScore">0</b><span>得分</span></div><div class="stat"><b id="rBest">0</b><span>最高分</span></div></div>
+    <div class="stats"><div class="stat"><b id="rStreak">0</b><span>最高連殺</span></div><div class="stat"><b id="rDodge">0</b><span>見切次數</span></div></div>
     <div class="rank" id="rNew" style="font-size:15px"></div>
     <button class="btn" id="again">再戰江湖</button>
     <div class="row2"><button class="btn g" id="share">分享成績</button><a class="btn g" href="index.html">回大廳</a></div>
@@ -154,13 +155,17 @@
     bandit: { n: '山賊', hp: 3, r: 11, spd: 62, robe: '#8A6A46', robe2: '#54402A', sc: 1, score: 10 },
     blade: { n: '刀客', hp: 5, r: 11, spd: 76, robe: '#4A4A56', robe2: '#22222C', sc: 1.05, score: 20 },
     archer: { n: '弓手', hp: 3, r: 10, spd: 70, robe: '#5F8A6A', robe2: '#34553F', sc: 1, score: 20 },
+    shield: { n: '盾兵', hp: 7, r: 12, spd: 50, robe: '#5E7088', robe2: '#2C3A4C', sc: 1.08, score: 35 },
+    bomber: { n: '火雷客', hp: 3, r: 10, spd: 66, robe: '#A8553A', robe2: '#5A2A1C', sc: 1, score: 30 },
     boss1: { n: '鐵掌幫主・雷震', hp: 42, r: 24, spd: 54, robe: '#A04A34', robe2: '#5A2316', sc: 1.9, score: 300, boss: 1 },
     boss2: { n: '魔教教主・血影', hp: 74, r: 16, spd: 68, robe: '#4A2460', robe2: '#160722', sc: 1.45, score: 600, boss: 1 }
   };
   var AX0 = 16, AX1 = 344, AY0 = 92, AY1 = 520;
+  var bombs = [], drops = [], streak = 0, streakT = 0, maxStreak = 0, dodges = 0, seen = {};
+  var HINT = { shield: '盾兵：繞到側後，或用三連斬破防', bomber: '火雷客：地上紅圈快閃開，炸彈也會炸傷敵人' };
 
-  function newPlayer(){ P = { x: 180, y: 380, vx: 0, vy: 0, hp: 5, maxhp: 5, face: 1, aim: -1.57, atkCd: 0, combo: 0, comboT: 0, dashT: 0, dashCd: 0, dvx: 0, dvy: 0, inv: 0, qi: 0, swingT: 0, swingA: 0, step: 0, kb: [0, 0], dead: 0, killsHeal: 0, lastMove: [1, 0], gt: 0 };
-    U = { dmg: 1, rad: 1, regen: 1, waveCost: 25, waveN: 1, dashCd: 1, dashDist: 1, spd: 1, ultDur: 4, life: 0 }; }
+  function newPlayer(){ P = { x: 180, y: 380, vx: 0, vy: 0, hp: 5, maxhp: 5, face: 1, aim: -1.57, atkCd: 0, combo: 0, comboT: 0, dashT: 0, dashCd: 0, dvx: 0, dvy: 0, inv: 0, qi: 0, swingT: 0, swingA: 0, step: 0, kb: [0, 0], dead: 0, killsHeal: 0, lastMove: [1, 0], gt: 0, wardCd: 0, dodgeT: 0, kcd: 0, ken: 0 };
+    U = { dmg: 1, rad: 1, regen: 1, waveCost: 25, waveN: 1, dashCd: 1, dashDist: 1, spd: 1, ultDur: 4, life: 0, crit: 0, ward: 0, thorn: 0, kd: 1 }; }
   newPlayer();
 
   // ---------------- 升級 ----------------
@@ -173,7 +178,11 @@
     { k: 'tri', i: '三', n: '劍氣三連', d: '劍氣一次射出三道', f: function(){ U.waveN = 3; } },
     { k: 'life', i: '生', n: '生機勃發', d: '每擊敗 10 名敵人回復 1 點生命', f: function(){ U.life = 1; } },
     { k: 'spd', i: '風', n: '疾風步', d: '移動速度 +15%', f: function(){ U.spd *= 1.15; } },
-    { k: 'ult', i: '陣', n: '萬劍精進', d: '絕招持續時間 +2 秒', f: function(){ U.ultDur += 2; } }
+    { k: 'ult', i: '陣', n: '萬劍精進', d: '絕招持續時間 +2 秒', f: function(){ U.ultDur += 2; } },
+    { k: 'crit', i: '破', n: '破綻洞察', d: '暴擊機率 +18%，暴擊傷害 ×2', f: function(){ U.crit += 0.18; } },
+    { k: 'ward', i: '護', n: '護體真氣', d: '每 18 秒自動抵擋一次傷害', f: function(){ U.ward = 1; P.wardCd = 0; } },
+    { k: 'thorn', i: '震', n: '反震勁', d: '受傷時爆發氣浪，震傷並擊退周圍敵人', f: function(){ U.thorn = 1; } },
+    { k: 'ken', i: '見', n: '見切精進', d: '見切慢動作更久、強化 +3 秒、內力回饋加倍', f: function(){ U.kd += 1; } }
   ];
   var got = {};
 
@@ -224,7 +233,7 @@
   }
   function doDash(){
     if (P.dashCd > 0 || P.dead) return; var m = moveVec(), dx = m[0], dy = m[1]; if (Math.abs(dx) + Math.abs(dy) < 0.15){ var tg = nearest(200, P); if (tg){ dx = -(tg.x - P.x); dy = -(tg.y - P.y); var l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l; } else { dx = P.face; dy = 0; } }
-    var l2 = Math.hypot(dx, dy) || 1; dx /= l2; dy /= l2; P.dashT = 0.17; P.dvx = dx * 125 * U.dashDist / 0.17; P.dvy = dy * 125 * U.dashDist / 0.17; P.inv = Math.max(P.inv, 0.32); P.dashCd = 0.95 * U.dashCd; sfx.dash();
+    var l2 = Math.hypot(dx, dy) || 1; dx /= l2; dy /= l2; P.dashT = 0.17; P.dodgeT = 0.32; P.dvx = dx * 125 * U.dashDist / 0.17; P.dvy = dy * 125 * U.dashDist / 0.17; P.inv = Math.max(P.inv, 0.32); P.dashCd = 0.95 * U.dashCd; sfx.dash();
     if (Math.abs(dx) > 0.2) P.face = dx > 0 ? 1 : -1;
   }
   function doWave(){
@@ -239,18 +248,55 @@
     enemies.forEach(function(e){ if (e.dead || e.sp > 0) return; var d = Math.hypot(e.x - P.x, e.y - P.y); if (d < 150 + e.r) hurtEnemy(e, 3 * U.dmg, Math.atan2(e.y - P.y, e.x - P.x), 320, true); });
     eproj.length = 0; pop('萬劍歸宗', P.x, P.y - 70, RED, 26);
   }
+  function kenki(){
+    P.kcd = 0.5; dodges++; var lv = U.kd; ts = 0.38; setTimeout(function(){ if (!P.dead) ts = 1; }, 380 + 260 * lv);
+    P.ken = 4 + 3 * (lv - 1); P.qi = Math.min(100, P.qi + 20 * lv); score += 30 * lv; flashR = Math.max(flashR, 0.25); hitstop = Math.max(hitstop, 0.05);
+    ring(P.x, P.y - 16, 70, '#C9962B', 0.5); ring(P.x, P.y - 16, 40, '#F8EBD8', 0.4); pop('見切！', P.x, P.y - 70, '#B8860B', 26); sfx.pick();
+  }
+  function thornBurst(){
+    ring(P.x, P.y, 90, '#C9962B', 0.5); ring(P.x, P.y, 55, RED, 0.4); shake = Math.max(shake, 8); pop('反震！', P.x, P.y - 64, '#B8860B', 20);
+    enemies.slice().forEach(function(e){ if (e.dead) return; var d = Math.hypot(e.x - P.x, e.y - P.y); if (d < 90 + e.r) hurtEnemy(e, 2.5 * U.dmg, Math.atan2(e.y - P.y, e.x - P.x), 320, true); });
+    eproj = eproj.filter(function(q){ return Math.hypot(q.x - P.x, q.y - P.y) > 95; });
+  }
+  function hurtMod(e, dmg, ang, noqi){
+    if (e.t === 'shield' && e.gd && !noqi && dmg < 1.5 * U.dmg && Math.abs(angDiff(ang + Math.PI, e.ga)) < 1.05){
+      e.gb = (e.gb || 0) + 1; sfx.hit(); effs.push({ k: 'spark', x: e.x + Math.cos(e.ga) * 16, y: e.y - 20, t: 0, life: 0.2, a: ang, big: false }); pop('鐺', e.x, e.y - 56, '#5A6068', 16);
+      e.kx += Math.cos(ang) * 40; e.ky += Math.sin(ang) * 40; hitstop = Math.max(hitstop, 0.03); P.qi = Math.min(100, P.qi + 2);
+      if (e.gb >= 3){ e.gb = 0; e.gd = false; e.stag = 1.0; e.gbk = 1.2; pop('破防！', e.x, e.y - 70, RED, 22); shake = Math.max(shake, 6); ring(e.x, e.y - 18, 50, RED, 0.4); }
+      return 0;
+    }
+    if (P.ken > 0) dmg *= 1.4;
+    if (U.crit > 0 && Math.random() < U.crit){ dmg *= 2; if (!noqi) pop('暴', e.x, e.y - 56, '#B8860B', 18); }
+    return dmg;
+  }
+  function makeElite(e){ e.el = true; e.maxhp = e.maxhp * 2.2; e.hp = e.maxhp; e.spm *= 1.1; }
+  function dropLoot(e){
+    var T = ET[e.t]; if (T.boss) return; var k = null, hurt = P.hp < P.maxhp;
+    if (e.el){ drops.push({ x: e.x, y: e.y, k: hurt ? 'herb' : 'qi', life: 12, t: 0 }); drops.push({ x: e.x + 14, y: e.y + 6, k: 'qi', life: 12, t: 0 }); return; }
+    if (Math.random() < 0.1) k = (hurt && Math.random() < 0.5) ? 'herb' : 'qi'; if (!k) return; drops.push({ x: e.x, y: e.y, k: k, life: 9, t: 0 });
+  }
+  function throwBomb(e){
+    var n = ch >= 4 ? 2 : 1;
+    for (var i = 0; i < n; i++){ var lead = i === 0 ? 0.45 : 0.1, bx = clamp(P.x + P.vx * lead + (i ? rnd(-60, 60) : 0), AX0 + 10, AX1 - 10), by = clamp(P.y + P.vy * lead + (i ? rnd(-50, 50) : 0), AY0 + 10, AY1 - 10); var tt = 1.15 + i * 0.25; bombs.push({ x: bx, y: by, t: tt, max: tt, r: 46, fx: e.x, fy: e.y - 20 }); }
+  }
   function hurtP(n, ux, uy){
-    if (P.inv > 0 || P.dead) return; P.hp -= n; P.inv = 1.0; shake = 9; flashR = 0.35; hitstop = 0.06; sfx.hurt(); P.kb = [ux * 220, uy * 220]; splat(P.x, P.y - 20, 12, RED); P.combo = 0; P.comboT = 0;
+    if (P.dead) return;
+    if (P.inv > 0){ if (P.dodgeT > 0 && P.kcd <= 0) kenki(); return; }
+    if (U.ward && P.wardCd <= 0){ P.wardCd = 18; P.inv = 0.9; ring(P.x, P.y - 16, 60, '#6FB6D6', 0.5); pop('護體', P.x, P.y - 64, '#2F5F85', 20); sfx.pick(); shake = Math.max(shake, 4); return; }
+    P.hp -= n; P.inv = 1.0; shake = 9; flashR = 0.35; hitstop = 0.06; sfx.hurt(); P.kb = [ux * 220, uy * 220]; splat(P.x, P.y - 20, 12, RED); P.combo = 0; P.comboT = 0;
+    streak = 0; streakT = 0; if (U.thorn) thornBurst();
     if (P.hp <= 0){ P.hp = 0; P.dead = 1.3; ts = 0.3; }
   }
   function hurtEnemy(e, dmg, ang, kb, noqi){
-    var T = ET[e.t]; e.hp -= dmg; e.flash = 0.12; var kk = T.boss ? kb * 0.12 : kb; e.kx += Math.cos(ang) * kk * 3; e.ky += Math.sin(ang) * kk * 3;
+    var T = ET[e.t]; dmg = hurtMod(e, dmg, ang, noqi); if (dmg <= 0) return; e.hp -= dmg; e.flash = 0.12; var kk = T.boss ? kb * 0.12 : kb; e.kx += Math.cos(ang) * kk * 3; e.ky += Math.sin(ang) * kk * 3;
     splat(e.x, e.y - 18, T.boss ? 7 : 5); effs.push({ k: 'spark', x: e.x, y: e.y - 18, t: 0, life: 0.2, a: ang, big: dmg > 1.5 }); sfx.hit(); if (!noqi) P.qi = Math.min(100, P.qi + (T.boss ? 3 : 5));
     if (!T.boss && (e.s === 'wind') && e.t !== 'boss1'){ e.s = 'chase'; e.cd = 0.7; e.st = 0; e.stag = 0.3; }
     if (e.hp <= 0) killEnemy(e);
   }
   function killEnemy(e){
-    if (e.dead) return; e.dead = true; var T = ET[e.t]; kills++; var bonus = 1 + Math.min(1.5, P.combo * 0.1); score += Math.round(T.score * bonus); P.qi = Math.min(100, P.qi + 4);
+    if (e.dead) return; e.dead = true; var T = ET[e.t]; kills++; var bonus = 1 + Math.min(1.5, P.combo * 0.1); streak++; streakT = 3.2; if (streak > maxStreak) maxStreak = streak; var sm = 1 + 0.25 * Math.min(8, Math.floor(streak / 5)); score += Math.round(T.score * bonus * sm * (e.el ? 3 : 1));
+    if (streak % 10 === 0){ pop('連殺 ' + streak, P.x, P.y - 80, '#B8860B', 22); P.qi = Math.min(100, P.qi + 8); }
+    if (e.el) pop('精英已斬', e.x, e.y - 62, '#B8860B', 22); dropLoot(e); P.qi = Math.min(100, P.qi + 4);
     stain(e.x, e.y + 4, T.boss ? 40 : 18); splat(e.x, e.y - 16, T.boss ? 40 : 12); sfx.kill(); ring(e.x, e.y - 10, T.boss ? 80 : 30, INK, 0.45);
     pop(T.boss ? '擊敗！' : ['斬', '破', '倒'][(Math.random() * 3) | 0], e.x, e.y - 40, RED, T.boss ? 30 : 20);
     if (U.life && kills % 10 === 0 && P.hp < P.maxhp){ P.hp++; pop('生機 +1', P.x, P.y - 60, '#2E8B6A', 16); }
@@ -275,6 +321,17 @@
       if (d < 140){ e.mx = -ux * sp; e.my = -uy * sp; } else if (d > 240){ e.mx = ux * sp * 0.8; e.my = uy * sp * 0.8; } else { e.mx = -uy * sp * 0.5 * (e.spm > 1 ? 1 : -1); e.my = ux * sp * 0.5 * (e.spm > 1 ? 1 : -1); }
       if (e.s === 'chase' && e.cd <= 0 && d < 360){ e.s = 'wind'; e.st = 0.6; e.lock = [ux, uy]; sfx.warn(); }
       else if (e.s === 'wind'){ e.mx *= 0.2; e.my *= 0.2; e.lock = [ux, uy]; if (e.st <= 0){ var a = Math.atan2(uy, ux); eShoot(e, a, 175); if (ch >= 4){ eShoot(e, a + 0.24, 175); eShoot(e, a - 0.24, 175); } e.s = 'chase'; e.cd = 2.3; } }
+    } else if (e.t === 'shield'){
+      var ta = Math.atan2(dy, dx); if (e.ga === undefined) e.ga = ta;
+      if (e.s === 'chase' || e.s === 'wind'){ var dfa = angDiff(ta, e.ga), mxa = 2.0 * dt; e.ga += clamp(dfa, -mxa, mxa); }
+      e.gd = (e.s === 'chase' || e.s === 'wind') && !(e.gbk > 0);
+      if (e.s === 'chase'){ e.mx = ux * sp; e.my = uy * sp; if (d < 48 && e.cd <= 0){ e.s = 'wind'; e.st = 0.6; sfx.warn(); } }
+      else if (e.s === 'wind'){ e.mx = 0; e.my = 0; if (e.st <= 0){ if (d < 64) hurtP(1, ux, uy); effs.push({ k: 'slash', x: e.x, y: e.y - 16, ang: Math.atan2(uy, ux), t: 0, life: 0.2 }); ring(e.x, e.y, 62, RED, 0.3); e.s = 'rest'; e.st = 0.9; } }
+      else if (e.s === 'rest'){ if (e.st <= 0){ e.s = 'chase'; e.cd = 1.0; } }
+    } else if (e.t === 'bomber'){
+      if (d < 130){ e.mx = -ux * sp; e.my = -uy * sp; } else if (d > 250){ e.mx = ux * sp * 0.9; e.my = uy * sp * 0.9; } else { e.mx = -uy * sp * 0.5 * (e.spm > 1 ? 1 : -1); e.my = ux * sp * 0.5 * (e.spm > 1 ? 1 : -1); }
+      if (e.s === 'chase' && e.cd <= 0 && d < 340){ e.s = 'wind'; e.st = 0.55; sfx.warn(); }
+      else if (e.s === 'wind'){ e.mx *= 0.2; e.my *= 0.2; if (e.st <= 0){ throwBomb(e); e.s = 'chase'; e.cd = ch >= 4 ? 2.4 : 3.0; } }
     } else if (e.t === 'boss1'){
       var hpR = e.hp / e.maxhp;
       if (!e.did && hpR < 0.5){ e.did = true; for (var i = 0; i < 2; i++) makeEnemy('bandit', clamp(e.x + (i ? 60 : -60), AX0, AX1), clamp(e.y + 30, AY0, AY1)); pop('幫眾聽令！', e.x, e.y - 90, RED, 20); sfx.gong(); }
@@ -298,31 +355,35 @@
   // ---------------- 流程 ----------------
   function composition(c, w){
     var list = [], nb = Math.min(8, 2 + c + w), nbl = c >= 2 ? Math.min(5, (c - 1) + (w > 1 ? 1 : 0)) : 0, na = c >= 2 ? Math.min(4, Math.floor((c + w) / 2)) : (w === 2 ? 1 : 0), i;
-    for (i = 0; i < nb; i++) list.push('bandit'); for (i = 0; i < nbl; i++) list.push('blade'); for (i = 0; i < na; i++) list.push('archer'); return shuffle(list);
+    var nsh = c >= 2 ? Math.min(3, Math.floor(c / 2) + (w >= 3 ? 1 : 0)) : 0, nbm = c >= 3 ? Math.min(3, (c - 2) + (w >= 3 ? 1 : 0)) : 0; nb = Math.max(2, nb - (nsh + nbm));
+    for (i = 0; i < nb; i++) list.push('bandit'); for (i = 0; i < nbl; i++) list.push('blade'); for (i = 0; i < na; i++) list.push('archer'); for (i = 0; i < nsh; i++) list.push('shield'); for (i = 0; i < nbm; i++) list.push('bomber');
+    list = shuffle(list);
+    if (c >= 2 && w >= 2){ var ne = (c >= 4 && w >= 3) ? 2 : 1; for (i = 0; i < ne && i < list.length; i++) list[i] = 'E:' + list[i]; list = shuffle(list); }
+    return list;
   }
   function totalWaves(){ var C = CH[ch - 1]; return C.waves + (C.boss ? 1 : 0); }
-  function startChapter(c){ ch = c; wv = 0; var C = CH[c - 1]; enemies = []; marks = []; queue = []; eproj = []; pwaves = []; parts.length = 0; effs.length = 0; ult = null; boss = null; stains.length = 0; P.x = 180; P.y = 400; P.vx = P.vy = 0; P.inv = 1.2; if (c > 1) P.hp = Math.min(P.maxhp, P.hp + 1);
+  function startChapter(c){ ch = c; wv = 0; var C = CH[c - 1]; enemies = []; marks = []; queue = []; eproj = []; bombs = []; drops = []; pwaves = []; parts.length = 0; effs.length = 0; ult = null; boss = null; stains.length = 0; P.x = 180; P.y = 400; P.vx = P.vy = 0; P.inv = 1.2; if (c > 1) P.hp = Math.min(P.maxhp, P.hp + 1);
     banner = { t: 0, dur: 2.8, title: '第' + CN[c - 1] + '章　' + C.n, sub: C.sub }; phase = 'banner'; mode = 'play'; showOv(''); $('pauseBtn').style.display = 'block'; sfx.gong(); }
   function startWave(){ wv++; var C = CH[ch - 1]; if (C.boss && wv === totalWaves()){ queue = [C.boss]; pop('強敵現身', W / 2, 210, RED, 30); sfx.gong(); } else { queue = composition(ch, wv); pop('第 ' + wv + ' 波', W / 2, 210, INK, 28); } phase = 'fight'; spawnT = 0.5; }
-  function spawnMark(t){ var side = Math.random(), x, y; if (side < 0.45){ x = rnd(AX0 + 20, AX1 - 20); y = AY0 + 8; } else if (side < 0.8){ x = AX0 + 10; y = rnd(AY0 + 40, 400); } else { x = AX1 - 10; y = rnd(AY0 + 40, 400); } if (Math.hypot(x - P.x, y - P.y) < 90){ x = x < 180 ? AX1 - 30 : AX0 + 30; }
-    if (ET[t].boss){ x = 180; y = 225; } marks.push({ t: t, x: x, y: y, life: ET[t].boss ? 1.5 : 0.8, max: ET[t].boss ? 1.5 : 0.8 }); }
+  function spawnMark(t){ var el = false; if (t.indexOf('E:') === 0){ el = true; t = t.slice(2); } if (!seen[t] && HINT[t]){ seen[t] = 1; toast(HINT[t]); } var side = Math.random(), x, y; if (side < 0.45){ x = rnd(AX0 + 20, AX1 - 20); y = AY0 + 8; } else if (side < 0.8){ x = AX0 + 10; y = rnd(AY0 + 40, 400); } else { x = AX1 - 10; y = rnd(AY0 + 40, 400); } if (Math.hypot(x - P.x, y - P.y) < 90){ x = x < 180 ? AX1 - 30 : AX0 + 30; }
+    if (ET[t].boss){ x = 180; y = 225; } marks.push({ t: t, el: el, x: x, y: y, life: ET[t].boss ? 1.5 : 0.8, max: ET[t].boss ? 1.5 : 0.8 }); }
   function chapterDone(){
     if (ch === 5){ endGame(true); return; } mode = 'upgrade'; $('pauseBtn').style.display = 'none'; sfx.pick(); score += 100 * ch;
-    var pool = UPG.filter(function(u){ return !(u.k === 'tri' && got.tri) && !(u.k === 'life' && got.life); }), picks = shuffle(pool).slice(0, 3), box = $('cards'); box.innerHTML = '';
+    var pool = UPG.filter(function(u){ return !(u.k === 'tri' && got.tri) && !(u.k === 'life' && got.life) && !(u.k === 'ward' && got.ward) && !(u.k === 'thorn' && got.thorn) && !(u.k === 'ken' && U.kd >= 3); }), picks = shuffle(pool).slice(0, 3), box = $('cards'); box.innerHTML = '';
     $('upgTitle').textContent = '第' + CN[ch - 1] + '章 · 領悟武學';
     picks.forEach(function(u){ var b = document.createElement('button'); b.className = 'card'; b.innerHTML = '<i>' + u.i + '</i><div><b>' + u.n + '</b><span>' + u.d + '</span></div>'; b.onclick = function(){ audio(); u.f(); got[u.k] = 1; sfx.pick(); startChapter(ch + 1); }; box.appendChild(b); });
     showOv('upg');
   }
   function showOv(id){ ['menu', 'how', 'pauseOv', 'upg', 'over'].forEach(function(k){ $(k).classList.toggle('hidden', k !== id); }); }
-  function startGame(){ audio(); bgmStart(); newPlayer(); got = {}; score = 0; kills = 0; hintT = 0; ts = 1; ult = null; paused = false; startChapter(1); }
+  function startGame(){ audio(); bgmStart(); newPlayer(); got = {}; streak = 0; streakT = 0; maxStreak = 0; dodges = 0; seen = {}; bombs = []; drops = []; score = 0; kills = 0; hintT = 0; ts = 1; ult = null; paused = false; startChapter(1); }
   function endGame(win){
     mode = 'end'; $('pauseBtn').style.display = 'none'; var isNew = score > best; if (isNew){ best = score; store('ik_best', String(best)); }
     var ranks = ['初出茅廬', '江湖新秀', '一方俠客', '劍道高手', '一代大俠', '天下第一'], ri = win ? 5 : clamp(ch - 1 + (score > 600 ? 1 : 0), 0, 4);
-    $('overEn').textContent = win ? 'VICTORY' : 'DEFEATED'; $('overTitle').textContent = win ? '天下第一' : '江湖路遠'; $('rRank').textContent = ranks[ri]; $('rCh').textContent = win ? '全破' : '第' + CN[ch - 1] + '章'; $('rKill').textContent = kills; $('rScore').textContent = '0'; $('rBest').textContent = best; $('rNew').textContent = isNew && score > 0 ? '★ 新紀錄 ★' : '';
+    $('overEn').textContent = win ? 'VICTORY' : 'DEFEATED'; $('overTitle').textContent = win ? '天下第一' : '江湖路遠'; $('rRank').textContent = ranks[ri]; $('rCh').textContent = win ? '全破' : '第' + CN[ch - 1] + '章'; $('rKill').textContent = kills; $('rScore').textContent = '0'; $('rBest').textContent = best; $('rStreak').textContent = maxStreak; $('rDodge').textContent = dodges; $('rNew').textContent = isNew && score > 0 ? '★ 新紀錄 ★' : '';
     setTimeout(function(){ showOv('over'); var t0 = performance.now(); (function f(now){ var u = Math.min(1, (now - t0) / 900); $('rScore').textContent = Math.round(score * (1 - Math.pow(1 - u, 3))); if (u < 1) requestAnimationFrame(f); })(t0); if (win) sfx.gong(); }, win ? 600 : 300);
   }
   function togglePause(){ if (mode !== 'play') return; paused = !paused; showOv(paused ? 'pauseOv' : ''); }
-  function toMenu(){ paused = false; mode = 'menu'; ch = 1; ts = 1; $('pauseBtn').style.display = 'none'; enemies = []; marks = []; eproj = []; effs.length = 0; showOv('menu'); setBest(); }
+  function toMenu(){ paused = false; mode = 'menu'; ch = 1; ts = 1; $('pauseBtn').style.display = 'none'; enemies = []; marks = []; eproj = []; bombs = []; drops = []; effs.length = 0; showOv('menu'); setBest(); }
   function setBest(){ $('bestLine').textContent = best ? '最高分 ' + best : ''; }
 
   // ---------------- 更新 ----------------
@@ -334,7 +395,7 @@
     // 玩家
     if (!P.dead){
       if (ch === 4){ lightT -= dt; if (lightT <= 0){ lightT = rnd(5, 10); flashR = Math.max(flashR, 0.55); noise(1.0, 0.25, 220, 50); } }
-      P.qi = Math.min(100, P.qi + 2.6 * U.regen * dt); P.atkCd -= dt; P.comboT -= dt; P.dashCd -= dt; P.inv -= dt; P.swingT -= dt; P.gt += dt;
+      P.qi = Math.min(100, P.qi + 2.6 * U.regen * dt); P.atkCd -= dt; P.comboT -= dt; P.dashCd -= dt; P.inv -= dt; P.swingT -= dt; P.gt += dt; P.wardCd -= dt; P.dodgeT -= dt; P.kcd -= dt; P.ken -= dt; if (streakT > 0){ streakT -= dt; if (streakT <= 0) streak = 0; }
       if (P.dashT > 0){ P.dashT -= dt; P.x += P.dvx * dt; P.y += P.dvy * dt; if (Math.random() < 0.9) ghosts.push({ x: P.x, y: P.y, face: P.face, t: 0.3 }); }
       else { var m = moveVec(), sp = 128 * U.spd; P.vx = m[0] * sp; P.vy = m[1] * sp; P.x += P.vx * dt; P.y += P.vy * dt; if (m[0] || m[1]){ if (Math.random() < dt * 12) parts.push({ x: P.x + rnd(-4, 4), y: P.y, vx: rnd(-14, 14), vy: rnd(-22, -6), life: 0.5, r: rnd(1.5, 3.2), c: 'rgba(130,110,80,.5)', g: -10 }); P.step += dt * 11; P.lastMove = [m[0], m[1]]; if (Math.abs(m[0]) > 0.2) P.face = m[0] > 0 ? 1 : -1; } }
       P.x += P.kb[0] * dt; P.y += P.kb[1] * dt; P.kb[0] *= Math.pow(0.001, dt); P.kb[1] *= Math.pow(0.001, dt);
@@ -347,14 +408,23 @@
     // 生成
     if (phase === 'fight'){
       spawnT -= dt; if (queue.length && spawnT <= 0 && enemies.filter(function(e){ return !e.dead; }).length + marks.length < 7){ spawnMark(queue.shift()); spawnT = 0.55; }
-      marks.forEach(function(mk){ mk.life -= dt; }); marks = marks.filter(function(mk){ if (mk.life <= 0){ var e = makeEnemy(mk.t, mk.x, mk.y); e.sp = 0; splat(mk.x, mk.y - 10, 8); ring(mk.x, mk.y, 30, INK, 0.35); return false; } return true; });
+      marks.forEach(function(mk){ mk.life -= dt; }); marks = marks.filter(function(mk){ if (mk.life <= 0){ var e = makeEnemy(mk.t, mk.x, mk.y); e.sp = 0; if (mk.el) makeElite(e); splat(mk.x, mk.y - 10, 8); ring(mk.x, mk.y, 30, INK, 0.35); return false; } return true; });
       if (!queue.length && !marks.length && !enemies.some(function(e){ return !e.dead; }) && !P.dead){ phase = 'clear'; clearT = 1.4; if (wv < totalWaves()){ if (P.hp < P.maxhp && wv % 2 === 0){ P.hp++; pop('回氣 +1', P.x, P.y - 60, '#2E8B6A', 16); } } } }
     else if (phase === 'clear'){ clearT -= dt; if (clearT <= 0){ if (wv < totalWaves()) startWave(); else { phase = 'done'; chapterDone(); } } }
     // 敵人
-    enemies.forEach(function(e){ if (e.dead) return; e.flash -= dt; e.uc = (e.uc || 0) - dt; aiEnemy(e, dt); var k = Math.pow(0.0005, dt); e.kx *= k; e.ky *= k; e.x += (e.mx + e.kx) * dt; e.y += (e.my + e.ky) * dt; e.x = clamp(e.x, AX0, AX1); e.y = clamp(e.y, ET[e.t].boss ? 215 : AY0 - 20, AY1); });
+    enemies.forEach(function(e){ if (e.dead) return; e.flash -= dt; if (e.gbk > 0) e.gbk -= dt; e.uc = (e.uc || 0) - dt; aiEnemy(e, dt); var k = Math.pow(0.0005, dt); e.kx *= k; e.ky *= k; e.x += (e.mx + e.kx) * dt; e.y += (e.my + e.ky) * dt; e.x = clamp(e.x, AX0, AX1); e.y = clamp(e.y, ET[e.t].boss ? 215 : AY0 - 20, AY1); });
     for (var a = 0; a < enemies.length; a++) for (var b = a + 1; b < enemies.length; b++){ var ea = enemies[a], eb = enemies[b]; if (ea.dead || eb.dead) continue; var dx = eb.x - ea.x, dy = eb.y - ea.y, d = Math.hypot(dx, dy) || 1, mn = (ea.r + eb.r) * 0.9; if (d < mn){ var p = (mn - d) / 2; ea.x -= dx / d * p; ea.y -= dy / d * p; eb.x += dx / d * p; eb.y += dy / d * p; } }
     enemies.forEach(function(e){ if (e.dead || P.dead) return; var dx = P.x - e.x, dy = P.y - e.y, d = Math.hypot(dx, dy) || 1, mn = e.r + 8; if (d < mn){ var p = (mn - d); P.x += dx / d * p * 0.5; P.y += dy / d * p * 0.5; e.x -= dx / d * p * 0.5; e.y -= dy / d * p * 0.5; } });
     enemies = enemies.filter(function(e){ return !e.dead; });
+    // 炸彈與掉落
+    bombs.forEach(function(b){ b.t -= dt; if (b.t <= 0){ ring(b.x, b.y, b.r, RED, 0.45); ring(b.x, b.y, b.r * 0.6, INK, 0.35); shake = Math.max(shake, 7); splat(b.x, b.y - 6, 14); stain(b.x, b.y, 30); sfx.kill();
+        if (!P.dead){ var dd = Math.hypot(P.x - b.x, P.y - b.y); if (dd < b.r) hurtP(1, (P.x - b.x) / (dd || 1), (P.y - b.y) / (dd || 1)); }
+        enemies.slice().forEach(function(e){ if (e.dead || ET[e.t].boss) return; if (Math.hypot(e.x - b.x, e.y - b.y) < b.r + e.r) hurtEnemy(e, 4, Math.atan2(e.y - b.y, e.x - b.x), 260, true); }); } });
+    bombs = bombs.filter(function(b){ return b.t > 0; });
+    drops.forEach(function(q){ q.t += dt; q.life -= dt; if (P.dead) return; var dd = Math.hypot(P.x - q.x, P.y - q.y) || 1;
+      if (dd < 80 && q.t > 0.35){ q.x += (P.x - q.x) / dd * 170 * dt; q.y += (P.y - q.y) / dd * 170 * dt; }
+      if (dd < 22 && q.t > 0.2){ q.life = 0; sfx.pick(); if (q.k === 'herb'){ if (P.hp < P.maxhp){ P.hp++; pop('回春 +1', P.x, P.y - 60, '#2E8B6A', 16); } else { score += 50; pop('+50', P.x, P.y - 60, '#2E8B6A', 16); } } else { P.qi = Math.min(100, P.qi + 35); pop('內力 +35', P.x, P.y - 60, '#2F5F85', 16); } } });
+    drops = drops.filter(function(q){ return q.life > 0; });
     // 敵方飛行物
     eproj.forEach(function(q){ q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt; if (!P.dead && Math.hypot(q.x - P.x, q.y - 16 - P.y) < 12) { q.life = 0; hurtP(1, q.vx / 200, q.vy / 200); } if (q.x < -20 || q.x > W + 20 || q.y < 40 || q.y > H + 20) q.life = 0; });
     eproj = eproj.filter(function(q){ return q.life > 0; });
@@ -522,7 +592,23 @@
     else if (e.t === 'archer'){ o.hair = 'cap'; o.weapon = 'bow'; o.sash = '#5A4020'; o.pull = e.s === 'wind' ? clamp(1 - e.st / 0.6, 0, 1) : 0; o.sash = '#8B6A2B'; }
     else if (e.t === 'boss1'){ o.hair = 'bald'; o.weapon = 'fist'; o.mouth = e.s === 'slam' || e.s === 'dash'; o.fo = e.s === 'slam' ? clamp(1 - e.st, 0, 1) : (e.s === 'dash' ? 1 : 0); o.beard = true; o.sash = '#1B1B1F'; o.skin = '#E2B88E'; o.collar = '#E8D6A8'; }
     else if (e.t === 'boss2'){ o.hair = 'long'; o.weapon = 'sword'; o.blade = '#E5503F'; o.bl = 34; o.mouth = e.s === 'dwind' || e.s === 'bstrike'; o.skin = '#EADFD0'; o.eye = '#D8261C'; o.aura = 'rgba(160,30,60,.35)'; o.sash = '#C8352B'; o.wa = e.s === 'bwind' || e.s === 'bstrike' ? -2.2 : -0.7; o.collar = '#C8352B'; }
+    if (e.el) o.aura = 'rgba(230,175,40,.42)';
+    if (e.t === 'shield'){ o.hair = 'hat'; o.sash = '#2C3A4C'; o.weapon = 'sword'; o.bl = 22; o.blade = '#C0C4CA'; o.wa = e.s === 'wind' ? -2.3 : -0.8; o.mouth = e.s === 'wind'; }
+    else if (e.t === 'bomber'){ o.hair = 'cap'; o.weapon = 'fist'; o.fo = e.s === 'wind' ? 1 : 0; o.sash = '#C8352B'; o.mouth = e.s === 'wind'; }
     person(ctx, o);
+    if (e.t === 'shield' && e.ga !== undefined){ var sx = e.x + Math.cos(e.ga) * 17, sy = e.y - 20 + Math.sin(e.ga) * 9, up = e.gd; ctx.save(); ctx.translate(sx, sy); ctx.rotate(e.ga + 1.5708); ctx.globalAlpha = up ? 1 : 0.45; ctx.fillStyle = up ? '#8A97A8' : '#5A6068'; ctx.strokeStyle = INK; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.ellipse(0, 0, 15, 10.5, 0, 0, 6.283); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#C9962B'; ctx.beginPath(); ctx.arc(0, 0, 3.4, 0, 6.283); ctx.fill(); ctx.stroke(); ctx.restore(); }
+    if (e.el) brush('精英', e.x, e.y - 60 * T.sc, 11, '#B8860B', 1);
+  }
+  function drawBomb(b){
+    var u = clamp((b.max - b.t) / 0.4, 0, 1), k = 1 - b.t / b.max; ctx.save();
+    ctx.fillStyle = 'rgba(200,53,43,' + (0.08 + 0.2 * k) + ')'; ctx.strokeStyle = 'rgba(200,53,43,' + (0.35 + 0.5 * k) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 6.283); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.arc(b.x, b.y, b.r * (1 - k), 0, 6.283); ctx.stroke();
+    var px = b.fx + (b.x - b.fx) * u, py = b.fy + (b.y - b.fy) * u - 46 * Math.sin(u * Math.PI); ctx.fillStyle = INK; ctx.beginPath(); ctx.arc(px, py - 4, 6, 0, 6.283); ctx.fill();
+    if (u >= 1){ ctx.fillStyle = Math.floor(b.t * 14) % 2 ? '#E5503F' : '#F0B040'; ctx.beginPath(); ctx.arc(px + 3, py - 11, 2.4, 0, 6.283); ctx.fill(); } ctx.restore();
+  }
+  function drawDrop(q){
+    if (q.life < 2.5 && Math.floor(q.life * 8) % 2 === 0) return; var bob = Math.sin(clock * 5 + q.x) * 2; ctx.save(); ctx.translate(q.x, q.y - 8 + bob);
+    ctx.fillStyle = 'rgba(40,30,15,.2)'; ctx.beginPath(); ctx.ellipse(0, 8 - bob, 7, 2.4, 0, 0, 6.283); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, 8, 0, 6.283); ctx.fillStyle = q.k === 'herb' ? '#4FAF8A' : '#6FB6D6'; ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 1.5; ctx.stroke(); brush(q.k === 'herb' ? '草' : '丹', 0, 1, 11, '#FFFFFF', 1); ctx.restore();
   }
   function playerFig(){
     var wa = -0.95 + Math.sin(clock * 2.2) * 0.06;
@@ -562,7 +648,8 @@
   }
   function drawTelegraph(e){
     var u = 1, T = ET[e.t];
-    if (e.t === 'bandit' && e.s === 'wind'){ u = 1 - e.st / 0.5; ctx.save(); ctx.fillStyle = 'rgba(200,53,43,' + (0.12 + 0.2 * u) + ')'; ctx.strokeStyle = 'rgba(200,53,43,' + (0.5 + 0.4 * u) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(e.x, e.y, 50, 36, 0, 0, 6.283); ctx.fill(); ctx.stroke(); ctx.restore(); }
+    if (e.t === 'shield' && e.s === 'wind'){ u = 1 - e.st / 0.6; ctx.save(); ctx.fillStyle = 'rgba(200,53,43,' + (0.12 + 0.2 * u) + ')'; ctx.strokeStyle = 'rgba(200,53,43,' + (0.5 + 0.4 * u) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(e.x, e.y, 64, 46, 0, 0, 6.283); ctx.fill(); ctx.stroke(); ctx.restore(); }
+    else if (e.t === 'bandit' && e.s === 'wind'){ u = 1 - e.st / 0.5; ctx.save(); ctx.fillStyle = 'rgba(200,53,43,' + (0.12 + 0.2 * u) + ')'; ctx.strokeStyle = 'rgba(200,53,43,' + (0.5 + 0.4 * u) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(e.x, e.y, 50, 36, 0, 0, 6.283); ctx.fill(); ctx.stroke(); ctx.restore(); }
     else if ((e.t === 'blade' || e.t === 'boss1') && (e.s === 'wind' || e.s === 'cwind')){ u = clamp(1 - e.st / 0.7, 0, 1); ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(Math.atan2(e.lock[1], e.lock[0])); ctx.fillStyle = 'rgba(200,53,43,' + (0.14 + 0.26 * u) + ')'; ctx.fillRect(0, -9 * (e.t === 'boss1' ? 2 : 1), (e.t === 'boss1' ? 260 : 180), 18 * (e.t === 'boss1' ? 2 : 1)); ctx.restore(); }
     else if (e.t === 'archer' && e.s === 'wind'){ ctx.save(); ctx.strokeStyle = 'rgba(200,53,43,.5)'; ctx.lineWidth = 1.4; ctx.setLineDash([6, 5]); ctx.beginPath(); ctx.moveTo(e.x, e.y - 20); ctx.lineTo(e.x + e.lock[0] * 320, e.y - 20 + e.lock[1] * 320); ctx.stroke(); ctx.restore(); }
     else if (e.t === 'boss1' && e.s === 'slam'){ u = clamp(1 - e.st, 0, 1); ctx.save(); ctx.fillStyle = 'rgba(200,53,43,' + (0.1 + 0.22 * u) + ')'; ctx.strokeStyle = 'rgba(200,53,43,.85)'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.ellipse(e.x, e.y, 100, 72, 0, 0, 6.283); ctx.fill(); ctx.stroke(); ctx.beginPath(); ctx.ellipse(e.x, e.y, 100 * u, 72 * u, 0, 0, 6.283); ctx.stroke(); ctx.restore(); }
@@ -584,6 +671,15 @@
     ctx.strokeStyle = INK; ctx.lineWidth = 1.8; ctx.stroke(); ctx.strokeStyle = 'rgba(200,53,43,.4)'; ctx.lineWidth = 1; rrect(x + 3, y + 3, w - 6, h - 6, 6); ctx.stroke();
     ctx.fillStyle = RED; [[x + 6, y + 6], [x + w - 6, y + h - 6]].forEach(function(p){ ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(0.785); ctx.fillRect(-1.6, -1.6, 3.2, 3.2); ctx.restore(); }); ctx.restore();
   }
+  function drawStreak(){
+    var by = (boss && !boss.dead) ? 134 : 110; ctx.save(); ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    if (streak >= 3){ var m = 1 + 0.25 * Math.min(8, Math.floor(streak / 5)), tx = '連殺 ' + streak + (m > 1 ? ' ×' + (+m.toFixed(2)) : ''); ctx.font = "900 15px 'Noto Serif TC',serif"; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(248,240,222,.95)'; ctx.strokeText(tx, 342, by); ctx.fillStyle = RED; ctx.fillText(tx, 342, by);
+      var w = 70 * clamp(streakT / 3.2, 0, 1); ctx.fillStyle = 'rgba(27,27,31,.5)'; ctx.fillRect(342 - w, by + 10, w, 3); by += 22; }
+    if (P.ken > 0){ ctx.font = "900 13px 'Noto Serif TC',serif"; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(248,240,222,.95)'; var t2 = '見切強化 ' + Math.ceil(P.ken) + 's'; ctx.strokeText(t2, 342, by); ctx.fillStyle = '#B8860B'; ctx.fillText(t2, 342, by); by += 18; }
+    if (U.ward){ ctx.font = "700 12px 'Noto Sans TC',sans-serif"; ctx.fillStyle = P.wardCd <= 0 ? '#2F5F85' : 'rgba(27,27,31,.4)'; ctx.fillText('護體' + (P.wardCd > 0 ? ' ' + Math.ceil(P.wardCd) : ' ✓'), 342, by);
+      if (P.wardCd <= 0 && !P.dead){ ctx.globalAlpha = 0.35 + 0.15 * Math.sin(clock * 5); ctx.strokeStyle = '#6FB6D6'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(P.x, P.y - 16, 20, 26, 0, 0, 6.283); ctx.stroke(); } }
+    ctx.restore();
+  }
   function drawHUD(){
     var i, y0 = 46;
     // 左：生命與內力
@@ -604,7 +700,7 @@
     plaque(262, y0, 88, 48); ctx.save(); ctx.font = "900 22px 'Noto Serif TC',serif"; ctx.textAlign = 'right'; ctx.textBaseline = 'middle'; ctx.fillStyle = INK; ctx.fillText(fmt(score), 340, y0 + 20); ctx.font = "700 10px 'Noto Sans TC',sans-serif"; ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(27,27,31,.55)'; ctx.fillText('得分', 274, y0 + 38); ctx.restore();
     if (kills){ ctx.save(); ctx.font = "700 10px 'Noto Sans TC',sans-serif"; ctx.textAlign = 'right'; ctx.fillStyle = 'rgba(27,27,31,.55)'; ctx.fillText('斬 ' + kills, 340, y0 + 38); ctx.restore(); }
     // Boss 血條
-    var cy = 112;
+    var cy = 112; drawStreak();
     if (boss && !boss.dead){ var bw = 250, bx = (W - bw) / 2, by = 100, r = clamp(boss.hp / boss.maxhp, 0, 1); ctx.save(); ctx.shadowColor = 'rgba(40,30,15,.35)'; ctx.shadowBlur = 6; ctx.fillStyle = 'rgba(27,27,31,.78)'; rrect(bx, by, bw, 15, 7.5); ctx.fill(); ctx.shadowBlur = 0; ctx.save(); rrect(bx + 2, by + 2, bw - 4, 11, 5.5); ctx.clip(); var bgd = ctx.createLinearGradient(bx, 0, bx + bw, 0); bgd.addColorStop(0, '#8A1812'); bgd.addColorStop(1, '#F0503F'); ctx.fillStyle = bgd; ctx.fillRect(bx + 2, by + 2, (bw - 4) * r, 11); ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(bx + 2, by + 3, (bw - 4) * r, 2.5); ctx.restore(); ctx.strokeStyle = '#E8D6A8'; ctx.lineWidth = 1.2; rrect(bx, by, bw, 15, 7.5); ctx.stroke(); ctx.restore();
       brush(ET[boss.t].n, W / 2, by + 8, 10.5, '#F8EBD8', 1); cy = 128; }
     if (P.comboT > 0 && P.combo >= 2){ var cs = 1 + 0.08 * Math.max(0, P.comboT - 0.6) * 10; ctx.save(); ctx.translate(W / 2, cy); ctx.scale(cs, cs); ctx.globalAlpha = clamp(P.comboT * 2, 0, 1); ctx.font = "900 18px 'Noto Serif TC',serif"; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(248,240,222,.95)'; ctx.strokeText(P.combo + ' 連斬', 0, 0); ctx.fillStyle = RED; ctx.fillText(P.combo + ' 連斬', 0, 0); ctx.restore(); }
@@ -646,7 +742,7 @@
     stains.forEach(function(s){ ctx.fillStyle = 'rgba(27,27,31,' + s.a * 0.35 + ')'; ctx.beginPath(); ctx.ellipse(s.x, s.y, s.r, s.r * 0.45, 0, 0, 6.283); ctx.fill(); ctx.fillStyle = 'rgba(27,27,31,' + s.a * 0.25 + ')'; ctx.beginPath(); ctx.ellipse(s.x + 4, s.y + 1, s.r * 0.6, s.r * 0.28, 0, 0, 6.283); ctx.fill(); });
     // 預警標記
     marks.forEach(function(m){ var u = 1 - m.life / m.max; ctx.save(); ctx.translate(m.x, m.y); ctx.globalAlpha = 0.3 + 0.5 * u; ctx.strokeStyle = INK; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.ellipse(0, 0, 26 * (1.2 - u * 0.4), 18 * (1.2 - u * 0.4), clock * 3, 0.3, 5.4); ctx.stroke(); ctx.fillStyle = 'rgba(27,27,31,' + (0.1 + 0.2 * u) + ')'; ctx.beginPath(); ctx.ellipse(0, 0, 20 * u + 6, 12 * u + 4, 0, 0, 6.283); ctx.fill(); ctx.restore(); });
-    enemies.forEach(drawTelegraph);
+    enemies.forEach(drawTelegraph); bombs.forEach(drawBomb); drops.forEach(drawDrop);
     ghosts.forEach(function(g){ ctx.save(); ctx.globalAlpha = g.t * 1.2; person(ctx, { x: g.x, y: g.y, face: g.face, sc: 1.05, robe: '#8A9099', robe2: '#5A6068', hair: 'bun', weapon: 'sword', wa: -0.9, step: 0, alpha: 0.4 }); ctx.restore(); });
     var items = []; enemies.forEach(function(e){ items.push({ y: e.y, f: function(){ enemyFig(e); if (e.hp < e.maxhp && !ET[e.t].boss){ var w = 22; ctx.fillStyle = 'rgba(27,27,31,.3)'; ctx.fillRect(e.x - w / 2, e.y - 66 * ET[e.t].sc * 0.8, w, 3); ctx.fillStyle = RED; ctx.fillRect(e.x - w / 2, e.y - 66 * ET[e.t].sc * 0.8, w * clamp(e.hp / e.maxhp, 0, 1), 3); } } }); });
     if (mode !== 'menu') items.push({ y: P.y, f: playerFig }); items.sort(function(a, b){ return a.y - b.y; }); items.forEach(function(it){ it.f(); }); if (mode === 'menu') drawMenuScene();
@@ -746,7 +842,7 @@ html.dv-mob body{min-height:100dvh}
 <aside id="dv-r" aria-label="其他遊戲"><small>換一款玩</small><span id="dv-more"></span><a class="all" href="index.html">回遊戲大廳 · 共 40 款</a></aside>
 <script id="dv-js">
 (function(){
- var LIST=[["paper-glider.html", "飛行躲避", "紙飛機大冒險", "讓紙飛機穿過桌上林立的鉛筆縫隙。"], ["rooftop-cat.html", "無盡跑酷", "屋頂貓跑酷", "夕陽屋頂上狂奔，跳過障礙、低頭鑽過飛鳥。"], ["chick-relay.html", "節奏跑酷", "小雞接力賽", "三條跑道三隻小雞，跟著鼓點跳過障礙、撿種子，烏⁠鴉來了千萬別跳"], ["ink-sword.html", "武俠", "墨劍江湖", "水墨風武俠動作：三連斬、輕功閃身、劍氣絕招，闖五章擊敗兩大魔頭"], ["boba-survivors.html", "倖存", "珍奶突圍", "化身珍珠奶茶，自動攻擊、撿珍珠升級，撐過 5 分鐘冰塊與方糖大軍"], ["drift-bend.html", "賽車漂移", "彎道漂移", "按住漂移鍵甩過彎道、放開噴出加速，十條賽道對決對手車手，收集十輛愛車"], ["star-raid.html", "太空射擊", "星艦突襲", "自動連射的太空射擊，撿道具升級武器，還要打倒巨型母艦。"], ["game.html", "即時操作", "夜蔓 貪食蛇", "連擊、衝刺、護盾與果實雨，還能和 AI 紅蛇對戰、解鎖蛇皮膚。"], ["snake-evolve.html", "街機", "蛇蛇進化", "貪吃蛇加上進化系統：穿牆、磁鐵、護盾、破岩，連吃蘋果衝高連擊"], ["tile-breaker.html", "打磚塊", "花磚打磚塊", "用木槳接住彈珠，敲碎整面馬賽克花磚牆。"], ["candy-pachinko.html", "物理彈射", "糖果彈珠台", "瞄準發射彈珠，在糖果釘子間亂彈，把橘色糖果全部打光就過關"], ["ring-toss.html", "街機經典", "夜市套圈圈", "按住瞄準、圈縮到最小時放手，套中熊貓、泰迪熊和金鑽，十個攤位等你挑戰"], ["pearl-catch.html", "接料反應", "珍珠接接樂", "用杯子接住珍珠和布丁，閃開會讓你變淡的冰塊。"], ["hoop-shot.html", "投籃機", "夜光籃球機", "往後拉、放開投籃，空心球加時間，連進有加分"], ["penalty-kings.html", "足球", "點球大師", "滑向球門射點球與任意球，繞過人牆、騙過守門員"], ["pool-hall.html", "運動競技", "八號球撞球", "巡迴賽挑戰六位對手，賺金幣買球桿與球檯，先清完自己的球再打進黑 8"], ["table-tennis.html", "運動競技", "極速桌球", "拖曳球拍回擊，揮得越快越有力，還能殺球，挑戰四級對手或無盡對拉"], ["mini-golf.html", "運動競技", "迷你高爾夫", "往後拉、放手推桿，十二個球場有沙坑、水池、風車、傳送門，桿數越少星越多"], ["dart-bar.html", "酒吧競技", "飛鏢酒吧", "按住瞄準、放開射鏢，三輪對決十位酒客，風、旋轉靶和昏暗燈光都是考驗"], ["lantern-rhythm.html", "節奏點擊", "燈籠節拍", "燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。"], ["garden-whack.html", "反應力", "菜園保衛戰", "限時 30 秒，把冒出土堆的小偷趕跑。"], ["steamer-stack.html", "抓時機", "蒸籠疊疊樂", "抓準時機放下蒸籠，疊得越準越高。"], ["cake-defense.html", "塔防", "蛋糕保衛戰", "擺放糖果槍、冰棒與爆米花砲塔，擋下偷吃生日蛋糕的螞蟻大軍"], ["dice-dungeon.html", "策略", "骰運地下城", "擲骰子、把點數放進技能卡，看穿怪物意圖，闖過 10 層地下城擊倒魔王"], ["magnet-miner.html", "冒險", "磁鐵礦工", "放下磁鐵吸金塊和鑽石，再深入一層，還是收線入袋？小心炸彈全炸光"], ["cat-cafe.html", "放置經營", "貓咪咖啡館", "點咖啡機賺錢，僱用貓咪店員，離線也繼續營業，再開分店"], ["fishing.html", "策略與經營", "深海釣手", "放線下海、左右閃避水母，釣起二十四種魚，賺錢升級漁具，把圖鑑收集滿"], ["soup-master.html", "策略經營", "湯頭大師", "用火候、下料時機和最後一撮鹽，熬出客人心中的那碗好湯，十種湯頭等你收集"], ["ink-gomoku.html", "對弈", "水墨五子棋", "墨黑對朱紅，橫直斜任一方向先連成五子者勝。"], ["xiangqi.html", "棋類對弈", "楚河漢界", "中國象棋對電腦，三種難度，還有悔棋與提示。"], ["macaron2048.html", "滑動合併", "馬卡龍 2048", "把相同口味的馬卡龍疊在一起，疊出最大的一顆。"], ["star-match.html", "記憶配對", "星圖配對", "翻開夜空卡片，用最少步數找出所有星座對子。"], ["tetris.html", "方塊消除", "方塊風暴", "經典俄羅斯方塊，暫存、預覽、瞬降，還有衝刺 40 行挑戰。"], ["meow-mover.html", "益智解謎", "喵喵搬運工", "推箱子解謎，58 個關卡，推木箱到貓腳印上，拿滿三顆星。"], ["tidal-sweeper.html", "邏輯推理", "潮間帶排雷", "退潮的沙灘藏著海膽，用數字推理出牠們的位置。"], ["shadow-cat-detective.html", "推理", "影子貓偵探", "五隻貓七嘴八舌，只有一隻在說謊。聽完口供，找出偷東西的真兇"], ["idiom-code.html", "棋牌益智", "四字密碼", "成語版猜字遊戲，看提示從十二個字裡湊出四字成語，六次機會，每天一題"], ["card-duel.html", "卡牌對戰", "紙牌決鬥", "用能量打出火球、護甲與隨從，擊敗十位對手，每贏一場就解鎖新卡牌"], ["bubble-wave.html", "鏡頭互動", "泡泡派對", "打開鏡頭，用揮手在空中打破飄上來的泡泡。"], ["halloween-booth.html", "鏡頭變臉", "萬聖變臉亭", "開鏡頭在臉上貼萬聖節貼紙，拍成圖片傳給朋友"]];
+ var LIST=[["paper-glider.html", "飛行躲避", "紙飛機大冒險", "讓紙飛機穿過桌上林立的鉛筆縫隙。"], ["rooftop-cat.html", "無盡跑酷", "屋頂貓跑酷", "夕陽屋頂上狂奔，跳過障礙、低頭鑽過飛鳥。"], ["chick-relay.html", "節奏跑酷", "小雞接力賽", "三條跑道三隻小雞，跟著鼓點跳過障礙、撿種子，烏⁠鴉來了千萬別跳"], ["ink-sword.html", "武俠", "墨劍江湖", "水墨風武俠動作：三連斬、輕功閃身、劍氣絕招，闖五章擊敗兩大魔頭"], ["boba-survivors.html", "倖存", "珍奶突圍", "化身珍珠奶茶，自動攻擊、撿珍珠升級，撐過 5 分鐘冰塊與方糖大軍"], ["drift-bend.html", "賽車漂移", "彎道漂移", "按住漂移鍵甩過彎道、放開噴出加速，十條賽道對決對手車手，收集十輛愛車"], ["star-raid.html", "太空射擊", "星艦突襲", "自動連射的太空射擊，撿道具升級武器，還要打倒巨型母艦。"], ["game.html", "即時操作", "夜蔓 貪食蛇", "連擊、衝刺、護盾與果實雨，還能和 AI 紅蛇對戰、解鎖蛇皮膚。"], ["snake-evolve.html", "街機", "蛇蛇進化", "貪吃蛇進化版：每 10 顆闖新區域，毒蘑菇、巨石、雷擊來襲；連擊吃滿進入狂熱無敵，還有任務與 12 枚勳章。"], ["tile-breaker.html", "打磚塊", "花磚打磚塊", "12 關闖關，接道具、炸彈連鎖、連擊倍率，還有三場花磚守衛 Boss 戰。"], ["candy-pachinko.html", "物理彈射", "糖果彈珠台", "瞄準發射彈珠，在糖果釘子間亂彈，把橘色糖果全部打光就過關"], ["ring-toss.html", "街機經典", "夜市套圈圈", "按住瞄準、圈縮到最小時放手，套中熊貓、泰迪熊和金鑽，十個攤位等你挑戰"], ["pearl-catch.html", "接料反應", "珍珠接接樂", "用杯子接住珍珠和布丁，閃開會讓你變淡的冰塊。"], ["hoop-shot.html", "投籃機", "夜光籃球機", "往後拉、放開投籃，空心球加時間，連進有加分"], ["penalty-kings.html", "足球", "點球大師", "滑向球門射點球與任意球，繞過人牆、騙過守門員"], ["pool-hall.html", "運動競技", "八號球撞球", "巡迴賽挑戰六位對手，賺金幣買球桿與球檯，先清完自己的球再打進黑 8"], ["table-tennis.html", "運動競技", "極速桌球", "拖曳球拍回擊、打旋轉球；巡迴賽挑戰 6 位個性對手拿星星，怒氣滿了還能放超級殺球。"], ["mini-golf.html", "運動競技", "迷你高爾夫", "往後拉、放手推桿，十二個球場有沙坑、水池、風車、傳送門，桿數越少星越多"], ["dart-bar.html", "酒吧競技", "飛鏢酒吧", "按住瞄準、放開射鏢，三輪對決十位酒客，風、旋轉靶和昏暗燈光都是考驗"], ["lantern-rhythm.html", "節奏點擊", "燈籠節拍", "燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。"], ["garden-whack.html", "反應力", "菜園保衛戰", "限時 30 秒，把冒出土堆的小偷趕跑。"], ["steamer-stack.html", "抓時機", "蒸籠疊疊樂", "抓準時機放下蒸籠，疊得越準越高。"], ["cake-defense.html", "塔防", "蛋糕保衛戰", "擺放糖果槍、冰棒與爆米花砲塔，擋下偷吃生日蛋糕的螞蟻大軍"], ["dice-dungeon.html", "策略", "骰運地下城", "擲骰子、把點數放進技能卡，看穿怪物意圖，闖過 10 層地下城擊倒魔王"], ["magnet-miner.html", "冒險", "磁鐵礦工", "放下磁鐵吸金塊和鑽石，再深入一層，還是收線入袋？小心炸彈全炸光"], ["cat-cafe.html", "放置經營", "貓咪咖啡館", "點咖啡機賺錢，僱用貓咪店員，離線也繼續營業，再開分店"], ["fishing.html", "策略與經營", "深海釣手", "放線下海、左右閃避水母，釣起二十四種魚，賺錢升級漁具，把圖鑑收集滿"], ["soup-master.html", "策略經營", "湯頭大師", "用火候、下料時機和最後一撮鹽，熬出客人心中的那碗好湯，十種湯頭等你收集"], ["ink-gomoku.html", "對弈", "水墨五子棋", "墨黑對朱紅，橫直斜任一方向先連成五子者勝。"], ["xiangqi.html", "棋類對弈", "楚河漢界", "中國象棋對電腦，三種難度，還有悔棋與提示。"], ["macaron2048.html", "滑動合併", "馬卡龍 2048", "把相同口味的馬卡龍疊在一起，疊出最大的一顆。"], ["star-match.html", "記憶配對", "星圖配對", "翻開夜空卡片，用最少步數找出所有星座對子。"], ["tetris.html", "方塊消除", "方塊風暴", "經典方塊加強版：T-Spin、背對背、道具方塊與風暴灰磚，另有衝刺與 8 個任務挑戰。"], ["meow-mover.html", "益智解謎", "喵喵搬運工", "推箱子解謎，58 個關卡，推木箱到貓腳印上，拿滿三顆星。"], ["tidal-sweeper.html", "邏輯推理", "潮間帶排雷", "退潮的沙灘藏著海膽，用數字推理出牠們的位置。"], ["shadow-cat-detective.html", "推理", "影子貓偵探", "五隻貓七嘴八舌，只有一隻在說謊。聽完口供，找出偷東西的真兇"], ["idiom-code.html", "棋牌益智", "四字密碼", "成語版猜字遊戲，看提示從十二個字裡湊出四字成語，六次機會，每天一題"], ["card-duel.html", "卡牌對戰", "紙牌決鬥", "用能量打出火球、護甲與隨從，擊敗十位對手，每贏一場就解鎖新卡牌"], ["bubble-wave.html", "鏡頭互動", "泡泡派對", "打開鏡頭，用揮手在空中打破飄上來的泡泡。"], ["halloween-booth.html", "鏡頭變臉", "萬聖變臉亭", "開鏡頭在臉上貼萬聖節貼紙，拍成圖片傳給朋友"]];
  var d=document,de=d.documentElement,b=d.body,me=(location.pathname.split('/').pop()||'');
  var mq=matchMedia('(min-width:900px) and (hover:hover) and (pointer:fine)');
  var z=1,n=0,L=d.getElementById('dv-l'),R=d.getElementById('dv-r');

@@ -73,6 +73,7 @@
   <div class="ov on" id="menu"><div class="card">
     <h2>八號球<small>EIGHT BALL POOL</small></h2>
     <div class="coinbar"><span class="c">🪙 <span class="cn">0</span></span><span id="hStat"></span></div>
+    <button class="bigbtn full" id="goCh" style="background:linear-gradient(180deg,#7FD6FF,#3A8FD8);box-shadow:0 .26em 0 #1F5E9A;color:#fff">🎯 挑戰關卡<small id="chSub"></small></button>
     <button class="bigbtn o full" id="goTour">🏆 巡迴賽<small id="tourSub"></small></button>
     <div class="full"><div class="lbl">快速對戰(練習用)</div>
     <div class="grid"><button class="bigbtn" data-d="easy">簡單</button><button class="bigbtn" data-d="normal">普通</button><button class="bigbtn" data-d="hard">困難</button></div></div>
@@ -83,6 +84,7 @@
     <a class="bigbtn g full" href="index.html">回遊戲大廳</a>
   </div></div>
   <div class="ov" id="tour"><div class="card"><h2>巡迴賽</h2><div class="coinbar"><span class="c">🪙 <span class="cn">0</span></span><span>先付報名費,贏了拿獎金</span></div><div class="list" id="tourList"></div><button class="bigbtn g full" data-back>返回</button></div></div>
+  <div class="ov" id="chal"><div class="card"><h2>挑戰關卡</h2><div class="coinbar"><span class="c">🪙 <span class="cn">0</span></span><span>桿數有限,一桿一桿算!</span></div><div class="list" id="chList"></div><button class="bigbtn g full" data-back>返回</button></div></div>
   <div class="ov" id="shop"><div class="card"><h2>商店</h2><div class="coinbar"><span class="c">🪙 <span class="cn">0</span></span><span>金幣靠比賽賺取</span></div>
     <div class="tabs2" id="shopTabs"><button data-t="cue" class="on">球桿</button><button data-t="cloth">球檯</button></div><div class="list" id="shopList"></div><button class="bigbtn g full" data-back>返回</button></div></div>
   <div class="ov" id="daily"><div class="card"><h2>每日獎勵</h2><p style="text-align:center">每天回來領一次,連續登入獎勵更高!</p><div class="days" id="dayBox"></div><button class="bigbtn o full" id="claim">領取</button><button class="bigbtn g full" data-back>返回</button></div></div>
@@ -126,7 +128,7 @@ var TOUR=[
  {n:'撞球皇后',e:'👑',d:'hard',sg:.7,fee:320,prize:1100,place:'全國錦標賽'},
  {n:'傳說大師',e:'🥷',d:'hard',sg:.3,fee:640,prize:2400,place:'世界總決賽'}];
 var DAILY=[50,80,120,160,220,300,500];
-var SV=(function(){ var d={coins:150,cues:['c0'],cloths:['k0'],cue:'c0',cloth:'k0',beaten:[],daily:{last:'',streak:0},tut:0,wins:0,games:0}; try{ var o=JSON.parse(store('pool_save')); if(o) for(var k in o) d[k]=o[k]; }catch(e){} return d; })();
+var SV=(function(){ var d={coins:150,cues:['c0'],cloths:['k0'],cue:'c0',cloth:'k0',beaten:[],daily:{last:'',streak:0},tut:0,wins:0,games:0,ch:{}}; try{ var o=JSON.parse(store('pool_save')); if(o) for(var k in o) d[k]=o[k]; }catch(e){} if(!d.ch) d.ch={}; return d; })();
 function persist(){ store('pool_save',JSON.stringify(SV)); }
 function CUE(){ return CUES.filter(function(c){ return c.id===SV.cue; })[0]||CUES[0]; }
 function CL(){ return CLOTHS.filter(function(c){ return c.id===SV.cloth; })[0]||CLOTHS[0]; }
@@ -190,6 +192,51 @@ function buildBg(){
   bgC=c;
 }
 
+/* ---------- challenge stages ---------- */
+var STAGES=[
+ {n:'熱身',tip:'先把這顆球打進袋',cue:[200,480],b:[[1,120,260]],s3:1,lim:3},
+ {n:'雙響炮',tip:'兩顆球,各個擊破',cue:[180,480],b:[[1,250,200],[2,110,380]],s3:2,lim:4},
+ {n:'一線穿',tip:'一直線的球,小心互相擋住',cue:[110,490],b:[[1,180,200],[2,180,260],[3,180,320]],s3:3,lim:5},
+ {n:'四角突破',tip:'每顆球都靠近袋口',cue:[180,320],b:[[1,76,134],[2,284,134],[3,76,500],[4,284,500]],s3:5,lim:8},
+ {n:'V 字陣',tip:'V 字排開,找出突破口',cue:[180,490],b:[[1,180,170],[2,152,134],[3,208,134],[4,124,98+14],[5,236,98+14]],s3:5,lim:8},
+ {n:'守門員',tip:'側袋前面有人把關',cue:[110,480],b:[[1,300,317],[2,262,317],[3,60,230],[4,60,404]],s3:4,lim:7},
+ {n:'迷你開球',tip:'小三角,用力開球一桿多進!',cue:[180,470],b:[[1,180,190],[2,169,170],[3,191,170],[4,158,150],[5,180,150],[6,202,150]],s3:6,lim:9},
+ {n:'星羅棋布',tip:'散落全桌,規劃進球順序',cue:[180,480],b:[[1,90,200],[2,260,170],[3,180,300],[4,70,420],[5,280,400],[6,180,130]],s3:5,lim:8},
+ {n:'黑八壓軸',tip:'黑 8 一定要最後進!',last8:1,cue:[180,500],b:[[8,180,300],[1,110,230],[2,250,230],[3,110,380],[4,250,380],[5,180,200],[6,180,400]],s3:6,lim:9},
+ {n:'傳說之桌',tip:'終極挑戰:桿數吃緊,黑 8 最後',last8:1,cue:[180,500],b:[[8,180,300],[1,180,230],[2,150,265],[3,210,265],[4,150,335],[5,210,335],[6,180,370],[7,100,150],[9,260,150]],s3:8,lim:11}
+];
+function chOpen(i){ return i===0||(SV.ch[i-1]||0)>0; }
+function chStars(){ var t=0; for(var k in SV.ch) t+=SV.ch[k]; return t; }
+function rackCh(){
+  var st=G.ch; balls=[]; sinks=[];
+  function mk(n,x,y){ return {n:n,x:x,y:y,vx:0,vy:0,out:false,R:rotZ(Math.random()*6.28),ax:0,ay:0,dirty:1}; }
+  balls.push(mk(0,st.cue[0],st.cue[1])); st.b.forEach(function(q){ balls.push(mk(q[0],q[1],q[2])); });
+}
+function resolveCh(){
+  var s=G.shot,st=G.ch; G.used++;
+  var left=inPlay(),got=s.pocketed.length;
+  if(st.last8&&s.pocketed.indexOf(8)>=0&&left.length){ chFinish(false,'黑 8 太早進袋!'); return; }
+  if(!left.length){ chFinish(true,'全部進袋!'); return; }
+  if(G.used>=st.lim){ chFinish(false,'桿數用完,還剩 '+left.length+' 顆球'); return; }
+  G.status=(s.scratch?'白球落袋,已重置。':(got?'進 '+got+' 球!':'沒進。'))+' 剩 '+(st.lim-G.used)+' 桿'; G.statusKeep=true;
+  if(got>=2) popup('🔥 一桿 '+got+' 球!',CX,MID,'#FFD45E');
+  beginTurn();
+}
+function chFinish(win,reason){ G.over={winner:win?0:1,reason:reason}; G.state='over'; G.overT=1.0; refreshCtl(); G.status=reason; }
+function showOverCh(){
+  var st=G.ch,i=G.chI,win=G.over.winner===0,stars=0,gain=0;
+  if(win){ stars=G.used<=st.s3?3:(G.used<=st.s3+1?2:1); var old=SV.ch[i]||0; gain=Math.max(0,stars-old)*25+(old?0:25); if(!gain) gain=5; if(stars>old) SV.ch[i]=stars; SV.coins+=gain; persist(); }
+  $('oT').textContent=win?('過關! '+new Array(stars+1).join('★')+new Array(4-stars).join('☆')):'挑戰失敗';
+  $('oS').innerHTML=G.over.reason+'<br>用了 '+G.used+' 桿(三星需 ≤ '+st.s3+' 桿)'+(win?'<br><b>🪙 +'+gain+'</b>':'<br>再想想路線,換個順序試試');
+  $('nextBtn').style.display=(win&&i<STAGES.length-1)?'block':'none';
+  $('over').classList.add('on'); if(win){ sfx.win(); confetti(); } else sfx.lose();
+}
+function startChallenge(i){ if(!STAGES[i]||!chOpen(i)) return false; lastOpts={ch:i,ai:[false,true],diff:'normal'}; newGame({ai:[false,true],diff:'normal',chI:i}); G.live=true; maybeTut(); return true; }
+function buildCh(){ var box=$('chList'); box.innerHTML=''; coinsUI();
+  STAGES.forEach(function(st,i){ var sc=SV.ch[i]||0,open=chOpen(i); var el=document.createElement('div'); el.className='opp'+(open?'':' lock');
+    el.innerHTML='<div class="av">'+(i+1)+'</div><div class="tx"><b>'+st.n+' '+(sc?new Array(sc+1).join('★')+new Array(4-sc).join('☆'):'')+'</b><span>'+st.b.length+' 顆球 ・ 限 '+st.lim+' 桿 ・ 三星 ≤'+st.s3+' 桿'+(st.last8?'<br>黑 8 最後進':'')+'</span></div><button class="bigbtn'+(open?' o':' g')+'">'+(!open?'🔒':sc?'重玩':'挑戰')+'</button>';
+    el.querySelector('button').addEventListener('click',function(){ audio(); if(open) startChallenge(i); }); box.appendChild(el); }); }
+
 /* ---------- game state ---------- */
 var G=null, balls=[], sinks=[], diffName={easy:'簡單',normal:'普通',hard:'困難'};
 var SIGMA={easy:3.4,normal:1.4,hard:.4};
@@ -198,10 +245,11 @@ function newGame(o){
   o=o||{}; var ai=o.ai||[false,true], diff=o.diff||'normal';
   var two=!ai[1]&&!ai[0];
   G={ diff:diff, two:two, ai:ai, players:[{name:two?'玩家 1':(ai[0]?'電腦甲':'你'),group:null},{name:two?'玩家 2':(ai[1]?'電腦'+(ai[0]?'乙':''):'玩家 2'),group:null}], cur:0, state:'aim', inHand:false, breakShot:true, angle:-Math.PI/2, power:.6, shot:null, over:null, status:'', strikeT:0, aiPhase:null, aiT:0, aiPlan:null, overT:0, turns:0, pulse:0, dragCue:false };
-  G.sigma=o.sigma; G.tour=(o.tour==null?null:o.tour); G.myPocketed=0; if(o.oppName) G.players[1].name=o.oppName; rack(); beginTurn(); syncPower(); $('over').classList.remove('on');
+  G.sigma=o.sigma; G.tour=(o.tour==null?null:o.tour); G.myPocketed=0; G.maxMulti=0; if(o.chI!=null){ G.ch=STAGES[o.chI]; G.chI=o.chI; G.used=0; G.breakShot=false; } if(o.oppName) G.players[1].name=o.oppName; rack(); beginTurn(); syncPower(); $('over').classList.remove('on');
 }
 function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)),t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
 function rack(){
+  if(G.ch){ rackCh(); return; }
   balls=[]; sinks=[]; balls.push({n:0,x:CX,y:HEAD_Y,vx:0,vy:0,out:false,R:rotZ(Math.random()*6.28),ax:0,ay:0,dirty:1});
   var solids=shuffle([1,2,3,4,5,6,7]), stripes=shuffle([9,10,11,12,13,14,15]); var pos=[]; for(var i=0;i<15;i++) pos[i]=0;
   pos[4]=8; pos[10]=solids.pop(); pos[14]=stripes.pop(); if(Math.random()<.5){ var t=pos[10]; pos[10]=pos[14]; pos[14]=t; }
@@ -221,7 +269,7 @@ function beginTurn(){
   G.aiPhase=curAI()?'think':null; G.aiT=curAI()?rnd(.8,1.2):0; G.aiPlan=null;
   var nm=G.players[G.cur].name; var gtxt=G.players[G.cur].group?(G.players[G.cur].group==='solid'?'(全色 1–7)':G.players[G.cur].group==='stripe'?'(花色 9–15)':''):'';
   if(!G.statusKeep) G.status=(G.breakShot?'開球!':(G.inHand?'白球在手:':'輪到 '))+(G.breakShot?'':nm)+(G.breakShot?'':gtxt);
-  G.statusKeep=false; refreshCtl();
+  if(G.ch&&!G.statusKeep) G.status=G.ch.tip; G.statusKeep=false; refreshCtl();
 }
 function refreshCtl(){ var on=G&&G.state==='aim'&&!curAI()&&!G.over; $('ctl').classList.toggle('off',!on); }
 function syncPower(){ var p=Math.round(G.power*100); $('pw').querySelector('i').style.width=p+'%'; $('pw').querySelector('b').style.left=p+'%'; $('pwT').textContent='力道 '+p+'%'; }
@@ -266,6 +314,7 @@ function allStopped(){ for(var i=0;i<balls.length;i++){ var b=balls[i]; if(!b.ou
 
 /* ---------- rules ---------- */
 function resolve(){
+  if(G.ch){ resolveCh(); return; }
   var s=G.shot,pi=G.cur,p=G.players[pi],op=1-pi,po=G.players[op],foul=false,why='';
   var legal=s.legal, only8=(legal.length===1&&legal[0]===8);
   if(s.scratch){ foul=true; why='白球落袋'; }
@@ -273,6 +322,7 @@ function resolve(){
   else if(legal.indexOf(s.first)<0){ foul=true; why=(s.first===8&&!only8)?'先碰到黑 8':'先碰到對手的球'; }
   var po8=s.pocketed.indexOf(8)>=0, objs=s.pocketed.filter(function(n){ return n!==8; });
   if(!G.ai[pi]&&!G.two&&!foul) G.myPocketed+=objs.filter(function(n){ return !p.group||grp(n)===p.group; }).length;
+  if(!foul&&objs.length>=2&&!G.ai[pi]&&!G.two){ G.maxMulti=Math.max(G.maxMulti||0,objs.length); popup('🔥 一桿 '+objs.length+' 球!',CX,MID,'#FFD45E'); }
   if(po8){
     if(s.wasBreak&&!s.scratch){ var e=balls.filter(function(b){ return b.n===8; })[0]; respot(e,CX,FOOT_Y); po8=false; G.status='開球打進黑 8,放回原位'; }
     else{ var win=only8&&!foul; finish(win?pi:op, win?(p.name+' 打進黑 8,獲勝!'):(foul&&only8?(why+'時打進黑 8,判負'):'黑 8 太早進袋,判負')); return; }
@@ -294,12 +344,13 @@ function finish(winner,reason){
   G.over={winner:winner,reason:reason}; G.state='over'; G.overT=1.1; refreshCtl(); G.status=reason;
 }
 function showOver(){
+  if(G.ch){ showOverCh(); return; }
   var w=G.over.winner, humanWin=G.two?true:!G.ai[w], gain=0, lines=[];
   if(G.two){ $('oT').textContent=G.players[w].name+' 獲勝!'; }
   else{
     $('oT').textContent=humanWin?'你贏了!':'再接再厲';
     SV.games++; if(humanWin) SV.wins++;
-    var pk=Math.round(G.myPocketed*2*CUE().bonus); if(pk){ gain+=pk; lines.push('進球獎勵 +'+pk+(CUE().bonus>1?'(球桿加成 ×'+CUE().bonus+')':'')); }
+    var pk=Math.round(G.myPocketed*2*CUE().bonus); if(G.maxMulti>=2){ var mb=(G.maxMulti-1)*15; gain+=mb; lines.push('連進加成 +'+mb+'(一桿 '+G.maxMulti+' 球)'); } if(pk){ gain+=pk; lines.push('進球獎勵 +'+pk+(CUE().bonus>1?'(球桿加成 ×'+CUE().bonus+')':'')); }
     if(G.tour!=null){ var t=TOUR[G.tour]; if(humanWin){ var first=SV.beaten.indexOf(G.tour)<0, pz=first?t.prize:Math.floor(t.prize*.5); gain+=pz; lines.push((first?'錦標獎金 +':'重賽獎金 +')+pz); if(first){ SV.beaten.push(G.tour); if(G.tour<TOUR.length-1) lines.push('🎉 解鎖下一位對手!'); else lines.push('🏆 你是世界冠軍!'); } } else lines.push('報名費 '+t.fee+' 已支付'); }
     else { var q=humanWin?{easy:20,normal:40,hard:70}[G.diff]:5; gain+=q; lines.push((humanWin?'勝利獎勵 +':'參賽獎勵 +')+q); }
     SV.coins+=gain; persist();
@@ -365,7 +416,8 @@ function cast(ox,oy,dx,dy){
 /* ---------- draw ---------- */
 function miniBall(x,y,r,n,alpha){ ctx.globalAlpha=alpha; ctx.drawImage(sprite(n),x-r,y-r,2*r,2*r); ctx.globalAlpha=1; }
 function drawHUD(){
-  for(var i=0;i<2;i++){
+  if(G.ch) drawHudCh();
+  for(var i=0;i<(G.ch?0:2);i++){
     var p=G.players[i],x=i?198:40,y=9,w=150,h=47,act=G.cur===i&&G.state!=='over';
     ctx.fillStyle=act?'rgba(255,200,61,.2)':'rgba(0,0,0,.32)'; rr(ctx,x,y,w,h,11); ctx.fill(); if(act){ ctx.strokeStyle='#FFC83D'; ctx.lineWidth=2; rr(ctx,x+1,y+1,w-2,h-2,10); ctx.stroke(); }
     ctx.fillStyle=act?'#FFE9A8':'#BFD8C8'; ctx.font='900 12px Noto Sans TC,sans-serif'; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(p.name,x+9,y+14);
@@ -377,6 +429,14 @@ function drawHUD(){
   ctx.textBaseline='alphabetic';
   // status pill
   var txt=G.status||''; if(txt){ ctx.font='900 11px Noto Sans TC,sans-serif'; var tw=Math.min(340,ctx.measureText(txt).width+22); ctx.fillStyle='rgba(20,10,4,.78)'; rr(ctx,CX+0-tw/2+ (0),64,tw,20,10); ctx.fill(); ctx.fillStyle='#FFE9A8'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(txt,CX,74.5); ctx.textBaseline='alphabetic'; }
+}
+function drawHudCh(){
+  var st=G.ch,left=inPlay().length,tot=st.b.length,rem=st.lim-G.used;
+  ctx.fillStyle='rgba(0,0,0,.32)'; rr(ctx,40,9,150,47,11); ctx.fill(); rr(ctx,198,9,122,47,11); ctx.fill();
+  ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillStyle='#FFE9A8'; ctx.font='900 12px Noto Sans TC,sans-serif'; ctx.fillText('第 '+(G.chI+1)+' 關・'+st.n,49,23);
+  ctx.fillStyle='#BFD8C8'; ctx.font='700 10px Noto Sans TC,sans-serif'; ctx.fillText('剩 '+left+' / '+tot+' 顆'+(st.last8?'(黑8最後)':''),49,42);
+  ctx.fillStyle='#9FC4AE'; ctx.fillText('剩餘桿數',208,23); ctx.fillStyle=rem<=1?'#FF7A7A':'#FFE9A8'; ctx.font='900 22px Fredoka,Noto Sans TC,sans-serif'; ctx.textAlign='left'; ctx.fillText(rem,208,43);
+  ctx.fillStyle='#9FC4AE'; ctx.font='700 9px Noto Sans TC,sans-serif'; ctx.textAlign='right'; ctx.fillText('★★★ ≤ '+st.s3+' 桿',311,44);
 }
 var SZ=48;
 function hexRGB(h){ return [parseInt(h.substr(1,2),16),parseInt(h.substr(3,2),16),parseInt(h.substr(5,2),16)]; }
@@ -452,11 +512,11 @@ window.addEventListener('keydown',function(e){ if(!G||G.state!=='aim'||curAI()) 
 
 /* ---------- meta / menus ---------- */
 var tt=null; function toast(m){ var t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(tt); tt=setTimeout(function(){ t.classList.remove('show'); },1900); }
-function show(id){ ['menu','tour','shop','daily','tut'].forEach(function(k){ $(k).classList.toggle('on',k===id); }); }
+function show(id){ ['menu','tour','chal','shop','daily','tut'].forEach(function(k){ $(k).classList.toggle('on',k===id); }); }
 function coinsUI(){ document.querySelectorAll('.cn').forEach(function(e){ e.textContent=SV.coins; }); }
 function today(){ return new Date().toDateString(); }
 function canClaim(){ return SV.daily.last!==today(); }
-function openMenu(){ $('resume').style.display=G&&G.live&&!G.over?'block':'none'; $('snd').textContent=sndOn?'🔊 音效:開':'🔇 音效:關'; $('hStat').textContent='勝 '+SV.wins+' / '+SV.games+' 場'; $('tourSub').textContent='已擊敗 '+SV.beaten.length+' / '+TOUR.length+' 位對手'; $('dDot').style.display=canClaim()?'inline-block':'none'; coinsUI(); show('menu'); }
+function openMenu(){ $('resume').style.display=G&&G.live&&!G.over?'block':'none'; $('snd').textContent=sndOn?'🔊 音效:開':'🔇 音效:關'; $('hStat').textContent='勝 '+SV.wins+' / '+SV.games+' 場'; $('chSub').textContent='★ '+chStars()+' / '+STAGES.length*3; $('tourSub').textContent='已擊敗 '+SV.beaten.length+' / '+TOUR.length+' 位對手'; $('dDot').style.display=canClaim()?'inline-block':'none'; coinsUI(); show('menu'); }
 function maybeTut(){ if(!SV.tut){ SV.tut=1; persist(); show('tut'); } else show(''); }
 var lastOpts={diff:'normal',ai:[false,true]};
 function startGame(o){ lastOpts=o; newGame(o); G.live=true; maybeTut(); }
@@ -480,6 +540,7 @@ function buildDaily(){ var box=$('dayBox'); box.innerHTML=''; var st=SV.daily.st
 $('claim').addEventListener('click',function(){ if(!canClaim()) return; audio(); var idx=this._idx; SV.coins+=DAILY[idx]; SV.daily.streak=(SV.daily.last===this._yest?SV.daily.streak:0)+1; SV.daily.last=today(); persist(); sfx.win(); toast('領到 🪙 '+DAILY[idx]+'!'); buildDaily(); coinsUI(); $('dDot').style.display='none'; });
 document.querySelectorAll('[data-d]').forEach(function(b){ b.addEventListener('click',function(){ audio(); startGame({diff:b.dataset.d,ai:[false,true]}); }); });
 $('two').addEventListener('click',function(){ audio(); startGame({diff:'normal',ai:[false,false]}); });
+$('goCh').addEventListener('click',function(){ audio(); buildCh(); show('chal'); });
 $('goTour').addEventListener('click',function(){ audio(); buildTour(); show('tour'); });
 $('goShop').addEventListener('click',function(){ audio(); buildShop(); show('shop'); });
 $('goDaily').addEventListener('click',function(){ audio(); buildDaily(); show('daily'); });
@@ -489,8 +550,8 @@ $('tutOk').addEventListener('click',function(){ show(''); });
 $('resume').addEventListener('click',function(){ show(''); });
 $('snd').addEventListener('click',function(){ sndOn=!sndOn; store('pool_snd',sndOn?'1':'0'); $('snd').textContent=sndOn?'🔊 音效:開':'🔇 音效:關'; audio(); });
 $('menuBtn').addEventListener('click',openMenu);
-$('again').addEventListener('click',function(){ $('over').classList.remove('on'); if(lastOpts.tour!=null){ if(!startTour(lastOpts.tour)){ buildTour(); show('tour'); } } else newGame(lastOpts); });
-$('nextBtn').addEventListener('click',function(){ $('over').classList.remove('on'); var n=G.tour+1; if(!startTour(n)){ buildTour(); show('tour'); } });
+$('again').addEventListener('click',function(){ $('over').classList.remove('on'); if(lastOpts.ch!=null){ startChallenge(lastOpts.ch); return; } if(lastOpts.tour!=null){ if(!startTour(lastOpts.tour)){ buildTour(); show('tour'); } } else newGame(lastOpts); });
+$('nextBtn').addEventListener('click',function(){ $('over').classList.remove('on'); if(G.ch){ if(!startChallenge(G.chI+1)){ buildCh(); show('chal'); } return; } var n=G.tour+1; if(!startTour(n)){ buildTour(); show('tour'); } });
 $('toMenu').addEventListener('click',function(){ $('over').classList.remove('on'); openMenu(); });
 
 /* ---------- confetti ---------- */
@@ -504,7 +565,7 @@ var cl=0; function confLoop(ts){ var dt=Math.min(.05,(ts-cl)/1000||.016); cl=ts;
 var last=0;
 function loop(ts){ var dt=Math.min(.033,(ts-last)/1000||.016); last=ts; if(G){ tick(dt); drawScene(); } requestAnimationFrame(loop); }
 resize(); newGame({diff:'normal',ai:[false,true]}); openMenu();
-window.__PL={SV:function(){ return SV; },startTour:startTour,showOver:showOver,G:function(){ return G; },balls:function(){ return balls; },tick:tick,newGame:newGame,launch:launch,resolve:resolve,openMenu:openMenu,cand:candidates};
+window.__PL={STAGES:STAGES,startCh:startChallenge,SV:function(){ return SV; },startTour:startTour,showOver:showOver,G:function(){ return G; },balls:function(){ return balls; },tick:tick,newGame:newGame,launch:launch,resolve:resolve,openMenu:openMenu,cand:candidates};
 requestAnimationFrame(loop);
 })();
 </script>
@@ -573,7 +634,7 @@ html.dv-mob body{min-height:100dvh}
 <aside id="dv-r" aria-label="其他遊戲"><small>換一款玩</small><span id="dv-more"></span><a class="all" href="index.html">回遊戲大廳 · 共 40 款</a></aside>
 <script id="dv-js">
 (function(){
- var LIST=[["paper-glider.html", "飛行躲避", "紙飛機大冒險", "讓紙飛機穿過桌上林立的鉛筆縫隙。"], ["rooftop-cat.html", "無盡跑酷", "屋頂貓跑酷", "夕陽屋頂上狂奔，跳過障礙、低頭鑽過飛鳥。"], ["chick-relay.html", "節奏跑酷", "小雞接力賽", "三條跑道三隻小雞，跟著鼓點跳過障礙、撿種子，烏⁠鴉來了千萬別跳"], ["ink-sword.html", "武俠", "墨劍江湖", "水墨風武俠動作：三連斬、輕功閃身、劍氣絕招，闖五章擊敗兩大魔頭"], ["boba-survivors.html", "倖存", "珍奶突圍", "化身珍珠奶茶，自動攻擊、撿珍珠升級，撐過 5 分鐘冰塊與方糖大軍"], ["drift-bend.html", "賽車漂移", "彎道漂移", "按住漂移鍵甩過彎道、放開噴出加速，十條賽道對決對手車手，收集十輛愛車"], ["star-raid.html", "太空射擊", "星艦突襲", "自動連射的太空射擊，撿道具升級武器，還要打倒巨型母艦。"], ["game.html", "即時操作", "夜蔓 貪食蛇", "連擊、衝刺、護盾與果實雨，還能和 AI 紅蛇對戰、解鎖蛇皮膚。"], ["snake-evolve.html", "街機", "蛇蛇進化", "貪吃蛇加上進化系統：穿牆、磁鐵、護盾、破岩，連吃蘋果衝高連擊"], ["tile-breaker.html", "打磚塊", "花磚打磚塊", "用木槳接住彈珠，敲碎整面馬賽克花磚牆。"], ["candy-pachinko.html", "物理彈射", "糖果彈珠台", "瞄準發射彈珠，在糖果釘子間亂彈，把橘色糖果全部打光就過關"], ["ring-toss.html", "街機經典", "夜市套圈圈", "按住瞄準、圈縮到最小時放手，套中熊貓、泰迪熊和金鑽，十個攤位等你挑戰"], ["pearl-catch.html", "接料反應", "珍珠接接樂", "用杯子接住珍珠和布丁，閃開會讓你變淡的冰塊。"], ["hoop-shot.html", "投籃機", "夜光籃球機", "往後拉、放開投籃，空心球加時間，連進有加分"], ["penalty-kings.html", "足球", "點球大師", "滑向球門射點球與任意球，繞過人牆、騙過守門員"], ["pool-hall.html", "運動競技", "八號球撞球", "巡迴賽挑戰六位對手，賺金幣買球桿與球檯，先清完自己的球再打進黑 8"], ["table-tennis.html", "運動競技", "極速桌球", "拖曳球拍回擊，揮得越快越有力，還能殺球，挑戰四級對手或無盡對拉"], ["mini-golf.html", "運動競技", "迷你高爾夫", "往後拉、放手推桿，十二個球場有沙坑、水池、風車、傳送門，桿數越少星越多"], ["dart-bar.html", "酒吧競技", "飛鏢酒吧", "按住瞄準、放開射鏢，三輪對決十位酒客，風、旋轉靶和昏暗燈光都是考驗"], ["lantern-rhythm.html", "節奏點擊", "燈籠節拍", "燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。"], ["garden-whack.html", "反應力", "菜園保衛戰", "限時 30 秒，把冒出土堆的小偷趕跑。"], ["steamer-stack.html", "抓時機", "蒸籠疊疊樂", "抓準時機放下蒸籠，疊得越準越高。"], ["cake-defense.html", "塔防", "蛋糕保衛戰", "擺放糖果槍、冰棒與爆米花砲塔，擋下偷吃生日蛋糕的螞蟻大軍"], ["dice-dungeon.html", "策略", "骰運地下城", "擲骰子、把點數放進技能卡，看穿怪物意圖，闖過 10 層地下城擊倒魔王"], ["magnet-miner.html", "冒險", "磁鐵礦工", "放下磁鐵吸金塊和鑽石，再深入一層，還是收線入袋？小心炸彈全炸光"], ["cat-cafe.html", "放置經營", "貓咪咖啡館", "點咖啡機賺錢，僱用貓咪店員，離線也繼續營業，再開分店"], ["fishing.html", "策略與經營", "深海釣手", "放線下海、左右閃避水母，釣起二十四種魚，賺錢升級漁具，把圖鑑收集滿"], ["soup-master.html", "策略經營", "湯頭大師", "用火候、下料時機和最後一撮鹽，熬出客人心中的那碗好湯，十種湯頭等你收集"], ["ink-gomoku.html", "對弈", "水墨五子棋", "墨黑對朱紅，橫直斜任一方向先連成五子者勝。"], ["xiangqi.html", "棋類對弈", "楚河漢界", "中國象棋對電腦，三種難度，還有悔棋與提示。"], ["macaron2048.html", "滑動合併", "馬卡龍 2048", "把相同口味的馬卡龍疊在一起，疊出最大的一顆。"], ["star-match.html", "記憶配對", "星圖配對", "翻開夜空卡片，用最少步數找出所有星座對子。"], ["tetris.html", "方塊消除", "方塊風暴", "經典俄羅斯方塊，暫存、預覽、瞬降，還有衝刺 40 行挑戰。"], ["meow-mover.html", "益智解謎", "喵喵搬運工", "推箱子解謎，58 個關卡，推木箱到貓腳印上，拿滿三顆星。"], ["tidal-sweeper.html", "邏輯推理", "潮間帶排雷", "退潮的沙灘藏著海膽，用數字推理出牠們的位置。"], ["shadow-cat-detective.html", "推理", "影子貓偵探", "五隻貓七嘴八舌，只有一隻在說謊。聽完口供，找出偷東西的真兇"], ["idiom-code.html", "棋牌益智", "四字密碼", "成語版猜字遊戲，看提示從十二個字裡湊出四字成語，六次機會，每天一題"], ["card-duel.html", "卡牌對戰", "紙牌決鬥", "用能量打出火球、護甲與隨從，擊敗十位對手，每贏一場就解鎖新卡牌"], ["bubble-wave.html", "鏡頭互動", "泡泡派對", "打開鏡頭，用揮手在空中打破飄上來的泡泡。"], ["halloween-booth.html", "鏡頭變臉", "萬聖變臉亭", "開鏡頭在臉上貼萬聖節貼紙，拍成圖片傳給朋友"]];
+ var LIST=[["paper-glider.html", "飛行躲避", "紙飛機大冒險", "讓紙飛機穿過桌上林立的鉛筆縫隙。"], ["rooftop-cat.html", "無盡跑酷", "屋頂貓跑酷", "夕陽屋頂上狂奔，跳過障礙、低頭鑽過飛鳥。"], ["chick-relay.html", "節奏跑酷", "小雞接力賽", "三條跑道三隻小雞，跟著鼓點跳過障礙、撿種子，烏⁠鴉來了千萬別跳"], ["ink-sword.html", "武俠", "墨劍江湖", "水墨風武俠動作：三連斬、輕功閃身、劍氣絕招，闖五章擊敗兩大魔頭"], ["boba-survivors.html", "倖存", "珍奶突圍", "化身珍珠奶茶，自動攻擊、撿珍珠升級，撐過 5 分鐘冰塊與方糖大軍"], ["drift-bend.html", "賽車漂移", "彎道漂移", "按住漂移鍵甩過彎道、放開噴出加速，十條賽道對決對手車手，收集十輛愛車"], ["star-raid.html", "太空射擊", "星艦突襲", "自動連射的太空射擊，撿道具升級武器，還要打倒巨型母艦。"], ["game.html", "即時操作", "夜蔓 貪食蛇", "連擊、衝刺、護盾與果實雨，還能和 AI 紅蛇對戰、解鎖蛇皮膚。"], ["snake-evolve.html", "街機", "蛇蛇進化", "貪吃蛇進化版：每 10 顆闖新區域，毒蘑菇、巨石、雷擊來襲；連擊吃滿進入狂熱無敵，還有任務與 12 枚勳章。"], ["tile-breaker.html", "打磚塊", "花磚打磚塊", "12 關闖關，接道具、炸彈連鎖、連擊倍率，還有三場花磚守衛 Boss 戰。"], ["candy-pachinko.html", "物理彈射", "糖果彈珠台", "瞄準發射彈珠，在糖果釘子間亂彈，把橘色糖果全部打光就過關"], ["ring-toss.html", "街機經典", "夜市套圈圈", "按住瞄準、圈縮到最小時放手，套中熊貓、泰迪熊和金鑽，十個攤位等你挑戰"], ["pearl-catch.html", "接料反應", "珍珠接接樂", "用杯子接住珍珠和布丁，閃開會讓你變淡的冰塊。"], ["hoop-shot.html", "投籃機", "夜光籃球機", "往後拉、放開投籃，空心球加時間，連進有加分"], ["penalty-kings.html", "足球", "點球大師", "滑向球門射點球與任意球，繞過人牆、騙過守門員"], ["pool-hall.html", "運動競技", "八號球撞球", "巡迴賽挑戰六位對手，賺金幣買球桿與球檯，先清完自己的球再打進黑 8"], ["table-tennis.html", "運動競技", "極速桌球", "拖曳球拍回擊、打旋轉球；巡迴賽挑戰 6 位個性對手拿星星，怒氣滿了還能放超級殺球。"], ["mini-golf.html", "運動競技", "迷你高爾夫", "往後拉、放手推桿，十二個球場有沙坑、水池、風車、傳送門，桿數越少星越多"], ["dart-bar.html", "酒吧競技", "飛鏢酒吧", "按住瞄準、放開射鏢，三輪對決十位酒客，風、旋轉靶和昏暗燈光都是考驗"], ["lantern-rhythm.html", "節奏點擊", "燈籠節拍", "燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。"], ["garden-whack.html", "反應力", "菜園保衛戰", "限時 30 秒，把冒出土堆的小偷趕跑。"], ["steamer-stack.html", "抓時機", "蒸籠疊疊樂", "抓準時機放下蒸籠，疊得越準越高。"], ["cake-defense.html", "塔防", "蛋糕保衛戰", "擺放糖果槍、冰棒與爆米花砲塔，擋下偷吃生日蛋糕的螞蟻大軍"], ["dice-dungeon.html", "策略", "骰運地下城", "擲骰子、把點數放進技能卡，看穿怪物意圖，闖過 10 層地下城擊倒魔王"], ["magnet-miner.html", "冒險", "磁鐵礦工", "放下磁鐵吸金塊和鑽石，再深入一層，還是收線入袋？小心炸彈全炸光"], ["cat-cafe.html", "放置經營", "貓咪咖啡館", "點咖啡機賺錢，僱用貓咪店員，離線也繼續營業，再開分店"], ["fishing.html", "策略與經營", "深海釣手", "放線下海、左右閃避水母，釣起二十四種魚，賺錢升級漁具，把圖鑑收集滿"], ["soup-master.html", "策略經營", "湯頭大師", "用火候、下料時機和最後一撮鹽，熬出客人心中的那碗好湯，十種湯頭等你收集"], ["ink-gomoku.html", "對弈", "水墨五子棋", "墨黑對朱紅，橫直斜任一方向先連成五子者勝。"], ["xiangqi.html", "棋類對弈", "楚河漢界", "中國象棋對電腦，三種難度，還有悔棋與提示。"], ["macaron2048.html", "滑動合併", "馬卡龍 2048", "把相同口味的馬卡龍疊在一起，疊出最大的一顆。"], ["star-match.html", "記憶配對", "星圖配對", "翻開夜空卡片，用最少步數找出所有星座對子。"], ["tetris.html", "方塊消除", "方塊風暴", "經典方塊加強版：T-Spin、背對背、道具方塊與風暴灰磚，另有衝刺與 8 個任務挑戰。"], ["meow-mover.html", "益智解謎", "喵喵搬運工", "推箱子解謎，58 個關卡，推木箱到貓腳印上，拿滿三顆星。"], ["tidal-sweeper.html", "邏輯推理", "潮間帶排雷", "退潮的沙灘藏著海膽，用數字推理出牠們的位置。"], ["shadow-cat-detective.html", "推理", "影子貓偵探", "五隻貓七嘴八舌，只有一隻在說謊。聽完口供，找出偷東西的真兇"], ["idiom-code.html", "棋牌益智", "四字密碼", "成語版猜字遊戲，看提示從十二個字裡湊出四字成語，六次機會，每天一題"], ["card-duel.html", "卡牌對戰", "紙牌決鬥", "用能量打出火球、護甲與隨從，擊敗十位對手，每贏一場就解鎖新卡牌"], ["bubble-wave.html", "鏡頭互動", "泡泡派對", "打開鏡頭，用揮手在空中打破飄上來的泡泡。"], ["halloween-booth.html", "鏡頭變臉", "萬聖變臉亭", "開鏡頭在臉上貼萬聖節貼紙，拍成圖片傳給朋友"]];
  var d=document,de=d.documentElement,b=d.body,me=(location.pathname.split('/').pop()||'');
  var mq=matchMedia('(min-width:900px) and (hover:hover) and (pointer:fine)');
  var z=1,n=0,L=d.getElementById('dv-l'),R=d.getElementById('dv-r');

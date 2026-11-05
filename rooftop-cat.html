@@ -30,6 +30,16 @@
   .overlay p{ margin:0; font-size:14px; line-height:1.8; max-width:340px; }
   .btn{ font:900 16px 'Noto Sans TC',sans-serif; color:var(--ink); background:var(--sun); border:none; padding:12px 28px; border-radius:24px; cursor:pointer; box-shadow:0 4px 0 #C9A25A; }
   .btn:active{ transform:translateY(3px); box-shadow:0 1px 0 #C9A25A; }
+  .skins{ display:flex; gap:8px; align-items:flex-end; justify-content:center; }
+  .skin{ width:56px; padding:5px 2px 4px; border-radius:10px; border:2px solid rgba(255,255,255,.18); background:rgba(255,255,255,.06); color:#F6E8F8; font:700 10px 'Noto Sans TC',sans-serif; cursor:pointer; line-height:1.3; }
+  .skin i{ display:block; width:24px; height:18px; margin:0 auto 3px; border-radius:50% 50% 40% 40%; box-shadow:inset 0 -3px 0 rgba(0,0,0,.25); }
+  .skin.on{ border-color:#FFD25C; background:rgba(255,210,92,.18); }
+  .skin.lock{ opacity:.55; }
+  #startOverlay,#endOverlay{ gap:7px; padding:12px; }
+  #startOverlay p,#endOverlay p{ font-size:12.5px !important; line-height:1.6 !important; }
+  #endOverlay p[id]{ padding:6px 16px !important; font-size:14px !important; }
+  #endOverlay h2,#startOverlay h2{ font-size:22px; }
+  .skin{ width:52px; }
   .hint{ margin-top:14px; max-width:480px; text-align:center; font-size:12px; line-height:1.8; color:#D8C3DE; }
   .hint kbd{ font:700 11px 'Noto Sans TC',sans-serif; background:var(--plum-2); border:1px solid #6B4A78; border-radius:4px; padding:2px 7px; color:var(--sun); }
 /* ===== UI v2 (template) ===== */
@@ -80,13 +90,15 @@ body{ position:relative; }
 
       <div class="overlay" id="startOverlay">
         <h2>準備起跑</h2>
-        <p>點畫面或按空白鍵跳躍（按久跳得高），向下滑或按住 ↓ 低頭滑行。撿到小魚乾加 10 公尺。</p>
+        <p>點畫面／空白鍵跳躍，<b>空中可再跳一次</b>；下滑／↓ 低頭。<br>撿魚乾連線加分、🥛護盾、⚡衝刺無敵，小心屋頂缺口！</p>
+        <div class="skins" id="skinsA"></div>
         <button class="btn" id="startBtn">開始奔跑</button>
       </div>
 
       <div class="overlay hidden" id="endOverlay">
         <h2>撞到了！</h2>
         <p id="endText"></p>
+        <div class="skins" id="skinsB"></div>
         <button class="btn" id="againBtn">再跑一次</button>
       </div>
     </div>
@@ -105,6 +117,12 @@ body{ position:relative; }
 
   var G = 2300, JUMP_V = 800, CAT_X = 84, CAT_W = 40, STAND_H = 46, DUCK_H = 26;
   var cat, obs, fish, speed, traveled, bonus, spawnLeft, running, last, raf, phase, duckT, jumpHeld, score;
+  var items = [], jumps = 0, shield = false, rush = 0, inv = 0, chain = 0, bestChain = 0, nearCnt = 0, fishRun = 0, mile = 0, banner = null, fell = false, rushHits = 0;
+  var SKINS = [{ n: '黑貓', c: '#1B1522', r: '#FF9D6E', need: 0 }, { n: '橘貓', c: '#E07A2E', r: '#FFE3A8', need: 60 }, { n: '銀灰貓', c: '#A9A5BA', r: '#FFFFFF', need: 200 }, { n: '午夜藍', c: '#3C4F9E', r: '#9FD6FF', need: 450 }];
+  var skinI = 0, totalFish = 0;
+  try { totalFish = parseInt(localStorage.getItem('rooftopcat_fish'), 10) || 0; skinI = parseInt(localStorage.getItem('rooftopcat_skin'), 10) || 0; } catch (e) { /* ignore */ }
+  if (!SKINS[skinI] || SKINS[skinI].need > totalFish) skinI = 0;
+  var stars = []; for (var si = 0; si < 34; si++) stars.push([(si * 97) % 480, (si * 53) % 150, .4 + (si % 5) * .15]);
 
   var best = 0;
   try { var sv = localStorage.getItem('rooftopcat_best'); if (sv) best = parseInt(sv, 10) || 0; } catch (e) { /* ignore */ }
@@ -173,37 +191,66 @@ body{ position:relative; }
   }
 
   function spawnObstacle(){
-    var roll = Math.random(), o;
-    if (score > 150 && roll < 0.24){
+    var roll = Math.random(), o, i;
+    if (score > 55 && roll < 0.17 && !(obs.length && obs[obs.length - 1].type === 'gap')){
+      var gw = rnd(90, 125) + (speed - 290) * 0.15;
+      o = { type: 'gap', x: W + 30, w: gw, top: GROUND, h: 0 }; obs.push(o);
+      for (i = 0; i < 3; i++) fish.push({ x: o.x + gw * (0.25 + i * 0.25), y: GROUND - 86 - Math.sin(i * 1.57) * 26, got: false });
+      spawnLeft = gw + speed * rnd(0.8, 1.2) + 150; return;
+    }
+    if (score > 200 && roll < 0.30){ // 鳥群：高低交錯
+      var hi = Math.random() < .5, n = 3, xx = W + 30;
+      for (i = 0; i < n; i++){ obs.push(hi ? { type: 'bird', x: xx, w: 38, top: GROUND - 70, h: 40, wing: i } : { type: 'bird', x: xx, w: 38, top: GROUND - 36, h: 30, wing: i, low: 1 }); hi = !hi; xx += 215; }
+      fish.push({ x: W + 30 + 215, y: GROUND - 120, got: false });
+      spawnLeft = 215 * 2 + 38 + speed * rnd(0.8, 1.1) + 120; return;
+    }
+    if (score > 150 && roll < 0.40){
       o = { type: 'bird', x: W + 30, w: 38, top: GROUND - 70, h: 40, wing: 0 };
-    } else if (roll < 0.55){
+    } else if (roll < 0.62){
       o = { type: 'crate', x: W + 30, w: 34, h: 34, top: GROUND - 34 };
-    } else if (roll < 0.85){
+    } else if (roll < 0.88){
       o = { type: 'chimney', x: W + 30, w: 38, h: 58, top: GROUND - 58 };
     } else {
       o = { type: 'double', x: W + 30, w: 70, h: 34, top: GROUND - 34 };
     }
     obs.push(o);
-    if (Math.random() < 0.55){
+    if (Math.random() < 0.6){
       var fy = o.type === 'bird' ? GROUND - 30 : GROUND - rnd(110, 150);
       fish.push({ x: o.x + o.w / 2, y: fy, got: false });
+      if (o.type !== 'bird' && Math.random() < .5){ fish.push({ x: o.x + o.w / 2 - 28, y: fy + 14, got: false }); fish.push({ x: o.x + o.w / 2 + 28, y: fy + 14, got: false }); }
     }
+    var ir = Math.random();
+    if (score > 40 && ir < 0.07 && !shield) items.push({ t: 'milk', x: o.x + o.w / 2 + 90, y: GROUND - rnd(60, 110) });
+    else if (score > 110 && ir > 0.94 && rush <= 0) items.push({ t: 'rush', x: o.x + o.w / 2 + 90, y: GROUND - rnd(60, 110) });
     spawnLeft = speed * rnd(0.95, 1.55) + 90;
   }
 
   function jump(){
     if (!running) return;
-    if (cat.h <= 0.5){ cat.vy = JUMP_V; cat.h = 1; jumpHeld = true; tone(520, 0.12, 'triangle', 0.1); tone(780, 0.1, 'triangle', 0.06, 0.05); }
+    if (cat.h <= 0.5){ cat.vy = JUMP_V; cat.h = 1; jumpHeld = true; jumps = 1; tone(520, 0.12, 'triangle', 0.1); tone(780, 0.1, 'triangle', 0.06, 0.05); }
+    else if (jumps < 2){ jumps = 2; cat.vy = JUMP_V * 0.82; jumpHeld = true; puff(CAT_X + 20, GROUND - cat.h, 8, 'rgba(255,255,255,.8)'); tone(700, 0.1, 'triangle', 0.1); tone(1040, 0.12, 'triangle', 0.07, 0.04); }
   }
   function releaseJump(){ jumpHeld = false; if (cat.vy > 300) cat.vy = 300; }
 
   function hits(a, b){ return a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t; }
 
+  function hurt(ob){
+    if (rush > 0){ return; }
+    if (inv > 0) return;
+    if (shield){ shield = false; inv = 1.3; floats.push({ x: CAT_X + 24, y: GROUND - cat.h - 56, t: '護盾破碎!', life: 1 }); spark(CAT_X + 24, GROUND - cat.h - 26, ['#9FE8FF', '#fff'], 16); shakeT = .18; tone(300, .2, 'sawtooth', .08); if (ob){ var k = obs.indexOf(ob); if (k >= 0) obs.splice(k, 1); } return true; }
+    return 'dead';
+  }
   function update(dt){
+    var mul = rush > 0 ? 1.5 : 1;
     speed = Math.min(620, 290 + traveled * 0.012);
-    var dx = speed * dt; traveled += dx; phase += dt * speed * 0.03;
+    var dx = speed * mul * dt; traveled += dx; phase += dt * speed * mul * 0.03;
     score = Math.floor(traveled / 18) + bonus;
     distEl.textContent = score;
+    var ms = Math.floor(score / 100);
+    if (ms > mile){ mile = ms; banner = { t: ms * 100 + ' 公尺!', life: 1.6 }; [523, 659, 784, 1047].forEach(function(f, i){ tone(f, .12, 'triangle', .06, i * .06); }); bonus += 5; }
+    if (banner){ banner.life -= dt; if (banner.life <= 0) banner = null; }
+    if (rush > 0){ rush -= dt; if (rush <= 0){ rush = 0; inv = 1.0; } if (Math.random() < .6) parts.push({ x: CAT_X, y: GROUND - cat.h - rnd(8, 38), vx: -rnd(120, 260), vy: rnd(-20, 20), life: .35, max: .35, r: rnd(2, 4), c: Math.random() < .5 ? '#FFD25C' : '#FFF3B8' }); }
+    if (inv > 0) inv -= dt;
 
     stepFx(dt); smoke.forEach(function(p){ p.y -= 22 * dt; p.x -= dx * .6; p.r += 6 * dt; p.life -= dt; }); smoke = smoke.filter(function(p){ return p.life > 0; });
     if (duckT > 0) duckT -= dt;
@@ -212,6 +259,7 @@ body{ position:relative; }
       cat.vy -= G * dt; cat.h += cat.vy * dt;
       if (cat.h <= 0){ cat.h = 0; cat.vy = 0; }
     }
+    if (cat.h <= 0) jumps = 0;
     if (wasAir && cat.h <= 0){ puff(CAT_X + 20, GROUND, 7); }
     wasAir = cat.h > 0.5;
     runDust += dt; if (!wasAir && runDust > .09){ runDust = 0; puff(CAT_X + 2, GROUND - 1, 1); }
@@ -220,24 +268,57 @@ body{ position:relative; }
     if (spawnLeft <= 0) spawnObstacle();
     var i;
     for (i = obs.length - 1; i >= 0; i--){
-      var o = obs[i]; o.x -= dx + (o.type === 'bird' ? 90 * dt : 0); if (o.type === 'bird') o.wing += dt * 12;
+      var o = obs[i]; o.x -= dx + (o.type === 'bird' ? (o.low ? 140 : 90) * dt : 0); if (o.type === 'bird') o.wing += dt * 12;
       if (o.x + o.w < -20) obs.splice(i, 1);
     }
     for (i = fish.length - 1; i >= 0; i--){
-      fish[i].x -= dx; if (fish[i].x < -30) fish.splice(i, 1);
+      fish[i].x -= dx; if (fish[i].x < -30){ if (!fish[i].got) chain = 0; fish.splice(i, 1); }
     }
+    for (i = items.length - 1; i >= 0; i--){ items[i].x -= dx; if (items[i].x < -30) items.splice(i, 1); }
 
     var ch = ducking ? DUCK_H : STAND_H, bottom = GROUND - cat.h;
     var box = { l: CAT_X + 6, r: CAT_X + CAT_W - 4, t: bottom - ch + 4, b: bottom };
-    for (i = 0; i < obs.length; i++){
+    for (i = obs.length - 1; i >= 0; i--){
       var ob = obs[i];
-      if (hits(box, { l: ob.x + 4, r: ob.x + ob.w - 4, t: ob.top + 4, b: ob.top + ob.h })){ dead = true; spark(CAT_X + 24, bottom - 26, ['#FFD25C', '#FF9D6E', '#fff'], 18); shakeT = .3; finish(); return; }
+      if (ob.type === 'gap'){
+        var cxm = CAT_X + 22;
+        if (cat.h <= 1 && rush <= 0 && cxm > ob.x + 6 && cxm < ob.x + ob.w - 6){
+          if (shield){ shield = false; inv = 1.3; cat.vy = JUMP_V * 1.02; cat.h = 2; jumps = 1; floats.push({ x: CAT_X + 24, y: GROUND - 60, t: '護盾救援!', life: 1 }); spark(CAT_X + 24, GROUND, ['#9FE8FF', '#fff'], 16); tone(900, .2, 'triangle', .1); }
+          else { dead = true; fell = true; shakeT = .25; tone(500, .5, 'sawtooth', .08); finish(); return; }
+        }
+        continue;
+      }
+      var hb = { l: ob.x + 4, r: ob.x + ob.w - 4, t: ob.top + 4, b: ob.top + ob.h };
+      if (hits(box, hb)){
+        if (rush > 0){ obs.splice(i, 1); bonus += 15; rushHits++; spark(ob.x + ob.w / 2, ob.top + ob.h / 2, ['#FFD25C', '#FF9D6E', '#fff'], 14); floats.push({ x: ob.x + ob.w / 2, y: ob.top - 6, t: '+15 粉碎!', life: .8 }); shakeT = .12; tone(180, .1, 'square', .08); continue; }
+        var hr = hurt(ob);
+        if (hr === 'dead'){ dead = true; spark(CAT_X + 24, bottom - 26, ['#FFD25C', '#FF9D6E', '#fff'], 18); shakeT = .3; finish(); return; }
+        continue;
+      }
+      // 險過：貼著障礙頂端跳過去
+      if (ob.type !== 'bird' && ob.done !== true){
+        if (box.r > ob.x + 4 && box.l < ob.x + ob.w - 4){ var cl = ob.top - bottom; ob.clr = ob.clr === undefined ? cl : Math.min(ob.clr, cl); }
+        else if (ob.x + ob.w - 4 <= box.l){ ob.done = true; if (ob.clr !== undefined && ob.clr >= 0 && ob.clr < 16 && rush <= 0){ bonus += 5; nearCnt++; floats.push({ x: CAT_X + 30, y: bottom - 62, t: '險過! +5', life: .8 }); tone(1200, .06, 'square', .05); } }
+      }
     }
     for (i = 0; i < fish.length; i++){
       var f = fish[i];
-      if (!f.got && hits(box, { l: f.x - 12, r: f.x + 12, t: f.y - 8, b: f.y + 8 })){ f.got = true; bonus += 10; spark(f.x, f.y, ['#B5ECFF', '#FFE08A', '#fff'], 12); floats.push({ x: f.x, y: f.y - 8, t: '+10', life: .8 }); tone(988, 0.1, 'triangle', 0.09); tone(1318, 0.14, 'triangle', 0.07, 0.07); }
+      if (!f.got && hits(box, { l: f.x - 12, r: f.x + 12, t: f.y - 8, b: f.y + 8 })){
+        f.got = true; chain++; if (chain > bestChain) bestChain = chain; fishRun++; totalFish++;
+        var gain = 10 + Math.min(chain - 1, 8) * 2; bonus += gain;
+        spark(f.x, f.y, ['#B5ECFF', '#FFE08A', '#fff'], 12); floats.push({ x: f.x, y: f.y - 8, t: '+' + gain + (chain >= 3 ? '  ×' + chain : ''), life: .8 }); tone(988 + Math.min(chain, 8) * 40, 0.1, 'triangle', 0.09); tone(1318 + Math.min(chain, 8) * 40, 0.14, 'triangle', 0.07, 0.07);
+      }
     }
     fish = fish.filter(function(q){ return !q.got; });
+    for (i = items.length - 1; i >= 0; i--){
+      var it = items[i];
+      if (hits(box, { l: it.x - 14, r: it.x + 14, t: it.y - 14, b: it.y + 14 })){
+        items.splice(i, 1);
+        if (it.t === 'milk'){ shield = true; floats.push({ x: it.x, y: it.y - 12, t: '🥛 護盾!', life: 1 }); [600, 800, 1000].forEach(function(f2, k){ tone(f2, .12, 'triangle', .08, k * .05); }); }
+        else { rush = 4; inv = 0; floats.push({ x: it.x, y: it.y - 12, t: '⚡ 衝刺 無敵!', life: 1.1 }); shakeT = .15; [400, 600, 900, 1300].forEach(function(f3, k){ tone(f3, .1, 'sawtooth', .06, k * .04); }); }
+        spark(it.x, it.y, ['#FFE08A', '#fff', '#9FE8FF'], 16);
+      }
+    }
   }
 
   var parts = [], floats = [], shakeT = 0, wasAir = false, runDust = 0, smoke = [], clouds = [[60, 50, 1], [200, 80, .7], [380, 40, .9], [470, 90, .6]], dead = false;
@@ -255,7 +336,7 @@ body{ position:relative; }
     ctx.save();
     ctx.fillStyle = 'rgba(30,10,30,.35)'; ctx.beginPath(); ctx.ellipse(x + 22, GROUND + 5, 22 * (1 - Math.min(.5, cat.h / 260)), 4, 0, 0, 6.3); ctx.fill();
     ctx.translate(x + 20, bottom); ctx.scale(1 / stretch, stretch); ctx.translate(-(x + 20), -bottom);
-    var body = '#1B1522', rim = '#FF9D6E';
+    var body = SKINS[skinI].c, rim = SKINS[skinI].r;
     function limb(x1, y1, x2, y2){ ctx.strokeStyle = body; ctx.lineWidth = 5.5; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); ctx.fillStyle = '#F2E8EE'; ctx.beginPath(); ctx.arc(x2, y2 - 1, 3, 0, 6.3); ctx.fill(); }
     if (ducking){
       var by = bottom - bob;
@@ -347,21 +428,35 @@ body{ position:relative; }
     drawLayer(far, traveled * 0.12, '#D87792', GROUND, 0);
     drawLayer(mid, traveled * 0.28, '#94497A', GROUND, .35);
     drawLayer(near, traveled * 0.55, '#5A3568', GROUND + 4, .55);
+    var dk = (0.5 - 0.5 * Math.cos(6.2832 * score / 400)) * 0.6;
+    if (dk > 0.02){ ctx.fillStyle = 'rgba(12,8,50,' + dk.toFixed(3) + ')'; ctx.fillRect(0, 0, W, GROUND + 4); ctx.fillStyle = '#fff'; stars.forEach(function(st2, k){ ctx.globalAlpha = Math.min(1, dk * 1.6) * st2[2] * (.6 + .4 * Math.sin(performance.now() / 400 + k)); ctx.fillRect(st2[0], st2[1], 1.6, 1.6); }); ctx.globalAlpha = 1; }
     // roof
     var rg = ctx.createLinearGradient(0, GROUND, 0, H); rg.addColorStop(0, '#5A3568'); rg.addColorStop(.12, '#3B2441'); rg.addColorStop(1, '#241431'); ctx.fillStyle = rg; ctx.fillRect(0, GROUND, W, H - GROUND);
     ctx.fillStyle = '#7A4A82'; ctx.fillRect(0, GROUND, W, 5); ctx.fillStyle = 'rgba(255,200,160,.35)'; ctx.fillRect(0, GROUND, W, 2);
     var off = traveled % 36; ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1.5;
     for (var row = 0; row < 3; row++){ var yy = GROUND + 12 + row * 14, sh = row % 2 ? 18 : 0; for (var x = -off - sh; x < W + 36; x += 36){ ctx.beginPath(); ctx.arc(x + 18, yy, 17, 0, Math.PI); ctx.stroke(); } }
+    // 缺口
+    obs.forEach(function(o){ if (o.type !== 'gap') return; var gg = ctx.createLinearGradient(0, GROUND, 0, H); gg.addColorStop(0, '#2A1030'); gg.addColorStop(1, '#0A0412'); ctx.fillStyle = gg; ctx.fillRect(o.x, GROUND - 1, o.w, H - GROUND + 1); ctx.fillStyle = '#7A4A82'; ctx.fillRect(o.x - 3, GROUND, 3, 12); ctx.fillRect(o.x + o.w, GROUND, 3, 12); ctx.fillStyle = 'rgba(255,200,160,.3)'; ctx.fillRect(o.x - 3, GROUND, 3, 2); ctx.fillRect(o.x + o.w, GROUND, 3, 2); ctx.fillStyle = 'rgba(255,214,120,.25)'; for (var wy = GROUND + 20; wy < H - 6; wy += 18) ctx.fillRect(o.x + o.w * .3 + (wy % 36), wy, 5, 7); });
+    items.forEach(function(it){ var bb = Math.sin(phase + it.x * .02) * 3; ctx.save(); ctx.translate(it.x, it.y + bb); var col = it.t === 'milk' ? '160,235,255' : '255,220,90'; var gl = ctx.createRadialGradient(0, 0, 3, 0, 0, 26); gl.addColorStop(0, 'rgba(' + col + ',.7)'); gl.addColorStop(1, 'rgba(' + col + ',0)'); ctx.fillStyle = gl; ctx.fillRect(-26, -26, 52, 52); ctx.font = '22px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(it.t === 'milk' ? '🥛' : '⚡', 0, 1); ctx.restore(); });
     // smoke
     smoke.forEach(function(p){ var a = Math.max(0, p.life / 1.2); ctx.fillStyle = 'rgba(255,230,220,' + (.3 * a) + ')'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.3); ctx.fill(); });
     fish.forEach(drawFish);
     obs.forEach(drawObs);
-    drawCat(duckT > 0 && cat.h <= 0.5 && !dead);
+    if (rush > 0){ var ag = ctx.createRadialGradient(CAT_X + 22, GROUND - cat.h - 24, 6, CAT_X + 22, GROUND - cat.h - 24, 52); ag.addColorStop(0, 'rgba(255,230,120,.55)'); ag.addColorStop(1, 'rgba(255,230,120,0)'); ctx.fillStyle = ag; ctx.fillRect(CAT_X - 40, GROUND - cat.h - 80, 130, 110); }
+    if (!(inv > 0 && Math.floor(performance.now() / 70) % 2 === 0)) drawCat(duckT > 0 && cat.h <= 0.5 && !dead);
+    if (shield){ ctx.strokeStyle = 'rgba(160,235,255,.85)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(CAT_X + 22, GROUND - cat.h - 24, 34 + Math.sin(performance.now() / 150) * 1.5, 0, 6.3); ctx.stroke(); ctx.fillStyle = 'rgba(160,235,255,.12)'; ctx.fill(); }
     parts.forEach(function(p){ var a = p.life / p.max; ctx.globalAlpha = a; ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (.5 + a * .5), 0, 6.3); ctx.fill(); }); ctx.globalAlpha = 1;
     ctx.textAlign = 'center'; ctx.lineJoin = 'round'; ctx.font = "900 17px 'Noto Sans TC',sans-serif";
     floats.forEach(function(f){ ctx.globalAlpha = Math.min(1, f.life / .5); ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(60,20,70,.9)'; ctx.strokeText(f.t, f.x, f.y); ctx.fillStyle = '#FFE08A'; ctx.fillText(f.t, f.x, f.y); }); ctx.globalAlpha = 1;
     if (running && speed > 420){ ctx.strokeStyle = 'rgba(255,255,255,' + Math.min(.22, (speed - 420) / 900) + ')'; ctx.lineWidth = 1.2; for (var q = 0; q < 6; q++){ var sy = (q * 41 + traveled * .9) % GROUND, sx = (q * 97 + traveled * 3) % W; ctx.beginPath(); ctx.moveTo(W - sx, sy); ctx.lineTo(W - sx + 40, sy); ctx.stroke(); } }
     ctx.restore();
+    if (running){
+      ctx.textAlign = 'left'; ctx.font = "800 12px 'Noto Sans TC',sans-serif"; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(40,10,50,.8)';
+      var hy = 20; if (shield){ ctx.strokeText('🥛 護盾', 10, hy); ctx.fillStyle = '#B5ECFF'; ctx.fillText('🥛 護盾', 10, hy); hy += 18; }
+      if (rush > 0){ ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.fillRect(10, hy - 8, 80, 7); ctx.fillStyle = '#FFD25C'; ctx.fillRect(10, hy - 8, 80 * rush / 4, 7); ctx.strokeText('⚡ 衝刺', 96, hy); ctx.fillStyle = '#FFE08A'; ctx.fillText('⚡ 衝刺', 96, hy); hy += 18; }
+      if (chain >= 2){ ctx.strokeText('🐟 連線 ×' + chain, 10, hy); ctx.fillStyle = '#FFE08A'; ctx.fillText('🐟 連線 ×' + chain, 10, hy); }
+      if (banner){ ctx.textAlign = 'center'; ctx.globalAlpha = Math.min(1, banner.life * 1.5); ctx.font = "900 30px 'Noto Sans TC',sans-serif"; ctx.lineWidth = 6; ctx.strokeText(banner.t, W / 2, 70); ctx.fillStyle = '#FFE08A'; ctx.fillText(banner.t, W / 2, 70); ctx.globalAlpha = 1; }
+    }
     var vg = ctx.createRadialGradient(W / 2, H / 2, H * .5, W / 2, H / 2, W * .65); vg.addColorStop(0, 'rgba(30,5,40,0)'); vg.addColorStop(1, 'rgba(30,5,40,.38)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
   }
 
@@ -378,9 +473,10 @@ body{ position:relative; }
   function finish(){
     running = false; cancelAnimationFrame(raf); music.stop(); draw(); endAnim();
     tone(130, 0.35, 'sawtooth', 0.1);
+    try { localStorage.setItem('rooftopcat_fish', String(totalFish)); } catch (e) { /* ignore */ }
     var isBest = score > best;
     if (isBest){ best = score; bestEl.textContent = best; try { localStorage.setItem('rooftopcat_best', String(best)); } catch (e) { /* ignore */ } }
-    var rk = score >= 500 ? '屋頂之王 👑' : score >= 250 ? '夜行貓俠 🐈‍⬛' : score >= 100 ? '敏捷小貓 🐾' : '剛學跑的貓 🧶'; endText.innerHTML = rk + '<br>跑了 ' + score + ' 公尺' + (isBest ? '<br>刷新最遠紀錄了！' : '');
+    var rk = score >= 500 ? '屋頂之王 👑' : score >= 250 ? '夜行貓俠 🐈‍⬛' : score >= 100 ? '敏捷小貓 🐾' : '剛學跑的貓 🧶'; endText.innerHTML = (fell ? '掉下屋頂缺口了！<br>' : '') + rk + '<br>跑了 ' + score + ' 公尺' + (isBest ? '　🏆新紀錄！' : '') + '<br><span style="font-size:12px;opacity:.85">🐟 ' + fishRun + ' 條・最長連線 ×' + bestChain + '・險過 ' + nearCnt + (rushHits ? '・粉碎 ' + rushHits : '') + '<br>累計魚乾 ' + totalFish + '</span>'; renderSkins();
     setTimeout(function(){ endOverlay.classList.remove('hidden'); }, 350);
   }
 
@@ -390,6 +486,7 @@ body{ position:relative; }
     getAc();
     startOverlay.classList.add('hidden'); endOverlay.classList.add('hidden');
     cat = { h: 0, vy: 0 }; parts = []; floats = []; smoke = []; dead = false; shakeT = 0; wasAir = false; obs = []; fish = []; speed = 290; traveled = 0; bonus = 0; score = 0; spawnLeft = 360; phase = 0; duckT = 0; jumpHeld = false; last = 0;
+    items = []; jumps = 0; shield = false; rush = 0; inv = 0; chain = 0; bestChain = 0; nearCnt = 0; fishRun = 0; mile = 0; banner = null; fell = false; rushHits = 0;
     distEl.textContent = '0';
     running = true; music.start(); raf = requestAnimationFrame(loop);
   }
@@ -417,6 +514,19 @@ body{ position:relative; }
     ty = null; tx = null;
   }, { passive: false });
 
+  function renderSkins(){
+    ['skinsA', 'skinsB'].forEach(function(id){
+      var box = document.getElementById(id); if (!box) return; box.innerHTML = '';
+      SKINS.forEach(function(k, i){
+        var b = document.createElement('button'), lock = k.need > totalFish; b.type = 'button';
+        b.className = 'skin' + (i === skinI ? ' on' : '') + (lock ? ' lock' : '');
+        b.innerHTML = '<i style="background:' + k.c + ';border:2px solid ' + k.r + '"></i>' + k.n + '<br>' + (lock ? '🔒 ' + k.need + '🐟' : (i === skinI ? '使用中' : '選用'));
+        b.addEventListener('click', function(e){ e.stopPropagation(); if (lock) return; skinI = i; try { localStorage.setItem('rooftopcat_skin', String(i)); } catch (er) { /* ignore */ } renderSkins(); if (!running) draw(); });
+        box.appendChild(b);
+      });
+    });
+  }
+  renderSkins();
   document.getElementById('startBtn').addEventListener('click', startGame);
   document.getElementById('againBtn').addEventListener('click', startGame);
   function refreshMusicBtn(){ musicBtn.textContent = musicOn ? '🔊' : '🔇'; musicBtn.setAttribute('aria-pressed', String(musicOn)); }
@@ -500,7 +610,7 @@ html.dv-mob body{min-height:100dvh}
 <aside id="dv-r" aria-label="其他遊戲"><small>換一款玩</small><span id="dv-more"></span><a class="all" href="index.html">回遊戲大廳 · 共 40 款</a></aside>
 <script id="dv-js">
 (function(){
- var LIST=[["paper-glider.html", "飛行躲避", "紙飛機大冒險", "讓紙飛機穿過桌上林立的鉛筆縫隙。"], ["rooftop-cat.html", "無盡跑酷", "屋頂貓跑酷", "夕陽屋頂上狂奔，跳過障礙、低頭鑽過飛鳥。"], ["chick-relay.html", "節奏跑酷", "小雞接力賽", "三條跑道三隻小雞，跟著鼓點跳過障礙、撿種子，烏⁠鴉來了千萬別跳"], ["ink-sword.html", "武俠", "墨劍江湖", "水墨風武俠動作：三連斬、輕功閃身、劍氣絕招，闖五章擊敗兩大魔頭"], ["boba-survivors.html", "倖存", "珍奶突圍", "化身珍珠奶茶，自動攻擊、撿珍珠升級，撐過 5 分鐘冰塊與方糖大軍"], ["drift-bend.html", "賽車漂移", "彎道漂移", "按住漂移鍵甩過彎道、放開噴出加速，十條賽道對決對手車手，收集十輛愛車"], ["star-raid.html", "太空射擊", "星艦突襲", "自動連射的太空射擊，撿道具升級武器，還要打倒巨型母艦。"], ["game.html", "即時操作", "夜蔓 貪食蛇", "連擊、衝刺、護盾與果實雨，還能和 AI 紅蛇對戰、解鎖蛇皮膚。"], ["snake-evolve.html", "街機", "蛇蛇進化", "貪吃蛇加上進化系統：穿牆、磁鐵、護盾、破岩，連吃蘋果衝高連擊"], ["tile-breaker.html", "打磚塊", "花磚打磚塊", "用木槳接住彈珠，敲碎整面馬賽克花磚牆。"], ["candy-pachinko.html", "物理彈射", "糖果彈珠台", "瞄準發射彈珠，在糖果釘子間亂彈，把橘色糖果全部打光就過關"], ["ring-toss.html", "街機經典", "夜市套圈圈", "按住瞄準、圈縮到最小時放手，套中熊貓、泰迪熊和金鑽，十個攤位等你挑戰"], ["pearl-catch.html", "接料反應", "珍珠接接樂", "用杯子接住珍珠和布丁，閃開會讓你變淡的冰塊。"], ["hoop-shot.html", "投籃機", "夜光籃球機", "往後拉、放開投籃，空心球加時間，連進有加分"], ["penalty-kings.html", "足球", "點球大師", "滑向球門射點球與任意球，繞過人牆、騙過守門員"], ["pool-hall.html", "運動競技", "八號球撞球", "巡迴賽挑戰六位對手，賺金幣買球桿與球檯，先清完自己的球再打進黑 8"], ["table-tennis.html", "運動競技", "極速桌球", "拖曳球拍回擊，揮得越快越有力，還能殺球，挑戰四級對手或無盡對拉"], ["mini-golf.html", "運動競技", "迷你高爾夫", "往後拉、放手推桿，十二個球場有沙坑、水池、風車、傳送門，桿數越少星越多"], ["dart-bar.html", "酒吧競技", "飛鏢酒吧", "按住瞄準、放開射鏢，三輪對決十位酒客，風、旋轉靶和昏暗燈光都是考驗"], ["lantern-rhythm.html", "節奏點擊", "燈籠節拍", "燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。"], ["garden-whack.html", "反應力", "菜園保衛戰", "限時 30 秒，把冒出土堆的小偷趕跑。"], ["steamer-stack.html", "抓時機", "蒸籠疊疊樂", "抓準時機放下蒸籠，疊得越準越高。"], ["cake-defense.html", "塔防", "蛋糕保衛戰", "擺放糖果槍、冰棒與爆米花砲塔，擋下偷吃生日蛋糕的螞蟻大軍"], ["dice-dungeon.html", "策略", "骰運地下城", "擲骰子、把點數放進技能卡，看穿怪物意圖，闖過 10 層地下城擊倒魔王"], ["magnet-miner.html", "冒險", "磁鐵礦工", "放下磁鐵吸金塊和鑽石，再深入一層，還是收線入袋？小心炸彈全炸光"], ["cat-cafe.html", "放置經營", "貓咪咖啡館", "點咖啡機賺錢，僱用貓咪店員，離線也繼續營業，再開分店"], ["fishing.html", "策略與經營", "深海釣手", "放線下海、左右閃避水母，釣起二十四種魚，賺錢升級漁具，把圖鑑收集滿"], ["soup-master.html", "策略經營", "湯頭大師", "用火候、下料時機和最後一撮鹽，熬出客人心中的那碗好湯，十種湯頭等你收集"], ["ink-gomoku.html", "對弈", "水墨五子棋", "墨黑對朱紅，橫直斜任一方向先連成五子者勝。"], ["xiangqi.html", "棋類對弈", "楚河漢界", "中國象棋對電腦，三種難度，還有悔棋與提示。"], ["macaron2048.html", "滑動合併", "馬卡龍 2048", "把相同口味的馬卡龍疊在一起，疊出最大的一顆。"], ["star-match.html", "記憶配對", "星圖配對", "翻開夜空卡片，用最少步數找出所有星座對子。"], ["tetris.html", "方塊消除", "方塊風暴", "經典俄羅斯方塊，暫存、預覽、瞬降，還有衝刺 40 行挑戰。"], ["meow-mover.html", "益智解謎", "喵喵搬運工", "推箱子解謎，58 個關卡，推木箱到貓腳印上，拿滿三顆星。"], ["tidal-sweeper.html", "邏輯推理", "潮間帶排雷", "退潮的沙灘藏著海膽，用數字推理出牠們的位置。"], ["shadow-cat-detective.html", "推理", "影子貓偵探", "五隻貓七嘴八舌，只有一隻在說謊。聽完口供，找出偷東西的真兇"], ["idiom-code.html", "棋牌益智", "四字密碼", "成語版猜字遊戲，看提示從十二個字裡湊出四字成語，六次機會，每天一題"], ["card-duel.html", "卡牌對戰", "紙牌決鬥", "用能量打出火球、護甲與隨從，擊敗十位對手，每贏一場就解鎖新卡牌"], ["bubble-wave.html", "鏡頭互動", "泡泡派對", "打開鏡頭，用揮手在空中打破飄上來的泡泡。"], ["halloween-booth.html", "鏡頭變臉", "萬聖變臉亭", "開鏡頭在臉上貼萬聖節貼紙，拍成圖片傳給朋友"]];
+ var LIST=[["paper-glider.html", "飛行躲避", "紙飛機大冒險", "讓紙飛機穿過桌上林立的鉛筆縫隙。"], ["rooftop-cat.html", "無盡跑酷", "屋頂貓跑酷", "夕陽屋頂上狂奔，跳過障礙、低頭鑽過飛鳥。"], ["chick-relay.html", "節奏跑酷", "小雞接力賽", "三條跑道三隻小雞，跟著鼓點跳過障礙、撿種子，烏⁠鴉來了千萬別跳"], ["ink-sword.html", "武俠", "墨劍江湖", "水墨風武俠動作：三連斬、輕功閃身、劍氣絕招，闖五章擊敗兩大魔頭"], ["boba-survivors.html", "倖存", "珍奶突圍", "化身珍珠奶茶，自動攻擊、撿珍珠升級，撐過 5 分鐘冰塊與方糖大軍"], ["drift-bend.html", "賽車漂移", "彎道漂移", "按住漂移鍵甩過彎道、放開噴出加速，十條賽道對決對手車手，收集十輛愛車"], ["star-raid.html", "太空射擊", "星艦突襲", "自動連射的太空射擊，撿道具升級武器，還要打倒巨型母艦。"], ["game.html", "即時操作", "夜蔓 貪食蛇", "連擊、衝刺、護盾與果實雨，還能和 AI 紅蛇對戰、解鎖蛇皮膚。"], ["snake-evolve.html", "街機", "蛇蛇進化", "貪吃蛇進化版：每 10 顆闖新區域，毒蘑菇、巨石、雷擊來襲；連擊吃滿進入狂熱無敵，還有任務與 12 枚勳章。"], ["tile-breaker.html", "打磚塊", "花磚打磚塊", "12 關闖關，接道具、炸彈連鎖、連擊倍率，還有三場花磚守衛 Boss 戰。"], ["candy-pachinko.html", "物理彈射", "糖果彈珠台", "瞄準發射彈珠，在糖果釘子間亂彈，把橘色糖果全部打光就過關"], ["ring-toss.html", "街機經典", "夜市套圈圈", "按住瞄準、圈縮到最小時放手，套中熊貓、泰迪熊和金鑽，十個攤位等你挑戰"], ["pearl-catch.html", "接料反應", "珍珠接接樂", "用杯子接住珍珠和布丁，閃開會讓你變淡的冰塊。"], ["hoop-shot.html", "投籃機", "夜光籃球機", "往後拉、放開投籃，空心球加時間，連進有加分"], ["penalty-kings.html", "足球", "點球大師", "滑向球門射點球與任意球，繞過人牆、騙過守門員"], ["pool-hall.html", "運動競技", "八號球撞球", "巡迴賽挑戰六位對手，賺金幣買球桿與球檯，先清完自己的球再打進黑 8"], ["table-tennis.html", "運動競技", "極速桌球", "拖曳球拍回擊、打旋轉球；巡迴賽挑戰 6 位個性對手拿星星，怒氣滿了還能放超級殺球。"], ["mini-golf.html", "運動競技", "迷你高爾夫", "往後拉、放手推桿，十二個球場有沙坑、水池、風車、傳送門，桿數越少星越多"], ["dart-bar.html", "酒吧競技", "飛鏢酒吧", "按住瞄準、放開射鏢，三輪對決十位酒客，風、旋轉靶和昏暗燈光都是考驗"], ["lantern-rhythm.html", "節奏點擊", "燈籠節拍", "燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。"], ["garden-whack.html", "反應力", "菜園保衛戰", "限時 30 秒，把冒出土堆的小偷趕跑。"], ["steamer-stack.html", "抓時機", "蒸籠疊疊樂", "抓準時機放下蒸籠，疊得越準越高。"], ["cake-defense.html", "塔防", "蛋糕保衛戰", "擺放糖果槍、冰棒與爆米花砲塔，擋下偷吃生日蛋糕的螞蟻大軍"], ["dice-dungeon.html", "策略", "骰運地下城", "擲骰子、把點數放進技能卡，看穿怪物意圖，闖過 10 層地下城擊倒魔王"], ["magnet-miner.html", "冒險", "磁鐵礦工", "放下磁鐵吸金塊和鑽石，再深入一層，還是收線入袋？小心炸彈全炸光"], ["cat-cafe.html", "放置經營", "貓咪咖啡館", "點咖啡機賺錢，僱用貓咪店員，離線也繼續營業，再開分店"], ["fishing.html", "策略與經營", "深海釣手", "放線下海、左右閃避水母，釣起二十四種魚，賺錢升級漁具，把圖鑑收集滿"], ["soup-master.html", "策略經營", "湯頭大師", "用火候、下料時機和最後一撮鹽，熬出客人心中的那碗好湯，十種湯頭等你收集"], ["ink-gomoku.html", "對弈", "水墨五子棋", "墨黑對朱紅，橫直斜任一方向先連成五子者勝。"], ["xiangqi.html", "棋類對弈", "楚河漢界", "中國象棋對電腦，三種難度，還有悔棋與提示。"], ["macaron2048.html", "滑動合併", "馬卡龍 2048", "把相同口味的馬卡龍疊在一起，疊出最大的一顆。"], ["star-match.html", "記憶配對", "星圖配對", "翻開夜空卡片，用最少步數找出所有星座對子。"], ["tetris.html", "方塊消除", "方塊風暴", "經典方塊加強版：T-Spin、背對背、道具方塊與風暴灰磚，另有衝刺與 8 個任務挑戰。"], ["meow-mover.html", "益智解謎", "喵喵搬運工", "推箱子解謎，58 個關卡，推木箱到貓腳印上，拿滿三顆星。"], ["tidal-sweeper.html", "邏輯推理", "潮間帶排雷", "退潮的沙灘藏著海膽，用數字推理出牠們的位置。"], ["shadow-cat-detective.html", "推理", "影子貓偵探", "五隻貓七嘴八舌，只有一隻在說謊。聽完口供，找出偷東西的真兇"], ["idiom-code.html", "棋牌益智", "四字密碼", "成語版猜字遊戲，看提示從十二個字裡湊出四字成語，六次機會，每天一題"], ["card-duel.html", "卡牌對戰", "紙牌決鬥", "用能量打出火球、護甲與隨從，擊敗十位對手，每贏一場就解鎖新卡牌"], ["bubble-wave.html", "鏡頭互動", "泡泡派對", "打開鏡頭，用揮手在空中打破飄上來的泡泡。"], ["halloween-booth.html", "鏡頭變臉", "萬聖變臉亭", "開鏡頭在臉上貼萬聖節貼紙，拍成圖片傳給朋友"]];
  var d=document,de=d.documentElement,b=d.body,me=(location.pathname.split('/').pop()||'');
  var mq=matchMedia('(min-width:900px) and (hover:hover) and (pointer:fine)');
  var z=1,n=0,L=d.getElementById('dv-l'),R=d.getElementById('dv-r');
