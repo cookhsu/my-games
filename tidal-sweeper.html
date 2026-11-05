@@ -44,6 +44,24 @@
   .btn:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--coral-dark); }
   .hint{ margin-top:16px; max-width:420px; text-align:center; font-size:12px; line-height:1.8; color:var(--muted); }
   @media (prefers-reduced-motion:reduce){ .btn{ transition:none; } }
+  .sub{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 6px 10px; font-weight:800; font-size:13px; }
+  .chip{ background:rgba(255,255,255,.14); border-radius:12px; padding:5px 10px; white-space:nowrap; }
+  .chipbtn{ font:800 13px 'Noto Sans TC',sans-serif; color:var(--foam); background:var(--sea); border:1px solid rgba(255,255,255,.18); border-radius:12px; padding:5px 10px; cursor:pointer; box-shadow:0 2px 0 rgba(0,0,0,.25); }
+  .chipbtn b{ background:var(--coral); color:var(--ink); border-radius:8px; padding:0 6px; margin-left:4px; font-size:12px; }
+  .chipbtn:disabled{ opacity:.45; cursor:default; }
+  .modes{ display:flex; flex-direction:column; gap:8px; width:100%; max-width:250px; }
+  .modes .btn{ width:100%; padding:10px 12px; font-size:15px; }
+  .stars{ font-size:34px; letter-spacing:6px; color:#FFD54A; text-shadow:0 2px 0 rgba(0,0,0,.3); }
+  .stars .off{ color:rgba(255,255,255,.25); }
+  .overlay .row{ display:flex; gap:10px; }
+  .btn.ghost{ background:transparent; color:var(--foam); border:2px solid rgba(255,255,255,.5); box-shadow:none; }
+  .grid.g12{ gap:2px; } .grid.g14{ gap:2px; }
+  .grid.g12 .cell{ font-size:clamp(11px,3.6vw,16px); border-radius:5px; }
+  .grid.g14 .cell{ font-size:clamp(10px,3.1vw,14px); border-radius:4px; }
+  .cell.hintcell{ outline:3px solid #FFD54A; outline-offset:-2px; animation:hintp .5s ease-in-out infinite alternate; }
+  @keyframes hintp{ from{ filter:brightness(1); } to{ filter:brightness(1.35); } }
+  .toast{ position:absolute; left:50%; top:10px; transform:translateX(-50%); z-index:6; background:rgba(14,59,67,.95); color:var(--foam); font-weight:800; font-size:13px; padding:7px 14px; border-radius:16px; pointer-events:none; opacity:0; transition:opacity .25s; white-space:nowrap; }
+  .toast.show{ opacity:1; }
 /* ===== UI v2 (template) ===== */
 body{ position:relative; }
 .marquee{ margin-top:18px; }
@@ -77,7 +95,7 @@ body{ position:relative; }
 <body>
   <div class="marquee">
     <h1>潮間帶排雷</h1>
-    <p>退潮的沙灘上藏著 10 隻海膽，用數字推理出牠們的位置，安全地走完整片沙灘。</p>
+    <p>退潮的沙灘上藏著海膽，用數字推理出牠們的位置，安全地走完整片沙灘。</p>
   </div>
 
   <div class="board">
@@ -90,29 +108,113 @@ body{ position:relative; }
       <div class="stat right"><span class="label">時間</span><span class="value" id="time">0</span></div>
     </div>
 
+    <div class="sub"><span class="chip" id="lvTag">淺灘</span><span class="chip" id="shells"></span><button class="chipbtn" id="hintBtn">💡 提示<b>3</b></button></div>
+
     <div class="frame">
+      <div class="toast" id="toast"></div>
       <div class="grid" id="grid" role="grid" aria-label="排雷棋盤"></div>
 
       <div class="overlay" id="startOverlay">
         <h2>準備踏沙</h2>
-        <p>點一下翻開沙地，數字代表周圍八格有幾隻海膽。電腦可以按右鍵插旗，手機長按或打開上方的旗子模式。</p>
-        <button class="btn" id="startBtn">開始遊戲</button>
+        <p>數字＝周圍八格的海膽數。盤面保證能推理，不用靠猜！</p>
+        <div class="modes">
+          <button class="btn" id="startBtn" data-lv="0">🏖 淺灘 9×9</button>
+          <button class="btn" data-lv="1">🌊 潮池 12×12</button>
+          <button class="btn" data-lv="2">🪸 深海 14×14</button>
+          <button class="btn ghost" data-lv="3">📅 每日海灘</button>
+        </div>
       </div>
 
       <div class="overlay hidden" id="endOverlay">
         <h2 id="endTitle"></h2>
+        <div class="stars" id="stars"></div>
         <p id="endText"></p>
-        <button class="btn" id="restartBtn">再走一次</button>
+        <div class="row"><button class="btn" id="restartBtn">再走一次</button><button class="btn ghost" id="menuBtn">換難度</button></div>
       </div>
     </div>
   </div>
 
-  <p class="hint">第一下一定安全。點已翻開的數字，若周圍旗子數剛好等於數字，會一次翻開其餘格子。</p>
+  <p class="hint">第一下一定安全。點已翻開的數字，若周圍旗子數剛好等於數字，會一次翻開其餘格子。<br>踩到海膽會先用掉一個 🐚 護身貝殼；💡 提示會指出一格安全的沙地（+10 秒）。★★ 不破殼、★★★ 再加上不用提示且夠快。</p>
 
 <script>
 (function(){
   "use strict";
   var ROWS = 9, COLS = 9, MINES = 10;
+  var LEVELS = [
+    { id:'easy', n:'淺灘', r:9, c:9, m:10, shell:2, hint:3, par:45 },
+    { id:'mid', n:'潮池', r:12, c:12, m:24, shell:2, hint:3, par:150 },
+    { id:'hard', n:'深海', r:14, c:14, m:40, shell:3, hint:4, par:300 },
+    { id:'daily', n:'每日海灘', r:11, c:11, m:20, shell:2, hint:3, par:120 }
+  ];
+  var lvIdx = 0, shells = 2, hints = 3, hintsUsed = 0, shellUsed = 0, penalty = 0, NB = [], toastT = null, rng = Math.random;
+  function dailySeed(){ var d = new Date(); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+  function mkRng(seed){ var a = seed | 0; return function(){ a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function bestKey(){ var L = LEVELS[lvIdx]; return L.id === 'easy' ? 'tidalsweeper_best' : L.id === 'daily' ? 'tidalsweeper_daily_' + dailySeed() : 'tidalsweeper_best_' + L.id; }
+  function loadBest(){ best = 0; try { var v = localStorage.getItem(bestKey()); if (v) best = parseInt(v, 10) || 0; } catch (e) { /* ignore */ } }
+  function toast(m){ var t = document.getElementById('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(function(){ t.classList.remove('show'); }, 1800); }
+  function updateSub(){
+    document.getElementById('lvTag').textContent = LEVELS[lvIdx].n;
+    var sh = ''; for (var i = 0; i < shells; i++) sh += '🐚'; document.getElementById('shells').textContent = sh || '無護殼';
+    var hb = document.getElementById('hintBtn'); hb.querySelector('b').textContent = hints; hb.disabled = !active || over || hints <= 0;
+  }
+  function buildNb(){ NB = []; for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++){ var l = []; for (var dr = -1; dr <= 1; dr++) for (var dc = -1; dc <= 1; dc++){ if (!dr && !dc) continue; var nr = r + dr, nc = c + dc; if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) l.push(nr * COLS + nc); } NB.push(l); } }
+  /* 推理模擬：只用「已翻開的數字」做邏輯推理，判斷盤面是否不用猜；也用來給提示 */
+  function simulate(mine, adj, openInit, start){
+    var N = ROWS * COLS, op = new Uint8Array(N), mk = new Uint8Array(N), cnt = 0, first = -1, i, j, k;
+    function doOpen(i0){ var q = [i0]; while (q.length){ var k0 = q.pop(); if (op[k0] || mk[k0]) continue; op[k0] = 1; cnt++; if (adj[k0] === 0){ var nb = NB[k0]; for (var z = 0; z < nb.length; z++) if (!op[nb[z]] && !mk[nb[z]]) q.push(nb[z]); } } }
+    if (openInit){ for (i = 0; i < N; i++) if (openInit[i]){ op[i] = 1; cnt++; } }
+    if (start >= 0) doOpen(start);
+    var progress = true;
+    while (progress){
+      progress = false;
+      var F = [];
+      for (i = 0; i < N; i++){
+        if (!op[i] || adj[i] === 0) continue;
+        var nb = NB[i], u = [], f = 0;
+        for (j = 0; j < nb.length; j++){ if (mk[nb[j]]) f++; else if (!op[nb[j]]) u.push(nb[j]); }
+        if (!u.length) continue;
+        var need = adj[i] - f;
+        if (need === 0){ for (j = 0; j < u.length; j++){ if (first < 0) first = u[j]; doOpen(u[j]); } progress = true; }
+        else if (need === u.length){ for (j = 0; j < u.length; j++) mk[u[j]] = 1; progress = true; }
+        else F.push({ i: i, u: u, need: need });
+      }
+      if (progress) continue;
+      for (var a = 0; a < F.length && !progress; a++){
+        var A = F[a], ar = (A.i / COLS) | 0, ac = A.i % COLS;
+        for (var b = 0; b < F.length; b++){
+          if (a === b) continue; var B = F[b], br = (B.i / COLS) | 0, bc = B.i % COLS;
+          if (Math.abs(ar - br) > 2 || Math.abs(ac - bc) > 2 || A.u.length > B.u.length) continue;
+          var sub = true; for (j = 0; j < A.u.length; j++){ if (B.u.indexOf(A.u[j]) < 0){ sub = false; break; } }
+          if (!sub) continue;
+          var diff = B.u.filter(function(x){ return A.u.indexOf(x) < 0; }), dn = B.need - A.need;
+          if (!diff.length) continue;
+          if (dn === 0){ for (j = 0; j < diff.length; j++){ if (first < 0) first = diff[j]; doOpen(diff[j]); } progress = true; break; }
+          else if (dn === diff.length){ for (j = 0; j < diff.length; j++) mk[diff[j]] = 1; progress = true; break; }
+        }
+      }
+      if (progress) continue;
+      var mc = 0; for (k = 0; k < N; k++) if (mk[k]) mc++;
+      var unk = N - cnt - mc, remain = MINES - mc;
+      if (unk > 0){
+        if (remain === 0){ for (k = 0; k < N; k++) if (!op[k] && !mk[k]){ if (first < 0) first = k; doOpen(k); } progress = true; }
+        else if (remain === unk){ for (k = 0; k < N; k++) if (!op[k] && !mk[k]) mk[k] = 1; progress = true; }
+      }
+    }
+    return { solved: cnt === N - MINES, first: first };
+  }
+  function layout(sr, sc, rand){
+    var N = ROWS * COLS, t0 = Date.now(), res = null;
+    for (var att = 0; att < 500; att++){
+      var pool = []; for (var i = 0; i < N; i++){ var r = (i / COLS) | 0, c = i % COLS; if (Math.abs(r - sr) > 1 || Math.abs(c - sc) > 1) pool.push(i); }
+      for (var p = pool.length - 1; p > 0; p--){ var q = Math.floor(rand() * (p + 1)); var tmp = pool[p]; pool[p] = pool[q]; pool[q] = tmp; }
+      var mine = new Uint8Array(N); for (var k = 0; k < MINES; k++) mine[pool[k]] = 1;
+      var adj = new Uint8Array(N); for (i = 0; i < N; i++){ var n = 0, nb = NB[i]; for (var z = 0; z < nb.length; z++) n += mine[nb[z]]; adj[i] = n; }
+      res = { mine: mine, adj: adj };
+      if (simulate(mine, adj, null, sr * COLS + sc).solved) break;
+      if (Date.now() - t0 > 700) break;
+    }
+    return res;
+  }
   var gridEl = document.getElementById('grid');
   var leftEl = document.getElementById('left');
   var timeEl = document.getElementById('time');
@@ -179,6 +281,7 @@ body{ position:relative; }
   function buildGrid(){
     gridEl.innerHTML = '';
     cells = [];
+    gridEl.style.gridTemplateColumns = 'repeat(' + COLS + ',1fr)'; gridEl.className = 'grid' + (COLS >= 14 ? ' g14' : COLS >= 11 ? ' g12' : '');
     for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++){
       var el = document.createElement('button');
       el.className = 'cell';
@@ -192,10 +295,8 @@ body{ position:relative; }
   }
 
   function placeMines(sr, sc){
-    var pool = cells.filter(function(x){ return Math.abs(x.r - sr) > 1 || Math.abs(x.c - sc) > 1; });
-    for (var i = pool.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
-    for (var k = 0; k < MINES; k++) pool[k].mine = true;
-    cells.forEach(function(x){ x.adj = neighbors(x.r, x.c).filter(function(n){ return n.mine; }).length; });
+    var L = layout(sr, sc, rng);
+    cells.forEach(function(x, i){ x.mine = !!L.mine[i]; x.adj = L.adj[i]; });
   }
 
   function paint(x){
@@ -219,7 +320,7 @@ body{ position:relative; }
 
   function startTimer(){
     clearInterval(timer);
-    timer = setInterval(function(){ seconds++; timeEl.textContent = seconds; }, 1000);
+    timer = setInterval(function(){ seconds++; timeEl.textContent = seconds + penalty; }, 1000);
   }
 
   function lose(hit){
@@ -233,8 +334,9 @@ body{ position:relative; }
     hit.el.classList.add('boom');
     tone(110, 0.5, 'sawtooth', 0.08);
     setTimeout(function(){
-      endTitle.textContent = '踩到海膽了';
+      endTitle.textContent = '踩到海膽了'; document.getElementById('stars').innerHTML = '';
       endText.textContent = '這一次走了 ' + seconds + ' 秒。再試一次，把數字多看幾遍。';
+      updateSub();
       endOverlay.classList.remove('hidden');
     }, 1100);
   }
@@ -243,12 +345,14 @@ body{ position:relative; }
     over = true; clearInterval(timer); music.stop();
     cells.forEach(function(x){ if (x.mine && !x.flag){ x.flag = true; paint(x); } });
     flagCount = MINES; updateLeft();
-    var isBest = !best || seconds < best;
-    if (isBest){ best = seconds; try { localStorage.setItem('tidalsweeper_best', String(best)); } catch (e) { /* ignore */ } }
+    var total = seconds + penalty, isBest = !best || total < best;
+    if (isBest){ best = total; try { localStorage.setItem(bestKey(), String(best)); } catch (e) { /* ignore */ } }
+    var st = 1; if (shellUsed === 0) st = 2; if (shellUsed === 0 && hintsUsed === 0 && total <= LEVELS[lvIdx].par) st = 3;
+    document.getElementById('stars').innerHTML = [1, 2, 3].map(function(k){ return k <= st ? '★' : '<span class="off">★</span>'; }).join('');
     [523.25, 659.25, 783.99, 1046.5].forEach(function(f, i){ tone(f, 0.25, 'triangle', 0.07, i * 0.1); });
     var fr2 = gridEl.parentNode; for (var q = 0; q < 26; q++){ var bb = document.createElement('div'); bb.className = 'bub'; var sz = 8 + Math.random() * 20; bb.style.cssText = 'left:' + (Math.random() * 96) + '%;width:' + sz + 'px;height:' + sz + 'px;animation-delay:' + (Math.random() * .9) + 's;--sx:' + ((Math.random() - .5) * 60) + 'px'; fr2.appendChild(bb); (function(e){ setTimeout(function(){ e.remove(); }, 3300); })(bb); }
     endTitle.textContent = '全部排除！';
-    endText.textContent = (seconds <= 40 ? '潮間帶大師 🏆　' : seconds <= 90 ? '拾貝高手 🐚　' : '踏沙新手 🦀　') + '用時 ' + seconds + ' 秒' + (isBest ? '，刷新了你的最快紀錄！' : '，最快紀錄是 ' + best + ' 秒。');
+    endText.textContent = ['', '平安上岸 🦀', '一次都沒被刺到 🐚', '潮間帶大師 🏆'][st] + '　用時 ' + total + ' 秒' + (hintsUsed ? '（含提示 +' + penalty + ' 秒）' : '') + (isBest ? '，刷新紀錄！' : '，最快紀錄是 ' + best + ' 秒。');
     endOverlay.classList.remove('hidden');
   }
 
@@ -258,7 +362,10 @@ body{ position:relative; }
     if (!started){
       started = true; placeMines(x.r, x.c); startTimer();
     }
-    if (x.mine){ x.open = true; paint(x); lose(x); return; }
+    if (x.mine){
+      if (shells > 0){ shells--; shellUsed++; x.flag = true; flagCount++; paint(x); updateLeft(); updateSub(); tone(180, 0.3, 'sawtooth', 0.07); toast('🐚 護身貝殼碎了！海膽已被標記'); var fr0 = gridEl.parentNode; fr0.classList.remove('shake'); void fr0.offsetWidth; fr0.classList.add('shake'); if (navigator.vibrate) { try { navigator.vibrate(40); } catch (e) {} } return; }
+      x.open = true; paint(x); lose(x); return;
+    }
     var stack = [x];
     while (stack.length){
       var cur = stack.pop();
@@ -333,23 +440,41 @@ body{ position:relative; }
 
   function newGame(){
     clearInterval(timer);
-    buildGrid();
+    var L = LEVELS[lvIdx]; ROWS = L.r; COLS = L.c; MINES = L.m; shells = L.shell; hints = L.hint; hintsUsed = 0; shellUsed = 0; penalty = 0;
+    buildNb(); buildGrid(); loadBest();
     active = false; started = false; over = false; flagMode = false; revealedCount = 0; flagCount = 0; seconds = 0; longPressFired = false;
     flagBtn.setAttribute('aria-pressed', 'false');
     timeEl.textContent = '0';
-    updateLeft();
+    updateLeft(); updateSub();
   }
-  function startGame(){
+  function startGame(lv){
+    if (typeof lv === 'number') lvIdx = lv;
     getAc();
     startOverlay.classList.add('hidden');
     endOverlay.classList.add('hidden');
+    rng = (LEVELS[lvIdx].id === 'daily') ? mkRng(dailySeed()) : Math.random;
     newGame();
     active = true;
+    updateSub();
     music.start();
+    if (LEVELS[lvIdx].id === 'daily'){ var sr = (ROWS / 2) | 0, sc = (COLS / 2) | 0; reveal(cells[idx(sr, sc)]); }
+  }
+  function giveHint(){
+    if (!active || over || !started || hints <= 0) { if (!started && active) toast('先翻開第一格再使用提示'); return; }
+    var N = ROWS * COLS, mine = new Uint8Array(N), adj = new Uint8Array(N), op = new Uint8Array(N);
+    cells.forEach(function(x, i){ mine[i] = x.mine ? 1 : 0; adj[i] = x.adj; op[i] = x.open ? 1 : 0; });
+    var res = simulate(mine, adj, op, -1);
+    if (res.first < 0 || cells[res.first].open){ toast('目前沒有新的確定安全格，再看看數字吧'); return; }
+    hints--; hintsUsed++; penalty += 10; timeEl.textContent = seconds + penalty;
+    var el = cells[res.first].el; el.classList.add('hintcell'); setTimeout(function(){ el.classList.remove('hintcell'); }, 4500);
+    toast('💡 發光的那格一定安全（+10 秒）'); tone(880, 0.12, 'triangle', 0.06); updateSub();
   }
 
-  startBtn.addEventListener('click', startGame);
-  restartBtn.addEventListener('click', startGame);
+  Array.prototype.forEach.call(startOverlay.querySelectorAll('[data-lv]'), function(b){ b.addEventListener('click', function(){ startGame(+b.dataset.lv); }); });
+  restartBtn.addEventListener('click', function(){ startGame(lvIdx); });
+  document.getElementById('menuBtn').addEventListener('click', function(){ endOverlay.classList.add('hidden'); startOverlay.classList.remove('hidden'); });
+  document.getElementById('hintBtn').addEventListener('click', giveHint);
+
   refreshMusicBtn();
   newGame();
 })();
@@ -460,7 +585,7 @@ html.dv-mob body{min-height:100dvh}
 <aside id="dv-r" aria-label="其他遊戲"><small>換一款玩</small><span id="dv-more"></span><a class="all" href="index.html">回遊戲大廳 · 共 40 款</a></aside>
 <script id="dv-js">
 (function(){
- var LIST=[["paper-glider.html", "飛行躲避", "紙飛機大冒險", "讓紙飛機穿過桌上林立的鉛筆縫隙。"], ["rooftop-cat.html", "無盡跑酷", "屋頂貓跑酷", "夕陽屋頂上狂奔，跳過障礙、低頭鑽過飛鳥。"], ["chick-relay.html", "節奏跑酷", "小雞接力賽", "三條跑道三隻小雞，跟著鼓點跳過障礙、撿種子，烏⁠鴉來了千萬別跳"], ["ink-sword.html", "武俠", "墨劍江湖", "水墨風武俠動作：三連斬、輕功閃身、劍氣絕招，闖五章擊敗兩大魔頭"], ["boba-survivors.html", "倖存", "珍奶突圍", "化身珍珠奶茶，自動攻擊、撿珍珠升級，撐過 5 分鐘冰塊與方糖大軍"], ["drift-bend.html", "賽車漂移", "彎道漂移", "按住漂移鍵甩過彎道、放開噴出加速，十條賽道對決對手車手，收集十輛愛車"], ["star-raid.html", "太空射擊", "星艦突襲", "自動連射的太空射擊，撿道具升級武器，還要打倒巨型母艦。"], ["game.html", "即時操作", "夜蔓 貪食蛇", "連擊、衝刺、護盾與果實雨，還能和 AI 紅蛇對戰、解鎖蛇皮膚。"], ["snake-evolve.html", "街機", "蛇蛇進化", "貪吃蛇加上進化系統：穿牆、磁鐵、護盾、破岩，連吃蘋果衝高連擊"], ["tile-breaker.html", "打磚塊", "花磚打磚塊", "用木槳接住彈珠，敲碎整面馬賽克花磚牆。"], ["candy-pachinko.html", "物理彈射", "糖果彈珠台", "瞄準發射彈珠，在糖果釘子間亂彈，把橘色糖果全部打光就過關"], ["ring-toss.html", "街機經典", "夜市套圈圈", "按住瞄準、圈縮到最小時放手，套中熊貓、泰迪熊和金鑽，十個攤位等你挑戰"], ["pearl-catch.html", "接料反應", "珍珠接接樂", "用杯子接住珍珠和布丁，閃開會讓你變淡的冰塊。"], ["hoop-shot.html", "投籃機", "夜光籃球機", "往後拉、放開投籃，空心球加時間，連進有加分"], ["penalty-kings.html", "足球", "點球大師", "滑向球門射點球與任意球，繞過人牆、騙過守門員"], ["pool-hall.html", "運動競技", "八號球撞球", "巡迴賽挑戰六位對手，賺金幣買球桿與球檯，先清完自己的球再打進黑 8"], ["table-tennis.html", "運動競技", "極速桌球", "拖曳球拍回擊，揮得越快越有力，還能殺球，挑戰四級對手或無盡對拉"], ["mini-golf.html", "運動競技", "迷你高爾夫", "往後拉、放手推桿，十二個球場有沙坑、水池、風車、傳送門，桿數越少星越多"], ["dart-bar.html", "酒吧競技", "飛鏢酒吧", "按住瞄準、放開射鏢，三輪對決十位酒客，風、旋轉靶和昏暗燈光都是考驗"], ["lantern-rhythm.html", "節奏點擊", "燈籠節拍", "燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。"], ["garden-whack.html", "反應力", "菜園保衛戰", "限時 30 秒，把冒出土堆的小偷趕跑。"], ["steamer-stack.html", "抓時機", "蒸籠疊疊樂", "抓準時機放下蒸籠，疊得越準越高。"], ["cake-defense.html", "塔防", "蛋糕保衛戰", "擺放糖果槍、冰棒與爆米花砲塔，擋下偷吃生日蛋糕的螞蟻大軍"], ["dice-dungeon.html", "策略", "骰運地下城", "擲骰子、把點數放進技能卡，看穿怪物意圖，闖過 10 層地下城擊倒魔王"], ["magnet-miner.html", "冒險", "磁鐵礦工", "放下磁鐵吸金塊和鑽石，再深入一層，還是收線入袋？小心炸彈全炸光"], ["cat-cafe.html", "放置經營", "貓咪咖啡館", "點咖啡機賺錢，僱用貓咪店員，離線也繼續營業，再開分店"], ["fishing.html", "策略與經營", "深海釣手", "放線下海、左右閃避水母，釣起二十四種魚，賺錢升級漁具，把圖鑑收集滿"], ["soup-master.html", "策略經營", "湯頭大師", "用火候、下料時機和最後一撮鹽，熬出客人心中的那碗好湯，十種湯頭等你收集"], ["ink-gomoku.html", "對弈", "水墨五子棋", "墨黑對朱紅，橫直斜任一方向先連成五子者勝。"], ["xiangqi.html", "棋類對弈", "楚河漢界", "中國象棋對電腦，三種難度，還有悔棋與提示。"], ["macaron2048.html", "滑動合併", "馬卡龍 2048", "把相同口味的馬卡龍疊在一起，疊出最大的一顆。"], ["star-match.html", "記憶配對", "星圖配對", "翻開夜空卡片，用最少步數找出所有星座對子。"], ["tetris.html", "方塊消除", "方塊風暴", "經典俄羅斯方塊，暫存、預覽、瞬降，還有衝刺 40 行挑戰。"], ["meow-mover.html", "益智解謎", "喵喵搬運工", "推箱子解謎，58 個關卡，推木箱到貓腳印上，拿滿三顆星。"], ["tidal-sweeper.html", "邏輯推理", "潮間帶排雷", "退潮的沙灘藏著海膽，用數字推理出牠們的位置。"], ["shadow-cat-detective.html", "推理", "影子貓偵探", "五隻貓七嘴八舌，只有一隻在說謊。聽完口供，找出偷東西的真兇"], ["idiom-code.html", "棋牌益智", "四字密碼", "成語版猜字遊戲，看提示從十二個字裡湊出四字成語，六次機會，每天一題"], ["card-duel.html", "卡牌對戰", "紙牌決鬥", "用能量打出火球、護甲與隨從，擊敗十位對手，每贏一場就解鎖新卡牌"], ["bubble-wave.html", "鏡頭互動", "泡泡派對", "打開鏡頭，用揮手在空中打破飄上來的泡泡。"], ["halloween-booth.html", "鏡頭變臉", "萬聖變臉亭", "開鏡頭在臉上貼萬聖節貼紙，拍成圖片傳給朋友"]];
+ var LIST=[["paper-glider.html", "飛行躲避", "紙飛機大冒險", "讓紙飛機穿過桌上林立的鉛筆縫隙。"], ["rooftop-cat.html", "無盡跑酷", "屋頂貓跑酷", "夕陽屋頂上狂奔，跳過障礙、低頭鑽過飛鳥。"], ["chick-relay.html", "節奏跑酷", "小雞接力賽", "三條跑道三隻小雞，跟著鼓點跳過障礙、撿種子，烏⁠鴉來了千萬別跳"], ["ink-sword.html", "武俠", "墨劍江湖", "水墨風武俠動作：三連斬、輕功閃身、劍氣絕招，闖五章擊敗兩大魔頭"], ["boba-survivors.html", "倖存", "珍奶突圍", "化身珍珠奶茶，自動攻擊、撿珍珠升級，撐過 5 分鐘冰塊與方糖大軍"], ["drift-bend.html", "賽車漂移", "彎道漂移", "按住漂移鍵甩過彎道、放開噴出加速，十條賽道對決對手車手，收集十輛愛車"], ["star-raid.html", "太空射擊", "星艦突襲", "自動連射的太空射擊，撿道具升級武器，還要打倒巨型母艦。"], ["game.html", "即時操作", "夜蔓 貪食蛇", "連擊、衝刺、護盾與果實雨，還能和 AI 紅蛇對戰、解鎖蛇皮膚。"], ["snake-evolve.html", "街機", "蛇蛇進化", "貪吃蛇進化版：每 10 顆闖新區域，毒蘑菇、巨石、雷擊來襲；連擊吃滿進入狂熱無敵，還有任務與 12 枚勳章。"], ["tile-breaker.html", "打磚塊", "花磚打磚塊", "12 關闖關，接道具、炸彈連鎖、連擊倍率，還有三場花磚守衛 Boss 戰。"], ["candy-pachinko.html", "物理彈射", "糖果彈珠台", "瞄準發射彈珠，在糖果釘子間亂彈，把橘色糖果全部打光就過關"], ["ring-toss.html", "街機經典", "夜市套圈圈", "按住瞄準、圈縮到最小時放手，套中熊貓、泰迪熊和金鑽，十個攤位等你挑戰"], ["pearl-catch.html", "接料反應", "珍珠接接樂", "用杯子接住珍珠和布丁，閃開會讓你變淡的冰塊。"], ["hoop-shot.html", "投籃機", "夜光籃球機", "往後拉、放開投籃，空心球加時間，連進有加分"], ["penalty-kings.html", "足球", "點球大師", "滑向球門射點球與任意球，繞過人牆、騙過守門員"], ["pool-hall.html", "運動競技", "八號球撞球", "巡迴賽挑戰六位對手，賺金幣買球桿與球檯，先清完自己的球再打進黑 8"], ["table-tennis.html", "運動競技", "極速桌球", "拖曳球拍回擊、打旋轉球；巡迴賽挑戰 6 位個性對手拿星星，怒氣滿了還能放超級殺球。"], ["mini-golf.html", "運動競技", "迷你高爾夫", "往後拉、放手推桿，十二個球場有沙坑、水池、風車、傳送門，桿數越少星越多"], ["dart-bar.html", "酒吧競技", "飛鏢酒吧", "按住瞄準、放開射鏢，三輪對決十位酒客，風、旋轉靶和昏暗燈光都是考驗"], ["lantern-rhythm.html", "節奏點擊", "燈籠節拍", "燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。"], ["garden-whack.html", "反應力", "菜園保衛戰", "限時 30 秒，把冒出土堆的小偷趕跑。"], ["steamer-stack.html", "抓時機", "蒸籠疊疊樂", "抓準時機放下蒸籠，疊得越準越高。"], ["cake-defense.html", "塔防", "蛋糕保衛戰", "擺放糖果槍、冰棒與爆米花砲塔，擋下偷吃生日蛋糕的螞蟻大軍"], ["dice-dungeon.html", "策略", "骰運地下城", "擲骰子、把點數放進技能卡，看穿怪物意圖，闖過 10 層地下城擊倒魔王"], ["magnet-miner.html", "冒險", "磁鐵礦工", "放下磁鐵吸金塊和鑽石，再深入一層，還是收線入袋？小心炸彈全炸光"], ["cat-cafe.html", "放置經營", "貓咪咖啡館", "點咖啡機賺錢，僱用貓咪店員，離線也繼續營業，再開分店"], ["fishing.html", "策略與經營", "深海釣手", "放線下海、左右閃避水母，釣起二十四種魚，賺錢升級漁具，把圖鑑收集滿"], ["soup-master.html", "策略經營", "湯頭大師", "用火候、下料時機和最後一撮鹽，熬出客人心中的那碗好湯，十種湯頭等你收集"], ["ink-gomoku.html", "對弈", "水墨五子棋", "墨黑對朱紅，橫直斜任一方向先連成五子者勝。"], ["xiangqi.html", "棋類對弈", "楚河漢界", "中國象棋對電腦，三種難度，還有悔棋與提示。"], ["macaron2048.html", "滑動合併", "馬卡龍 2048", "把相同口味的馬卡龍疊在一起，疊出最大的一顆。"], ["star-match.html", "記憶配對", "星圖配對", "翻開夜空卡片，用最少步數找出所有星座對子。"], ["tetris.html", "方塊消除", "方塊風暴", "經典方塊加強版：T-Spin、背對背、道具方塊與風暴灰磚，另有衝刺與 8 個任務挑戰。"], ["meow-mover.html", "益智解謎", "喵喵搬運工", "推箱子解謎，58 個關卡，推木箱到貓腳印上，拿滿三顆星。"], ["tidal-sweeper.html", "邏輯推理", "潮間帶排雷", "退潮的沙灘藏著海膽，用數字推理出牠們的位置。"], ["shadow-cat-detective.html", "推理", "影子貓偵探", "五隻貓七嘴八舌，只有一隻在說謊。聽完口供，找出偷東西的真兇"], ["idiom-code.html", "棋牌益智", "四字密碼", "成語版猜字遊戲，看提示從十二個字裡湊出四字成語，六次機會，每天一題"], ["card-duel.html", "卡牌對戰", "紙牌決鬥", "用能量打出火球、護甲與隨從，擊敗十位對手，每贏一場就解鎖新卡牌"], ["bubble-wave.html", "鏡頭互動", "泡泡派對", "打開鏡頭，用揮手在空中打破飄上來的泡泡。"], ["halloween-booth.html", "鏡頭變臉", "萬聖變臉亭", "開鏡頭在臉上貼萬聖節貼紙，拍成圖片傳給朋友"]];
  var d=document,de=d.documentElement,b=d.body,me=(location.pathname.split('/').pop()||'');
  var mq=matchMedia('(min-width:900px) and (hover:hover) and (pointer:fine)');
  var z=1,n=0,L=d.getElementById('dv-l'),R=d.getElementById('dv-r');
