@@ -58,6 +58,7 @@ canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block}
 .row{display:flex;gap:.6em}.row>*{flex:1}
 .stat{display:grid;grid-template-columns:repeat(2,1fr);gap:.4em .8em;font-size:.88em;text-align:left;color:#C9D0E2}.stat b{float:right;color:#fff;font-family:'Space Grotesk',sans-serif}
 #nogl{display:none;position:absolute;inset:0;z-index:30;align-items:center;justify-content:center;text-align:center;padding:2em;background:#07080d;color:var(--dim);line-height:1.7}
+html,body{position:fixed;inset:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
 </style>
 </head>
 <body>
@@ -279,5 +280,6 @@ openMenu();requestAnimationFrame(loop);
 window.__LB={auto:v=>auto=v,ts:v=>TS=v,go,state:()=>state,info:()=>({score,combo,maxCombo,hp,cnt,n:notes.length,songT,endT}),press,SV};
 })();}catch(e){console.warn(e);$('nogl').style.display='flex';}
 </script>
+<script>document.addEventListener('touchmove',function(e){if(!(e.target.closest&&e.target.closest('.card,.sheet,.panel,[data-scroll]')))e.preventDefault();},{passive:false});</script>
 </body>
 </html>

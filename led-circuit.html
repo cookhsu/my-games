@@ -49,6 +49,7 @@ canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
 .row{display:flex;gap:.6em}.row>*{flex:1}
 .hint{position:absolute;left:0;right:0;bottom:5.2em;text-align:center;z-index:4;pointer-events:none;color:#C9D0E2;font-size:.82em;text-shadow:0 1px 8px #000}
 #nogl{display:none;position:absolute;inset:0;z-index:30;align-items:center;justify-content:center;text-align:center;padding:2em;background:#07080d;color:var(--dim);line-height:1.7}
+html,body{position:fixed;inset:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none}
 </style>
 </head>
 <body>
@@ -250,5 +251,6 @@ size();build(lvIdx);openMenu();requestAnimationFrame(loop);
 window.__LC={solveAll(){for(let k=0;k<G.n*G.n;k++){if(G.lock[k])continue;while(cur[k]!==G.m0[k])rotateTile(k);}},G:()=>G,state:()=>state,go,moves:()=>moves,par:()=>par,SV};
 })();}catch(e){console.warn(e);$('nogl').style.display='flex';}
 </script>
+<script>document.addEventListener('touchmove',function(e){if(!(e.target.closest&&e.target.closest('.card,.sheet,.panel,[data-scroll]')))e.preventDefault();},{passive:false});</script>
 </body>
 </html>
