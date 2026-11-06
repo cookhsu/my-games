@@ -1,0 +1,202 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SafeVault 加密保管匣</title>
+<style>
+:root{--bg:#f3f6fa;--card:#fff;--line:#e4e9f1;--ink:#1b2a3b;--muted:#6b7c93;--faint:#96a3b5;--rail:#0f1c2b;--blue:#3b82f6;--blued:#2563eb;--teal:#0d9488;--sel:#eaf2ff;--field:#fff;--danger:#b9281e;--dbg:#fef2f0}
+:root[data-theme=dark]{--bg:#0c1520;--card:#142234;--line:#223449;--ink:#e6edf6;--muted:#93a5bb;--faint:#6e8199;--rail:#08111b;--sel:#1a3050;--field:#0f1b2a;--danger:#ff8a80;--dbg:#3a1d1f}
+*{box-sizing:border-box}html,body{margin:0;height:100%}body{font-family:"Microsoft JhengHei UI","Noto Sans CJK TC","Noto Sans TC",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+button{font:inherit;cursor:pointer;border:0;color:inherit}svg{flex:none}
+.app{display:grid;grid-template-columns:248px 1fr;height:100vh}
+.rail{background:var(--rail);padding:20px 16px;display:flex;flex-direction:column;gap:6px;color:#e2e9f3}
+.brand{display:flex;gap:12px;align-items:center;padding:0 6px 4px}.brand b{font-size:20px;color:#fff}
+.seal{width:40px;height:40px;border-radius:12px;background:linear-gradient(180deg,#364e6e,#18263a);border:1px solid rgba(216,183,122,.5);display:grid;place-items:center}
+.tag{color:#8298b2;font-size:12px;padding:0 6px 18px}
+.nav{display:flex;align-items:center;gap:12px;height:44px;border-radius:11px;padding:0 14px;background:none;color:#a8bcd2;text-align:left;width:100%}
+.nav:hover{background:#182a3d}.nav.on{background:linear-gradient(180deg,#264264,#1b304c);color:#fff;box-shadow:inset 0 0 0 1px var(--blue)}
+.sp{flex:1}.sign{border-top:1px solid #1d3047;padding:12px 6px 0;color:#6e849e;font-size:11.5px}.sign b{display:block;color:#b0c2da;font-size:12.5px}
+.main{padding:24px 30px;overflow:auto;min-width:0}
+.hero{border-radius:18px;background:linear-gradient(110deg,#12263f,#224672);position:relative;overflow:hidden;padding:22px 26px;margin-bottom:18px;color:#fff}
+.hero:before{content:"";position:absolute;right:-60px;top:-100px;width:300px;height:300px;border-radius:50%;background:rgba(255,255,255,.055)}
+.hero:after{content:"";position:absolute;right:-100px;top:30px;width:200px;height:200px;border-radius:50%;background:rgba(216,183,122,.09)}
+.hero small{color:#96bef5;font-weight:700;font-size:11px;letter-spacing:.3px}.hero h1{margin:6px 0 4px;font-size:26px}.hero p{margin:0;color:#aabed7;font-size:12.5px}
+.chips{position:absolute;right:26px;top:22px;display:flex;gap:8px;z-index:1}.chip{height:26px;border-radius:13px;padding:0 12px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.25);color:#cee0f4;font-size:11.5px;display:flex;align-items:center;gap:7px}.chip i{width:6px;height:6px;border-radius:50%;background:#4ade80}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 3px 8px rgba(20,40,80,.06);padding:18px 20px;margin-bottom:16px}
+.card h3{margin:0 0 4px;font-size:16px}.card>p{margin:0 0 14px;color:var(--muted);font-size:12.5px}
+.drop{border:2px dashed #b9c6da;border-radius:14px;padding:26px;text-align:center;color:var(--muted);background:var(--field);transition:.15s}.drop.over{border-color:var(--blue);background:var(--sel)}
+.drop b{display:block;color:var(--ink);font-size:15px;margin:10px 0 4px}.drop .row{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.halo{width:64px;height:64px;border-radius:50%;background:var(--sel);display:grid;place-items:center;margin:0 auto}
+.btn{height:40px;border-radius:10px;padding:0 18px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:13.5px;background:var(--card);border:1px solid var(--line);color:var(--ink)}
+.btn:hover{border-color:var(--blue)}.btn.p{background:linear-gradient(180deg,#5b95f7,#2563eb);color:#fff;border:0;box-shadow:0 2px 0 rgba(10,30,90,.45);font-weight:700}
+.btn.p:disabled{opacity:.45;cursor:not-allowed}.btn.d{color:var(--danger);background:var(--dbg);border-color:transparent}.btn.sm{height:32px;padding:0 12px;font-size:12.5px}
+.list{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:14px;background:var(--card)}
+.it{display:flex;align-items:center;gap:12px;min-height:46px;padding:6px 14px;border-bottom:1px solid var(--line)}.it:last-child{border:0}.it:hover{background:var(--sel)}
+.fi{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:var(--sel);color:var(--blued)}
+.it .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.it .s{color:var(--muted);font-size:12px}.it .st.ok{color:var(--teal)}.it .st.sp{color:var(--blued)}
+.x{background:none;color:var(--faint);width:28px;height:28px;border-radius:7px}.x:hover{background:var(--dbg);color:var(--danger)}
+label.cap{display:block;font-size:12.5px;color:var(--muted);margin:12px 2px 5px}
+.inp{display:flex;align-items:center;height:46px;border-radius:10px;border:1px solid var(--line);background:var(--field);padding:0 8px 0 14px}.inp:focus-within{border:1.6px solid var(--blue)}
+.inp input{flex:1;border:0;outline:0;background:none;font:inherit;font-size:15px;color:var(--ink);min-width:0}.inp button{background:none;color:var(--blued);font-size:12px;padding:8px}
+.meter{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}.meter i{height:5px;border-radius:2px;background:var(--line)}.mn{font-size:12px;color:var(--muted);margin-top:6px;min-height:18px}
+.err{color:var(--danger);font-size:12.5px;margin-top:8px;min-height:18px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:900px){.two{grid-template-columns:1fr}.app{grid-template-columns:1fr;height:auto}.rail{flex-direction:row;flex-wrap:wrap;padding:12px}.tag,.sign,.sp{display:none}.nav{width:auto}.chips{position:static;margin-top:10px}}
+.ov{position:fixed;inset:0;background:rgba(8,17,27,.55);display:none;align-items:center;justify-content:center;z-index:9;padding:16px}.ov.on{display:flex}
+.dlg{width:520px;max-width:100%;background:var(--bg);border-radius:18px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.band{background:linear-gradient(100deg,#12263f,#224672);padding:20px 26px;display:flex;gap:16px;align-items:center;color:#fff}.band h2{margin:0;font-size:19px}.band p{margin:3px 0 0;color:#aabed7;font-size:12px}
+.body{padding:20px 26px 24px}
+.steps{display:flex;margin-bottom:18px}.stp{flex:1;text-align:center;font-size:11.5px;color:var(--faint);position:relative}
+.stp b{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--line);color:var(--muted);margin:0 auto 6px;font-size:12px}
+.stp.on b{background:var(--blue);color:#fff;box-shadow:0 0 0 4px rgba(59,130,246,.25)}.stp.on{color:var(--ink);font-weight:700}.stp.dn b{background:var(--teal);color:#fff}.stp.dn{color:var(--teal)}
+.stp:not(:last-child):after{content:"";position:absolute;left:calc(50% + 18px);right:calc(-50% + 18px);top:13px;height:2px;background:var(--line)}.stp.dn:after{background:var(--teal)}
+.pbar{height:10px;border-radius:5px;background:var(--line);overflow:hidden}.pbar i{display:block;height:100%;width:0;border-radius:5px;background:linear-gradient(90deg,#3b82f6,#0d9488);transition:width .2s}
+.done{text-align:center}.ok2{width:84px;height:84px;border-radius:50%;background:rgba(13,148,136,.15);display:grid;place-items:center;margin:4px auto 14px}.ok2 div{width:58px;height:58px;border-radius:50%;background:linear-gradient(180deg,#14b8a6,#0d9488);display:grid;place-items:center}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0 18px}.sum div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}.sum b{display:block;font-size:17px}.sum span{font-size:11.5px;color:var(--muted)}
+.opt{display:flex;align-items:center;gap:14px;padding:13px 0;border-top:1px solid var(--line)}.opt:first-of-type{border:0}.opt .t{flex:1}.opt b{display:block;font-size:13.5px}.opt small{color:var(--muted);font-size:12px}
+.sw{width:44px;height:25px;border-radius:13px;background:#cfd8e5;position:relative;padding:0;flex:none}.sw:after{content:"";position:absolute;left:3px;top:3px;width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.15s}.sw.on{background:linear-gradient(180deg,#5b95f7,#2563eb)}.sw.on:after{left:22px}
+.seg{display:flex;background:var(--bg);border-radius:9px;padding:3px;border:1px solid var(--line)}.seg button{background:none;padding:6px 12px;font-size:12px;border-radius:7px;color:var(--muted)}.seg button.a{background:var(--card);color:var(--blued);font-weight:700;box-shadow:0 1px 3px rgba(20,40,80,.15)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#12263f;color:#fff;padding:10px 18px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:20}.toast.on{opacity:1}
+.hide{display:none!important}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute"><defs><symbol id="lk" viewBox="0 0 54 54"><path d="M19 31a8 10 0 0 1 16 0" fill="none" stroke="#e8cc96" stroke-width="2.2" stroke-linecap="round"/><rect x="15" y="23" width="24" height="19" rx="5" fill="rgba(232,204,150,.16)" stroke="#e8cc96" stroke-width="2.2"/><circle cx="27" cy="31" r="2.5" fill="#e8cc96"/><path d="M27 33v4" stroke="#e8cc96" stroke-width="2.2" stroke-linecap="round"/></symbol></defs></svg>
+<div class="app">
+<aside class="rail"><div class="brand"><div class="seal"><svg viewBox="0 0 54 54" width="30" height="30"><use href="#lk"/></svg></div><b>SafeVault</b></div><div class="tag">檔案加密保管</div>
+<button class="nav on" data-tab="enc"></button><button class="nav" data-tab="dec"></button><button class="nav" data-tab="set"></button>
+<div class="sp"></div><div class="sign"><b>SafeVault 1.0</b>AES-256-GCM · 僅在本機處理</div></aside>
+<main class="main">
+<section class="hero"><small>SAFEVAULT / PRIVATE VAULT</small><h1 id="h1">加密保存</h1><p id="hp"></p><div class="chips"><div class="chip"><i></i>AES-256-GCM</div><div class="chip"><i style="background:#d8b77a"></i>不上傳任何資料</div></div></section>
+
+<section id="t-enc">
+<div class="card"><h3>1. 選擇要保護的內容</h3><p>檔案只在你的瀏覽器內加密,不會上傳。原始檔案不會被修改。</p>
+<div class="drop" id="drop"><div class="halo" id="dico"></div><b>把檔案或資料夾拖到這裡</b>或使用下方按鈕選擇<div class="row"><button class="btn p" id="pf"></button><button class="btn" id="pd"></button></div></div>
+<input type="file" id="fin" multiple hidden><input type="file" id="din" webkitdirectory hidden>
+<div class="list hide" id="flist"></div><div id="ftot" class="mn"></div></div>
+<div class="card"><h3>2. 設定密碼</h3><p>至少 12 個字元。忘記密碼將無法還原,沒有任何後門。</p>
+<label class="cap">密碼</label><div class="inp"><input type="password" id="p1" autocomplete="new-password"><button data-eye="p1">顯示</button></div>
+<label class="cap">再次輸入密碼</label><div class="inp"><input type="password" id="p2" autocomplete="new-password"><button data-eye="p2">顯示</button></div>
+<div class="meter" id="meter"><i></i><i></i><i></i><i></i></div><div class="mn" id="mn"></div><div class="err" id="eerr"></div>
+<button class="btn p" id="go" style="width:100%;height:46px" disabled></button></div>
+</section>
+
+<section id="t-dec" class="hide">
+<div class="card" id="dlock"><h3>解鎖保管匣</h3><p>選擇 .svault 檔案並輸入密碼。</p>
+<div class="drop" id="drop2"><div class="halo" id="dico2"></div><b id="vname">拖入或選擇 .svault 檔案</b><div class="row"><button class="btn p" id="pv"></button></div></div><input type="file" id="vin" accept=".svault" hidden>
+<label class="cap">密碼</label><div class="inp"><input type="password" id="dp" autocomplete="current-password"><button data-eye="dp">顯示</button></div><div class="err" id="derr"></div>
+<button class="btn p" id="unlock" style="width:100%;height:46px" disabled></button></div>
+<div class="card hide" id="dopen"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div style="flex:1"><h3 id="otitle"></h3><p id="osub" style="margin:0"></p></div><button class="btn p sm" id="dall"></button><button class="btn sm" id="lockb"></button></div><div class="list" id="olist"></div></div>
+</section>
+
+<section id="t-set" class="hide"><div class="card"><h3>外觀</h3><div class="opt"><div class="t"><b>主題</b><small>選擇介面的明暗風格</small></div><div class="seg" id="segT"><button data-v="light">淺色</button><button data-v="dark">深色</button><button data-v="auto">跟隨系統</button></div></div></div>
+<div class="card"><h3>安全</h3><div class="opt"><div class="t"><b>閒置 5 分鐘自動鎖定</b><small>清除已解鎖的內容,需重新輸入密碼</small></div><button class="sw" id="swLock"></button></div>
+<div class="opt"><div class="t"><b>加密參數</b><small>PBKDF2-SHA256 · 600,000 次迭代 · AES-256-GCM · 每個檔案獨立 IV 並綁定順序</small></div></div></div>
+<div class="card"><h3>重要提醒</h3><p style="margin:0">瀏覽器網頁無法保證記憶體在使用後被清除,也無法驗證你所用裝置是否安全。請在可信任的電腦上操作,並妥善保存密碼。單一檔案過大(數 GB)可能因記憶體不足而失敗。</p></div></section>
+</main></div>
+
+<div class="ov" id="ovP"><div class="dlg"><div class="band"><div class="seal"><svg viewBox="0 0 54 54" width="30" height="30"><use href="#lk"/></svg></div><div><h2 id="pt">正在加密保存</h2><p id="ps">請勿關閉此頁面</p></div></div>
+<div class="body"><div class="steps" id="steps"></div><div id="pbody"></div></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const IC={lock:'<path d="M7 11V8a5 5 0 0 1 10 0v3"/><rect x="5" y="11" width="14" height="10" rx="1.5"/><path d="M12 15v3"/>',unlock:'<path d="M8 11V7a4 4 0 0 1 8-1"/><rect x="5" y="11" width="14" height="10" rx="1.5"/><path d="M12 15v3"/>',file:'<path d="M5 21V3h9l5 5v13z"/><path d="M14 3v5h5"/>',folder:'<path d="M3 20V5h7l3 3h8v12z"/>',gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>',down:'<path d="M12 4v12M6 11l6 6 6-6M5 21h14"/>',up:'<path d="M12 20V5M6 11l6-6 6 6"/>',x:'<path d="M6 6l12 12M18 6L6 18"/>',key:'<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/>'};
+const ic=(k,s=18,c='currentColor',w=1.7)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${IC[k]}</svg>`;
+const fmt=n=>n<1024?n+' B':n<1048576?(n/1024).toFixed(n<10240?1:0)+' KB':n<1073741824?(n/1048576).toFixed(1)+' MB':(n/1073741824).toFixed(2)+' GB';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2600)}
+// static icons / labels
+$$('.nav').forEach(b=>{const m={enc:['lock','加密保存'],dec:['unlock','解密還原'],set:['gear','設定']}[b.dataset.tab];b.innerHTML=ic(m[0])+m[1]});
+$('#dico').innerHTML=ic('lock',30,'#2563eb');$('#dico2').innerHTML=ic('key',30,'#2563eb');
+$('#pf').innerHTML=ic('file',16,'#fff')+' 選擇檔案';$('#pd').innerHTML=ic('folder',16)+' 選擇資料夾';$('#pv').innerHTML=ic('file',16,'#fff')+' 選擇 .svault';
+$('#go').innerHTML=ic('lock',18,'#fff')+' 加密並下載保管匣';$('#unlock').innerHTML=ic('unlock',18,'#fff')+' 解鎖';
+$('#dall').innerHTML=ic('down',15,'#fff')+' 全部下載';$('#lockb').innerHTML=ic('lock',15)+' 鎖定';
+const HP={enc:['加密保存','選擇檔案、設定密碼,產生一個加密的 .svault 保管匣。'],dec:['解密還原','輸入密碼,查看並還原保管匣內的檔案。'],set:['設定','調整外觀與安全行為。']};
+function tab(t){$$('.nav').forEach(b=>b.classList.toggle('on',b.dataset.tab==t));['enc','dec','set'].forEach(x=>$('#t-'+x).classList.toggle('hide',x!=t));$('#h1').textContent=HP[t][0];$('#hp').textContent=HP[t][1]}
+$$('.nav').forEach(b=>b.onclick=()=>tab(b.dataset.tab));tab('enc');
+$$('[data-eye]').forEach(b=>b.onclick=()=>{const i=$('#'+b.dataset.eye);const s=i.type=='password';i.type=s?'text':'password';b.textContent=s?'隱藏':'顯示'});
+
+// ===== crypto =====
+const MAGIC=[0x53,0x56,0x4c,0x54],ITER=600000,te=new TextEncoder(),td=new TextDecoder();
+async function deriveKey(pw,salt,iter){const km=await crypto.subtle.importKey('raw',te.encode(pw),'PBKDF2',false,['deriveKey']);return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])}
+const u32=n=>new Uint8Array([n>>>24,n>>>16&255,n>>>8&255,n&255]);
+const rd32=(a,o)=>((a[o]<<24)|(a[o+1]<<16)|(a[o+2]<<8)|a[o+3])>>>0;
+async function sealRec(key,idx,data){const iv=crypto.getRandomValues(new Uint8Array(12));const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:u32(idx)},key,data));return [iv,u32(ct.length),ct]}
+async function openRec(key,idx,iv,ct){return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv,additionalData:u32(idx)},key,ct))}
+const tick=()=>new Promise(r=>setTimeout(r,16));
+
+// ===== strength =====
+function strength(p){let s=0;if(p.length>=12)s++;if(p.length>=16)s++;const k=[/[a-z]/,/[A-Z]/,/\d/,/[^A-Za-z0-9]/].filter(r=>r.test(p)).length;if(k>=3)s++;if(k==4&&p.length>=14)s++;if(/^(.)\1+$/.test(p)||/(1234|abcd|password|qwer)/i.test(p))s=Math.max(0,s-2);return Math.min(4,p.length<12?Math.min(s,1):s)}
+const SC=['#e5484d','#f59e0b','#3b82f6','#0d9488'],SN=['太弱','普通','不錯','很強'];
+// ===== encrypt tab =====
+let files=[];
+function addFiles(list){for(const f of list){const n=f.webkitRelativePath||f.name;if(!files.some(x=>x.n==n&&x.f.size==f.size))files.push({f,n})}renderFiles()}
+function renderFiles(){const L=$('#flist');L.classList.toggle('hide',!files.length);L.innerHTML=files.map((x,i)=>`<div class="it"><div class="fi">${ic('file',16)}</div><div class="n">${esc(x.n)}</div><div class="s">${fmt(x.f.size)}</div><button class="x" data-i="${i}" title="移除">${ic('x',14)}</button></div>`).join('');
+ const t=files.reduce((a,x)=>a+x.f.size,0);$('#ftot').textContent=files.length?`共 ${files.length} 個檔案 · ${fmt(t)}`:'';checkEnc()}
+$('#flist').onclick=e=>{const b=e.target.closest('.x');if(b){files.splice(+b.dataset.i,1);renderFiles()}};
+$('#pf').onclick=()=>$('#fin').click();$('#pd').onclick=()=>$('#din').click();
+$('#fin').onchange=e=>{addFiles(e.target.files);e.target.value=''};$('#din').onchange=e=>{addFiles(e.target.files);e.target.value=''};
+function dz(el,fn){['dragenter','dragover'].forEach(v=>el.addEventListener(v,e=>{e.preventDefault();el.classList.add('over')}));['dragleave','drop'].forEach(v=>el.addEventListener(v,e=>{e.preventDefault();el.classList.remove('over')}));el.addEventListener('drop',e=>fn(e.dataTransfer.files))}
+dz($('#drop'),addFiles);
+function checkEnc(){const p=$('#p1').value,q=$('#p2').value,s=strength(p);
+ if(!p){$$('#meter i').forEach(e=>e.style.background='')}else{const lv=p.length<12?0:Math.max(1,s)-0;const idx=p.length<12?0:Math.min(3,Math.max(0,s-1));$$('#meter i').forEach((e,i)=>e.style.background=i<=idx?SC[idx]:'')}
+ let m='',er='';if(p){m=p.length<12?`還差 ${12-p.length} 個字元`:'強度:'+SN[Math.min(3,Math.max(0,s-1))]}
+ if(q&&p!=q)er='兩次輸入的密碼不一致';$('#mn').textContent=m;$('#eerr').textContent=er;
+ $('#go').disabled=!(files.length&&p.length>=12&&p==q)}
+$('#p1').oninput=$('#p2').oninput=checkEnc;
+
+// ===== progress dialog =====
+const STEPS=['選擇內容','設定密碼','處理中','完成'];
+function steps(a){$('#steps').innerHTML=STEPS.map((n,i)=>`<div class="stp ${i<a?'dn':i==a?'on':''}"><b>${i<a?'✓':i+1}</b>${n}</div>`).join('')}
+function dlBlob(parts,name){const b=new Blob(parts,{type:'application/octet-stream'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),60000)}
+let busy=false;
+$('#go').onclick=async()=>{
+ if(busy)return;busy=true;const pw=$('#p1').value,list=files.slice();const total=list.reduce((a,x)=>a+x.f.size,0);
+ $('#pt').textContent='正在加密保存';$('#ps').textContent='請勿關閉此頁面';steps(2);$('#ovP').classList.add('on');
+ $('#pbody').innerHTML=`<div style="display:flex;justify-content:space-between;margin-bottom:8px"><b id="pn">準備中…</b><b id="pp" style="color:var(--blued)">0%</b></div><div class="pbar"><i id="pb"></i></div><div class="mn" id="pm">產生金鑰中(PBKDF2 600,000 次)…</div><div class="list" id="pl" style="max-height:200px;overflow:auto">${list.map((x,i)=>`<div class="it" id="r${i}"><div class="fi">${ic('file',15)}</div><div class="n">${esc(x.n)}</div><div class="s st">等待中</div></div>`).join('')}</div>`;
+ try{
+  await tick();const salt=crypto.getRandomValues(new Uint8Array(16));const key=await deriveKey(pw,salt,ITER);
+  const parts=[new Uint8Array(MAGIC),new Uint8Array([1]),u32(ITER),salt];
+  const man=te.encode(JSON.stringify({v:1,created:Date.now(),files:list.map(x=>({n:x.n,s:x.f.size,t:x.f.type,m:x.f.lastModified}))}));
+  parts.push(...await sealRec(key,0,man));let done=0;
+  for(let i=0;i<list.length;i++){const x=list[i],row=$('#r'+i).querySelector('.st');row.textContent='加密中…';row.className='s st sp';$('#pn').textContent=x.n;
+   const buf=new Uint8Array(await x.f.arrayBuffer());parts.push(...await sealRec(key,i+1,buf));done+=x.f.size;
+   row.textContent='✓ 已加密';row.className='s st ok';const pc=total?Math.round(done/total*100):100;$('#pb').style.width=pc+'%';$('#pp').textContent=pc+'%';$('#pm').textContent=`已處理 ${fmt(done)} / ${fmt(total)}`;await tick()}
+  const name=(list.length==1?list[0].n.split('/').pop().replace(/\.[^.]+$/,''):'保管匣-'+new Date().toISOString().slice(0,10))+'.svault';
+  const size=parts.reduce((a,p)=>a+p.length,0);dlBlob(parts,name);
+  steps(4);$('#pt').textContent='加密完成';$('#ps').textContent='保管匣已下載到你的電腦';
+  $('#pbody').innerHTML=`<div class="done"><div class="ok2"><div><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div></div><b style="font-size:19px">${esc(name)}</b><div class="sum"><div><b>${list.length}</b><span>個檔案</span></div><div><b>${fmt(total)}</b><span>原始大小</span></div><div><b>${fmt(size)}</b><span>保管匣大小</span></div></div><p style="color:var(--muted);font-size:12.5px;margin:0 0 16px">原始檔案沒有被修改。請妥善保存密碼,忘記就無法還原。</p><div style="display:flex;gap:10px"><button class="btn" style="flex:1" id="pc">完成</button><button class="btn p" style="flex:1" id="pr">重新下載</button></div></div>`;
+  $('#pc').onclick=()=>{$('#ovP').classList.remove('on');files=[];$('#p1').value=$('#p2').value='';renderFiles()};$('#pr').onclick=()=>dlBlob(parts,name);
+ }catch(e){$('#pt').textContent='加密失敗';$('#ps').textContent='';$('#pbody').innerHTML=`<p style="color:var(--danger)">${esc(e.message||e)}<br><span style="color:var(--muted)">檔案可能過大或記憶體不足。</span></p><button class="btn" id="pc">關閉</button>`;$('#pc').onclick=()=>$('#ovP').classList.remove('on')}
+ busy=false};
+
+// ===== decrypt tab =====
+let vfile=null,opened=null,lockT=null;
+function setV(f){if(!f)return;vfile=f;$('#vname').textContent=f.name+' · '+fmt(f.size);$('#derr').textContent='';chkDec()}
+$('#pv').onclick=()=>$('#vin').click();$('#vin').onchange=e=>{setV(e.target.files[0]);e.target.value=''};dz($('#drop2'),l=>setV(l[0]));
+function chkDec(){$('#unlock').disabled=!(vfile&&$('#dp').value)}$('#dp').oninput=chkDec;$('#dp').onkeydown=e=>{if(e.key=='Enter'&&!$('#unlock').disabled)$('#unlock').click()};
+function lockNow(msg){opened=null;$('#olist').innerHTML='';$('#dopen').classList.add('hide');$('#dlock').classList.remove('hide');$('#dp').value='';chkDec();clearTimeout(lockT);if(msg)toast(msg)}
+function armLock(){clearTimeout(lockT);if(opened&&store.get('autolock',true))lockT=setTimeout(()=>lockNow('已閒置自動鎖定'),300000)}
+['pointerdown','keydown'].forEach(v=>addEventListener(v,armLock,{passive:true}));
+$('#lockb').onclick=()=>lockNow('已鎖定');
+$('#unlock').onclick=async()=>{
+ const b=$('#unlock');b.disabled=true;b.textContent='解鎖中…';$('#derr').textContent='';
+ try{const a=new Uint8Array(await vfile.arrayBuffer());
+  if(a.length<33||MAGIC.some((m,i)=>a[i]!=m))throw new Error('這不是有效的 .svault 檔案');
+  if(a[4]!=1)throw new Error('不支援的保管匣版本');const it=rd32(a,5);if(it<100000||it>5000000)throw new Error('檔案參數異常');
+  await tick();const key=await deriveKey($('#dp').value,a.slice(9,25),it);let o=25,idx=0;
+  const next=async()=>{if(o+16>a.length)throw new Error('檔案已損毀或被截斷');const iv=a.slice(o,o+12),n=rd32(a,o+12);if(o+16+n>a.length)throw new Error('檔案已損毀或被截斷');const ct=a.subarray(o+16,o+16+n);o+=16+n;return openRec(key,idx++,iv,ct)};
+  let man;try{man=JSON.parse(td.decode(await next()))}catch(e){if(e instanceof SyntaxError)throw e;if(/損毀/.test(e.message))throw e;throw new Error('密碼錯誤,或檔案已被竄改')}
+  const items=[];for(const f of man.files){let d;try{d=await next()}catch(e){throw new Error(/損毀/.test(e.message)?e.message:'檔案內容已被竄改或損毀,無法還原')}items.push({n:f.n,s:f.s,t:f.t,d})}
+  opened={name:vfile.name,items,created:man.created};showOpen();
+ }catch(e){$('#derr').textContent=e.message||String(e)}
+ b.innerHTML=ic('unlock',18,'#fff')+' 解鎖';chkDec()};
+function showOpen(){$('#dlock').classList.add('hide');$('#dopen').classList.remove('hide');$('#otitle').textContent=opened.name;
+ $('#osub').textContent=`${opened.items.length} 個檔案 · 建立於 ${new Date(opened.created).toLocaleString('zh-TW')}`;
+ $('#olist').innerHTML=opened.items.map((x,i)=>`<div class="it"><div class="fi">${ic('file',16)}</div><div class="n">${esc(x.n)}</div><div class="s">${fmt(x.s)}</div><button class="btn sm" data-d="${i}">${ic('down',14)} 還原</button></div>`).join('');armLock()}
+function dlItem(x){const a=document.createElement('a');const u=URL.createObjectURL(new Blob([x.d],{type:x.t||'application/octet-stream'}));a.href=u;a.download=x.n.split('/').pop();document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)}
+$('#olist').onclick=e=>{const b=e.target.closest('[data-d]');if(b){dlItem(opened.items[+b.dataset.d]);armLock()}};
+$('#dall').onclick=async()=>{for(const x of opened.items){dlItem(x);await new Promise(r=>setTimeout(r,350))}toast('已開始下載全部檔案(瀏覽器可能會詢問是否允許多檔下載)')};
+$('#unlock').disabled=true;
+
+// ===== settings =====
+function applyTheme(){const v=store.get('theme','light');const dark=v=='dark'||(v=='auto'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.dataset.theme=dark?'dark':'light';$$('#segT button').forEach(b=>b.classList.toggle('a',b.dataset.v==v))}
+$('#segT').onclick=e=>{const b=e.target.closest('button');if(b){store.set('theme',b.dataset.v);applyTheme()}};applyTheme();
+function swr(){$('#swLock').classList.toggle('on',store.get('autolock',true))}$('#swLock').onclick=()=>{store.set('autolock',!store.get('autolock',true));swr();armLock()};swr();
+window.__sv={deriveKey,strength};
+</script></body></html>

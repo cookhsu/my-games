@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>/*audio-unlock*/(function(){if(window.__au)return;var ctxs=[];window.__au=ctxs;var A=window.AudioContext||window.webkitAudioContext;
+if(A){var P=function(a,b){var c=new A(a,b);ctxs.push(c);return c;};P.prototype=A.prototype;try{Object.setPrototypeOf(P,A);}catch(e){}window.AudioContext=P;window.webkitAudioContext=P;}
+var el=null;function unlock(){try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch(e){}
+try{if(!el){el=document.createElement('audio');el.src="data:audio/wav;base64,UklGRmQGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YUAGAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA";el.loop=true;el.preload='auto';el.setAttribute('playsinline','');el.setAttribute('webkit-playsinline','');el.style.display='none';}
+var pr=el.play();if(pr&&pr.catch)pr.catch(function(){});}catch(e){}
+for(var i=0;i<ctxs.length;i++){var c=ctxs[i];try{if(c.state!=='running'&&c.resume){var r=c.resume();if(r&&r.catch)r.catch(function(){});}var b=c.createBuffer(1,1,22050),s=c.createBufferSource();s.buffer=b;s.connect(c.destination);s.start(0);}catch(e){}}}
+['touchstart','touchend','pointerdown','pointerup','mousedown','click','keydown'].forEach(function(ev){addEventListener(ev,unlock,{capture:true,passive:true});});
+document.addEventListener('visibilitychange',function(){if(document.hidden){try{el&&el.pause();}catch(e){}}else{unlock();}});
+addEventListener('pageshow',unlock);})();</script>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LED 燈光工作室</title>
+<style>
+:root{--bg:#07080d;--panel:#10131c;--panel2:#171b27;--line:rgba(255,255,255,.08);--txt:#eef1f8;--dim:#8a93aa;--acc:#7cc4ff;--r:16px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font:14px/1.5 'Noto Sans TC',-apple-system,'PingFang TC','Microsoft JhengHei',system-ui,sans-serif;overflow:hidden}
+.app{height:100%;display:grid;grid-template-rows:minmax(0,46%) minmax(0,1fr);max-width:1100px;margin:0 auto}
+@media(min-width:860px){.app{grid-template-rows:none;grid-template-columns:minmax(0,1.35fr) 400px}}
+#stage{position:relative;min-height:0;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#161a2a,#07080d 75%)}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+#gl:active{cursor:grabbing}
+.top{position:absolute;left:0;right:0;top:0;display:flex;justify-content:space-between;align-items:center;padding:max(10px,env(safe-area-inset-top)) 12px 0;pointer-events:none;z-index:2}
+.top h1{font-size:15px;margin:0;letter-spacing:.12em;text-shadow:0 1px 8px #000}.top small{display:block;color:var(--dim);font-size:11px;letter-spacing:.04em}
+.top a,.top button{pointer-events:auto}
+.pwr{width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:rgba(20,24,36,.8);color:var(--dim);font-size:20px;display:grid;place-items:center;cursor:pointer;backdrop-filter:blur(6px);transition:.25s}
+.pwr.on{color:#0a0c12;background:var(--acc);box-shadow:0 0 22px var(--acc)}
+.hint{position:absolute;left:0;right:0;bottom:8px;text-align:center;color:var(--dim);font-size:11px;pointer-events:none}
+.sheet{background:var(--panel);border-top:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+@media(min-width:860px){.sheet{border-top:0;border-left:1px solid var(--line)}}
+.tabs{display:flex;gap:4px;padding:8px 10px 0}
+.tabs button{flex:1;padding:9px 0;border:0;border-radius:12px 12px 0 0;background:transparent;color:var(--dim);font:700 13px 'Noto Sans TC',sans-serif;cursor:pointer;border-bottom:2px solid transparent}
+.tabs button.on{color:var(--txt);border-bottom-color:var(--acc);background:var(--panel2)}
+.body{flex:1;overflow:auto;padding:14px 14px 28px;background:var(--panel2);-webkit-overflow-scrolling:touch}
+.pane{display:none;flex-direction:column;gap:14px}.pane.on{display:flex}
+.lbl{font-size:12px;color:var(--dim);letter-spacing:.14em;font-weight:700;margin:0 0 8px;display:flex;justify-content:space-between;align-items:center}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:1px solid var(--line);background:#0e1119;color:var(--txt);padding:7px 12px;border-radius:999px;font:700 12.5px 'Noto Sans TC',sans-serif;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.chip.on{border-color:var(--acc);background:rgba(124,196,255,.14);color:#fff}
+.chip i{width:10px;height:10px;border-radius:50%;display:inline-block;box-shadow:0 0 6px currentColor}
+.row{display:flex;gap:14px;align-items:center}
+#wheel{width:170px;height:170px;border-radius:50%;touch-action:none;flex:none;cursor:crosshair;box-shadow:0 0 0 1px var(--line),0 8px 24px rgba(0,0,0,.4)}
+.col{flex:1;display:flex;flex-direction:column;gap:12px;min-width:0}
+input[type=range]{width:100%;accent-color:var(--acc);height:28px}
+.val{color:var(--txt);font-variant-numeric:tabular-nums}
+.swatches{display:flex;gap:8px;flex-wrap:wrap}.sw{width:30px;height:30px;border-radius:50%;border:2px solid rgba(255,255,255,.15);cursor:pointer}.sw:active{transform:scale(.92)}
+.fx{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.fx button{padding:12px 4px;border-radius:14px;border:1px solid var(--line);background:#0e1119;color:var(--txt);font:700 12.5px 'Noto Sans TC',sans-serif;cursor:pointer;display:flex;flex-direction:column;gap:4px;align-items:center}
+.fx button span{font-size:20px}.fx button.on{border-color:var(--acc);background:rgba(124,196,255,.14)}
+.sc{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.scn{position:relative;border:1px solid var(--line);border-radius:14px;padding:12px;background:#0e1119;cursor:pointer;text-align:left;color:var(--txt);font:700 13px 'Noto Sans TC',sans-serif}
+.scn small{display:block;color:var(--dim);font-weight:400;font-size:11px;margin-top:2px}
+.scn .bar{height:6px;border-radius:3px;margin-top:9px}.scn .x{position:absolute;right:8px;top:6px;color:var(--dim);font-size:15px}
+.btn{border:0;border-radius:12px;padding:11px 14px;font:700 13px 'Noto Sans TC',sans-serif;cursor:pointer;background:var(--acc);color:#07101a}.btn.g{background:#0e1119;color:var(--txt);border:1px solid var(--line)}
+input[type=time],select{background:#0e1119;color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:700 13px 'Noto Sans TC',sans-serif;color-scheme:dark}
+.card{background:#0e1119;border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.sw2{position:relative;width:44px;height:26px;flex:none}.sw2 input{opacity:0;position:absolute;inset:0;width:100%;height:100%;margin:0;cursor:pointer}.sw2 b{position:absolute;inset:0;border-radius:13px;background:#2a3042;transition:.2s}.sw2 b::after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}.sw2 input:checked+b{background:var(--acc)}.sw2 input:checked+b::after{left:21px}
+.big{font:900 28px 'Fredoka','Noto Sans TC',sans-serif;font-variant-numeric:tabular-nums}
+#msg{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:8px 16px;border-radius:999px;font-weight:700;font-size:13px;z-index:9;opacity:0;transition:.25s;pointer-events:none}#msg.on{opacity:1}
+#nogl{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="stage">
+    <canvas id="gl"></canvas>
+    <div class="top"><div><h1>LED 燈光工作室</h1><small id="sub">模擬房間 ・ 拖曳旋轉視角</small></div><button class="pwr on" id="pwr" aria-label="電源">⏻</button></div>
+    <div class="hint">拖曳旋轉 ・ 滾輪/雙指縮放</div>
+    <div id="nogl">無法載入 3D 引擎(three.module.min.js)<br>請確認檔案與本頁放在同一個資料夾。</div>
+  </div>
+  <div class="sheet">
+    <div class="tabs" id="tabs"><button data-p="color" class="on">顏色</button><button data-p="fx">動態</button><button data-p="scene">情境</button><button data-p="time">排程</button></div>
+    <div class="body">
+      <div class="pane on" id="p-color">
+        <div><div class="lbl">編輯區域 <span style="font-weight:400;letter-spacing:0">可複選</span></div><div class="chips" id="zones"></div></div>
+        <div class="row">
+          <canvas id="wheel" width="340" height="340"></canvas>
+          <div class="col">
+            <div><div class="lbl">亮度 <span class="val" id="bv">80%</span></div><input type="range" id="bright" min="1" max="100" value="80"></div>
+            <div><div class="lbl">色溫</div><div class="swatches" id="temps"></div></div>
+          </div>
+        </div>
+        <div><div class="lbl">常用色</div><div class="swatches" id="sws"></div></div>
+      </div>
+      <div class="pane" id="p-fx">
+        <div><div class="lbl">編輯區域</div><div class="chips" id="zones2"></div></div>
+        <div class="fx" id="fxs"></div>
+        <div><div class="lbl">速度 <span class="val" id="sv">50%</span></div><input type="range" id="speed" min="5" max="100" value="50"></div>
+        <div class="card"><div class="row" style="justify-content:space-between"><div><b>🎤 麥克風音樂律動</b><div style="color:var(--dim);font-size:12px">「音樂」效果改用真實聲音節拍</div></div><label class="sw2"><input type="checkbox" id="mic"><b></b></label></div></div>
+      </div>
+      <div class="pane" id="p-scene">
+        <div class="sc" id="scs"></div>
+        <button class="btn g" id="saveSc">＋ 把目前設定存成情境</button>
+        <button class="btn g" id="exp">📋 複製設定(JSON)</button>
+      </div>
+      <div class="pane" id="p-time">
+        <div class="card"><div class="lbl" style="margin:0">睡眠倒數 <span class="val big" id="cd">--:--</span></div><div class="chips" id="tm"></div><div style="color:var(--dim);font-size:12px">時間到前 20 秒會慢慢調暗,最後自動關燈。</div></div>
+        <div class="card"><div class="lbl" style="margin:0">日出喚醒</div><div style="color:var(--dim);font-size:12px">亮度與色溫從深紅慢慢升到暖白,像天亮一樣。</div><div class="row"><button class="btn" id="sun5">開始(5 分鐘)</button><button class="btn g" id="sun10">試跑 10 秒</button></div></div>
+        <div class="card"><div class="lbl" style="margin:0">每日定時</div>
+          <div class="row"><label class="sw2"><input type="checkbox" id="onEn"><b></b></label><span style="flex:1">開燈</span><input type="time" id="onT" value="18:30"></div>
+          <div class="row"><label class="sw2"><input type="checkbox" id="offEn"><b></b></label><span style="flex:1">關燈</span><input type="time" id="offT" value="23:30"></div>
+          <div style="color:var(--dim);font-size:12px">這是網頁模擬,頁面開著時才會觸發;真正控制燈具需要接上藍牙或 Wi-Fi 控制器。</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="msg"></div>
+
+<script>
+/* ===== 狀態(與 3D 無關,載入失敗也能操作) ===== */
+const $=id=>document.getElementById(id);
+const ZN=[['ceil','天花板','#7cc4ff'],['tv','電視牆','#ff6fa8'],['desk','書桌','#ffb454'],['floor','床底/踢腳','#9b7cff']];
+const FX=[['static','靜態','●'],['breathe','呼吸','◐'],['rainbow','彩虹','🌈'],['chase','流星','☄'],['twinkle','星空','✦'],['beat','音樂','♪'],['fire','燭火','🔥']];
+const TEMPS=[['#ff9d3a','2700K'],['#ffc07a','3200K'],['#ffe3b8','4000K'],['#fff6ea','5000K'],['#dfeaff','6500K']];
+const SWS=['#ff3b3b','#ff8a2a','#ffd93b','#39e06b','#27e0d0','#3b8bff','#8a5bff','#ff4fd8'];
+const SCENES0=[
+ {n:'閱讀',e:'📖',b:75,z:{ceil:['#fff0d8','static'],tv:['#ffe3b8','static'],desk:['#fff6ea','static'],floor:['#ffc07a','static']}},
+ {n:'電影',e:'🎬',b:45,z:{ceil:['#1a2a6a','breathe'],tv:['#ff5a2a','static'],desk:['#201030','static'],floor:['#552266','static']}},
+ {n:'派對',e:'🎉',b:100,z:{ceil:['#ff3bd8','rainbow'],tv:['#3bd8ff','beat'],desk:['#ffd93b','chase'],floor:['#8a5bff','twinkle']}},
+ {n:'睡前',e:'🌙',b:18,z:{ceil:['#ff7a2a','breathe'],tv:['#000000','static'],desk:['#ff9d3a','static'],floor:['#ff5a1a','static']}},
+ {n:'專注',e:'🧠',b:85,z:{ceil:['#dfeaff','static'],tv:['#27e0d0','static'],desk:['#ffffff','static'],floor:['#3b8bff','static']}},
+ {n:'浪漫',e:'💗',b:40,z:{ceil:['#ff4f8a','breathe'],tv:['#ff2a6a','fire'],desk:['#ff8a6a','static'],floor:['#8a2a6a','breathe']}}];
+function ld(k,d){try{const v=JSON.parse(localStorage.getItem(k));return v==null?d:v;}catch(e){return d;}}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+const S=ld('led_state',null)||{on:true,bright:80,speed:50,zones:{}};
+for(const [k,,c] of ZN)if(!S.zones[k])S.zones[k]={c:c,fx:'static'};
+let SCN=ld('led_scenes',[]);let SEL=new Set(['ceil','tv','desk','floor']);
+const save=()=>sv('led_state',S);
+function toast(t){const m=$('msg');m.textContent=t;m.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>m.classList.remove('on'),1500);}
+/* 顏色轉換 */
+function hsv2rgb(h,s,v){const i=Math.floor(h*6),f=h*6-i,p=v*(1-s),q=v*(1-f*s),t=v*(1-(1-f)*s);const m=[[v,t,p],[q,v,p],[p,v,t],[p,q,v],[t,p,v],[v,p,q]][i%6];return m;}
+function rgb2hsv(r,g,b){const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let h=0;if(d){if(mx===r)h=((g-b)/d)%6;else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;h/=6;if(h<0)h+=1;}return[h,mx?d/mx:0,mx];}
+const hex2rgb=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16)/255);
+const rgb2hex=c=>'#'+c.map(x=>('0'+Math.round(Math.max(0,Math.min(1,x))*255).toString(16)).slice(-2)).join('');
+/* UI */
+function chipsFor(el){el.innerHTML='';const all=document.createElement('button');all.className='chip'+(SEL.size===4?' on':'');all.textContent='全部';all.onclick=()=>{SEL=new Set(ZN.map(z=>z[0]));uiSel();};el.appendChild(all);
+ for(const [k,n] of ZN){const b=document.createElement('button');b.className='chip'+(SEL.has(k)&&SEL.size<4?' on':'');b.innerHTML='<i style="color:'+S.zones[k].c+';background:'+S.zones[k].c+'"></i>'+n;b.onclick=()=>{if(SEL.size===4)SEL=new Set([k]);else if(SEL.has(k)){SEL.delete(k);if(!SEL.size)SEL=new Set([k]);}else SEL.add(k);uiSel();};el.appendChild(b);}}
+function uiSel(){chipsFor($('zones'));chipsFor($('zones2'));drawWheel();fxUI();}
+const first=()=>S.zones[[...SEL][0]];
+function setColor(hex){for(const k of SEL)S.zones[k].c=hex;if(!S.on){S.on=true;pw();}save();uiSel();}
+/* 色環 */
+const wh=$('wheel'),wx=wh.getContext('2d');let wimg=null;
+function drawWheel(){const W=wh.width,R=W/2;if(!wimg){wimg=wx.createImageData(W,W);for(let y=0;y<W;y++)for(let x=0;x<W;x++){const dx=x+.5-R,dy=y+.5-R,r=Math.hypot(dx,dy)/R,o=(y*W+x)*4;if(r>1){wimg.data[o+3]=0;continue;}let h=Math.atan2(dy,dx)/6.2832;if(h<0)h+=1;const c=hsv2rgb(h,Math.min(1,r),1);wimg.data[o]=c[0]*255;wimg.data[o+1]=c[1]*255;wimg.data[o+2]=c[2]*255;wimg.data[o+3]=r>.985?(1-r)/.015*255:255;}}
+ wx.clearRect(0,0,W,W);wx.putImageData(wimg,0,0);const [h,s]=rgb2hsv(...hex2rgb(first().c)),a=h*6.2832,px=R+Math.cos(a)*s*R,py=R+Math.sin(a)*s*R;wx.lineWidth=5;wx.strokeStyle='#fff';wx.fillStyle=first().c;wx.beginPath();wx.arc(px,py,15,0,7);wx.fill();wx.stroke();wx.lineWidth=2;wx.strokeStyle='rgba(0,0,0,.45)';wx.stroke();}
+function wpick(e){const r=wh.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*2-1,y=(e.clientY-r.top)/r.height*2-1;let rr=Math.hypot(x,y);let h=Math.atan2(y,x)/6.2832;if(h<0)h+=1;rr=Math.min(1,rr);setColor(rgb2hex(hsv2rgb(h,rr,1)));}
+let wd=false;wh.addEventListener('pointerdown',e=>{wd=true;wh.setPointerCapture(e.pointerId);wpick(e);});wh.addEventListener('pointermove',e=>{if(wd)wpick(e);});wh.addEventListener('pointerup',()=>wd=false);wh.addEventListener('pointercancel',()=>wd=false);
+for(const [c,n] of TEMPS){const d=document.createElement('div');d.className='sw';d.style.background=c;d.title=n;d.onclick=()=>setColor(c);$('temps').appendChild(d);}
+for(const c of SWS){const d=document.createElement('div');d.className='sw';d.style.background=c;d.onclick=()=>setColor(c);$('sws').appendChild(d);}
+/* 動態 */
+function fxUI(){const f=first().fx;$('fxs').innerHTML='';for(const [k,n,i] of FX){const b=document.createElement('button');b.className=f===k?'on':'';b.innerHTML='<span>'+i+'</span>'+n;b.onclick=()=>{for(const z of SEL)S.zones[z].fx=k;save();fxUI();};$('fxs').appendChild(b);}}
+$('bright').oninput=e=>{S.bright=+e.target.value;$('bv').textContent=S.bright+'%';save();};
+$('speed').oninput=e=>{S.speed=+e.target.value;$('sv').textContent=S.speed+'%';save();};
+/* 電源 */
+function pw(){$('pwr').classList.toggle('on',S.on);}
+$('pwr').onclick=()=>{S.on=!S.on;pw();save();toast(S.on?'已開燈':'已關燈');};
+/* 分頁 */
+$('tabs').onclick=e=>{const b=e.target.closest('button');if(!b)return;document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.pane').forEach(p=>p.classList.toggle('on',p.id==='p-'+b.dataset.p));};
+/* 情境 */
+function scUI(){const el=$('scs');el.innerHTML='';const all=[...SCENES0.map(s=>Object.assign({},s)),...SCN.map((s,i)=>Object.assign({u:i},s))];
+ for(const s of all){const b=document.createElement('div');b.className='scn';const cs=ZN.map(z=>s.z[z[0]][0]);b.innerHTML=(s.u!==undefined?'<span class="x" data-u="'+s.u+'">✕</span>':'')+'<div>'+s.e+' '+s.n+'</div><small>亮度 '+s.b+'%</small><div class="bar" style="background:linear-gradient(90deg,'+cs.join(',')+')"></div>';
+  b.onclick=ev=>{if(ev.target.dataset.u!==undefined){SCN.splice(+ev.target.dataset.u,1);sv('led_scenes',SCN);scUI();return;}S.on=true;S.bright=s.b;for(const k in s.z){S.zones[k].c=s.z[k][0];S.zones[k].fx=s.z[k][1];}pw();$('bright').value=S.bright;$('bv').textContent=S.bright+'%';save();uiSel();toast('已套用「'+s.n+'」');};el.appendChild(b);}}
+$('saveSc').onclick=()=>{const n=prompt('情境名稱','我的情境');if(!n)return;const z={};for(const k in S.zones)z[k]=[S.zones[k].c,S.zones[k].fx];SCN.push({n:n.slice(0,8),e:'⭐',b:S.bright,z:z});sv('led_scenes',SCN);scUI();toast('已儲存');};
+$('exp').onclick=()=>{const t=JSON.stringify(S);try{navigator.clipboard.writeText(t);toast('已複製設定');}catch(e){prompt('複製這段設定',t);}};
+/* 排程 */
+let cdEnd=0,sunT=null,preB=null;
+for(const m of [15,30,60,0]){const b=document.createElement('button');b.className='chip';b.textContent=m?m+' 分鐘':'取消';b.onclick=()=>{cdEnd=m?Date.now()+m*60000:0;toast(m?'睡眠倒數 '+m+' 分鐘':'已取消倒數');};$('tm').appendChild(b);}
+function startSun(sec){sunT={t0:performance.now(),d:sec*1000};S.on=true;pw();toast('日出喚醒開始');}
+$('sun5').onclick=()=>startSun(300);$('sun10').onclick=()=>startSun(10);
+['onEn','offEn','onT','offT'].forEach(id=>{const e=$(id),k='led_'+id;const v=ld(k,null);if(v!==null){if(e.type==='checkbox')e.checked=v;else e.value=v;}e.onchange=()=>sv(k,e.type==='checkbox'?e.checked:e.value);});
+let lastMin='';
+setInterval(()=>{const now=new Date(),hm=('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2);
+ if(hm!==lastMin){lastMin=hm;if($('onEn').checked&&hm===$('onT').value){S.on=true;pw();save();toast('定時開燈');}if($('offEn').checked&&hm===$('offT').value){S.on=false;pw();save();toast('定時關燈');}}
+ if(cdEnd){const r=Math.max(0,cdEnd-Date.now());$('cd').textContent=('0'+Math.floor(r/60000)).slice(-2)+':'+('0'+Math.floor(r/1000)%60).slice(-2);if(!r){cdEnd=0;S.on=false;pw();save();toast('睡眠倒數結束,已關燈');}}else $('cd').textContent='--:--';},500);
+/* 對 3D 提供的亮度係數:睡眠淡出 / 日出 */
+window.LEDX={factor(){let f=S.on?1:0;if(cdEnd){const r=cdEnd-Date.now();if(r<20000)f*=Math.max(0,r/20000);}return f;},sun(){if(!sunT)return null;const k=(performance.now()-sunT.t0)/sunT.d;if(k>=1){sunT=null;return null;}return k;}};
+/* 初始化 UI */
+$('bright').value=S.bright;$('bv').textContent=S.bright+'%';$('speed').value=S.speed;$('sv').textContent=S.speed+'%';pw();uiSel();scUI();
+window.LEDS={S,ZN,hex2rgb,rgb2hsv,hsv2rgb};
+</script>
+
+<script type="module">
+let THREE=null;
+for(const u of ['./three.module.min.js','https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js','https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js']){try{THREE=await import(u);break;}catch(e){}}
+if(!THREE){document.getElementById('nogl').style.display='grid';}
+else try{(()=>{
+const {S,ZN,hex2rgb}=window.LEDS,cv=document.getElementById('gl'),stage=document.getElementById('stage');
+const rd=new THREE.WebGLRenderer({canvas:cv,antialias:true,powerPreference:'high-performance'});
+rd.setPixelRatio(Math.min(2,devicePixelRatio||1));rd.outputColorSpace=THREE.SRGBColorSpace;rd.toneMapping=THREE.ACESFilmicToneMapping;rd.toneMappingExposure=1.05;
+const sc=new THREE.Scene();sc.background=new THREE.Color(0x07080d);sc.fog=new THREE.Fog(0x07080d,9,20);
+const cam=new THREE.PerspectiveCamera(38,1,.1,60);
+const amb=new THREE.HemisphereLight(0x8a96c8,0x201a18,.22);sc.add(amb);
+const std=(c,o)=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.85,metalness:0},o||{}));
+const bx=(w,h,d,x,y,z,m)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);sc.add(o);return o;};
+/* 房間(剖面) */
+const wallM=std(0x2b2f3d),floorM=std(0x3a2d26,{roughness:.55});
+bx(4.2,.1,3.2,0,-.05,0,floorM);bx(4.2,2.7,.1,0,1.3,-1.55,wallM);bx(.1,2.7,3.2,-2.05,1.3,0,wallM);
+bx(2.2,.01,1.6,-.2,.01,.4,std(0x4a3b5a,{roughness:1}));/* 地毯 */
+/* 床 */
+bx(1.5,.28,1.95,1.2,.19,-.5,std(0x2a2433));bx(1.46,.16,1.9,1.2,.42,-.5,std(0xe8e2dc,{roughness:.9}));bx(1.46,.05,1.0,1.2,.51,-.05,std(0x5b7ea8));bx(1.5,.7,.08,1.2,.6,-1.48,std(0x3a2c24));
+bx(.6,.2,.4,.95,.58,-1.2,std(0xf4efe8));bx(.6,.2,.4,1.45,.58,-1.2,std(0xf4efe8));
+/* 電視櫃與電視 */
+bx(1.7,.45,.4,-.8,.23,-1.3,std(0x4a3626));bx(1.4,.8,.05,-.8,1.2,-1.5,std(0x050507,{roughness:.2,metalness:.4}));
+const tvScr=new THREE.Mesh(new THREE.PlaneGeometry(1.3,.7),new THREE.MeshBasicMaterial({color:0x0a0c14}));tvScr.position.set(-.8,1.2,-1.472);sc.add(tvScr);
+/* 書桌 */
+bx(.6,.05,1.5,-1.7,.72,.8,std(0x6b4a30));for(const z of[.1,1.5])bx(.05,.7,.05,-1.42,.36,z,std(0x222));bx(.05,.7,.05,-1.98,.36,.1,std(0x222));bx(.05,.7,.05,-1.98,.36,1.5,std(0x222));
+bx(.04,.45,.8,-1.95,1.1,.8,std(0x08090c,{roughness:.2,metalness:.4}));bx(.14,.03,.3,-1.8,.76,.8,std(0x111));
+bx(.4,.05,.4,-1.5,.78,.3,std(0xcfcfcf));
+/* 盆栽與椅子 */
+const pot=new THREE.Mesh(new THREE.CylinderGeometry(.16,.12,.28,14),std(0xb5563b));pot.position.set(1.8,.14,1.2);sc.add(pot);
+for(let i=0;i<6;i++){const l=new THREE.Mesh(new THREE.SphereGeometry(.16,10,8),std(0x2f8a4a));l.scale.set(.6,1.3,.6);l.position.set(1.8+Math.cos(i)*.1,.5+i%2*.12,1.2+Math.sin(i)*.1);l.rotation.z=Math.cos(i)*.4;sc.add(l);}
+bx(.45,.06,.45,-1.15,.45,.8,std(0x222a3a));bx(.45,.5,.06,-.95,.7,.8,std(0x222a3a));bx(.05,.45,.05,-1.15,.22,.8,std(0x111));
+
+/* LED 燈帶 */
+const GL=32;/* 每公尺顆數 */
+function sample(path){const pts=[];for(let s=0;s<path.length-1;s++){const a=path[s],b=path[s+1],len=Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2]),n=Math.max(1,Math.round(len*GL));for(let i=0;i<n;i++){const t=i/n;pts.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]);}}return pts;}
+const rect=(cx,cy,w,h,fn)=>{const x0=cx-w/2,x1=cx+w/2,y0=cy-h/2,y1=cy+h/2;return[fn(x0,y0),fn(x1,y0),fn(x1,y1),fn(x0,y1),fn(x0,y0)];};
+const PATH={
+ ceil:[[-2,2.5,-1.5],[2.1,2.5,-1.5],[-1.99,2.5,-1.5],[-1.99,2.5,1.5]],
+ tv:rect(-.8,1.2,1.6,.95,(x,y)=>[x,y,-1.49]),
+ desk:[[-1.4,.69,0],[-1.4,.69,1.6],[-1.98,.69,1.6]].concat([]),
+ floor:[[-2,.09,-1.49],[.45,.09,-1.49],[.45,.09,-1.5]].concat([])
+};
+/* 書桌:桌下一條 + 螢幕背光 */
+const deskA=sample([[-1.4,.69,.05],[-1.4,.69,1.55]]),deskB=sample(rect(0,1.1,.5,.9,(a,b)=>[-1.99,b,.8+a]));
+const floorA=sample([[-2,.09,-1.49],[.4,.09,-1.49]]),floorB=sample([[.42,.09,.5],[1.98,.09,.5],[1.98,.09,-1.5]]),floorC=sample([[.42,.09,.5],[.42,.09,-1.5]]);
+const PTS={ceil:sample([[-2,2.5,-1.49],[2.1,2.5,-1.49]]).concat(sample([[-1.99,2.5,-1.49],[-1.99,2.5,1.5]])),tv:sample(PATH.tv),desk:deskA.concat(deskB),floor:floorA.concat(floorB,floorC)};
+const Z={};let total=0;
+const coreG=new THREE.BoxGeometry(.028,.028,.028);
+const glowTex=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d'),r=g.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.25,'rgba(255,255,255,.55)');r.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=r;g.fillRect(0,0,64,64);return new THREE.CanvasTexture(c);})();
+for(const [k] of ZN){const pts=PTS[k],n=pts.length;total+=n;
+ const core=new THREE.InstancedMesh(coreG,new THREE.MeshBasicMaterial({color:0xffffff,toneMapped:false}),n);const d=new THREE.Object3D();pts.forEach((p,i)=>{d.position.set(p[0],p[1],p[2]);d.updateMatrix();core.setMatrixAt(i,d.matrix);core.setColorAt(i,new THREE.Color(0));});sc.add(core);
+ const pos=new Float32Array(n*3),col=new Float32Array(n*3);pts.forEach((p,i)=>{pos.set(p,i*3);});
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('color',new THREE.BufferAttribute(col,3));
+ const glow=new THREE.Points(g,new THREE.PointsMaterial({size:.2,map:glowTex,vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true}));sc.add(glow);
+ const mid=pts[Math.floor(n/2)];const L=new THREE.PointLight(0xffffff,0,6,1.6);L.position.set(mid[0]*.85,Math.min(2.2,mid[1]+.35),mid[2]*.85+(k==='ceil'?.4:0));sc.add(L);
+ Z[k]={n,core,glow,g,col,L,ph:pts.map(()=>Math.random()),pts};}
+const tvGlow=new THREE.PointLight(0xffffff,0,5,1.8);tvGlow.position.set(-.8,1.2,-1.2);sc.add(tvGlow);
+/* 效果 */
+const c=new THREE.Color();let mic=null,micLvl=0,micOn=false;
+const kick=t=>Math.exp(-((t%1))*4.5);
+function frame(t,dt){
+ const X=window.LEDX,f=X.factor(),sun=X.sun(),sp=.2+S.speed/50*1.2;let br=S.bright/100*f;
+ let sunCol=null;if(sun!==null){br=Math.max(.02,sun);sunCol=new THREE.Color().setHSL(.02+.1*sun,1-.45*sun,.3+.3*sun);}
+ if(micOn&&mic){mic.an.getByteFrequencyData(mic.buf);let s=0;for(let i=1;i<24;i++)s+=mic.buf[i];micLvl+=(s/23/255-micLvl)*.4;}
+ let tvR=0,tvG=0,tvB=0,tvN=0;
+ for(const [k] of ZN){const z=Z[k],st=S.zones[k],base=hex2rgb(st.c),n=z.n;let ar=0,ag=0,ab=0;
+  const bc=sunCol?[sunCol.r,sunCol.g,sunCol.b]:base;
+  for(let i=0;i<n;i++){let r=bc[0],g=bc[1],b=bc[2],v=1,u=i/n;
+   switch(st.fx){
+    case'breathe':v=.18+.82*(.5+.5*Math.sin(t*sp*1.6));break;
+    case'rainbow':c.setHSL((t*sp*.12+u*.9)%1,1,.5);r=c.r;g=c.g;b=c.b;break;
+    case'chase':{let d=Math.abs(((t*sp*.28)%1)-u);d=Math.min(d,1-d);const head=((t*sp*.28)%1)-u;const tail=((head%1)+1)%1;v=.05+Math.exp(-tail*9)*(tail<.5?1:0)+.0;break;}
+    case'twinkle':v=.06+.94*Math.pow(.5+.5*Math.sin(t*sp*3+z.ph[i]*6.28),5);break;
+    case'beat':{const e=micOn&&mic?micLvl*1.8:kick(t*sp*1.7),dd=Math.abs(u-.5)*2;v=.12+Math.min(1,e*(1.2-dd*.5));break;}
+    case'fire':{const q=Math.sin(t*7*sp+z.ph[i]*20)*.5+Math.sin(t*13*sp+z.ph[i]*9)*.5;v=.55+.45*q;r=base[0];g=base[1]*(.6+.3*q);b=base[2]*.5;break;}
+   }
+   const k2=v*br;r*=k2;g*=k2;b*=k2;z.col[i*3]=r;z.col[i*3+1]=g;z.col[i*3+2]=b;c.setRGB(r,g,b,THREE.LinearSRGBColorSpace);z.core.setColorAt(i,c);ar+=r;ag+=g;ab+=b;}
+  z.core.instanceColor.needsUpdate=true;z.g.attributes.color.needsUpdate=true;
+  const m=Math.max(1e-4,Math.max(ar,ag,ab)/n);z.L.color.setRGB(ar/n/m,ag/n/m,ab/n/m);z.L.intensity=Math.min(7,m*26*(k==='ceil'?1.2:1));
+  if(k==='tv'){tvR=ar/n;tvG=ag/n;tvB=ab/n;tvN=m;}}
+ tvGlow.color.setRGB(tvR,tvG,tvB);tvGlow.intensity=Math.min(6,tvN*9);
+ amb.intensity=.2+.55*(1-Math.min(1,br*1.2)*(f?1:0))*0+.14;
+}
+/* 相機 */
+let th=.42,ph=.5,rad=7.2,tT=.42,tP=.5,tR=7.2,drag=null,idle=0;
+const tgt=new THREE.Vector3(0,1.05,0);
+function camUpd(){cam.position.set(tgt.x+Math.sin(th)*Math.cos(ph)*rad,tgt.y+Math.sin(ph)*rad,tgt.z+Math.cos(th)*Math.cos(ph)*rad);cam.lookAt(tgt);}
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY};idle=0;});
+cv.addEventListener('pointermove',e=>{if(!drag)return;tT-=(e.clientX-drag.x)*.006;tP+=(e.clientY-drag.y)*.004;tT=Math.max(-.2,Math.min(1.3,tT));tP=Math.max(.12,Math.min(.95,tP));drag={x:e.clientX,y:e.clientY};idle=0;});
+cv.addEventListener('pointerup',()=>drag=null);cv.addEventListener('pointercancel',()=>drag=null);
+cv.addEventListener('wheel',e=>{tR=Math.max(4.2,Math.min(10,tR+e.deltaY*.004));e.preventDefault();},{passive:false});
+function size(){const r=stage.getBoundingClientRect();rd.setSize(r.width,r.height,false);cam.aspect=r.width/r.height;tR=Math.max(tR,0);const a=cam.aspect;rad=tR=Math.max(tR,a<.9?9.4:a<1.3?8:7.2);cam.updateProjectionMatrix();}
+addEventListener('resize',size);size();rad=tR=(cam.aspect<.9?9.4:cam.aspect<1.3?8:7.2);
+/* 麥克風 */
+document.getElementById('mic').onchange=async e=>{if(!e.target.checked){micOn=false;return;}try{const st=await navigator.mediaDevices.getUserMedia({audio:true}),ac=new (window.AudioContext||window.webkitAudioContext)(),an=ac.createAnalyser();an.fftSize=256;ac.createMediaStreamSource(st).connect(an);mic={an,buf:new Uint8Array(an.frequencyBinCount)};micOn=true;}catch(err){e.target.checked=false;micOn=false;alert('無法使用麥克風,將使用內建節拍。');}};
+let last=performance.now();
+function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;idle+=dt;if(!drag&&idle>4)tT=.42+Math.sin(now/4000)*.22;th+=(tT-th)*Math.min(1,dt*6);ph+=(tP-ph)*Math.min(1,dt*6);rad+=(tR-rad)*Math.min(1,dt*6);camUpd();frame(now/1000,dt);rd.render(sc,cam);requestAnimationFrame(loop);}
+requestAnimationFrame(loop);
+window.LED3D={ok:true,n:total};
+})();}catch(e){console.warn('3D init failed',e);document.getElementById('nogl').style.display='grid';}
+</script>
+</body>
+</html>
