@@ -69,6 +69,8 @@
   a.fc:hover,a.fc:focus-visible{ transform:translateY(-8px); box-shadow:0 28px 54px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.3); }
   a.fc:hover::after{ left:130%; }
   a.fc:focus-visible{ outline:2px solid #fff; outline-offset:4px; }
+  .fc .em img{ width:104px; height:104px; border-radius:22px; object-fit:cover; display:block; box-shadow:0 8px 20px rgba(0,0,0,.35); border:2px solid rgba(255,255,255,.55); }
+  .fc .em:has(img){ font-size:0; } .fc:has(.em img) h3{ max-width:64%; }
   .fc .em{ position:absolute; right:16px; top:30px; font-size:88px; line-height:1; filter:drop-shadow(0 10px 0 rgba(0,0,0,.18)); animation:bob 3.6s ease-in-out infinite; }
   .fc:nth-child(2) .em{ animation-delay:-1.2s; } .fc:nth-child(3) .em{ animation-delay:-2.4s; }
   @keyframes bob{ 0%,100%{ transform:translateY(0) rotate(-5deg);} 50%{ transform:translateY(-10px) rotate(5deg);} }
@@ -204,7 +206,7 @@
   </header>
 
   <section class="hero" aria-label="最新作品">
-    <div class="sec">NEW ARRIVALS ・ 最新上架</div>
+    <div class="sec">TODAY'S PICKS ・ 隨機推薦</div>
     <div class="feat">
       <a class="fc" style="--a:#C98A3A;--b:#5A2E12" href="idiom-code.html"><span class="badge">益智 ・ NEW</span><span class="em">📜</span><h3>四字密碼</h3><p>看成語提示，猜出藏在十二個字裡的四字成語。</p><span class="play">▶ 立即遊玩</span></a>
       <a class="fc" style="--a:#E0443A;--b:#3A1250" href="ring-toss.html"><span class="badge">街機 ・ NEW</span><span class="em">🏮</span><h3>夜市套圈圈</h3><p>按住瞄準，圈縮到最小時放手，套走熊貓與金鑽。</p><span class="play">▶ 立即遊玩</span></a>
@@ -399,6 +401,25 @@
     c.dataset.t=(c.querySelector('h2').textContent+' '+c.querySelector('p').textContent+' '+c.querySelector('.tag').textContent).toLowerCase();
     if(NEW.indexOf(no)>=0){ c.dataset.n='1'; var r=document.createElement('span'); r.className='new'; r.textContent='NEW'; c.querySelector('.art').appendChild(r); }
   });
+  /* 隨機推薦:每次開啟從全部遊戲抽 6 款 */
+  (function(){
+    var feat=document.querySelector('.feat'); if(!feat) return;
+    var all=[].slice.call(document.querySelectorAll('a.card'));
+    for(var i=all.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=all[i];all[i]=all[j];all[j]=t;}
+    feat.innerHTML='';
+    all.slice(0,6).forEach(function(c){
+      var a=document.createElement('a'); a.className='fc'; a.href=c.getAttribute('href');
+      var col=(c.getAttribute('style')||'').match(/--c:\s*(#[0-9a-fA-F]{3,8})/); col=col?col[1]:'#C98A3A';
+      a.style.setProperty('--a',col); a.style.setProperty('--b','color-mix(in srgb,'+col+' 30%,#14101a)');
+      var img=c.querySelector('img.scene'); var tag=c.querySelector('.tag');
+      var badge=document.createElement('span'); badge.className='badge'; badge.textContent=(tag?tag.textContent:'')+' ・ 推薦';
+      var em=document.createElement('span'); em.className='em'; if(img){var im=document.createElement('img');im.src=img.src;im.alt='';em.appendChild(im);}
+      var h=document.createElement('h3'); h.textContent=c.querySelector('h2').textContent;
+      var p=document.createElement('p'); p.textContent=c.querySelector('p').textContent;
+      var pl=document.createElement('span'); pl.className='play'; pl.textContent='▶ 立即遊玩';
+      a.appendChild(badge);a.appendChild(em);a.appendChild(h);a.appendChild(p);a.appendChild(pl); feat.appendChild(a);
+    });
+  })();
   var chips=document.getElementById('chips'),empty=document.getElementById('empty'),q=document.getElementById('q'),cur='all';
   function apply(){
     var kw=q.value.trim().toLowerCase(),total=0;
