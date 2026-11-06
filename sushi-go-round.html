@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#3a1f14"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>迴轉壽司大作戰</title>
+<style>
+:root{--bg:#160d09;--card:#3a2218;--line:rgba(255,255,255,.2);--txt:#FFF6E6;--dim:#E2C4A8;--acc:#FF6A4A}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:'Noto Sans TC',-apple-system,'PingFang TC','Microsoft JhengHei',system-ui,sans-serif;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+body{display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 0%,#5a2e1c 0%,#160d09 70%)}
+.wrap{position:relative;width:min(100vw,calc(100vh*.5625));aspect-ratio:9/16;max-height:100vh;overflow:hidden;border-radius:18px;background:#bfe6ff;box-shadow:0 24px 70px rgba(0,0,0,.6);font-size:calc(min(100vw,100vh*.5625)/360*14px)}
+canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.bar{position:absolute;left:0;right:0;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:.7em .8em 0;pointer-events:none;gap:.4em}
+.bar>*{pointer-events:auto}
+.pill{font:800 .9em 'Space Grotesk','Noto Sans TC',sans-serif;background:rgba(40,20,12,.62);border:1px solid var(--line);border-radius:1.2em;padding:.38em .85em;color:var(--txt);text-decoration:none;white-space:nowrap;backdrop-filter:blur(4px)}
+.grp{display:flex;gap:.4em}
+.ib{width:2.5em;height:2.5em;border-radius:50%;border:1px solid var(--line);background:rgba(40,20,12,.62);color:var(--txt);display:grid;place-items:center;cursor:pointer;padding:0;font-size:1em;backdrop-filter:blur(4px)}
+.ib svg{width:1.3em;height:1.3em}
+#hud{position:absolute;left:0;right:0;top:3.7em;z-index:4;padding:0 .9em;pointer-events:none;display:none}
+#hud .r1{display:flex;justify-content:space-between;align-items:center;gap:.5em}
+.hp{background:rgba(40,20,12,.62);border:1px solid var(--line);border-radius:1em;padding:.2em .7em;font:900 1em 'Space Grotesk','Noto Sans TC',sans-serif;min-width:4.2em;text-align:center;white-space:nowrap}
+#hr{color:#ff5a6a;letter-spacing:.06em;font-size:1.15em}
+#sc{font-size:1.4em;color:#fff}
+#cmb{color:#ffd23a}
+#pg{margin-top:.5em;height:.9em;border-radius:1em;background:rgba(40,20,12,.62);border:1px solid var(--line);overflow:hidden;position:relative}
+#pgf{height:100%;width:0;background:linear-gradient(90deg,#ff9a4a,#ffd23a);transition:width .3s}
+#pgt{position:absolute;inset:0;display:grid;place-items:center;font:800 .62em 'Noto Sans TC',sans-serif;color:#fff;text-shadow:0 0 .3em #000}
+#lvn{text-align:center;font:800 .8em 'Noto Sans TC',sans-serif;margin-top:.45em;color:#fff;text-shadow:0 .1em .3em rgba(0,0,0,.8)}
+#frz{display:none;margin-top:.45em;text-align:center;font:900 .9em 'Noto Sans TC',sans-serif;color:#9ae8ff;text-shadow:0 0 .4em #000}
+#hint{position:absolute;left:0;right:0;bottom:2.6em;text-align:center;z-index:4;pointer-events:none;font:700 .95em 'Noto Sans TC',sans-serif;text-shadow:0 .1em .4em rgba(0,0,0,.9);opacity:0;transition:opacity .4s;line-height:1.7;color:#fff}
+#bn{position:absolute;left:0;right:0;top:40%;text-align:center;z-index:12;pointer-events:none;font:900 2em 'Noto Sans TC',sans-serif;letter-spacing:.1em;text-shadow:0 .08em .4em rgba(0,0,0,.7);opacity:0;padding:0 1em;color:#fff}
+#bn.on{animation:bn 1.6s ease-out}
+@keyframes bn{0%{opacity:0;transform:scale(.7)}15%{opacity:1;transform:scale(1.08)}80%{opacity:1;transform:scale(1)}100%{opacity:0}}
+.pp{position:absolute;z-index:15;transform:translate(-50%,-50%);font:900 1.25em 'Space Grotesk','Noto Sans TC',sans-serif;-webkit-text-stroke:.08em rgba(30,10,0,.85);paint-order:stroke fill;pointer-events:none;white-space:nowrap;animation:pp 1s ease-out forwards}
+@keyframes pp{0%{opacity:0;margin-top:0;scale:.6}15%{opacity:1;scale:1.15}100%{opacity:0;margin-top:-3.2em;scale:1}}
+#flash{position:absolute;inset:0;z-index:9;pointer-events:none;opacity:0;transition:opacity .35s}
+.ov{position:absolute;inset:0;z-index:20;display:none;align-items:flex-end;justify-content:center;padding:1.1em;background:linear-gradient(180deg,rgba(20,8,2,.35),rgba(20,8,2,.65))}
+.ov.on{display:flex}
+.card{width:100%;max-width:22em;max-height:100%;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:1.3em;padding:1.1em;display:flex;flex-direction:column;gap:.7em;text-align:center;box-shadow:0 1.2em 3em rgba(0,0,0,.5);margin-bottom:1em}
+.card h1,.card h2{margin:0;font:900 1.6em 'Noto Sans TC',sans-serif;letter-spacing:.06em}
+.card h1 small{display:block;font-size:.42em;color:#ffb48a;letter-spacing:.3em;margin-top:.2em}
+.card p{margin:0;color:#F5E0CC;font-size:.86em;line-height:1.6}
+.sub{color:var(--dim);font-size:.82em}
+.btn{border:0;border-radius:1.1em;padding:.85em 1.1em;font:900 1em 'Noto Sans TC',sans-serif;color:#fff;background:var(--acc);box-shadow:0 .24em 0 #b0361a;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:.45em}
+.btn.g{background:#5a3a2a;color:var(--txt);box-shadow:0 .24em 0 #24120a;border:1px solid var(--line)}
+.btn:active{transform:translateY(.12em)}
+.row{display:flex;gap:.6em;align-items:center}.row>*{flex:1}
+.lvs{display:grid;grid-template-columns:repeat(3,1fr);gap:.55em}
+.lv{border:1px solid var(--line);border-radius:.9em;background:#523222;color:var(--txt);padding:.5em .2em;font:800 .85em 'Noto Sans TC',sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:.15em}
+.lv b{font:900 1.4em 'Space Grotesk',sans-serif}
+.lv i{font-style:normal;color:#ffd23a;letter-spacing:.1em;font-size:.9em;min-height:1.1em}
+.lv.sel{outline:.15em solid #ffd23a;background:#7a4a30}
+.lv.lock{opacity:.4}
+.big{font:900 2.4em 'Space Grotesk',sans-serif;color:#fff}
+.stars{font-size:2.2em;letter-spacing:.15em;color:#ffd23a;line-height:1}
+.tb{display:flex;flex-direction:column;gap:.3em}
+.tr{display:flex;align-items:center;gap:.5em;border-radius:.7em;background:#4e2f20;padding:.4em .7em;font:800 .9em 'Noto Sans TC',sans-serif}
+.tr span{flex:1;text-align:left}.tr b{font-family:'Space Grotesk',sans-serif}
+#toast{position:absolute;left:1em;right:1em;top:7em;z-index:40;display:none;background:rgba(30,16,10,.96);border:1px solid var(--line);border-radius:1em;padding:.8em 1em;font-size:.85em;line-height:1.6;text-align:center;pointer-events:none}
+#nogl{display:none;position:absolute;inset:0;z-index:30;align-items:center;justify-content:center;text-align:center;padding:2em;background:#160d09;color:var(--dim);line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="gl"></canvas>
+  <div id="flash"></div>
+  <div class="bar">
+    <a class="pill" href="index.html">‹ 大廳</a>
+    <span class="grp">
+      <button class="ib" id="fsBtn" aria-label="全螢幕"><svg id="fsI" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+      <button class="ib" id="sndBtn" aria-label="音效">🔊</button>
+      <button class="ib" id="pauseBtn" aria-label="暫停"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg></button>
+    </span>
+  </div>
+  <div id="hud">
+    <div class="r1"><div class="hp" id="hr">♥♥♥</div><div class="hp" id="sc">0</div><div class="hp" id="cmb">連擊 0</div></div>
+    <div id="pg"><div id="pgf"></div><div id="pgt"></div></div>
+    <div id="lvn"></div><div id="frz"></div>
+  </div>
+  <div id="hint">看客人想吃什麼,<br>點一下轉盤上對的壽司送過去!</div>
+  <div id="bn"></div>
+  <div id="toast"></div>
+
+  <div class="ov on" id="menu"><div class="card">
+    <h1>迴轉壽司大作戰<small>SUSHI GO ROUND</small></h1>
+    <p>客人頭上的泡泡是想吃的壽司,<br>在轉盤上點對的盤子送過去。<br>點錯會讓客人失去耐心,芥末盤千萬別碰!</p>
+    <div class="lvs" id="lvs"></div>
+    <div class="sub" id="mInfo"></div>
+    <button class="btn" id="start">開店營業!</button>
+  </div></div>
+  <div class="ov" id="pause"><div class="card"><h2>休息一下</h2><button class="btn" id="resume">繼續營業</button><button class="btn g" id="toMenu">回到選關</button></div></div>
+  <div class="ov" id="over"><div class="card">
+    <h2 id="oT">打烊了</h2><div class="stars" id="oSt"></div><div class="big" id="oS">0</div>
+    <div class="tb" id="oD"></div>
+    <div class="row"><button class="btn g" id="oM">選關</button><button class="btn" id="oR">再來一次</button></div>
+    <button class="btn" id="oN" style="display:none">下一關 ›</button>
+  </div></div>
+  <div id="nogl">無法載入 3D 引擎(three.module.min.js)<br>請確認檔案與本頁放在同一個資料夾,<br>並使用支援 WebGL 的瀏覽器。</div>
+</div>
+
+<script type="module">
+let THREE=null;
+for(const u of ['./three.module.min.js','https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js','https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js']){try{THREE=await import(u);break;}catch(e){}}
+const $=id=>document.getElementById(id);
+if(!THREE){$('nogl').style.display='flex';}
+else try{(()=>{
+/* ===== 存檔 ===== */
+let SV={unl:1,stars:[0,0,0,0,0,0],best:[0,0,0,0,0,0],snd:1};try{const o=JSON.parse(localStorage.getItem('ss_save'));if(o)SV=Object.assign(SV,o);}catch(e){}
+const save=()=>{try{localStorage.setItem('ss_save',JSON.stringify(SV));}catch(e){}};
+/* ===== 常數 ===== */
+const rnd=(a,b)=>a+Math.random()*(b-a),ri=n=>Math.floor(Math.random()*n),pick=a=>a[ri(a.length)],clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const TCOL=['#ff8a5a','#e0344a','#ffd84a','#ff6a4a','#ff7a1a','#b86ab8','#4ac85a'];
+const TNAME=['鮭魚','鮪魚','玉子','甜蝦','鮭卵軍艦','章魚','小黃瓜卷'];
+const LV=[
+ {n:'晴空食堂',types:3,seats:2,goal:8,speed:2.0,pt:17,plates:14,two:0,wasabi:0,gold:0},
+ {n:'夜市燈籠',types:4,seats:3,goal:12,speed:2.4,pt:15,plates:16,two:0,wasabi:.05,gold:.04},
+ {n:'櫻花小徑',types:5,seats:4,goal:16,speed:2.8,pt:14,plates:18,two:.25,wasabi:.07,gold:.04},
+ {n:'雪見屋台',types:6,seats:5,goal:20,speed:3.2,pt:13,plates:19,two:.35,wasabi:.08,gold:.04},
+ {n:'海底壽司',types:7,seats:6,goal:24,speed:3.6,pt:12,plates:20,two:.45,wasabi:.09,gold:.05},
+ {n:'祭典花火',types:7,seats:6,goal:30,speed:4.0,pt:11,plates:21,two:.55,wasabi:.1,gold:.05}];
+const TH=[
+ {bg:0xbfe6ff,fl1:0xe8d4a8,fl2:0xdcc698,ct:0xa8743a,ctT:0xe0b878,sl1:0x3a3f4a,sl2:0x4a5060,hemi:1.55,sun:2.0,lan:0xff5a4a,pk:'none',pc:0xffffff},
+ {bg:0x1a1a3a,fl1:0x4a3a42,fl2:0x42343c,ct:0x6a3a2a,ctT:0x9a5a3a,sl1:0x2a2a3a,sl2:0x3a3a4e,hemi:.9,sun:.7,lan:0xffb43a,pk:'fire',pc:0xffe27a},
+ {bg:0xffd6e8,fl1:0xf6e4e8,fl2:0xeed4da,ct:0xb86a5a,ctT:0xe89a8a,sl1:0x4a3a44,sl2:0x5a4854,hemi:1.6,sun:1.8,lan:0xff7aa8,pk:'sakura',pc:0xffa8c8},
+ {bg:0xdcecff,fl1:0xf4f8ff,fl2:0xe2ecf8,ct:0x6a7a98,ctT:0xb0c0d8,sl1:0x3a4458,sl2:0x4a5670,hemi:1.6,sun:1.8,lan:0xff8a5a,pk:'snow',pc:0xffffff},
+ {bg:0x0a4a6a,fl1:0x2a7a8a,fl2:0x246e7e,ct:0x2a5a7a,ctT:0x5aa0c0,sl1:0x1a3a4a,sl2:0x244c60,hemi:1.2,sun:1.1,lan:0x7affd8,pk:'bubble',pc:0xbff0ff},
+ {bg:0x1a1038,fl1:0x3a2a5a,fl2:0x32244e,ct:0x8a2a4a,ctT:0xc84a6a,sl1:0x2a1a40,sl2:0x3a2858,hemi:.95,sun:.8,lan:0xff4a8a,pk:'spark',pc:0xffd23a}];
+const ZS=[-6,-2,2,6],ACT=[1,6,2,5,0,7,3,4];
+const SPEC=[{f:0xff9a4a,s:0x4a8ad9,e:'tri',ec:0xff9a4a},{f:0xd8a870,s:0xe0504a,e:'flop',ec:0x8a5a30},{f:0x9a6a42,s:0x4ab87a,e:'rnd',ec:0x9a6a42},{f:0xf6f0f0,s:0xe0a0c8,e:'long',ec:0xf6f0f0},{f:0xffffff,s:0x3a3a48,e:'rnd',ec:0x222228,pa:1},{f:0x5ac85a,s:0xffc83b,e:'frog',ec:0x5ac85a}];
+/* ===== 渲染器 ===== */
+const wrap=$('wrap'),glc=$('gl');
+const rd=new THREE.WebGLRenderer({canvas:glc,antialias:true,powerPreference:'high-performance'});
+rd.outputColorSpace=THREE.SRGBColorSpace;
+const sc=new THREE.Scene();sc.background=new THREE.Color(0xbfe6ff);sc.fog=new THREE.Fog(0xbfe6ff,40,80);
+const cam=new THREE.PerspectiveCamera(36,9/16,.1,150);
+const hemi=new THREE.HemisphereLight(0xffffff,0xb0a8a0,1.5),sun=new THREE.DirectionalLight(0xfff2d8,2.0);sun.position.set(-6,14,8);sc.add(hemi,sun);
+const glowTex=(()=>{const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d'),r=g.createRadialGradient(64,64,0,64,64,64);r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.3,'rgba(255,255,255,.5)');r.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=r;g.fillRect(0,0,128,128);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;})();
+const MAT=new THREE.MeshLambertMaterial({vertexColors:true}),MATB=new THREE.MeshBasicMaterial({vertexColors:true});
+/* ===== 幾何工具 ===== */
+const _e=new THREE.Euler(),_q=new THREE.Quaternion(),_p=new THREE.Vector3(),_s=new THREE.Vector3();
+function part(g,c,x,y,z,sx,sy,sz,rx,ry,rz){_e.set(rx||0,ry||0,rz||0);_q.setFromEuler(_e);_p.set(x||0,y||0,z||0);_s.set(sx??1,sy??1,sz??1);return{g,c,m:new THREE.Matrix4().compose(_p,_q,_s)};}
+const BX=(w,h,d,c,x,yb,z,ry,rz)=>part(new THREE.BoxGeometry(w,h,d),c,x,yb+h/2,z,1,1,1,0,ry||0,rz||0);
+const SP=(c,x,y,z,sx,sy,sz)=>part(new THREE.SphereGeometry(1,16,12),c,x,y,z,sx,sy??sx,sz??sx);
+const CY=(rt,rb,h,c,x,y,z,rx,ry,rz,seg)=>part(new THREE.CylinderGeometry(rt,rb,h,seg||20),c,x,y,z,1,1,1,rx,ry,rz);
+function merge(parts){const pos=[],nor=[],col=[],idx=[];let off=0;for(const p of parts){const g=p.g.clone();g.applyMatrix4(p.m);const pa=g.attributes.position,na=g.attributes.normal,c=new THREE.Color(p.c);for(let i=0;i<pa.count;i++){pos.push(pa.getX(i),pa.getY(i),pa.getZ(i));nor.push(na.getX(i),na.getY(i),na.getZ(i));col.push(c.r,c.g,c.b);}const ix=g.index;if(ix){for(let i=0;i<ix.count;i++)idx.push(ix.getX(i)+off);}else for(let i=0;i<pa.count;i++)idx.push(i+off);off+=pa.count;g.dispose();p.g.dispose();}
+ const G=new THREE.BufferGeometry();G.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));G.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));G.setAttribute('color',new THREE.Float32BufferAttribute(col,3));G.setIndex(idx);return G;}
+/* ===== 壽司模型 ===== */
+const RICE=0xfffaf0,NORI=0x1e2e26;
+function plateBase(rim,pc){return[CY(.58,.5,.07,pc||0xffffff,0,.035,0,0,0,0,28),CY(.44,.44,.02,0xf2ece4,0,.075,0,0,0,0,28),part(new THREE.TorusGeometry(.51,.04,6,30),rim,0,.075,0,1,1,1,Math.PI/2)];}
+function nigiri(top,pc){return[SP(RICE,0,.2,0,.37,.14,.21),SP(top,0,.3,0,.41,.085,.25)];}
+const SUSHI=[
+ /* 鮭魚 */()=>[...plateBase(0xff8a5a),...nigiri(0xff8a5a),BX(.035,.03,.3,0xffe6d6,-.15,.345,0,.25),BX(.035,.03,.3,0xffe6d6,0,.365,0,.25),BX(.035,.03,.3,0xffe6d6,.15,.345,0,.25)],
+ /* 鮪魚 */()=>[...plateBase(0xe0344a),SP(RICE,0,.2,0,.37,.14,.21),SP(0xb82038,0,.28,0,.42,.06,.26),SP(0xe8405a,0,.31,0,.41,.08,.245),SP(0xff7a8a,.05,.37,.03,.12,.02,.08)],
+ /* 玉子 */()=>[...plateBase(0xffd84a),SP(RICE,0,.2,0,.37,.14,.21),BX(.54,.13,.3,0xffd84a,0,.27,0),BX(.1,.145,.32,NORI,0,.265,0),SP(0xfff0a0,-.14,.41,0,.14,.02,.08)],
+ /* 甜蝦 */()=>[...plateBase(0xff6a4a),SP(RICE,0,.2,0,.37,.14,.21),SP(0xffa890,0,.3,0,.43,.1,.25),BX(.05,.02,.27,0xff5a3a,-.2,.385,0),BX(.05,.02,.27,0xff5a3a,-.07,.4,0),BX(.05,.02,.27,0xff5a3a,.07,.4,0),BX(.05,.02,.27,0xff5a3a,.2,.385,0),SP(0xff4a2a,.5,.3,0,.12,.07,.16)],
+ /* 鮭卵軍艦 */()=>{const p=[...plateBase(0xff7a1a),CY(.17,.17,.1,RICE,0,.14,0),CY(.27,.27,.26,NORI,0,.28,0,0,0,0,18),CY(.22,.22,.02,0xfffaf0,0,.405,0,0,0,0,18)];for(const [x,z,y] of[[0,0,.46],[.12,.06,.43],[-.12,.06,.43],[.06,-.12,.43],[-.06,-.12,.43],[.0,.12,.44],[.14,-.06,.43],[-.14,-.06,.43]])p.push(SP(y>.44?0xff9a3a:0xff7a1a,x,y,z,.085));p.push(SP(0xffe0b0,.03,.52,0,.025));return p;},
+ /* 章魚 */()=>[...plateBase(0xb86ab8),SP(RICE,0,.2,0,.37,.14,.21),SP(0xd8a0d8,0,.3,0,.42,.09,.25),SP(0xf6e8f6,-.15,.375,.02,.05,.02,.05),SP(0xf6e8f6,-.05,.385,-.05,.05,.02,.05),SP(0xf6e8f6,.06,.385,.05,.05,.02,.05),SP(0xf6e8f6,.16,.375,-.03,.05,.02,.05),SP(0x7a3a7a,0,.255,0,.425,.03,.255)],
+ /* 小黃瓜卷 */()=>{const p=plateBase(0x4ac85a);for(const z of[-.2,.2]){p.push(CY(.2,.2,.34,NORI,0,.29,z,0,0,Math.PI/2,18),CY(.16,.16,.355,RICE,0,.29,z,0,0,Math.PI/2,18),CY(.075,.075,.37,0x5ad05a,0,.29,z,0,0,Math.PI/2,12));}return p;},
+ /* 芥末 */()=>{const p=plateBase(0xe03a3a,0xfff0f0);p.push(SP(0x6ab030,0,.3,0,.34,.24,.3),SP(0x8ad040,-.18,.36,.1,.2,.16,.2),SP(0x8ad040,.18,.34,-.08,.22,.17,.2),SP(0x9ae050,.02,.5,0,.2,.12,.2),BX(.1,.03,.07,0x111111,-.1,.58,.04,.4),BX(.1,.03,.07,0x111111,.1,.58,.04,-.4),BX(.12,.03,.05,0xd02a2a,-.1,.62,.02,.5),BX(.12,.03,.05,0xd02a2a,.1,.62,.02,-.5),BX(.22,.03,.05,0x222222,0,.58,.2));for(let i=0;i<6;i++){const a=i*1.047;p.push(CY(0,.07,.18,0xd02a2a,Math.cos(a)*.36,.3,Math.sin(a)*.36,0,0,0,6));}return p;},
+ /* 黃金 */()=>[...plateBase(0xfff3a0,0xffd23a),SP(0xffe9a0,0,.2,0,.37,.14,.21),SP(0xffc83b,0,.3,0,.42,.09,.25),SP(0xfff8c8,-.1,.37,0,.1,.02,.06),SP(0xfff8c8,.12,.36,.04,.06,.02,.05)]];
+const PG=SUSHI.map(f=>merge(f()));
+/* ===== 客人模型 ===== */
+function custParts(sp,mood){const S=SPEC[sp],P=[];const dk=0x1a1a22;
+ P.push(BX(.82,.62,.56,S.s,0,0,0),BX(.2,.4,.22,S.s,-.52,.08,-.05),BX(.2,.4,.22,S.s,.52,.08,-.05),BX(.16,.14,.2,S.f,-.52,0,-.12),BX(.16,.14,.2,S.f,.52,0,-.12));
+ P.push(BX(.94,.78,.82,S.f,0,.62,0));
+ if(S.e==='tri'){P.push(BX(.22,.28,.14,S.ec,-.3,1.4,0),BX(.22,.28,.14,S.ec,.3,1.4,0),BX(.1,.16,.04,0xffa8b8,-.3,1.42,-.07),BX(.1,.16,.04,0xffa8b8,.3,1.42,-.07));}
+ else if(S.e==='flop')P.push(BX(.18,.46,.16,S.ec,-.56,.8,0),BX(.18,.46,.16,S.ec,.56,.8,0),BX(.3,.2,.04,0x5a3a20,.2,1.02,-.41));
+ else if(S.e==='rnd')P.push(BX(.26,.26,.16,S.ec,-.38,1.4,0),BX(.26,.26,.16,S.ec,.38,1.4,0));
+ else if(S.e==='long')P.push(BX(.17,.62,.1,S.ec,-.22,1.4,0),BX(.17,.62,.1,S.ec,.22,1.4,0),BX(.07,.46,.03,0xffb0c0,-.22,1.46,-.06),BX(.07,.46,.03,0xffb0c0,.22,1.46,-.06));
+ else P.push(SP(S.f,-.27,1.46,-.18,.2),SP(S.f,.27,1.46,-.18,.2));
+ if(S.pa)P.push(BX(.24,.26,.05,0x222228,-.22,.96,-.41),BX(.24,.26,.05,0x222228,.22,.96,-.41));
+ const ec=S.pa?0xffffff:dk;
+ if(mood===1){P.push(BX(.2,.05,.05,ec,-.22,1.02,-.425,0,.35),BX(.2,.05,.05,ec,.22,1.02,-.425,0,-.35),BX(.14,.08,.04,0xff8aa0,-.34,.82,-.41),BX(.14,.08,.04,0xff8aa0,.34,.82,-.41),BX(.3,.12,.05,0xc83a4a,0,.7,-.415));}
+ else{P.push(BX(.11,.16,.05,ec,-.22,.98,-.425),BX(.11,.16,.05,ec,.22,.98,-.425));
+  if(mood===2)P.push(BX(.22,.06,.05,0xd02a2a,-.22,1.2,-.43,0,.5),BX(.22,.06,.05,0xd02a2a,.22,1.2,-.43,0,-.5),BX(.2,.05,.05,0x4a1a1a,0,.74,-.415));
+  else P.push(BX(.2,.05,.05,0x5a2a2a,0,.78,-.415));}
+ if(sp!==4)P.push(BX(.28,.2,.12,S.f===0xffffff?0xf0e0d0:0xf6dcc0,0,.7,-.45));
+ return P;}
+const CG=SPEC.map((_,i)=>[0,1,2].map(m=>merge(custParts(i,m))));
+/* ===== 圖示(泡泡) ===== */
+function E(g,x,y,rx,ry,f,s){g.beginPath();g.ellipse(x,y,rx,ry,0,0,Math.PI*2);g.fillStyle=f;g.fill();if(s){g.lineWidth=2.5;g.strokeStyle=s;g.stroke();}}
+function icon(g,t,x,y,u){const rice=()=>E(g,x,y+9*u,27*u,12*u,'#fffaf0','#cfc6b4');
+ if(t===0){rice();E(g,x,y-1*u,29*u,13*u,'#ff8a5a','#c0562a');g.strokeStyle='#ffe6d6';g.lineWidth=3*u;for(const dx of[-12,0,12]){g.beginPath();g.moveTo(x+dx-4*u,y-9*u);g.lineTo(x+dx+4*u,y+7*u);g.stroke();}}
+ else if(t===1){rice();E(g,x,y-1*u,29*u,13*u,'#e0344a','#8a1426');E(g,x+6*u,y-5*u,10*u,3.5*u,'#ff8a9a');}
+ else if(t===2){rice();g.fillStyle='#ffd84a';g.strokeStyle='#b08a1a';g.lineWidth=2.5;g.beginPath();g.roundRect(x-27*u,y-12*u,54*u,22*u,5*u);g.fill();g.stroke();g.fillStyle='#1e2e26';g.fillRect(x-6*u,y-12*u,12*u,22*u);}
+ else if(t===3){rice();E(g,x,y-1*u,29*u,13*u,'#ffa890','#c05a3a');g.strokeStyle='#ff5a3a';g.lineWidth=3.5*u;for(const dx of[-16,-5,6,17]){g.beginPath();g.moveTo(x+dx,y-9*u);g.lineTo(x+dx,y+7*u);g.stroke();}E(g,x+29*u,y,7*u,5*u,'#ff4a2a');}
+ else if(t===4){g.fillStyle='#fffaf0';g.beginPath();g.roundRect(x-18*u,y+4*u,36*u,14*u,4*u);g.fill();g.fillStyle='#1e2e26';g.beginPath();g.roundRect(x-21*u,y-16*u,42*u,34*u,8*u);g.fill();E(g,x,y-14*u,18*u,7*u,'#fffaf0');for(const [dx,dy] of[[0,-17],[-9,-14],[9,-14],[-4,-10],[5,-9],[0,-22]])E(g,x+dx*u,y+dy*u,6.5*u,6.5*u,'#ff7a1a','#c04a00');}
+ else if(t===5){rice();E(g,x,y-1*u,29*u,13*u,'#d8a0d8','#8a508a');for(const [dx,dy] of[[-14,-3],[-3,-7],[8,-1],[17,-5]])E(g,x+dx*u,y+dy*u,4.5*u,3.5*u,'#f6e8f6');}
+ else{for(const dy of[-13,13]){E(g,x,y+dy*u,22*u,12*u,'#1e2e26');E(g,x,y+dy*u,17*u,8.5*u,'#fffaf0');E(g,x,y+dy*u,8*u,4.2*u,'#5ad05a');}}}
+function rr(g,x,y,w,h,r,f,s){g.beginPath();g.roundRect(x,y,w,h,r);g.fillStyle=f;g.fill();if(s){g.lineWidth=4;g.strokeStyle=s;g.stroke();}}
+/* ===== 傳送帶路徑 ===== */
+const BA=2.0,BB=8.0,BR=1.6;
+const SEG=[];let PL=0;
+(()=>{const a=BA,b=BB,r=BR;const add=o=>{SEG.push(o);PL+=o.len;};
+ add({k:'l',x:-(a-r),z:-b,dx:1,dz:0,len:2*(a-r)});
+ add({k:'a',cx:a-r,cz:-(b-r),a0:-Math.PI/2,len:r*Math.PI/2});
+ add({k:'l',x:a,z:-(b-r),dx:0,dz:1,len:2*(b-r)});
+ add({k:'a',cx:a-r,cz:b-r,a0:0,len:r*Math.PI/2});
+ add({k:'l',x:a-r,z:b,dx:-1,dz:0,len:2*(a-r)});
+ add({k:'a',cx:-(a-r),cz:b-r,a0:Math.PI/2,len:r*Math.PI/2});
+ add({k:'l',x:-a,z:b-r,dx:0,dz:-1,len:2*(b-r)});
+ add({k:'a',cx:-(a-r),cz:-(b-r),a0:Math.PI,len:r*Math.PI/2});})();
+const PO={x:0,z:0,tx:1,tz:0};
+function pathAt(s){s=((s%PL)+PL)%PL;for(let i=0;i<SEG.length;i++){const g=SEG[i];if(s<=g.len||i===SEG.length-1){if(g.k==='l'){PO.x=g.x+g.dx*s;PO.z=g.z+g.dz*s;PO.tx=g.dx;PO.tz=g.dz;}else{const th=g.a0+s/BR;PO.x=g.cx+BR*Math.cos(th);PO.z=g.cz+BR*Math.sin(th);PO.tx=-Math.sin(th);PO.tz=Math.cos(th);}return PO;}s-=g.len;}return PO;}
+const BY=.52;
+/* ===== 固定場景:傳送帶、櫃檯、廚房 ===== */
+const NSL=Math.floor(PL/.34);
+const slatGeo=new THREE.BoxGeometry(.3,.07,1.3);
+const slats=new THREE.InstancedMesh(slatGeo,new THREE.MeshLambertMaterial({color:0xffffff}),NSL);slats.frustumCulled=false;sc.add(slats);
+const _o=new THREE.Object3D();let beltOff=0;
+function updSlats(){for(let i=0;i<NSL;i++){const p=pathAt(i*PL/NSL+beltOff);_o.position.set(p.x,BY-.04,p.z);_o.rotation.set(0,-Math.atan2(p.tz,p.tx),0);_o.updateMatrix();slats.setMatrixAt(i,_o.matrix);}slats.instanceMatrix.needsUpdate=true;}
+const railParts=[];for(let i=0;i<150;i++){const p=pathAt(i*PL/150);for(const sd of[-1,1]){const nx=-p.tz*sd*.72,nz=p.tx*sd*.72;railParts.push(BX(.62,.26,.12,0xc9ccd4,p.x+nx,.36,p.z+nz,-Math.atan2(p.tz,p.tx)));}}
+sc.add(new THREE.Mesh(merge(railParts),MAT));
+const base=[BX(2.0,.55,13.2,0x3a2418,0,0,0)];
+// 傳送帶底座(沿路徑)
+const bsp=[];for(let i=0;i<120;i++){const p=pathAt(i*PL/120);bsp.push(BX(.62,.4,1.5,0x2a1a12,p.x,.08,p.z,-Math.atan2(p.tz,p.tx)));}
+sc.add(new THREE.Mesh(merge(bsp),MAT));
+/* 場景裝飾 (依主題重建) */
+const decor=new THREE.Group();sc.add(decor);
+const TPN=110,tpPos=new Float32Array(TPN*3),tpV=[];const tpG=new THREE.BufferGeometry();tpG.setAttribute('position',new THREE.BufferAttribute(tpPos,3));
+const tpM=new THREE.PointsMaterial({size:.32,map:glowTex,transparent:true,depthWrite:false,color:0xffffff});const tpts=new THREE.Points(tpG,tpM);tpts.frustumCulled=false;sc.add(tpts);
+let curTH=null;
+function clearDecor(){for(const c of [...decor.children]){decor.remove(c);if(c.geometry)c.geometry.dispose();if(c.material&&c.isSprite){}}}
+function chefParts(){const w=0xfffaf4,o=0xff9a4a;return[BX(1.0,.8,.7,w,0,0,0),BX(.26,.5,.26,w,-.66,.1,.1),BX(.26,.5,.26,w,.66,.1,.1),BX(1.1,.86,.96,o,0,.8,0),BX(.28,.34,.16,o,-.38,1.62,0),BX(.28,.34,.16,o,.38,1.62,0),BX(.14,.2,.06,0x1a1a22,-.26,1.2,.49),BX(.14,.2,.06,0x1a1a22,.26,1.2,.49),BX(.34,.22,.06,0xf6dcc0,0,.98,.5),BX(.3,.07,.06,0xc83a4a,0,.9,.52),BX(1.0,.26,.9,0xffffff,0,1.58,0),BX(.8,.44,.78,0xffffff,0,1.84,0),BX(.9,.12,.9,0x2a2a34,0,1.4,0)];}
+const chef=new THREE.Group();const chefM=new THREE.Mesh(merge(chefParts()),MAT);chef.add(chefM);
+const arm=new THREE.Group();arm.position.set(.7,.5,.2);arm.add(new THREE.Mesh(merge([BX(.12,.06,.7,0xd0d4dc,0,0,.4),BX(.14,.16,.2,0x5a3a20,0,-.03,0)]),MAT));chef.add(arm);
+chef.position.set(0,.55,-.8);chef.scale.setScalar(1.15);chef.rotation.y=Math.PI;sc.add(chef);
+function buildDecor(i){const T=TH[i];clearDecor();
+ /* 地板 */
+ const fp=[];for(let ix=-5;ix<=5;ix++)for(let iz=-6;iz<=6;iz++){fp.push(BX(3,.2,3,(ix+iz)&1?T.fl1:T.fl2,ix*3,-.2,iz*3));}
+ decor.add(new THREE.Mesh(merge(fp),MAT));
+ /* 櫃檯、廚房島台 */
+ const cp=[];for(const sx of[-1,1]){cp.push(BX(1.2,.5,17.2,T.ct,sx*3.3,0,0),BX(1.4,.08,17.4,T.ctT,sx*3.3,.5,0));for(const z of ZS)cp.push(CY(.38,.42,.55,0xd8c8b0,sx*4.65,0,z,0,0,0,14),CY(.42,.42,.08,T.ct,sx*4.65,.55,z,0,0,0,14));}
+ cp.push(BX(2.1,.5,12,T.ct,0,0,0),BX(2.3,.08,12.2,T.ctT,0,.5,0));
+ // 砧板、米桶、魚
+ cp.push(BX(1.2,.07,1.6,0xe8c888,0,.58,-.7),CY(.62,.55,.55,0x8a5a2a,0,.58,3.0,0,0,0,18),CY(.5,.5,.04,0xfffaf0,0,1.12,3.0,0,0,0,18),CY(.64,.64,.06,0x5a3a1a,0,.8,3.0,0,0,0,18));
+ cp.push(BX(1.0,.2,1.7,0xc8d0e0,0,.58,-4),BX(.2,.16,.5,0xa0a8c0,0,.58,-5.1,.3),SP(0x222233,.2,.82,-3.4,.06),SP(0xffffff,.2,.82,-3.4,.02),BX(.7,.14,.5,0xffd8d0,0,.58,4.7),BX(.6,.12,.4,0xff7a5a,0,.58,-2.5,.3));
+ decor.add(new THREE.Mesh(merge(cp),MAT));
+ /* 廚房窗口 (暖簾) */
+ const kp=[BX(.3,3.2,.3,T.ct,-2.1,0,-8.9),BX(.3,3.2,.3,T.ct,2.1,0,-8.9),BX(4.8,.35,.5,T.ct,0,3.2,-8.9),BX(1.5,1.3,.1,0xe8e8f0,-1.0,1.8,-8.9),BX(1.5,1.3,.1,0xe8e8f0,1.0,1.8,-8.9),BX(.12,1.3,.12,0x222233,0,1.8,-8.85)];
+ decor.add(new THREE.Mesh(merge(kp),MAT));
+ /* 燈籠 */
+ const lc=new THREE.Color(T.lan);const lp=[];
+ for(const sx of[-1,1])for(const z of[-8.5,0,8.5]){lp.push(CY(.04,.04,2.2,0x3a2a22,sx*5.7,0,z,0,0,0,6),SP(T.lan,sx*5.7,2.5,z,.5,.65,.5));}
+ const lm=new THREE.Mesh(merge(lp),MAT);decor.add(lm);
+ const lb=[];for(const sx of[-1,1])for(const z of[-8.5,0,8.5])lb.push(SP(T.lan,sx*5.7,2.5,z,.5,.65,.5));
+ const lbm=new THREE.Mesh(merge(lb),new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:.92}));lbm.scale.setScalar(.999);decor.add(lbm);
+ for(const sx of[-1,1])for(const z of[-8.5,0,8.5]){const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex,color:T.lan,transparent:true,opacity:i===1||i===5||i===4?.9:.35,blending:THREE.AdditiveBlending,depthWrite:false}));sp.position.set(sx*5.7,2.5,z);sp.scale.set(3.2,3.2,1);decor.add(sp);}
+ /* 氣氛 */
+ sc.background.setHex(T.bg);sc.fog.color.setHex(T.bg);hemi.intensity=T.hemi;sun.intensity=T.sun;
+ slats.setColorAt&&0;
+ for(let k=0;k<NSL;k++)slats.setColorAt(k,new THREE.Color(k%2?T.sl1:T.sl2));slats.instanceColor.needsUpdate=true;
+ tpM.color.setHex(T.pc);tpM.size=T.pk==='snow'?.3:T.pk==='sakura'?.36:T.pk==='bubble'?.5:T.pk==='spark'?.34:.28;tpM.blending=(T.pk==='spark'||T.pk==='fire'||T.pk==='bubble')?THREE.AdditiveBlending:THREE.NormalBlending;tpM.opacity=T.pk==='none'?0:1;tpM.needsUpdate=true;
+ tpV.length=0;for(let k=0;k<TPN;k++){tpPos[k*3]=rnd(-9,9);tpPos[k*3+1]=rnd(.5,11);tpPos[k*3+2]=rnd(-12,12);tpV.push({a:rnd(0,6.28),s:rnd(.5,1.2)});}
+ curTH=T;}
+function updParticles(dt){const T=curTH;if(!T||T.pk==='none')return;for(let k=0;k<TPN;k++){const v=tpV[k];v.a+=dt*v.s;let x=tpPos[k*3],y=tpPos[k*3+1],z=tpPos[k*3+2];
+ if(T.pk==='snow'){y-=dt*1.4*v.s;x+=Math.sin(v.a)*dt*.6;}else if(T.pk==='sakura'){y-=dt*.9*v.s;x+=dt*.9+Math.sin(v.a*1.5)*dt*.5;z+=Math.cos(v.a)*dt*.4;}else if(T.pk==='bubble'){y+=dt*1.3*v.s;x+=Math.sin(v.a)*dt*.4;}else if(T.pk==='spark'){y+=dt*.5*v.s;x+=Math.sin(v.a*2)*dt*.8;}else{x+=Math.sin(v.a)*dt*.8;y+=Math.cos(v.a*1.3)*dt*.5;z+=Math.cos(v.a*.8)*dt*.6;}
+ if(y<0){y=11;x=rnd(-9,9);}if(y>11.5){y=.3;x=rnd(-9,9);}if(x>10)x=-10;if(x<-10)x=10;tpPos[k*3]=x;tpPos[k*3+1]=y;tpPos[k*3+2]=z;}tpG.attributes.position.needsUpdate=true;}
+/* ===== 粒子 ===== */
+const parts=[];const PMAX=300,pPos=new Float32Array(PMAX*3),pCol=new Float32Array(PMAX*3),pG=new THREE.BufferGeometry();pG.setAttribute('position',new THREE.BufferAttribute(pPos,3));pG.setAttribute('color',new THREE.BufferAttribute(pCol,3));
+const pts=new THREE.Points(pG,new THREE.PointsMaterial({size:.34,map:glowTex,vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));pts.frustumCulled=false;sc.add(pts);
+function spark(x,y,z,col,n,sp){const c=new THREE.Color(col);for(let i=0;i<n;i++){if(parts.length>=PMAX)parts.shift();const a=Math.random()*6.283,s=(.6+Math.random()*1.6)*sp;parts.push({x,y,z,vx:Math.cos(a)*s,vy:1.5+Math.random()*2.6,vz:Math.sin(a)*s,l:.4+Math.random()*.6,c});}}
+/* ===== 遊戲狀態 ===== */
+let S='menu',LVi=0,TS=1,score=0,hearts=3,lost=0,served=0,combo=0,maxCombo=0,freeze=0,gtime=0,shake=0,endT=0,selLv=0;
+const plates=[],flying=[],custs=[];
+const plateRoot=new THREE.Group();sc.add(plateRoot);
+const glowMat=new THREE.SpriteMaterial({map:glowTex,color:0xffd23a,transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthWrite:false});
+function mkPlate(type,s,popIn){const g=new THREE.Group(),m=new THREE.Mesh(PG[type],MAT);g.add(m);const p={g,m,type,s,pop:popIn?0:1,ph:Math.random()*6,glow:null};if(type===8)addGlow(p);plateRoot.add(g);return p;}
+function addGlow(p){const sp=new THREE.Sprite(glowMat);sp.scale.set(2.2,2.2,1);sp.position.y=.4;p.g.add(sp);p.glow=sp;}
+function setType(p,t){p.type=t;p.m.geometry=PG[t];if(p.glow){p.g.remove(p.glow);p.glow=null;}if(t===8)addGlow(p);}
+function pickType(){const L=LV[LVi],r=Math.random();
+ if(L.gold&&r<L.gold)return 8;if(L.wasabi&&r<L.gold+L.wasabi)return 7;
+ const want=[];for(const c of custs)if(c.state==='wait')for(const n of c.needs)if(n.st===0)want.push(n.t);
+ const on=new Array(9).fill(0);for(const p of plates)on[p.type]++;
+ const miss=want.filter(t=>on[t]<1);
+ if(miss.length&&Math.random()<.75)return pick(miss);
+ if(want.length&&Math.random()<.35)return pick(want);
+ return ri(L.types);}
+/* ===== 客人 ===== */
+const stoolOut=new THREE.Group();
+for(let i=0;i<8;i++){const side=i<4?-1:1,z=ZS[i%4];const g=new THREE.Group(),m=new THREE.Mesh(CG[i%6][0],MAT);g.add(m);g.scale.setScalar(1.6);g.rotation.y=side<0?-Math.PI/2-.6:Math.PI/2+.6;
+ g.position.set(side*4.65,.63,z);g.visible=false;sc.add(g);
+ const cv=document.createElement('canvas');cv.width=256;cv.height=128;const tex=new THREE.CanvasTexture(cv);tex.colorSpace=THREE.SRGBColorSpace;
+ const spr=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false}));spr.scale.set(2.7,1.35,1);spr.center.set(.5,0);spr.position.set(side*4.65,3.1,z);spr.visible=false;spr.renderOrder=5;sc.add(spr);
+ custs.push({i,side,z,sp:i%6,g,m,spr,cv,cx:cv.getContext('2d'),tex,state:'off',t:0,delay:0,needs:[],pat:1,pt:15,mood:0,step:-1,x:side*4.65});}
+function setMood(c,m){if(c.mood!==m){c.mood=m;c.m.geometry=CG[c.sp][m];}}
+function drawBubble(c){const g=c.cx;g.clearRect(0,0,256,128);const warn=c.pat<.3;
+ rr(g,8,6,240,96,24,'#fffdf4',warn?'#e0342a':'#3a2a22');
+ g.beginPath();g.moveTo(112,100);g.lineTo(128,124);g.lineTo(146,100);g.closePath();g.fillStyle='#fffdf4';g.fill();g.lineWidth=4;g.strokeStyle=warn?'#e0342a':'#3a2a22';g.beginPath();g.moveTo(112,102);g.lineTo(128,124);g.lineTo(146,102);g.stroke();
+ g.fillStyle='#fffdf4';g.fillRect(114,98,30,6);
+ const n=c.needs.length,xs=n===1?[128]:[78,178];
+ c.needs.forEach((nd,k)=>{g.globalAlpha=nd.st===0?1:.3;icon(g,nd.t,xs[k],44,.95);g.globalAlpha=1;if(nd.st>0){g.strokeStyle='#2fb84a';g.lineWidth=9;g.lineCap='round';g.beginPath();g.moveTo(xs[k]-16,46);g.lineTo(xs[k]-4,58);g.lineTo(xs[k]+18,32);g.stroke();}});
+ rr(g,34,78,188,13,6,'#d8d0c4');const w=Math.max(0,188*c.pat);if(w>1){const col=c.pat>.55?'#4ac85a':c.pat>.28?'#ffb43a':'#ee3a2a';rr(g,34,78,Math.max(12,w),13,6,col);}
+ c.tex.needsUpdate=true;}
+function newOrder(c){const L=LV[LVi];const n=Math.random()<L.two?2:1;c.needs=[];for(let k=0;k<n;k++)c.needs.push({t:ri(L.types),st:0});c.pt=L.pt*(n===2?1.55:1)*rnd(.92,1.08);c.pat=1;c.step=-1;}
+/* ===== 音效 ===== */
+let AC=null,mg=null;
+function initAudio(){if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();mg=AC.createGain();mg.gain.value=SV.snd?.9:0;mg.connect(AC.destination);}catch(e){}}if(AC&&AC.state==='suspended')AC.resume();if(mg)mg.gain.value=SV.snd?.9:0;}
+function tone(f,d,ty,v,sl,dl){if(!AC||!SV.snd)return;try{const at=AC.currentTime+(dl||0),o=AC.createOscillator(),g=AC.createGain();o.type=ty||'sine';o.frequency.setValueAtTime(f,at);if(sl)o.frequency.exponentialRampToValueAtTime(sl,at+d);g.gain.setValueAtTime(v||.1,at);g.gain.exponentialRampToValueAtTime(.0001,at+d);o.connect(g);g.connect(mg);o.start(at);o.stop(at+d+.02);}catch(e){}}
+function noise(d,v,fc){if(!AC||!SV.snd)return;try{const n=Math.floor(AC.sampleRate*d),b=AC.createBuffer(1,n,AC.sampleRate),a=b.getChannelData(0);for(let i=0;i<n;i++)a[i]=(Math.random()*2-1)*(1-i/n);const s=AC.createBufferSource();s.buffer=b;const f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=fc||900;const g=AC.createGain();g.gain.value=v||.3;s.connect(f);f.connect(g);g.connect(mg);s.start();}catch(e){}}
+const sfx={grab(){tone(520,.07,'triangle',.08,780);},serve(k){const b=520*Math.pow(1.06,Math.min(k,10));tone(b,.1,'square',.06);tone(b*1.5,.16,'square',.06,null,.08);},eat(){tone(300,.06,'triangle',.07,200);tone(340,.06,'triangle',.07,220,.09);},wrong(){tone(180,.18,'sawtooth',.09,110);},wasabi(){noise(.5,.4,2500);tone(700,.4,'sawtooth',.08,200);},gold(){[784,988,1318,1568].forEach((f,i)=>tone(f,.2,'sine',.09,null,i*.07));},lose(){tone(300,.5,'sawtooth',.1,90);},angry(){tone(240,.25,'square',.08,120);},win(){[523,659,784,1047,1318].forEach((f,i)=>tone(f,.25,'triangle',.1,null,i*.1));},bell(){tone(1200,.1,'sine',.06);}};
+/* ===== 提示 / HUD ===== */
+function banner(t,col){const b=$('bn');b.textContent=t;b.style.color=col||'#fff';b.classList.remove('on');void b.offsetWidth;b.classList.add('on');}
+function pop(txt,x,y,z,col,big){const v=new THREE.Vector3(x,y,z).project(cam);const d=document.createElement('div');d.className='pp';d.textContent=txt;d.style.left=((v.x+1)/2*100)+'%';d.style.top=((1-v.y)/2*100)+'%';d.style.color=col||'#fff';if(big)d.style.fontSize='1.7em';wrap.appendChild(d);setTimeout(()=>d.remove(),1000);}
+function flash(col){const f=$('flash');f.style.transition='none';f.style.background=col;f.style.opacity=.45;void f.offsetWidth;f.style.transition='opacity .4s';f.style.opacity=0;}
+function hud(){$('hr').textContent='♥'.repeat(hearts)+'♡'.repeat(3-hearts);$('sc').textContent=score;$('cmb').textContent='連擊 '+combo;const L=LV[LVi];$('pgf').style.width=Math.min(100,served/L.goal*100)+'%';$('pgt').textContent='招待客人 '+served+' / '+L.goal;$('lvn').textContent='第 '+(LVi+1)+' 關 ・ '+L.n;}
+/* ===== 關卡流程 ===== */
+function clearPlates(){for(const p of plates)plateRoot.remove(p.g);plates.length=0;for(const f of flying)plateRoot.remove(f.p.g);flying.length=0;}
+function startLevel(i){initAudio();LVi=i;const L=LV[i];buildDecor(i);clearPlates();
+ score=0;hearts=3;lost=0;served=0;combo=0;maxCombo=0;freeze=0;gtime=0;endT=0;beltOff=0;
+ for(const c of custs){const k=ACT.indexOf(c.i);c.g.visible=false;c.spr.visible=false;c.state=k<L.seats?'empty':'off';c.delay=.5+k*.9;c.mood=-1;setMood(c,0);}
+ for(let k=0;k<L.plates;k++){plates.push(mkPlate(ri(L.types),k*PL/L.plates,false));}
+ S='play';$('menu').classList.remove('on');$('over').classList.remove('on');$('pause').classList.remove('on');$('hud').style.display='block';hud();
+ $('hint').style.opacity=1;setTimeout(()=>{$('hint').style.opacity=0;},4200);banner('第 '+(i+1)+' 關 '+L.n,'#fff');updSlats();}
+function loseHeart(){hearts--;lost++;combo=0;sfx.angry();flash('#ff2a2a');shake=.35;hud();if(hearts<=0&&S==='play'){S='lose';endT=0;sfx.lose();}}
+function addScore(c,pts,x,z){score+=pts;pop('+'+pts,x,1.6,z,'#ffe27a');hud();}
+function removePlate(p){const k=plates.indexOf(p);if(k>=0)plates.splice(k,1);}
+function tapPlate(p){if(S!=='play')return;const t=p.type;
+ if(t===8){removePlate(p);plateRoot.remove(p.g);freeze=5;for(const c of custs)if(c.state==='wait'){c.pat=1;c.step=-1;}score+=200;sfx.gold();flash('#ffe27a');spark(p.g.position.x,.9,p.g.position.z,0xffd23a,40,2.4);pop('時間暫停!',p.g.position.x,1.6,p.g.position.z,'#ffe27a',true);banner('時間暫停 5 秒!','#ffe27a');hud();return;}
+ if(t===7){removePlate(p);plateRoot.remove(p.g);combo=0;sfx.wasabi();flash('#6ad030');shake=.5;spark(p.g.position.x,.7,p.g.position.z,0x8ad040,36,2.6);for(const c of custs)if(c.state==='wait'){c.pat=Math.max(.02,c.pat-.22);c.step=-1;}pop('嗆辣!',p.g.position.x,1.6,p.g.position.z,'#9ae050',true);hud();return;}
+ let best=null,bi=null;for(const c of custs)if(c.state==='wait'){for(const n of c.needs)if(n.st===0&&n.t===t){if(!best||c.pat<best.pat){best=c;bi=n;}break;}}
+ if(best){bi.st=1;removePlate(p);sfx.grab();flying.push({p,c:best,n:bi,t:0,dur:.42,fx:p.g.position.x,fy:p.g.position.y,fz:p.g.position.z,tx:best.side*3.3,ty:BY+.6,tz:best.z,done:false,hold:0});drawBubble(best);}
+ else{removePlate(p);plateRoot.remove(p.g);combo=0;sfx.wrong();spark(p.g.position.x,.7,p.g.position.z,0xbbbbbb,14,1.4);for(const c of custs)if(c.state==='wait'){c.pat=Math.max(.02,c.pat-.07);c.step=-1;}pop('沒人點這個!',p.g.position.x,1.6,p.g.position.z,'#ff8a7a');hud();}}
+function arrive(f){const c=f.c,n=f.n;f.done=true;f.hold=1.1;if(c.state!=='wait'&&c.state!=='eat'){return;}
+ n.st=2;combo++;if(combo>maxCombo)maxCombo=combo;const pts=100+Math.min(10,combo)*10+Math.round(Math.max(0,c.pat)*50);sfx.serve(combo);spark(c.side*3.3,1.1,c.z,0xffd23a,14,1.6);addScore(c,pts,c.side*3.4,c.z);
+ if(combo>=3&&combo%3===0)pop('連擊 x'+combo+'!',0,1.8,c.z,'#ffd23a',true);
+ if(c.needs.every(x=>x.st===2)){c.state='eat';c.t=0;setMood(c,1);served++;sfx.eat();spark(c.side*4.6,2.2,c.z,0xff8aa0,12,1.4);hud();c.spr.visible=false;
+  if(served>=LV[LVi].goal&&S==='play'){S='win';endT=0;}}
+ else{drawBubble(c);}}
+/* ===== 輸入 ===== */
+const _v=new THREE.Vector3();
+function pickAt(cx,cy){const r=glc.getBoundingClientRect();const R=r.width*.095;let best=null,bd=1e9;for(const p of plates){_v.set(p.g.position.x,p.g.position.y+.15,p.g.position.z).project(cam);const sx=(_v.x+1)/2*r.width+r.left,sy=(1-_v.y)/2*r.height+r.top;const d=Math.hypot(sx-cx,sy-cy);if(d<R&&d<bd){bd=d;best=p;}}return best;}
+glc.addEventListener('pointerdown',e=>{initAudio();if(S!=='play')return;const p=pickAt(e.clientX,e.clientY);if(p)tapPlate(p);});
+/* ===== 選關 / 結算 ===== */
+function menuUI(){const g=$('lvs');g.innerHTML='';LV.forEach((L,i)=>{const b=document.createElement('button');const lock=i>=SV.unl;b.className='lv'+(i===selLv?' sel':'')+(lock?' lock':'');b.innerHTML='<b>'+(i+1)+'</b><span>'+L.n+'</span><i>'+(lock?'🔒':'★'.repeat(SV.stars[i])+'☆'.repeat(3-SV.stars[i]))+'</i>';b.onclick=()=>{if(lock)return;selLv=i;menuUI();};g.appendChild(b);});$('mInfo').textContent='第 '+(selLv+1)+' 關最高分 '+SV.best[selLv];}
+function openMenu(){S='menu';$('over').classList.remove('on');$('pause').classList.remove('on');$('menu').classList.add('on');$('hud').style.display='none';clearPlates();for(const c of custs){c.g.visible=false;c.spr.visible=false;c.state='off';}selLv=Math.min(selLv,SV.unl-1);buildDecor(selLv);menuUI();updSlats();}
+function showEnd(win){const st=win?(lost===0?3:lost===1?2:1):0;let nb=false;if(win){if(st>SV.stars[LVi])SV.stars[LVi]=st;if(score>SV.best[LVi]){SV.best[LVi]=score;nb=true;}if(LVi+1>=SV.unl&&LVi<5)SV.unl=LVi+2;save();}
+ $('oT').textContent=win?(nb?'新紀錄!生意興隆':'生意興隆!'):'客人都氣跑了…';$('oSt').textContent=win?'★'.repeat(st)+'☆'.repeat(3-st):'';$('oS').textContent=score;
+ $('oD').innerHTML='<div class="tr"><span>招待客人</span><b>'+served+' / '+LV[LVi].goal+'</b></div><div class="tr"><span>最高連擊</span><b>'+maxCombo+'</b></div><div class="tr"><span>生氣的客人</span><b>'+lost+'</b></div>';
+ $('oN').style.display=win&&LVi<5?'flex':'none';$('over').classList.add('on');if(win)sfx.win();}
+$('start').onclick=()=>startLevel(selLv);$('oR').onclick=()=>startLevel(LVi);$('oM').onclick=openMenu;$('toMenu').onclick=openMenu;$('oN').onclick=()=>{selLv=LVi+1;startLevel(LVi+1);};
+let pauseFrom=null;function togglePause(){if(S==='play'){pauseFrom=S;S='pause';$('pause').classList.add('on');}else if(S==='pause'){S=pauseFrom||'play';$('pause').classList.remove('on');}}
+$('pauseBtn').onclick=togglePause;$('resume').onclick=togglePause;
+$('sndBtn').onclick=()=>{SV.snd=SV.snd?0:1;save();initAudio();$('sndBtn').textContent=SV.snd?'🔊':'🔇';};$('sndBtn').textContent=SV.snd?'🔊':'🔇';
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&S==='play')togglePause();});
+addEventListener('keydown',e=>{if(e.key==='p'||e.key==='Escape')togglePause();});
+/* ===== 全螢幕與版面 ===== */
+const FSI_IN='<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',FSI_OUT='<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>';
+function standalone(){return !!(navigator.standalone||(window.matchMedia&&(matchMedia('(display-mode: fullscreen)').matches||matchMedia('(display-mode: standalone)').matches)));}
+function isFS(){return !!(document.fullscreenElement||document.webkitFullscreenElement||document.body.classList.contains('pfs'));}
+function layout(){const Wd=innerWidth,Hd=innerHeight;let w,h;if(Wd/Hd<=9/16){w=Wd;h=Hd;}else{h=Hd;w=Hd*9/16;}wrap.style.width=w+'px';wrap.style.height=h+'px';wrap.style.maxHeight='none';wrap.style.fontSize=(w/360*14)+'px';const full=isFS();wrap.style.borderRadius=(full||Wd/Hd<=9/16)?'0':'18px';$('fsI').innerHTML=full?FSI_OUT:FSI_IN;$('fsBtn').style.display=standalone()?'none':'';}
+let toastT=0;function toast(m){const e=$('toast');e.innerHTML=m;e.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>{e.style.display='none';},6000);}
+function pfsOn(){document.body.classList.add('pfs');size();if(/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1))toast('iPhone 的 Safari 不支援網頁全螢幕。<br>點下方「分享」→「加入主畫面」,<br>之後從桌面圖示開啟就是全螢幕。');else toast('此瀏覽器不支援全螢幕,已盡量撐滿畫面。');}
+function toggleFS(){const el=document.documentElement;
+ if(isFS()){document.body.classList.remove('pfs');const x=document.exitFullscreen||document.webkitExitFullscreen;if(x&&(document.fullscreenElement||document.webkitFullscreenElement)){try{const r=x.call(document);if(r&&r.catch)r.catch(()=>{});}catch(e){}}size();return;}
+ const rq=el.requestFullscreen||el.webkitRequestFullscreen;
+ if(rq){try{const r=rq.call(el);if(r&&r.then)r.then(()=>{try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock('portrait').catch(()=>{});}catch(e){}}).catch(()=>pfsOn());}catch(e){pfsOn();}}
+ else pfsOn();}
+$('fsBtn').onclick=toggleFS;
+let camD=30;
+function size(){layout();const r=wrap.getBoundingClientRect();rd.setPixelRatio(Math.min(2,devicePixelRatio||1));rd.setSize(r.width,r.height,false);cam.aspect=r.width/r.height;cam.updateProjectionMatrix();const tn=Math.tan(cam.fov*Math.PI/360);camD=Math.max(24,5.9/(tn*cam.aspect));}
+addEventListener('resize',size);['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,size));
+/* ===== 更新 ===== */
+function update(dt){
+ gtime+=dt;const play=S==='play';const L=LV[LVi];
+ const spd=(S==='menu'?1.4:L.speed)*((play||S==='menu')?1:S==='win'?.4:.4);
+ beltOff+=spd*dt;updSlats();
+ /* 盤子 */
+ if(play||S==='win'||S==='lose'||S==='menu'){for(const p of plates){p.s+=spd*dt;if(p.s>=PL){p.s-=PL;if(play){setType(p,pickType());p.pop=0;}}
+  const q=pathAt(p.s);p.g.position.set(q.x,BY,q.z);if(p.pop<1)p.pop=Math.min(1,p.pop+dt*3);const e=1-Math.pow(1-p.pop,3);p.g.scale.setScalar(e*(1+Math.sin(gtime*3+p.ph)*.015));if(p.glow){p.glow.material.opacity=.55+Math.sin(gtime*6)*.3;}
+  if(p.type===8)p.m.rotation.y=gtime*2;else if(p.type===7){p.m.rotation.y=Math.sin(gtime*7+p.ph)*.25;}else p.m.rotation.y=0;}
+  if(play&&plates.length<L.plates){let free=true;for(const p of plates){if(p.s<1.5||p.s>PL-1.5){free=false;break;}}if(free)plates.push(mkPlate(pickType(),0,true));}}
+ /* 飛行中的盤子 */
+ for(let i=flying.length-1;i>=0;i--){const f=flying[i];if(!f.done){f.t+=dt;const k=Math.min(1,f.t/f.dur),e=k*k*(3-2*k);f.p.g.position.set(f.fx+(f.tx-f.fx)*e,f.fy+(f.ty-f.fy)*e+Math.sin(k*Math.PI)*2.2,f.fz+(f.tz-f.fz)*e);f.p.g.rotation.y+=dt*12;if(k>=1){arrive(f);f.p.g.rotation.y=0;}}
+  else{f.hold-=dt;if(f.hold<=0){plateRoot.remove(f.p.g);flying.splice(i,1);}}}
+ /* 客人 */
+ const frozen=freeze>0;if(freeze>0){freeze-=dt;if(freeze<0)freeze=0;}
+ $('frz').style.display=frozen?'block':'none';if(frozen)$('frz').textContent='時間暫停 '+Math.ceil(freeze)+' 秒';
+ for(const c of custs){const sx=c.side*4.65;
+  if(c.state==='off'){continue;}
+  if(c.state==='empty'){c.g.visible=false;if(play){c.delay-=dt;if(c.delay<=0){newOrder(c);c.state='enter';c.t=0;c.g.visible=true;setMood(c,0);c.g.position.x=c.side*9;}}}
+  else if(c.state==='enter'){c.t+=dt/.7;const e=1-Math.pow(1-Math.min(1,c.t),3);c.g.position.x=c.side*9+(sx-c.side*9)*e;c.g.position.y=.63+Math.abs(Math.sin(c.t*14))*.12*(1-e);if(c.t>=1){c.state='wait';c.g.position.y=.63;c.spr.visible=true;drawBubble(c);}}
+  else if(c.state==='wait'){if(play&&!frozen)c.pat-=dt/c.pt;const st=Math.ceil(c.pat*24);if(st!==c.step){c.step=st;drawBubble(c);}
+   c.g.position.y=.63+(c.pat<.3?Math.abs(Math.sin(gtime*14+c.i))*.07:Math.sin(gtime*2+c.i)*.02);setMood(c,c.pat<.3?2:0);
+   if(c.pat<=0&&play){c.state='leave';c.t=0;c.angry=true;setMood(c,2);c.spr.visible=false;spark(sx,2.2,c.z,0xff4a2a,16,1.6);pop('氣氣氣!',sx*.8,2.3,c.z,'#ff6a5a',true);for(const n of c.needs)if(n.st===1)n.st=0;loseHeart();}}
+  else if(c.state==='eat'){c.t+=dt;c.g.position.y=.63+Math.abs(Math.sin(c.t*9))*.1;if(c.t>1.1){c.state='leave';c.t=0;c.angry=false;}}
+  else if(c.state==='leave'){c.t+=dt/.6;const e=Math.min(1,c.t)*Math.min(1,c.t);c.g.position.x=sx+(c.side*9-sx)*e;if(c.t>=1){c.state='empty';c.g.visible=false;c.delay=rnd(.7,2.0);}}}
+ /* 結束判定 */
+ if(S==='win'||S==='lose'){endT+=dt;if(S==='win'){for(const c of custs)if(c.state==='wait'){c.state='leave';c.t=0;c.spr.visible=false;}}if(endT>(S==='win'?1.4:1.0)&&!$('over').classList.contains('on'))showEnd(S==='win');}
+ /* 主廚 */
+ arm.rotation.x=Math.sin(gtime*(S==='menu'?4:7))*.5-.2;chef.position.y=.55+Math.abs(Math.sin(gtime*7))*.03;
+ /* 粒子 */
+ updParticles(dt);
+ for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.l-=dt;if(p.l<=0){parts.splice(i,1);continue;}p.vy-=8*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;if(p.y<.5){p.y=.5;p.vy*=-.3;}}
+ for(let i=0;i<PMAX;i++){const p=parts[i];if(p){pPos[i*3]=p.x;pPos[i*3+1]=p.y;pPos[i*3+2]=p.z;const q=Math.min(1,p.l*2.4);pCol[i*3]=p.c.r*q;pCol[i*3+1]=p.c.g*q;pCol[i*3+2]=p.c.b*q;}else{pPos[i*3+1]=-50;pCol[i*3]=pCol[i*3+1]=pCol[i*3+2]=0;}}
+ pG.attributes.position.needsUpdate=true;pG.attributes.color.needsUpdate=true;
+ /* 相機 */
+ if(shake>0)shake=Math.max(0,shake-dt);const sk=shake*shake*1.2;
+ const el=56*Math.PI/180;cam.position.set((Math.random()-.5)*sk,camD*Math.sin(el),camD*Math.cos(el)-.9+(Math.random()-.5)*sk);cam.lookAt(0,0,-.9);
+}
+/* ===== 主迴圈 ===== */
+let last=performance.now();
+function loop(ms){const dt=Math.max(0,Math.min(.05,(ms-last)/1000));last=ms;if(S!=='pause'&&dt>0)update(dt*TS);rd.render(sc,cam);requestAnimationFrame(loop);}
+size();buildDecor(0);openMenu();try{rd.compile(sc,cam);}catch(e){}requestAnimationFrame(loop);
+let auto=0,autoT=0;setInterval(()=>{if(!auto||S!=='play')return;for(const p of plates){if(p.type===8||p.type===7)continue;for(const c of custs)if(c.state==='wait'&&c.needs.some(n=>n.st===0&&n.t===p.type)){tapPlate(p);return;}}},auto||300);
+window.__SS={state:()=>S,info:()=>({S,score,hearts,served,goal:LV[LVi].goal,combo,plates:plates.length,wait:custs.filter(c=>c.state==='wait').length,cust:custs.map(c=>c.state).join(','),freeze:+freeze.toFixed(1),unl:SV.unl}),start:startLevel,ts:v=>{TS=v;},auto:v=>{auto=v;},tap:i=>{if(plates[i])tapPlate(plates[i]);},tapType:t=>{const p=plates.find(q=>q.type===t);if(p)tapPlate(p);return !!p;},orders:()=>custs.filter(c=>c.state==='wait').map(c=>c.needs.map(n=>n.t+':'+n.st).join('/')),theme:i=>buildDecor(i),SV};
+})();}catch(e){console.warn(e);$('nogl').style.display='flex';}
+</script>
+</body>
+</html>
