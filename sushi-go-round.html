@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#3a1f14"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>迴轉壽司大作戰</title>
+<title>OSSU 迴轉壽司大作戰</title>
 <style>
 :root{--bg:#160d09;--card:#3a2218;--line:rgba(255,255,255,.2);--txt:#FFF6E6;--dim:#E2C4A8;--acc:#FF6A4A}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -24,9 +24,9 @@ canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
 #hr{color:#ff5a6a;letter-spacing:.06em;font-size:1.15em}
 #sc{font-size:1.4em;color:#fff}
 #cmb{color:#ffd23a}
-#pg{margin-top:.5em;height:.9em;border-radius:1em;background:rgba(40,20,12,.62);border:1px solid var(--line);overflow:hidden;position:relative}
+#pg{margin-top:.5em;height:1.15em;border-radius:1em;background:rgba(40,20,12,.62);border:1px solid var(--line);overflow:hidden;position:relative}
 #pgf{height:100%;width:0;background:linear-gradient(90deg,#ff9a4a,#ffd23a);transition:width .3s}
-#pgt{position:absolute;inset:0;display:grid;place-items:center;font:800 .62em 'Noto Sans TC',sans-serif;color:#fff;text-shadow:0 0 .3em #000}
+#pgt{position:absolute;inset:0;display:grid;place-items:center;font:800 .72em 'Noto Sans TC',sans-serif;color:#fff;text-shadow:0 0 .3em #000}
 #lvn{text-align:center;font:800 .8em 'Noto Sans TC',sans-serif;margin-top:.45em;color:#fff;text-shadow:0 .1em .3em rgba(0,0,0,.8)}
 #frz{display:none;margin-top:.45em;text-align:center;font:900 .9em 'Noto Sans TC',sans-serif;color:#9ae8ff;text-shadow:0 0 .4em #000}
 #hint{position:absolute;left:0;right:0;bottom:2.6em;text-align:center;z-index:4;pointer-events:none;font:700 .95em 'Noto Sans TC',sans-serif;text-shadow:0 .1em .4em rgba(0,0,0,.9);opacity:0;transition:opacity .4s;line-height:1.7;color:#fff}
@@ -60,6 +60,7 @@ canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
 .tr span{flex:1;text-align:left}.tr b{font-family:'Space Grotesk',sans-serif}
 #toast{position:absolute;left:1em;right:1em;top:7em;z-index:40;display:none;background:rgba(30,16,10,.96);border:1px solid var(--line);border-radius:1em;padding:.8em 1em;font-size:.85em;line-height:1.6;text-align:center;pointer-events:none}
 #nogl{display:none;position:absolute;inset:0;z-index:30;align-items:center;justify-content:center;text-align:center;padding:2em;background:#160d09;color:var(--dim);line-height:1.7}
+html,body{position:fixed;inset:0;width:100%;overflow:hidden;overscroll-behavior:none}
 </style>
 </head>
 <body>
@@ -77,14 +78,14 @@ canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
   <div id="hud">
     <div class="r1"><div class="hp" id="hr">♥♥♥</div><div class="hp" id="sc">0</div><div class="hp" id="cmb">連擊 0</div></div>
     <div id="pg"><div id="pgf"></div><div id="pgt"></div></div>
-    <div id="lvn"></div><div id="frz"></div>
+    <div id="frz"></div>
   </div>
   <div id="hint">看客人想吃什麼,<br>點一下轉盤上對的壽司送過去!</div>
   <div id="bn"></div>
   <div id="toast"></div>
 
   <div class="ov on" id="menu"><div class="card">
-    <h1>迴轉壽司大作戰<small>SUSHI GO ROUND</small></h1>
+    <h1>迴轉壽司大作戰<small>OSSU 壽司店 ・ SUSHI GO ROUND</small></h1>
     <p>客人頭上的泡泡是想吃的壽司,<br>在轉盤上點對的盤子送過去。<br>點錯會讓客人失去耐心,芥末盤千萬別碰!</p>
     <div class="lvs" id="lvs"></div>
     <div class="sub" id="mInfo"></div>
@@ -217,6 +218,11 @@ const base=[BX(2.0,.55,13.2,0x3a2418,0,0,0)];
 // 傳送帶底座(沿路徑)
 const bsp=[];for(let i=0;i<120;i++){const p=pathAt(i*PL/120);bsp.push(BX(.62,.4,1.5,0x2a1a12,p.x,.08,p.z,-Math.atan2(p.tz,p.tx)));}
 sc.add(new THREE.Mesh(merge(bsp),MAT));
+
+/* ===== 店名 OSSU ===== */
+function signTex(w,h,bg,fg,fs){const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.fillStyle=bg;g.beginPath();g.roundRect(4,4,w-8,h-8,h*.18);g.fill();g.lineWidth=h*.06;g.strokeStyle=fg;g.stroke();g.fillStyle=fg;g.font='900 '+fs+'px "Space Grotesk","Noto Sans TC",sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('OSSU',w/2,h*.54);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;}
+const shopSign=new THREE.Mesh(new THREE.PlaneGeometry(3.4,1.25),new THREE.MeshBasicMaterial({map:signTex(512,188,'#b3261e','#fff4dc',118),transparent:true}));shopSign.position.set(0,2.0,-8.78);sc.add(shopSign);
+const islandSign=new THREE.Mesh(new THREE.PlaneGeometry(1.7,.82),new THREE.MeshBasicMaterial({map:signTex(512,248,'#3a2418','#ffd87a',150),transparent:true}));islandSign.position.set(0,.95,5.0);islandSign.rotation.x=-.75;sc.add(islandSign);
 /* 場景裝飾 (依主題重建) */
 const decor=new THREE.Group();sc.add(decor);
 const TPN=110,tpPos=new Float32Array(TPN*3),tpV=[];const tpG=new THREE.BufferGeometry();tpG.setAttribute('position',new THREE.BufferAttribute(tpPos,3));
@@ -305,7 +311,7 @@ const sfx={grab(){tone(520,.07,'triangle',.08,780);},serve(k){const b=520*Math.p
 function banner(t,col){const b=$('bn');b.textContent=t;b.style.color=col||'#fff';b.classList.remove('on');void b.offsetWidth;b.classList.add('on');}
 function pop(txt,x,y,z,col,big){const v=new THREE.Vector3(x,y,z).project(cam);const d=document.createElement('div');d.className='pp';d.textContent=txt;d.style.left=((v.x+1)/2*100)+'%';d.style.top=((1-v.y)/2*100)+'%';d.style.color=col||'#fff';if(big)d.style.fontSize='1.7em';wrap.appendChild(d);setTimeout(()=>d.remove(),1000);}
 function flash(col){const f=$('flash');f.style.transition='none';f.style.background=col;f.style.opacity=.45;void f.offsetWidth;f.style.transition='opacity .4s';f.style.opacity=0;}
-function hud(){$('hr').textContent='♥'.repeat(hearts)+'♡'.repeat(3-hearts);$('sc').textContent=score;$('cmb').textContent='連擊 '+combo;const L=LV[LVi];$('pgf').style.width=Math.min(100,served/L.goal*100)+'%';$('pgt').textContent='招待客人 '+served+' / '+L.goal;$('lvn').textContent='第 '+(LVi+1)+' 關 ・ '+L.n;}
+function hud(){$('hr').textContent='♥'.repeat(hearts)+'♡'.repeat(3-hearts);$('sc').textContent=score;$('cmb').textContent='連擊 '+combo;const L=LV[LVi];$('pgf').style.width=Math.min(100,served/L.goal*100)+'%';$('pgt').textContent='第 '+(LVi+1)+' 關 '+L.n+' ・ 招待客人 '+served+' / '+L.goal;}
 /* ===== 關卡流程 ===== */
 function clearPlates(){for(const p of plates)plateRoot.remove(p.g);plates.length=0;for(const f of flying)plateRoot.remove(f.p.g);flying.length=0;}
 function startLevel(i){initAudio();LVi=i;const L=LV[i];buildDecor(i);clearPlates();
@@ -398,7 +404,7 @@ function update(dt){
  pG.attributes.position.needsUpdate=true;pG.attributes.color.needsUpdate=true;
  /* 相機 */
  if(shake>0)shake=Math.max(0,shake-dt);const sk=shake*shake*1.2;
- const el=56*Math.PI/180;cam.position.set((Math.random()-.5)*sk,camD*Math.sin(el),camD*Math.cos(el)-.9+(Math.random()-.5)*sk);cam.lookAt(0,0,-.9);
+ const el=56*Math.PI/180;cam.position.set((Math.random()-.5)*sk,camD*Math.sin(el),camD*Math.cos(el)-1.7+(Math.random()-.5)*sk);cam.lookAt(0,0,-1.7);
 }
 /* ===== 主迴圈 ===== */
 let last=performance.now();
@@ -408,5 +414,6 @@ let auto=0,autoT=0;setInterval(()=>{if(!auto||S!=='play')return;for(const p of p
 window.__SS={state:()=>S,info:()=>({S,score,hearts,served,goal:LV[LVi].goal,combo,plates:plates.length,wait:custs.filter(c=>c.state==='wait').length,cust:custs.map(c=>c.state).join(','),freeze:+freeze.toFixed(1),unl:SV.unl}),start:startLevel,ts:v=>{TS=v;},auto:v=>{auto=v;},tap:i=>{if(plates[i])tapPlate(plates[i]);},tapType:t=>{const p=plates.find(q=>q.type===t);if(p)tapPlate(p);return !!p;},orders:()=>custs.filter(c=>c.state==='wait').map(c=>c.needs.map(n=>n.t+':'+n.st).join('/')),theme:i=>buildDecor(i),SV};
 })();}catch(e){console.warn(e);$('nogl').style.display='flex';}
 </script>
+<script>document.addEventListener('touchmove',function(e){if(!(e.target.closest&&e.target.closest('.card,.sheet,.panel,[data-scroll]')))e.preventDefault();},{passive:false});</script>
 </body>
 </html>

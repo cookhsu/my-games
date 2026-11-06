@@ -58,6 +58,7 @@ canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
 .how{display:grid;grid-template-columns:1fr 1fr;gap:.3em .8em;text-align:left;font-size:.8em;color:#E4DDFA}
 #toast{position:absolute;left:1em;right:1em;top:7em;z-index:40;display:none;background:rgba(16,19,40,.96);border:1px solid var(--line);border-radius:1em;padding:.8em 1em;font-size:.85em;line-height:1.6;text-align:center;pointer-events:none}
 #nogl{display:none;position:absolute;inset:0;z-index:30;align-items:center;justify-content:center;text-align:center;padding:2em;background:#0d0a1c;color:var(--dim);line-height:1.7}
+html,body{position:fixed;inset:0;width:100%;overflow:hidden;overscroll-behavior:none}
 </style>
 </head>
 <body>
@@ -425,5 +426,6 @@ size();openMenu();try{rd.compile(sc,cam);}catch(e){}requestAnimationFrame(loop);
 window.__BB={state:()=>S,info:()=>({S,lv,tLeft,lives:run.lives,score:run.score,foes:enemies.length,bombs:bombs.length,px:+P.x.toFixed(2),pz:+P.z.toFixed(2),exit:exitC,shown:exitShown,open:exitOpen,range:run.range,maxB:run.maxB,crates:grid.flat().filter(v=>v===2).length}),start:startLevel,ts:v=>{TS=v;},dir:v=>{autoDir=v;},bomb:placeBomb,kill:()=>{for(const e of enemies){sc.remove(e.mesh);sc.remove(e.blob);}enemies.length=0;},reveal:()=>{destroyCrate(exitC[0],exitC[1]);},tp:(x,z)=>{P.x=x;P.z=z;},grid:()=>grid,hurt:()=>{P.inv=0;hurt();},SV};
 })();}catch(e){console.warn(e);$('nogl').style.display='flex';}
 </script>
+<script>document.addEventListener('touchmove',function(e){if(!(e.target.closest&&e.target.closest('.card,.sheet,.panel,[data-scroll]')))e.preventDefault();},{passive:false});</script>
 </body>
 </html>

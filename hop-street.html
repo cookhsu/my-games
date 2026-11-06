@@ -46,6 +46,7 @@ canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
 .big{font:900 2.4em 'Space Grotesk',sans-serif;color:#fff}
 #toast{position:absolute;left:1em;right:1em;top:7em;z-index:40;display:none;background:rgba(16,30,28,.96);border:1px solid var(--line);border-radius:1em;padding:.8em 1em;font-size:.85em;line-height:1.6;text-align:center;pointer-events:none}
 #nogl{display:none;position:absolute;inset:0;z-index:30;align-items:center;justify-content:center;text-align:center;padding:2em;background:#0d1a14;color:var(--dim);line-height:1.7}
+html,body{position:fixed;inset:0;width:100%;overflow:hidden;overscroll-behavior:none}
 </style>
 </head>
 <body>
@@ -345,5 +346,6 @@ window.__HS={state:()=>S,info:()=>({S,score,row:P.row,x:+P.x.toFixed(2),coins:SV
 let godM=false;
 })();}catch(e){console.warn(e);$('nogl').style.display='flex';}
 </script>
+<script>document.addEventListener('touchmove',function(e){if(!(e.target.closest&&e.target.closest('.card,.sheet,.panel,[data-scroll]')))e.preventDefault();},{passive:false});</script>
 </body>
 </html>

@@ -38,6 +38,7 @@ canvas#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-a
 .btn:active{transform:translateY(.12em)}
 .stat{display:grid;grid-template-columns:1fr 1fr;gap:.4em .8em;font-size:.88em;text-align:left;color:#D8D6E8}.stat b{float:right;color:#fff;font-family:'Space Grotesk',sans-serif}
 #toast{position:absolute;left:1em;right:1em;top:6em;z-index:40;display:none;background:rgba(16,19,40,.96);border:1px solid var(--line);border-radius:1em;padding:.8em 1em;font-size:.85em;line-height:1.6;text-align:center;pointer-events:none}
+html,body{position:fixed;inset:0;width:100%;overflow:hidden;overscroll-behavior:none}
 </style>
 </head>
 <body>
@@ -495,5 +496,6 @@ const M=window.__NM3={ok:false,render,resize:size,proj,event};
 glc.style.display='block';size();M.ok=true;
 })();}catch(e){console.warn(e);window.__NM3=null;}
 </script>
+<script>document.addEventListener('touchmove',function(e){if(!(e.target.closest&&e.target.closest('.card,.sheet,.panel,[data-scroll]')))e.preventDefault();},{passive:false});</script>
 </body>
 </html>
