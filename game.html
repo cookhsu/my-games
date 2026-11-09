@@ -119,19 +119,15 @@ addEventListener('pageshow',unlock);})();</script>
   .dash:active,.dash.on{ transform:translateY(3px); box-shadow:0 2px 0 #8a5a10, 0 0 30px rgba(244,166,35,.55); background:linear-gradient(180deg,#FFD27A,#F4A623); }
   @media (prefers-reduced-motion:reduce){ .overlay .logo,.btn.big,.btn.big::after,.newbest{ animation:none; } }
 </style>
+<style id="desk-css">@media (pointer:coarse){.desk-only{display:none!important;}}</style>
 <style id="no-scroll">
 html,body{overscroll-behavior:none;}
 .cabinet,#game,.overlay,.controls{touch-action:none;-webkit-user-select:none;user-select:none;}
-@media (max-width:640px){
-  .controls{display:flex!important;justify-content:flex-end;align-items:center;margin-top:10px;padding:0 4px;gap:0;}
-  .dash{width:64px;height:64px;font-size:14px;line-height:1.15;border-width:2.5px;margin-right:2px;box-shadow:0 4px 0 #8a5a10,0 0 16px rgba(244,166,35,.25),inset 0 1px 0 rgba(255,255,255,.12);}
-  .dash:active,.dash.on{transform:translateY(2px) scale(.96);}
-}
 @media (max-width:640px) and (orientation:portrait){
   body.playing{position:fixed;inset:0;width:100%;overflow:hidden;}
   body.playing .marquee,body.playing .hint{display:none!important;}
   body.playing .cabinet{margin-top:8px;padding:12px;}
-  body.playing #game{width:min(100%,calc((100dvh - 170px) * .667));margin:0 auto;}
+  body.playing #game{width:min(100%,calc((100dvh - 90px) * .667));margin:0 auto;}
 }
 </style>
 </head>
@@ -177,7 +173,7 @@ html,body{overscroll-behavior:none;}
           <i style="background:#7A6A8A"></i><span>岩石：每吃 5 顆升一級並多出現</span>
           <i style="background:#5AA9FF"></i><span>傳送門：3 級起，進一個從另一個出來</span>
           <i style="background:#C8F169"></i><span>螢火蟲：4 級起巡邏，碰到就結束</span>
-          <i style="background:#fff"></i><span>按住 Shift 衝刺：速度加快、得分 ×2，會消耗體力</span>
+          <i class="desk-only" style="background:#fff"></i><span class="desk-only">按住 Shift 衝刺：速度加快、得分 ×2，會消耗體力</span>
           <i style="background:#FF6A3D"></i><span>巨大蘑菇：身體變大 8 秒並長 3 節，撞到岩石會直接撞碎 +15</span>
           <i style="background:#9FE8FF"></i><span>護盾泡泡：擋下一次撞擊，並短暫穿透</span>
           <i style="background:#FF9EC0"></i><span>果實雨：限時掉下一大把果實，快搶！</span>
@@ -198,16 +194,14 @@ html,body{overscroll-behavior:none;}
       </div>
     </div>
 
-    <div class="controls">
-      <button class="dash" id="dashBtn" aria-label="按住衝刺">衝刺</button>
-    </div>
   </div>
 
-  <p class="hint">手機在畫面上往上滑蛇就往上、往下滑就往下，左右也一樣；電腦可用方向鍵 / <kbd>W A S D</kbd> 或滑鼠拖曳。按住 <kbd>Shift</kbd> 或右下角「衝刺」鈕加速，<kbd>P</kbd> 或空白鍵暫停。分數越高，蛇皮膚越多。</p>
+  <p class="hint">手機在畫面上往上滑蛇就往上、往下滑就往下，左右也一樣；電腦可用方向鍵 / <kbd>W A S D</kbd> 或滑鼠拖曳。<span class="desk-only">電腦按住 <kbd>Shift</kbd> 可衝刺，</span><kbd>P</kbd> 或空白鍵暫停。分數越高，蛇皮膚越多。</p>
 
 <script>
 (function(){
   "use strict";
+  var IS_TOUCH = !!(window.matchMedia && matchMedia('(pointer:coarse)').matches);
   var CELL = 20, GW = 20, GH = (window.matchMedia && matchMedia('(max-width:640px) and (orientation:portrait)').matches) ? 30 : 20, GRID = GW, SIZE = GW * CELL, SW = GW * CELL, SH = GH * CELL;
   var canvas = document.getElementById('game'), ctx = canvas.getContext('2d');
   canvas.width = SW; canvas.height = SH;
@@ -855,8 +849,10 @@ html,body{overscroll-behavior:none;}
     if (gameTime < bigUntil){ chip('GIANT', SW - 8, ry, '#FF8A3D', true); barv(SW - 8 - 74, ry + 12, 74, (bigUntil - gameTime) / 8000, '#FF8A3D'); ry += 30; }
     if (shield){ chip('SHIELD', SW - 8, ry, '#9FE8FF', true); ry += 22; }
     if (gameTime < rainUntil){ var cy2 = combo > 1 && gameTime - lastEat < 2600 ? 66 : 38; chip('RAIN', 8, cy2, '#FF9EC0'); barv(8, cy2 + 12, 74, (rainUntil - gameTime) / 8000, '#FF9EC0'); }
+    if (!IS_TOUCH){
     chip(dashing ? 'DASH x2' : 'DASH', 8, SH - 26, dashing ? '#FDF6EC' : (stamina < 20 ? '#F45B5B' : '#F4A623'));
     barv(8, SH - 14, 96, stamina / 100, dashing ? '#FDF6EC' : (stamina < 20 ? '#F45B5B' : '#F4A623'), dashing ? '#fff' : (stamina < 20 ? '#FF9A9A' : '#FFD27A'));
+    }
     var vg = ctx.createRadialGradient(SW / 2, SH / 2, SH * .38, SW / 2, SH / 2, SH * .75); vg.addColorStop(0, 'rgba(8,3,14,0)'); vg.addColorStop(1, 'rgba(8,3,14,.5)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, SW, SH);
     ctx.restore();
   }
@@ -866,7 +862,7 @@ html,body{overscroll-behavior:none;}
     var dt = Math.min(0.05, (ts - lastTs) / 1000); lastTs = ts;
     pulse += dt;
     if (running && !paused){
-      if (dashHeld && ((dashing && stamina > 0) || (!dashing && stamina >= 20))) dashing = true; else dashing = false;
+      if (!IS_TOUCH && dashHeld && ((dashing && stamina > 0) || (!dashing && stamina >= 20))) dashing = true; else dashing = false;
       if (dashing) stamina = Math.max(0, stamina - 45 * dt); else stamina = Math.min(100, stamina + 22 * dt);
       if (dashing && stamina <= 0) dashing = false;
       gameTime += dt * 1000; acc += dt * 1000;
@@ -917,9 +913,6 @@ html,body{overscroll-behavior:none;}
   });
   document.addEventListener('keyup', function(e){ if (e.key === 'Shift') dashHeld = false; });
   window.addEventListener('blur', function(){ dashHeld = false; });
-  var dashBtn = document.getElementById('dashBtn');
-  ['pointerdown'].forEach(function(n){ dashBtn.addEventListener(n, function(e){ e.preventDefault(); dashHeld = true; dashBtn.classList.add('on'); }); });
-  ['pointerup', 'pointerleave', 'pointercancel'].forEach(function(n){ dashBtn.addEventListener(n, function(){ dashHeld = false; dashBtn.classList.remove('on'); }); });
   document.addEventListener('visibilitychange', function(){ if (document.hidden && running && !paused) setPaused(true); });
   /* 滑動操控：往上滑蛇往上、往下滑蛇往下、左右同理（手指或滑鼠拖曳皆可） */
   var sw0 = null;
