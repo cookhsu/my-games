@@ -122,11 +122,16 @@ addEventListener('pageshow',unlock);})();</script>
 <style id="no-scroll">
 html,body{overscroll-behavior:none;}
 .cabinet,#game,.overlay,.controls{touch-action:none;-webkit-user-select:none;user-select:none;}
+@media (max-width:640px){
+  .controls{display:flex!important;justify-content:flex-end;align-items:center;margin-top:10px;padding:0 4px;gap:0;}
+  .dash{width:64px;height:64px;font-size:14px;line-height:1.15;border-width:2.5px;margin-right:2px;box-shadow:0 4px 0 #8a5a10,0 0 16px rgba(244,166,35,.25),inset 0 1px 0 rgba(255,255,255,.12);}
+  .dash:active,.dash.on{transform:translateY(2px) scale(.96);}
+}
 @media (max-width:640px) and (orientation:portrait){
   body.playing{position:fixed;inset:0;width:100%;overflow:hidden;}
   body.playing .marquee,body.playing .hint{display:none!important;}
   body.playing .cabinet{margin-top:8px;padding:12px;}
-  body.playing #game{width:min(100%,calc((100dvh - 195px) * .667));margin:0 auto;}
+  body.playing #game{width:min(100%,calc((100dvh - 170px) * .667));margin:0 auto;}
 }
 </style>
 </head>
@@ -194,7 +199,7 @@ html,body{overscroll-behavior:none;}
     </div>
 
     <div class="controls">
-      <button class="dash" id="dashBtn" aria-label="按住衝刺">按住<br>衝刺</button>
+      <button class="dash" id="dashBtn" aria-label="按住衝刺">衝刺</button>
     </div>
   </div>
 
