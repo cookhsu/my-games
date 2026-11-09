@@ -119,6 +119,16 @@ addEventListener('pageshow',unlock);})();</script>
   .dash:active,.dash.on{ transform:translateY(3px); box-shadow:0 2px 0 #8a5a10, 0 0 30px rgba(244,166,35,.55); background:linear-gradient(180deg,#FFD27A,#F4A623); }
   @media (prefers-reduced-motion:reduce){ .overlay .logo,.btn.big,.btn.big::after,.newbest{ animation:none; } }
 </style>
+<style id="no-scroll">
+html,body{overscroll-behavior:none;}
+.cabinet,#game,.overlay,.controls{touch-action:none;-webkit-user-select:none;user-select:none;}
+@media (max-width:640px) and (orientation:portrait){
+  body.playing{position:fixed;inset:0;width:100%;overflow:hidden;}
+  body.playing .marquee,body.playing .hint{display:none!important;}
+  body.playing .cabinet{margin-top:8px;padding:12px;}
+  body.playing #game{width:min(100%,calc((100dvh - 195px) * .667));margin:0 auto;}
+}
+</style>
 </head>
 <body>
   <div class="marquee">
@@ -542,7 +552,7 @@ addEventListener('pageshow',unlock);})();</script>
     if (unNow > unBefore){ unMsg = '<br>解鎖新皮膚：' + SKINS.slice(unBefore, unNow).map(function(k){ return k.n; }).join('、'); }
     finalText.innerHTML = '<span class="stats"><span class="st"><small>分數</small><b>' + score + '</b></span><span class="st"><small>等級</small><b>' + level + '</b></span><span class="st"><small>模式</small><b>' + (m === 'wrap' ? '穿牆' : (m === 'duel' ? '對戰' : '經典')) + '</b></span></span>' + (newBest ? '<span class="newbest">🏆 刷新最高分!</span>' : '') + (unMsg ? '<span class="unlock">' + unMsg.replace('<br>','') + '</span>' : '');
     renderSkins();
-    setTimeout(function(){ overOverlay.classList.remove('hidden'); }, 600);
+    setTimeout(function(){ overOverlay.classList.remove('hidden'); document.body.classList.remove('playing'); }, 600);
   }
 
   function step(){
@@ -887,7 +897,7 @@ addEventListener('pageshow',unlock);})();</script>
     getAc();
     startOverlay.classList.add('hidden'); overOverlay.classList.add('hidden'); pauseOverlay.classList.add('hidden');
     resetState(); bestEl.textContent = bests[mode];
-    running = true; paused = false; pauseBtn.textContent = '⏸';
+    running = true; paused = false; pauseBtn.textContent = '⏸'; document.body.classList.add('playing'); window.scrollTo(0, 0);
     music.start();
   }
 
@@ -919,6 +929,7 @@ addEventListener('pageshow',unlock);})();</script>
   canvas.addEventListener('pointermove', swipeMove);
   ['pointerup','pointercancel'].forEach(function(n){ canvas.addEventListener(n, function(){ sw0 = null; }); });
   canvas.style.touchAction = 'none';
+  document.addEventListener('touchmove', function(e){ if (running && !paused && e.target.closest && e.target.closest('.cabinet')) e.preventDefault(); }, { passive: false });
 
   document.getElementById('startBtn').addEventListener('click', startGame);
   document.getElementById('dexBtn').addEventListener('click', function(){ document.getElementById('dexOverlay').classList.remove('hidden'); });
