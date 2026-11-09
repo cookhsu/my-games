@@ -292,7 +292,7 @@ body{ position:relative; }
 
       <div class="overlay" id="startOverlay">
         <h2>準備起飛！</h2>
-        <p>點畫面／空白鍵／↑ 往上飛。穿過縫隙<b>正中央</b>有「完美」加分，撿⭐、🛡、🔽、🚀 道具，小心會晃動的鉛筆和紙團！</p>
+        <p>點畫面／空白鍵／↑ 往上飛。穿過縫隙<b>正中央</b>有「完美」加分，撿⭐、🛡、🔽、🚀 道具，順著綠色氣流往上飛、避開紅色下壓氣流，收集星星弧線拿額外分，小心晃動的鉛筆、紙團和飛來的剪刀（右側出現紅色驚嘆號就是預警）！</p>
         <button class="btn" id="startBtn">開始遊戲</button>
       </div>
 
@@ -352,7 +352,7 @@ body{ position:relative; }
   var SPAWN_GAP_X = 235;   // horizontal distance between obstacle pairs
 
   var planeY, planeV, planeAngle, obstacles, score, running, lastTime, rafId, spawnTimer;
-  var passes, stars, pups, balls, floats, shield, shrink, dash, inv, streak, bestStreak, starCnt, curSpd, tier, banner, mis, misDone, misLast, themeC, ballsDodged;
+  var winds = [], shears = [], arcGot = {}, arcId = 0, passes, stars, pups, balls, floats, shield, shrink, dash, inv, streak, bestStreak, starCnt, curSpd, tier, banner, mis, misDone, misLast, themeC, ballsDodged;
   var THEMES = [['#4B806B', '#2C5144'], ['#4A6FA5', '#223A66'], ['#9A6B3F', '#5A3A1E'], ['#3A3560', '#15122E']];
   function hexRGB(h){ return [parseInt(h.substr(1, 2), 16), parseInt(h.substr(3, 2), 16), parseInt(h.substr(5, 2), 16)]; }
   themeC = [hexRGB(THEMES[0][0]), hexRGB(THEMES[0][1])];
@@ -366,6 +366,7 @@ body{ position:relative; }
     score = 0;
     scoreEl.textContent = '0';
     passes = 0; stars = []; pups = []; balls = []; floats = []; shield = false; shrink = 0; dash = 0; inv = 0; streak = 0; bestStreak = 0; starCnt = 0; curSpd = SPEED; tier = 0; banner = null; misDone = 0; misLast = ''; ballsDodged = 0; PLANE_R = 15; newMis();
+    winds = []; shears = []; arcGot = {}; arcId = 0;
     spawnTimer = 0; trail = []; parts = []; popT = 0; shakeT = 0; scroll = 0; endAnim = false;
     spawnObstacle(W + 60);
   }
@@ -383,6 +384,9 @@ body{ position:relative; }
     else if (passes >= 8 && r < .20) pups.push({ t: 'shrink', x: mx, y: rnd(110, H - 110) });
     else if (passes >= 12 && r < .26 && dash <= 0) pups.push({ t: 'dash', x: mx, y: rnd(110, H - 110) });
     else if (passes >= 10 && r < .50) balls.push({ x: mx + 30, y: rnd(90, H - 90), ph: Math.random() * 6.28, got: false, r: 11 });
+    else if (passes >= 5 && r >= .5 && r < .64) winds.push({ x: mx - 55, w: 110, y: rnd(120, H - 200), h: 120, dir: Math.random() < .6 ? -1 : 1 });
+    else if (r >= .64 && r < .92){ var aid = ++arcId, ay = rnd(130, H - 130); for (var ak = 0; ak < 5; ak++) stars.push({ x: mx - 52 + ak * 26, y: ay - Math.sin(ak / 4 * Math.PI) * 38, got: false, arc: aid }); }
+    if (passes >= 14 && Math.random() < .24) shears.push({ x: W + 40, y: rnd(100, H - 100), warn: 1.0, ph: 0 });
   }
   function rnd(a, b){ return a + Math.random() * (b - a); }
   function newMis(){
@@ -501,6 +505,9 @@ body{ position:relative; }
     ctx.save();
     if (shakeT > 0) ctx.translate((Math.random() - .5) * 8 * shakeT * 3, (Math.random() - .5) * 8 * shakeT * 3);
     drawBackground();
+    winds.forEach(function(w){ var up = w.dir < 0, col = up ? '120,255,190' : '255,140,120'; var wg = ctx.createLinearGradient(0, w.y, 0, w.y + w.h); wg.addColorStop(up ? 1 : 0, 'rgba(' + col + ',.30)'); wg.addColorStop(up ? 0 : 1, 'rgba(' + col + ',.04)'); ctx.fillStyle = wg; ctx.fillRect(w.x, w.y, w.w, w.h);
+      ctx.strokeStyle = 'rgba(' + col + ',.85)'; ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      for (var wi = 0; wi < 3; wi++){ var ax = w.x + 22 + wi * 33; for (var wj = 0; wj < 3; wj++){ var ph = ((tClock * 70 + wj * 40) % 120) / 120, ay = up ? w.y + w.h - ph * w.h : w.y + ph * w.h; ctx.globalAlpha = Math.sin(ph * Math.PI); var d = up ? -1 : 1; ctx.beginPath(); ctx.moveTo(ax - 7, ay - 5 * d); ctx.lineTo(ax, ay + 3 * d); ctx.lineTo(ax + 7, ay - 5 * d); ctx.stroke(); } } ctx.globalAlpha = 1; });
     obstacles.forEach(function(o){
       drawPencil(o.x, 0, o.gapY - o.gap / 2, true);
       drawPencil(o.x, o.gapY + o.gap / 2, H, false);
@@ -509,6 +516,12 @@ body{ position:relative; }
     stars.forEach(function(st){ var bob = Math.sin(tClock * 4 + st.x * .05) * 3; ctx.save(); ctx.translate(st.x, st.y + bob); ctx.rotate(tClock * 1.5); var sg = ctx.createRadialGradient(0, 0, 2, 0, 0, 20); sg.addColorStop(0, 'rgba(255,230,120,.7)'); sg.addColorStop(1, 'rgba(255,230,120,0)'); ctx.fillStyle = sg; ctx.fillRect(-20, -20, 40, 40); ctx.fillStyle = '#FFD84A'; ctx.strokeStyle = '#B98A10'; ctx.lineWidth = 1.5; ctx.beginPath(); for (var q = 0; q < 10; q++){ var rr2 = q % 2 ? 5 : 11, an = q * Math.PI / 5 - Math.PI / 2; ctx.lineTo(Math.cos(an) * rr2, Math.sin(an) * rr2); } ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore(); });
     pups.forEach(function(p){ var bob = Math.sin(tClock * 4 + p.x * .05) * 3, col = p.t === 'shield' ? '159,232,255' : (p.t === 'shrink' ? '190,255,170' : '255,190,120'); ctx.save(); ctx.translate(p.x, p.y + bob); var pg = ctx.createRadialGradient(0, 0, 3, 0, 0, 26); pg.addColorStop(0, 'rgba(' + col + ',.8)'); pg.addColorStop(1, 'rgba(' + col + ',0)'); ctx.fillStyle = pg; ctx.fillRect(-26, -26, 52, 52); ctx.fillStyle = '#FDF6EC'; ctx.beginPath(); ctx.arc(0, 0, 14, 0, 6.3); ctx.fill(); ctx.strokeStyle = 'rgba(' + col + ',1)'; ctx.lineWidth = 2.5; ctx.stroke(); ctx.font = '16px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(p.t === 'shield' ? '🛡' : (p.t === 'shrink' ? '🔽' : '🚀'), 0, 1); ctx.restore(); });
     balls.forEach(function(b){ ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(tClock * 3 + b.ph); ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.arc(3, 4, b.r, 0, 6.3); ctx.fill(); ctx.fillStyle = '#F4EEE0'; ctx.beginPath(); for (var q = 0; q < 9; q++){ var an = q * 6.283 / 9, rr3 = b.r * (q % 2 ? .82 : 1.05); ctx.lineTo(Math.cos(an) * rr3, Math.sin(an) * rr3); } ctx.closePath(); ctx.fill(); ctx.strokeStyle = 'rgba(90,80,60,.55)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-6, -2); ctx.lineTo(2, 3); ctx.lineTo(6, -4); ctx.moveTo(-2, 6); ctx.lineTo(1, -1); ctx.stroke(); ctx.restore(); });
+    shears.forEach(function(sh){
+      if (sh.warn > 0){ var a = .5 + .5 * Math.sin(tClock * 22); ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#FF5A4D'; ctx.beginPath(); ctx.moveTo(W - 8, sh.y - 16); ctx.lineTo(W - 34, sh.y); ctx.lineTo(W - 8, sh.y + 16); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#fff'; ctx.font = "900 18px 'Nunito', sans-serif"; ctx.textAlign = 'center'; ctx.fillText('!', W - 15, sh.y + 6); ctx.restore(); return; }
+      ctx.save(); ctx.translate(sh.x, sh.y); var op = Math.sin(sh.ph) * .22;
+      ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.beginPath(); ctx.ellipse(3, 5, 26, 6, 0, 0, 6.3); ctx.fill();
+      ctx.lineCap = 'round'; for (var sb = -1; sb <= 1; sb += 2){ ctx.save(); ctx.rotate(sb * (.18 + op)); ctx.fillStyle = '#E6EAF0'; ctx.strokeStyle = '#8C95A3'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(-26, 0); ctx.lineTo(8, -4 * sb); ctx.lineTo(8, 1 * sb); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.strokeStyle = '#E8483D'; ctx.lineWidth = 3.2; ctx.beginPath(); ctx.arc(14, 4 * sb, 6, 0, 6.3); ctx.stroke(); ctx.restore(); }
+      ctx.fillStyle = '#8C95A3'; ctx.beginPath(); ctx.arc(2, 0, 2.2, 0, 6.3); ctx.fill(); ctx.restore(); });
     if (dash > 0){ for (var dl = 0; dl < 7; dl++){ var dy = planeY + (dl - 3) * 9, dx0 = PLANE_X - 20 - ((tClock * 600 + dl * 53) % 120); ctx.strokeStyle = 'rgba(255,230,150,' + (.5 - (PLANE_X - dx0) / 300) + ')'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(dx0, dy); ctx.lineTo(dx0 - 26, dy); ctx.stroke(); } }
     if (!(inv > 0 && Math.floor(tClock * 14) % 2 === 0)) drawPlane(PLANE_X, planeY, planeAngle);
     if (shield){ ctx.strokeStyle = 'rgba(159,232,255,.9)'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(PLANE_X, planeY, PLANE_R + 12 + Math.sin(tClock * 6) * 1.5, 0, 6.3); ctx.stroke(); ctx.fillStyle = 'rgba(159,232,255,.14)'; ctx.fill(); }
@@ -652,6 +665,10 @@ body{ position:relative; }
       planeV = 0; planeY += ((nxt ? nxt.gapY : H * .45) - planeY) * Math.min(1, dt * 7);
     } else { planeV += GRAVITY * dt; planeY += planeV * dt; }
     planeAngle = Math.max(-0.5, Math.min(1.1, planeV / 500));
+    winds.forEach(function(w){ w.x -= curSpd * dt; if (dash <= 0 && PLANE_X > w.x && PLANE_X < w.x + w.w && planeY > w.y && planeY < w.y + w.h){ planeV += w.dir * 1500 * dt; if (planeV < -520) planeV = -520; if (planeV > 560) planeV = 560; w.on = true; } });
+    winds = winds.filter(function(w){ return w.x + w.w > -20; });
+    shears.forEach(function(sh){ sh.ph += dt * 12; if (sh.warn > 0){ sh.warn -= dt; } else { sh.x -= (curSpd + 170) * dt; if (!sh.hit && Math.abs(sh.x - PLANE_X) < 26 && Math.abs(sh.y - planeY) < PLANE_R + 10){ sh.hit = true; if (dash > 0 || inv > 0){ score += 3; scoreEl.textContent = score; floats.push({ x: sh.x, y: sh.y - 16, t: '剪刀 +3', life: .8, c: '#FFE08A', s: 15 }); } else if (hurt('ball', sh)){ gameOver(); return; } } } });
+    shears = shears.filter(function(sh){ return sh.x > -50; });
     obstacles.forEach(function(o){ o.x -= curSpd * dt; if (o.mv){ o.ph += o.sp * dt; o.gapY = o.base + Math.sin(o.ph) * o.amp; } });
     stars.forEach(function(st){ st.x -= curSpd * dt; }); pups.forEach(function(p){ p.x -= curSpd * dt; }); balls.forEach(function(b){ b.x -= (curSpd + 55) * dt; b.y += Math.sin(tClock * 2.2 + b.ph) * 40 * dt; });
     stars = stars.filter(function(st){ return st.x > -30 && !st.got; }); pups = pups.filter(function(p){ return p.x > -30; });
@@ -675,7 +692,7 @@ body{ position:relative; }
         var nt = Math.floor(passes / 10); if (nt > tier){ tier = nt; banner = { t: '第 ' + (tier + 1) + ' 區!', life: 1.6 }; sfx(784, .12, 'triangle', .07); sfx(1047, .2, 'triangle', .07); }
       }
     });
-    for (var si = 0; si < stars.length; si++){ var st = stars[si]; if (!st.got && Math.abs(st.x - PLANE_X) < 22 && Math.abs(st.y - planeY) < 24){ st.got = true; starCnt++; score += 2; scoreEl.textContent = score; mission('star', 1); floats.push({ x: st.x, y: st.y - 16, t: '⭐ +2', life: .8, c: '#FFE08A', s: 15 }); burst(st.x, st.y, 10, ['#FFD84A', '#fff'], 100); sfx(1319, .1, 'triangle', .07); } }
+    for (var si = 0; si < stars.length; si++){ var st = stars[si]; if (!st.got && Math.abs(st.x - PLANE_X) < 22 && Math.abs(st.y - planeY) < 24){ st.got = true; starCnt++; score += 2; if (st.arc){ arcGot[st.arc] = (arcGot[st.arc] || 0) + 1; if (arcGot[st.arc] === 5){ score += 8; floats.push({ x: PLANE_X + 30, y: planeY - 40, t: '🌟 星星串 +8', life: 1.2, c: '#FFF2A0', s: 18 }); burst(PLANE_X, planeY, 18, ['#FFD84A', '#fff'], 150); sfx(1568, .18, 'triangle', .07); } } scoreEl.textContent = score; mission('star', 1); floats.push({ x: st.x, y: st.y - 16, t: '⭐ +2', life: .8, c: '#FFE08A', s: 15 }); burst(st.x, st.y, 10, ['#FFD84A', '#fff'], 100); sfx(1319, .1, 'triangle', .07); } }
     for (var pi = pups.length - 1; pi >= 0; pi--){ var p = pups[pi]; if (Math.abs(p.x - PLANE_X) < 26 && Math.abs(p.y - planeY) < 28){ pups.splice(pi, 1);
       if (p.t === 'shield'){ shield = true; floats.push({ x: p.x, y: p.y - 18, t: '🛡 護盾!', life: 1, c: '#9FE8FF', s: 16 }); }
       else if (p.t === 'shrink'){ shrink = 7; PLANE_R = 9; floats.push({ x: p.x, y: p.y - 18, t: '🔽 迷你化!', life: 1, c: '#C8FFB0', s: 16 }); }
@@ -838,7 +855,7 @@ html.dv-desk #dv-l.on,html.dv-desk #dv-r.on{display:flex;opacity:1;pointer-event
 html.dv-mob body{min-height:100dvh}
 </style>
 <aside id="dv-l" aria-label="遊戲資訊"><small>NOW PLAYING</small><b></b><span class="t"></span><p></p><div class="k">滑鼠點擊、拖曳即可操作；有支援鍵盤的遊戲，畫面內都有按鍵提示。</div><button id="dv-fs" type="button">⛶ 全螢幕</button></aside>
-<aside id="dv-r" aria-label="其他遊戲"><small>換一款玩</small><span id="dv-more"></span><a class="all" href="index.html">回遊戲大廳 · 共 40 款</a></aside>
+<aside id="dv-r" aria-label="其他遊戲"><small>換一款玩</small><span id="dv-more"></span><a class="all" href="index.html">回遊戲大廳 · 共 50 款</a></aside>
 <script id="dv-js">
 (function(){
  var LIST=[["paper-glider.html", "飛行躲避", "紙飛機大冒險", "讓紙飛機穿過桌上林立的鉛筆縫隙。"], ["rooftop-cat.html", "無盡跑酷", "屋頂貓跑酷", "夕陽屋頂上狂奔，跳過障礙、低頭鑽過飛鳥。"], ["chick-relay.html", "節奏跑酷", "小雞接力賽", "三條跑道三隻小雞，跟著鼓點跳過障礙、撿種子，烏⁠鴉來了千萬別跳"], ["ink-sword.html", "武俠", "墨劍江湖", "水墨風武俠動作：三連斬、輕功閃身、劍氣絕招，闖五章擊敗兩大魔頭"], ["boba-survivors.html", "倖存", "珍奶突圍", "化身珍珠奶茶，自動攻擊、撿珍珠升級，撐過 5 分鐘冰塊與方糖大軍"], ["drift-bend.html", "賽車漂移", "彎道漂移", "按住漂移鍵甩過彎道、放開噴出加速，十條賽道對決對手車手，收集十輛愛車"], ["star-raid.html", "太空射擊", "星艦突襲", "自動連射的太空射擊，撿道具升級武器，還要打倒巨型母艦。"], ["game.html", "即時操作", "夜蔓 貪食蛇", "連擊、衝刺、護盾與果實雨，還能和 AI 紅蛇對戰、解鎖蛇皮膚。"], ["snake-evolve.html", "街機", "蛇蛇進化", "貪吃蛇進化版：每 10 顆闖新區域，毒蘑菇、巨石、雷擊來襲；連擊吃滿進入狂熱無敵，還有任務與 12 枚勳章。"], ["tile-breaker.html", "打磚塊", "花磚打磚塊", "12 關闖關，接道具、炸彈連鎖、連擊倍率，還有三場花磚守衛 Boss 戰。"], ["candy-pachinko.html", "物理彈射", "糖果彈珠台", "瞄準發射彈珠，在糖果釘子間亂彈，把橘色糖果全部打光就過關"], ["ring-toss.html", "街機經典", "夜市套圈圈", "按住瞄準、圈縮到最小時放手，套中熊貓、泰迪熊和金鑽，十個攤位等你挑戰"], ["pearl-catch.html", "接料反應", "珍珠接接樂", "用杯子接住珍珠和布丁，閃開會讓你變淡的冰塊。"], ["hoop-shot.html", "投籃機", "夜光籃球機", "往後拉、放開投籃，空心球加時間，連進有加分"], ["penalty-kings.html", "足球", "點球大師", "滑向球門射點球與任意球，繞過人牆、騙過守門員"], ["pool-hall.html", "運動競技", "八號球撞球", "巡迴賽挑戰六位對手，賺金幣買球桿與球檯，先清完自己的球再打進黑 8"], ["table-tennis.html", "運動競技", "極速桌球", "拖曳球拍回擊、打旋轉球；巡迴賽挑戰 6 位個性對手拿星星，怒氣滿了還能放超級殺球。"], ["mini-golf.html", "運動競技", "迷你高爾夫", "往後拉、放手推桿，十二個球場有沙坑、水池、風車、傳送門，桿數越少星越多"], ["dart-bar.html", "酒吧競技", "飛鏢酒吧", "按住瞄準、放開射鏢，三輪對決十位酒客，風、旋轉靶和昏暗燈光都是考驗"], ["lantern-rhythm.html", "節奏點擊", "燈籠節拍", "燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。"], ["garden-whack.html", "反應力", "菜園保衛戰", "限時 30 秒，把冒出土堆的小偷趕跑。"], ["steamer-stack.html", "抓時機", "蒸籠疊疊樂", "抓準時機放下蒸籠，疊得越準越高。"], ["cake-defense.html", "塔防", "蛋糕保衛戰", "擺放糖果槍、冰棒與爆米花砲塔，擋下偷吃生日蛋糕的螞蟻大軍"], ["dice-dungeon.html", "策略", "骰運地下城", "擲骰子、把點數放進技能卡，看穿怪物意圖，闖過 10 層地下城擊倒魔王"], ["magnet-miner.html", "冒險", "磁鐵礦工", "放下磁鐵吸金塊和鑽石，再深入一層，還是收線入袋？小心炸彈全炸光"], ["cat-cafe.html", "放置經營", "貓咪咖啡館", "點咖啡機賺錢，僱用貓咪店員，離線也繼續營業，再開分店"], ["fishing.html", "策略與經營", "深海釣手", "放線下海、左右閃避水母，釣起二十四種魚，賺錢升級漁具，把圖鑑收集滿"], ["soup-master.html", "策略經營", "湯頭大師", "用火候、下料時機和最後一撮鹽，熬出客人心中的那碗好湯，十種湯頭等你收集"], ["ink-gomoku.html", "對弈", "水墨五子棋", "墨黑對朱紅，橫直斜任一方向先連成五子者勝。"], ["xiangqi.html", "棋類對弈", "楚河漢界", "中國象棋對電腦，三種難度，還有悔棋與提示。"], ["macaron2048.html", "滑動合併", "馬卡龍 2048", "把相同口味的馬卡龍疊在一起，疊出最大的一顆。"], ["star-match.html", "記憶配對", "星圖配對", "翻開夜空卡片，用最少步數找出所有星座對子。"], ["tetris.html", "方塊消除", "方塊風暴", "經典方塊加強版：T-Spin、背對背、道具方塊與風暴灰磚，另有衝刺與 8 個任務挑戰。"], ["meow-mover.html", "益智解謎", "喵喵搬運工", "推箱子解謎，58 個關卡，推木箱到貓腳印上，拿滿三顆星。"], ["tidal-sweeper.html", "邏輯推理", "潮間帶排雷", "退潮的沙灘藏著海膽，用數字推理出牠們的位置。"], ["shadow-cat-detective.html", "推理", "影子貓偵探", "五隻貓七嘴八舌，只有一隻在說謊。聽完口供，找出偷東西的真兇"], ["idiom-code.html", "棋牌益智", "四字密碼", "成語版猜字遊戲，看提示從十二個字裡湊出四字成語，六次機會，每天一題"], ["card-duel.html", "卡牌對戰", "紙牌決鬥", "用能量打出火球、護甲與隨從，擊敗十位對手，每贏一場就解鎖新卡牌"], ["bubble-wave.html", "鏡頭互動", "泡泡派對", "打開鏡頭，用揮手在空中打破飄上來的泡泡。"], ["halloween-booth.html", "鏡頭變臉", "萬聖變臉亭", "開鏡頭在臉上貼萬聖節貼紙，拍成圖片傳給朋友"]];
