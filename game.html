@@ -183,23 +183,18 @@ addEventListener('pageshow',unlock);})();</script>
     </div>
 
     <div class="controls">
-      <div class="dpad" role="group" aria-label="方向控制">
-        <button class="up" aria-label="上">▲</button>
-        <button class="left" aria-label="左">◀</button>
-        <button class="right" aria-label="右">▶</button>
-        <button class="down" aria-label="下">▼</button>
-      </div>
       <button class="dash" id="dashBtn" aria-label="按住衝刺">按住<br>衝刺</button>
     </div>
   </div>
 
-  <p class="hint">方向鍵 / <kbd>W A S D</kbd> 移動，按住 <kbd>Shift</kbd> 衝刺，<kbd>P</kbd> 或空白鍵暫停。分數越高，蛇皮膚越多。手機可在畫面上滑動，右下角按住「衝刺」鈕加速。</p>
+  <p class="hint">滑鼠移到哪、手指按在哪，蛇就往那個方向轉，不需要方向鍵。按住滑鼠左鍵或 <kbd>Shift</kbd> 衝刺，<kbd>P</kbd> 或空白鍵暫停。分數越高，蛇皮膚越多。手機請按住畫面指引方向，右下角按住「衝刺」鈕加速。</p>
 
 <script>
 (function(){
   "use strict";
-  var GRID = 20, CELL = 20, SIZE = 400;
+  var CELL = 20, GW = 20, GH = (window.matchMedia && matchMedia('(max-width:640px) and (orientation:portrait)').matches) ? 30 : 20, GRID = GW, SIZE = GW * CELL, SW = GW * CELL, SH = GH * CELL;
   var canvas = document.getElementById('game'), ctx = canvas.getContext('2d');
+  canvas.width = SW; canvas.height = SH;
   var scoreEl = document.getElementById('score'), bestEl = document.getElementById('best');
   var startOverlay = document.getElementById('startOverlay'), overOverlay = document.getElementById('overOverlay'), pauseOverlay = document.getElementById('pauseOverlay');
   var finalText = document.getElementById('finalText'), musicBtn = document.getElementById('musicBtn'), pauseBtn = document.getElementById('pauseBtn');
@@ -355,7 +350,7 @@ addEventListener('pageshow',unlock);})();</script>
   }
   function freeCell(minHeadDist){
     for (var i = 0; i < 200; i++){
-      var x = Math.floor(Math.random() * GRID), y = Math.floor(Math.random() * GRID);
+      var x = Math.floor(Math.random() * GW), y = Math.floor(Math.random() * GH);
       if (occupied(x, y)) continue;
       if (minHeadDist && Math.abs(x - snake[0].x) + Math.abs(y - snake[0].y) < minHeadDist) continue;
       return { x: x, y: y };
@@ -397,7 +392,7 @@ addEventListener('pageshow',unlock);})();</script>
     flies.push({ x: c.x, y: c.y, px: c.x, py: c.y, dx: horiz ? sg : 0, dy: horiz ? 0 : sg });
   }
   function blockedForFly(x, y){
-    if (x < 0 || x >= GRID || y < 0 || y >= GRID) return true;
+    if (x < 0 || x >= GW || y < 0 || y >= GH) return true;
     return rocks.some(function(r){ return r.x === x && r.y === y; });
   }
   function moveFlies(){
@@ -410,10 +405,10 @@ addEventListener('pageshow',unlock);})();</script>
 
   // ---- 對手蛇 ----
   var DIRS = [{ x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }];
-  function inb(x, y){ return x >= 0 && x < GRID && y >= 0 && y < GRID; }
+  function inb(x, y){ return x >= 0 && x < GW && y >= 0 && y < GH; }
   function spawnRival(){
     for (var tries = 0; tries < 60; tries++){
-      var x = 8 + Math.floor(Math.random() * 11), y = Math.floor(Math.random() * GRID);
+      var x = 8 + Math.floor(Math.random() * 11), y = Math.floor(Math.random() * GH);
       var cells = [], ok = true;
       for (var k = 0; k < 4; k++){
         var c = { x: x + k, y: y };
@@ -430,7 +425,7 @@ addEventListener('pageshow',unlock);})();</script>
   }
   function rivalBlocked(){
     var blk = [], i, j;
-    for (i = 0; i < GRID; i++){ blk.push([]); for (j = 0; j < GRID; j++) blk[i].push(false); }
+    for (i = 0; i < GH; i++){ blk.push([]); for (j = 0; j < GW; j++) blk[i].push(false); }
     function mark(c){ if (c && inb(c.x, c.y)) blk[c.y][c.x] = true; }
     rocks.forEach(mark); snake.forEach(mark); flies.forEach(mark);
     rival.body.slice(0, -1).forEach(mark);
@@ -550,10 +545,10 @@ addEventListener('pageshow',unlock);})();</script>
   function step(){
     if (queue.length) dir = queue.shift();
     var head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
-    if (mode === 'wrap'){ head.x = (head.x + GRID) % GRID; head.y = (head.y + GRID) % GRID; }
-    else if (head.x < 0 || head.x >= GRID || head.y < 0 || head.y >= GRID){
+    if (mode === 'wrap'){ head.x = (head.x + GW) % GW; head.y = (head.y + GH) % GH; }
+    else if (head.x < 0 || head.x >= GW || head.y < 0 || head.y >= GH){
       if (!shield){ die(); return; }
-      head.x = (head.x + GRID) % GRID; head.y = (head.y + GRID) % GRID; hit();
+      head.x = (head.x + GW) % GW; head.y = (head.y + GH) % GH; hit();
     }
 
     if (portals){
@@ -651,16 +646,16 @@ addEventListener('pageshow',unlock);})();</script>
 
   /* ---- art v2 helpers ---- */
   var bgCache = null, amb = [];
-  (function(){ var sd = 11; function r(){ sd = (sd * 16807) % 2147483647; return sd / 2147483647; } for (var q = 0; q < 16; q++) amb.push({ x: r() * 400, y: r() * 400, ph: r() * 6.28, sp: .4 + r() * .8, rad: 14 + r() * 18 }); })();
+  (function(){ var sd = 11; function r(){ sd = (sd * 16807) % 2147483647; return sd / 2147483647; } for (var q = 0; q < 16; q++) amb.push({ x: r() * SW, y: r() * SH, ph: r() * 6.28, sp: .4 + r() * .8, rad: 14 + r() * 18 }); })();
   function buildBg(){
-    var c = document.createElement('canvas'); c.width = SIZE; c.height = SIZE; var g = c.getContext('2d');
-    var gr = g.createRadialGradient(SIZE / 2, SIZE * .42, 30, SIZE / 2, SIZE / 2, SIZE * .82); gr.addColorStop(0, '#2E1C3E'); gr.addColorStop(.6, '#1B1026'); gr.addColorStop(1, '#0E0714'); g.fillStyle = gr; g.fillRect(0, 0, SIZE, SIZE);
-    var x, y; for (y = 0; y < GRID; y++) for (x = 0; x < GRID; x++){ if ((x + y) % 2 === 0){ g.fillStyle = 'rgba(255,255,255,.028)'; g.fillRect(x * CELL, y * CELL, CELL, CELL); } }
-    g.strokeStyle = 'rgba(255,255,255,.018)'; g.lineWidth = 1; for (x = 0; x <= GRID; x++){ g.beginPath(); g.moveTo(x * CELL + .5, 0); g.lineTo(x * CELL + .5, SIZE); g.stroke(); g.beginPath(); g.moveTo(0, x * CELL + .5); g.lineTo(SIZE, x * CELL + .5); g.stroke(); }
+    var c = document.createElement('canvas'); c.width = SW; c.height = SH; var g = c.getContext('2d');
+    var gr = g.createRadialGradient(SW / 2, SH * .42, 30, SW / 2, SH / 2, SH * .82); gr.addColorStop(0, '#2E1C3E'); gr.addColorStop(.6, '#1B1026'); gr.addColorStop(1, '#0E0714'); g.fillStyle = gr; g.fillRect(0, 0, SW, SH);
+    var x, y; for (y = 0; y < GH; y++) for (x = 0; x < GW; x++){ if ((x + y) % 2 === 0){ g.fillStyle = 'rgba(255,255,255,.028)'; g.fillRect(x * CELL, y * CELL, CELL, CELL); } }
+    g.strokeStyle = 'rgba(255,255,255,.018)'; g.lineWidth = 1; for (x = 0; x <= GW; x++){ g.beginPath(); g.moveTo(x * CELL + .5, 0); g.lineTo(x * CELL + .5, SH); g.stroke(); } for (y = 0; y <= GH; y++){ g.beginPath(); g.moveTo(0, y * CELL + .5); g.lineTo(SW, y * CELL + .5); g.stroke(); }
     var sd = 5; function r(){ sd = (sd * 16807) % 2147483647; return sd / 2147483647; }
-    g.lineCap = 'round'; for (var i = 0; i < 70; i++){ var px = r() * SIZE, py = r() * SIZE, hh = 4 + r() * 5; g.strokeStyle = 'rgba(' + (60 + r() * 40 | 0) + ',' + (170 + r() * 50 | 0) + ',140,' + (.10 + r() * .12) + ')'; g.lineWidth = 1.3; for (var b = -1; b <= 1; b++){ g.beginPath(); g.moveTo(px + b * 2, py); g.quadraticCurveTo(px + b * 3, py - hh * .6, px + b * 4.5, py - hh); g.stroke(); } }
-    for (i = 0; i < 18; i++){ var fx = r() * SIZE, fy = r() * SIZE, col = ['#F4A623', '#F45B8A', '#B79CED', '#7FF0E0'][i % 4]; g.fillStyle = col; g.globalAlpha = .22; for (var pp = 0; pp < 5; pp++){ var aa = pp * 1.2566; g.beginPath(); g.arc(fx + Math.cos(aa) * 2.4, fy + Math.sin(aa) * 2.4, 1.6, 0, 6.3); g.fill(); } g.globalAlpha = .4; g.fillStyle = '#FDF6EC'; g.beginPath(); g.arc(fx, fy, 1.2, 0, 6.3); g.fill(); g.globalAlpha = 1; }
-    for (i = 0; i < 4; i++){ var mx = r() * SIZE, my = r() * SIZE, mg = g.createRadialGradient(mx, my, 0, mx, my, 90); mg.addColorStop(0, 'rgba(130,90,190,.12)'); mg.addColorStop(1, 'rgba(130,90,190,0)'); g.fillStyle = mg; g.fillRect(mx - 90, my - 90, 180, 180); }
+    g.lineCap = 'round'; for (var i = 0; i < 70; i++){ var px = r() * SW, py = r() * SH, hh = 4 + r() * 5; g.strokeStyle = 'rgba(' + (60 + r() * 40 | 0) + ',' + (170 + r() * 50 | 0) + ',140,' + (.10 + r() * .12) + ')'; g.lineWidth = 1.3; for (var b = -1; b <= 1; b++){ g.beginPath(); g.moveTo(px + b * 2, py); g.quadraticCurveTo(px + b * 3, py - hh * .6, px + b * 4.5, py - hh); g.stroke(); } }
+    for (i = 0; i < 18; i++){ var fx = r() * SW, fy = r() * SH, col = ['#F4A623', '#F45B8A', '#B79CED', '#7FF0E0'][i % 4]; g.fillStyle = col; g.globalAlpha = .22; for (var pp = 0; pp < 5; pp++){ var aa = pp * 1.2566; g.beginPath(); g.arc(fx + Math.cos(aa) * 2.4, fy + Math.sin(aa) * 2.4, 1.6, 0, 6.3); g.fill(); } g.globalAlpha = .4; g.fillStyle = '#FDF6EC'; g.beginPath(); g.arc(fx, fy, 1.2, 0, 6.3); g.fill(); g.globalAlpha = 1; }
+    for (i = 0; i < 4; i++){ var mx = r() * SW, my = r() * SH, mg = g.createRadialGradient(mx, my, 0, mx, my, 90); mg.addColorStop(0, 'rgba(130,90,190,.12)'); mg.addColorStop(1, 'rgba(130,90,190,0)'); g.fillStyle = mg; g.fillRect(mx - 90, my - 90, 180, 180); }
     return c;
   }
   function chip(text, x, y, color, right){
@@ -678,8 +673,8 @@ addEventListener('pageshow',unlock);})();</script>
     if (!bgCache) bgCache = buildBg();
     ctx.drawImage(bgCache, 0, 0);
     amb.forEach(function(a){ var ax = a.x + Math.sin(pulse * a.sp + a.ph) * a.rad, ay = a.y + Math.cos(pulse * a.sp * .8 + a.ph) * a.rad * .6, tw = .35 + .35 * Math.sin(pulse * 3 + a.ph); ctx.fillStyle = 'rgba(200,241,105,' + (tw * .5) + ')'; ctx.beginPath(); ctx.arc(ax, ay, 1.8, 0, 6.3); ctx.fill(); ctx.fillStyle = 'rgba(200,241,105,' + (tw * .12) + ')'; ctx.beginPath(); ctx.arc(ax, ay, 6, 0, 6.3); ctx.fill(); });
-    if (mode === 'classic'){ var bg2 = ctx.createLinearGradient(0, 0, SIZE, SIZE); bg2.addColorStop(0, 'rgba(255,214,120,.75)'); bg2.addColorStop(.5, 'rgba(244,166,35,.45)'); bg2.addColorStop(1, 'rgba(255,214,120,.75)'); ctx.save(); ctx.shadowColor = 'rgba(244,166,35,.7)'; ctx.shadowBlur = 10; ctx.strokeStyle = bg2; ctx.lineWidth = 3; ctx.strokeRect(1.5, 1.5, SIZE - 3, SIZE - 3); ctx.restore(); }
-    else if (mode === 'wrap'){ ctx.save(); ctx.setLineDash([8, 7]); ctx.lineDashOffset = -pulse * 20; ctx.shadowColor = '#2DD4BF'; ctx.shadowBlur = 8; ctx.strokeStyle = 'rgba(127,240,224,.6)'; ctx.lineWidth = 2; ctx.strokeRect(1.5, 1.5, SIZE - 3, SIZE - 3); ctx.restore(); }
+    if (mode === 'classic'){ var bg2 = ctx.createLinearGradient(0, 0, SW, SH); bg2.addColorStop(0, 'rgba(255,214,120,.75)'); bg2.addColorStop(.5, 'rgba(244,166,35,.45)'); bg2.addColorStop(1, 'rgba(255,214,120,.75)'); ctx.save(); ctx.shadowColor = 'rgba(244,166,35,.7)'; ctx.shadowBlur = 10; ctx.strokeStyle = bg2; ctx.lineWidth = 3; ctx.strokeRect(1.5, 1.5, SW - 3, SH - 3); ctx.restore(); }
+    else if (mode === 'wrap'){ ctx.save(); ctx.setLineDash([8, 7]); ctx.lineDashOffset = -pulse * 20; ctx.shadowColor = '#2DD4BF'; ctx.shadowBlur = 8; ctx.strokeStyle = 'rgba(127,240,224,.6)'; ctx.lineWidth = 2; ctx.strokeRect(1.5, 1.5, SW - 3, SH - 3); ctx.restore(); }
 
     rocks.forEach(function(r){
       var rx0 = r.x * CELL, ry0 = r.y * CELL;
@@ -820,13 +815,13 @@ addEventListener('pageshow',unlock);})();</script>
     chip('LV ' + level, 8, 16, 'rgba(253,246,236,.85)');
     if (combo > 1 && gameTime - lastEat < 2600){ chip('COMBO x' + combo, 8, 38, '#F4A623'); barv(8, 50, 74, 1 - (gameTime - lastEat) / 2600, '#F4A623', '#FFD27A'); }
     var ry = 16;
-    if (gameTime < slowUntil){ chip('SLOW', SIZE - 8, ry, '#7FF0E0', true); ry += 22; }
-    if (gameTime < ghostUntil){ chip('GHOST', SIZE - 8, ry, '#B79CED', true); barv(SIZE - 8 - 74, ry + 12, 74, (ghostUntil - gameTime) / 5000, '#B79CED'); ry += 30; }
-    if (shield){ chip('SHIELD', SIZE - 8, ry, '#9FE8FF', true); ry += 22; }
+    if (gameTime < slowUntil){ chip('SLOW', SW - 8, ry, '#7FF0E0', true); ry += 22; }
+    if (gameTime < ghostUntil){ chip('GHOST', SW - 8, ry, '#B79CED', true); barv(SW - 8 - 74, ry + 12, 74, (ghostUntil - gameTime) / 5000, '#B79CED'); ry += 30; }
+    if (shield){ chip('SHIELD', SW - 8, ry, '#9FE8FF', true); ry += 22; }
     if (gameTime < rainUntil){ var cy2 = combo > 1 && gameTime - lastEat < 2600 ? 66 : 38; chip('RAIN', 8, cy2, '#FF9EC0'); barv(8, cy2 + 12, 74, (rainUntil - gameTime) / 8000, '#FF9EC0'); }
-    chip(dashing ? 'DASH x2' : 'DASH', 8, SIZE - 26, dashing ? '#FDF6EC' : (stamina < 20 ? '#F45B5B' : '#F4A623'));
-    barv(8, SIZE - 14, 96, stamina / 100, dashing ? '#FDF6EC' : (stamina < 20 ? '#F45B5B' : '#F4A623'), dashing ? '#fff' : (stamina < 20 ? '#FF9A9A' : '#FFD27A'));
-    var vg = ctx.createRadialGradient(SIZE / 2, SIZE / 2, SIZE * .38, SIZE / 2, SIZE / 2, SIZE * .75); vg.addColorStop(0, 'rgba(8,3,14,0)'); vg.addColorStop(1, 'rgba(8,3,14,.5)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, SIZE, SIZE);
+    chip(dashing ? 'DASH x2' : 'DASH', 8, SH - 26, dashing ? '#FDF6EC' : (stamina < 20 ? '#F45B5B' : '#F4A623'));
+    barv(8, SH - 14, 96, stamina / 100, dashing ? '#FDF6EC' : (stamina < 20 ? '#F45B5B' : '#F4A623'), dashing ? '#fff' : (stamina < 20 ? '#FF9A9A' : '#FFD27A'));
+    var vg = ctx.createRadialGradient(SW / 2, SH / 2, SH * .38, SW / 2, SH / 2, SH * .75); vg.addColorStop(0, 'rgba(8,3,14,0)'); vg.addColorStop(1, 'rgba(8,3,14,.5)'); ctx.fillStyle = vg; ctx.fillRect(0, 0, SW, SH);
     ctx.restore();
   }
 
@@ -877,11 +872,7 @@ addEventListener('pageshow',unlock);})();</script>
 
   document.addEventListener('keydown', function(e){
     var k = e.key;
-    if (k === 'ArrowUp' || k === 'w' || k === 'W'){ setDir(0, -1); e.preventDefault(); }
-    else if (k === 'ArrowDown' || k === 's' || k === 'S'){ setDir(0, 1); e.preventDefault(); }
-    else if (k === 'ArrowLeft' || k === 'a' || k === 'A'){ setDir(-1, 0); e.preventDefault(); }
-    else if (k === 'ArrowRight' || k === 'd' || k === 'D'){ setDir(1, 0); e.preventDefault(); }
-    else if (k === 'p' || k === 'P' || k === ' '){ if (running){ e.preventDefault(); setPaused(!paused); } }
+    if (k === 'p' || k === 'P' || k === ' '){ if (running){ e.preventDefault(); setPaused(!paused); } }
     else if (k === 'Shift'){ dashHeld = true; }
   });
   document.addEventListener('keyup', function(e){ if (e.key === 'Shift') dashHeld = false; });
@@ -890,20 +881,22 @@ addEventListener('pageshow',unlock);})();</script>
   ['pointerdown'].forEach(function(n){ dashBtn.addEventListener(n, function(e){ e.preventDefault(); dashHeld = true; dashBtn.classList.add('on'); }); });
   ['pointerup', 'pointerleave', 'pointercancel'].forEach(function(n){ dashBtn.addEventListener(n, function(){ dashHeld = false; dashBtn.classList.remove('on'); }); });
   document.addEventListener('visibilitychange', function(){ if (document.hidden && running && !paused) setPaused(true); });
-  document.querySelector('.dpad .up').addEventListener('click', function(){ setDir(0, -1); });
-  document.querySelector('.dpad .down').addEventListener('click', function(){ setDir(0, 1); });
-  document.querySelector('.dpad .left').addEventListener('click', function(){ setDir(-1, 0); });
-  document.querySelector('.dpad .right').addEventListener('click', function(){ setDir(1, 0); });
-
-  var ts0 = null;
-  canvas.addEventListener('touchstart', function(e){ var t = e.changedTouches[0]; ts0 = { x: t.clientX, y: t.clientY }; }, { passive: true });
-  canvas.addEventListener('touchend', function(e){
-    if (!ts0) return;
-    var t = e.changedTouches[0], dx = t.clientX - ts0.x, dy = t.clientY - ts0.y;
-    if (Math.abs(dx) > Math.abs(dy)){ if (Math.abs(dx) > 18) setDir(dx > 0 ? 1 : -1, 0); }
-    else if (Math.abs(dy) > 18) setDir(0, dy > 0 ? 1 : -1);
-    ts0 = null;
-  }, { passive: true });
+  /* 指標操控：蛇會自動轉向滑鼠 / 手指所在的位置 */
+  var ptrT = null, mouseDash = false;
+  function ptrCell(e){ var r = canvas.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.width * GW, y: (e.clientY - r.top) / r.height * GH }; }
+  canvas.addEventListener('pointermove', function(e){ ptrT = ptrCell(e); });
+  canvas.addEventListener('pointerdown', function(e){ ptrT = ptrCell(e); if (e.pointerType === 'mouse'){ mouseDash = true; dashHeld = true; } try{ canvas.setPointerCapture(e.pointerId); }catch(_){} });
+  ['pointerup','pointercancel'].forEach(function(n){ canvas.addEventListener(n, function(e){ if (e.pointerType === 'mouse'){ mouseDash = false; dashHeld = false; } else ptrT = null; }); });
+  canvas.addEventListener('pointerleave', function(e){ if (e.pointerType === 'mouse'){ ptrT = null; } });
+  canvas.style.touchAction = 'none';
+  setInterval(function(){
+    if (!running || paused || dead || !ptrT || queue.length) return;
+    var h = snake[0], dx = ptrT.x - (h.x + .5), dy = ptrT.y - (h.y + .5);
+    if (Math.abs(dx) < .6 && Math.abs(dy) < .6) return;
+    var hx = dx > 0 ? 1 : -1, hy = dy > 0 ? 1 : -1, pri = [];
+    if (Math.abs(dx) >= Math.abs(dy)){ pri = [[hx, 0], [0, hy]]; } else { pri = [[0, hy], [hx, 0]]; }
+    for (var k = 0; k < pri.length; k++){ var d = pri[k]; if (d[0] === -dir.x && d[1] === -dir.y) continue; if (d[0] === dir.x && d[1] === dir.y) return; setDir(d[0], d[1]); return; }
+  }, 40);
 
   document.getElementById('startBtn').addEventListener('click', startGame);
   document.getElementById('dexBtn').addEventListener('click', function(){ document.getElementById('dexOverlay').classList.remove('hidden'); });
@@ -1026,7 +1019,7 @@ html.dv-desk #dv-l.on,html.dv-desk #dv-r.on{display:flex;opacity:1;pointer-event
 html.dv-mob body{min-height:100dvh}
 </style>
 <aside id="dv-l" aria-label="遊戲資訊"><small>NOW PLAYING</small><b></b><span class="t"></span><p></p><div class="k">滑鼠點擊、拖曳即可操作；有支援鍵盤的遊戲，畫面內都有按鍵提示。</div><button id="dv-fs" type="button">⛶ 全螢幕</button></aside>
-<aside id="dv-r" aria-label="其他遊戲"><small>換一款玩</small><span id="dv-more"></span><a class="all" href="index.html">回遊戲大廳 · 共 40 款</a></aside>
+<aside id="dv-r" aria-label="其他遊戲"><small>換一款玩</small><span id="dv-more"></span><a class="all" href="index.html">回遊戲大廳 · 共 50 款</a></aside>
 <script id="dv-js">
 (function(){
  var LIST=[["paper-glider.html", "飛行躲避", "紙飛機大冒險", "讓紙飛機穿過桌上林立的鉛筆縫隙。"], ["rooftop-cat.html", "無盡跑酷", "屋頂貓跑酷", "夕陽屋頂上狂奔，跳過障礙、低頭鑽過飛鳥。"], ["chick-relay.html", "節奏跑酷", "小雞接力賽", "三條跑道三隻小雞，跟著鼓點跳過障礙、撿種子，烏⁠鴉來了千萬別跳"], ["ink-sword.html", "武俠", "墨劍江湖", "水墨風武俠動作：三連斬、輕功閃身、劍氣絕招，闖五章擊敗兩大魔頭"], ["boba-survivors.html", "倖存", "珍奶突圍", "化身珍珠奶茶，自動攻擊、撿珍珠升級，撐過 5 分鐘冰塊與方糖大軍"], ["drift-bend.html", "賽車漂移", "彎道漂移", "按住漂移鍵甩過彎道、放開噴出加速，十條賽道對決對手車手，收集十輛愛車"], ["star-raid.html", "太空射擊", "星艦突襲", "自動連射的太空射擊，撿道具升級武器，還要打倒巨型母艦。"], ["game.html", "即時操作", "夜蔓 貪食蛇", "連擊、衝刺、護盾與果實雨，還能和 AI 紅蛇對戰、解鎖蛇皮膚。"], ["snake-evolve.html", "街機", "蛇蛇進化", "貪吃蛇進化版：每 10 顆闖新區域，毒蘑菇、巨石、雷擊來襲；連擊吃滿進入狂熱無敵，還有任務與 12 枚勳章。"], ["tile-breaker.html", "打磚塊", "花磚打磚塊", "12 關闖關，接道具、炸彈連鎖、連擊倍率，還有三場花磚守衛 Boss 戰。"], ["candy-pachinko.html", "物理彈射", "糖果彈珠台", "瞄準發射彈珠，在糖果釘子間亂彈，把橘色糖果全部打光就過關"], ["ring-toss.html", "街機經典", "夜市套圈圈", "按住瞄準、圈縮到最小時放手，套中熊貓、泰迪熊和金鑽，十個攤位等你挑戰"], ["pearl-catch.html", "接料反應", "珍珠接接樂", "用杯子接住珍珠和布丁，閃開會讓你變淡的冰塊。"], ["hoop-shot.html", "投籃機", "夜光籃球機", "往後拉、放開投籃，空心球加時間，連進有加分"], ["penalty-kings.html", "足球", "點球大師", "滑向球門射點球與任意球，繞過人牆、騙過守門員"], ["pool-hall.html", "運動競技", "八號球撞球", "巡迴賽挑戰六位對手，賺金幣買球桿與球檯，先清完自己的球再打進黑 8"], ["table-tennis.html", "運動競技", "極速桌球", "拖曳球拍回擊、打旋轉球；巡迴賽挑戰 6 位個性對手拿星星，怒氣滿了還能放超級殺球。"], ["mini-golf.html", "運動競技", "迷你高爾夫", "往後拉、放手推桿，十二個球場有沙坑、水池、風車、傳送門，桿數越少星越多"], ["dart-bar.html", "酒吧競技", "飛鏢酒吧", "按住瞄準、放開射鏢，三輪對決十位酒客，風、旋轉靶和昏暗燈光都是考驗"], ["lantern-rhythm.html", "節奏點擊", "燈籠節拍", "燈籠隨節奏落下，在光圈處點擊，彈出你的旋律。"], ["garden-whack.html", "反應力", "菜園保衛戰", "限時 30 秒，把冒出土堆的小偷趕跑。"], ["steamer-stack.html", "抓時機", "蒸籠疊疊樂", "抓準時機放下蒸籠，疊得越準越高。"], ["cake-defense.html", "塔防", "蛋糕保衛戰", "擺放糖果槍、冰棒與爆米花砲塔，擋下偷吃生日蛋糕的螞蟻大軍"], ["dice-dungeon.html", "策略", "骰運地下城", "擲骰子、把點數放進技能卡，看穿怪物意圖，闖過 10 層地下城擊倒魔王"], ["magnet-miner.html", "冒險", "磁鐵礦工", "放下磁鐵吸金塊和鑽石，再深入一層，還是收線入袋？小心炸彈全炸光"], ["cat-cafe.html", "放置經營", "貓咪咖啡館", "點咖啡機賺錢，僱用貓咪店員，離線也繼續營業，再開分店"], ["fishing.html", "策略與經營", "深海釣手", "放線下海、左右閃避水母，釣起二十四種魚，賺錢升級漁具，把圖鑑收集滿"], ["soup-master.html", "策略經營", "湯頭大師", "用火候、下料時機和最後一撮鹽，熬出客人心中的那碗好湯，十種湯頭等你收集"], ["ink-gomoku.html", "對弈", "水墨五子棋", "墨黑對朱紅，橫直斜任一方向先連成五子者勝。"], ["xiangqi.html", "棋類對弈", "楚河漢界", "中國象棋對電腦，三種難度，還有悔棋與提示。"], ["macaron2048.html", "滑動合併", "馬卡龍 2048", "把相同口味的馬卡龍疊在一起，疊出最大的一顆。"], ["star-match.html", "記憶配對", "星圖配對", "翻開夜空卡片，用最少步數找出所有星座對子。"], ["tetris.html", "方塊消除", "方塊風暴", "經典方塊加強版：T-Spin、背對背、道具方塊與風暴灰磚，另有衝刺與 8 個任務挑戰。"], ["meow-mover.html", "益智解謎", "喵喵搬運工", "推箱子解謎，58 個關卡，推木箱到貓腳印上，拿滿三顆星。"], ["tidal-sweeper.html", "邏輯推理", "潮間帶排雷", "退潮的沙灘藏著海膽，用數字推理出牠們的位置。"], ["shadow-cat-detective.html", "推理", "影子貓偵探", "五隻貓七嘴八舌，只有一隻在說謊。聽完口供，找出偷東西的真兇"], ["idiom-code.html", "棋牌益智", "四字密碼", "成語版猜字遊戲，看提示從十二個字裡湊出四字成語，六次機會，每天一題"], ["card-duel.html", "卡牌對戰", "紙牌決鬥", "用能量打出火球、護甲與隨從，擊敗十位對手，每贏一場就解鎖新卡牌"], ["bubble-wave.html", "鏡頭互動", "泡泡派對", "打開鏡頭，用揮手在空中打破飄上來的泡泡。"], ["halloween-booth.html", "鏡頭變臉", "萬聖變臉亭", "開鏡頭在臉上貼萬聖節貼紙，拍成圖片傳給朋友"]];
