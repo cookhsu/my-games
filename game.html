@@ -119,14 +119,11 @@ addEventListener('pageshow',unlock);})();</script>
   .dash:active,.dash.on{ transform:translateY(3px); box-shadow:0 2px 0 #8a5a10, 0 0 30px rgba(244,166,35,.55); background:linear-gradient(180deg,#FFD27A,#F4A623); }
   @media (prefers-reduced-motion:reduce){ .overlay .logo,.btn.big,.btn.big::after,.newbest{ animation:none; } }
 </style>
-<style id="mic-css">.mic-chip{display:block;margin:12px auto 0;padding:9px 18px;border-radius:999px;border:2px solid var(--gold);background:linear-gradient(180deg,#4e3159,#33203d);color:var(--gold);font:700 13px 'Nunito',sans-serif;cursor:pointer;box-shadow:0 3px 0 #8a5a10;max-width:100%;}
-.mic-chip.on{background:linear-gradient(180deg,#FFD27A,#F4A623);color:#2a1606;}
-</style>
 <style id="no-scroll">
 html,body{overscroll-behavior:none;}
 .cabinet,#game,.overlay,.controls{touch-action:none;-webkit-user-select:none;user-select:none;}
 @media (max-width:640px){
-  .controls{display:none!important;justify-content:flex-end;align-items:center;margin-top:10px;padding:0 4px;gap:0;}
+  .controls{display:flex!important;justify-content:flex-end;align-items:center;margin-top:10px;padding:0 4px;gap:0;}
   .dash{width:64px;height:64px;font-size:14px;line-height:1.15;border-width:2.5px;margin-right:2px;box-shadow:0 4px 0 #8a5a10,0 0 16px rgba(244,166,35,.25),inset 0 1px 0 rgba(255,255,255,.12);}
   .dash:active,.dash.on{transform:translateY(2px) scale(.96);}
 }
@@ -134,7 +131,7 @@ html,body{overscroll-behavior:none;}
   body.playing{position:fixed;inset:0;width:100%;overflow:hidden;}
   body.playing .marquee,body.playing .hint{display:none!important;}
   body.playing .cabinet{margin-top:8px;padding:12px;}
-  body.playing #game{width:min(100%,calc((100dvh - 190px) * .667));margin:0 auto;}
+  body.playing #game{width:min(100%,calc((100dvh - 170px) * .667));margin:0 auto;}
 }
 </style>
 </head>
@@ -180,7 +177,7 @@ html,body{overscroll-behavior:none;}
           <i style="background:#7A6A8A"></i><span>岩石：每吃 5 顆升一級並多出現</span>
           <i style="background:#5AA9FF"></i><span>傳送門：3 級起，進一個從另一個出來</span>
           <i style="background:#C8F169"></i><span>螢火蟲：4 級起巡邏，碰到就結束</span>
-          <i style="background:#fff"></i><span>喊「衝啊」（或按住 Shift）衝刺：速度加快、得分 ×2，會消耗體力</span>
+          <i style="background:#fff"></i><span>按住 Shift 衝刺：速度加快、得分 ×2，會消耗體力</span>
           <i style="background:#FF6A3D"></i><span>巨大蘑菇：身體變大 8 秒並長 3 節，撞到岩石會直接撞碎 +15</span>
           <i style="background:#9FE8FF"></i><span>護盾泡泡：擋下一次撞擊，並短暫穿透</span>
           <i style="background:#FF9EC0"></i><span>果實雨：限時掉下一大把果實，快搶！</span>
@@ -201,10 +198,12 @@ html,body{overscroll-behavior:none;}
       </div>
     </div>
 
-    <button class="mic-chip" id="micBtn" type="button" aria-pressed="false">🎤 喊「衝啊」衝刺</button>
+    <div class="controls">
+      <button class="dash" id="dashBtn" aria-label="按住衝刺">衝刺</button>
+    </div>
   </div>
 
-  <p class="hint">手機在畫面上往上滑蛇就往上、往下滑就往下，左右也一樣；電腦可用方向鍵 / <kbd>W A S D</kbd> 或滑鼠拖曳。對著手機喊「衝啊」蛇就會衝刺（需允許麥克風，電腦也可按住 <kbd>Shift</kbd>），<kbd>P</kbd> 或空白鍵暫停。分數越高，蛇皮膚越多。</p>
+  <p class="hint">手機在畫面上往上滑蛇就往上、往下滑就往下，左右也一樣；電腦可用方向鍵 / <kbd>W A S D</kbd> 或滑鼠拖曳。按住 <kbd>Shift</kbd> 或右下角「衝刺」鈕加速，<kbd>P</kbd> 或空白鍵暫停。分數越高，蛇皮膚越多。</p>
 
 <script>
 (function(){
@@ -867,7 +866,7 @@ html,body{overscroll-behavior:none;}
     var dt = Math.min(0.05, (ts - lastTs) / 1000); lastTs = ts;
     pulse += dt;
     if (running && !paused){
-      if ((dashHeld || performance.now() < voiceUntil) && ((dashing && stamina > 0) || (!dashing && stamina >= 20))) dashing = true; else dashing = false;
+      if (dashHeld && ((dashing && stamina > 0) || (!dashing && stamina >= 20))) dashing = true; else dashing = false;
       if (dashing) stamina = Math.max(0, stamina - 45 * dt); else stamina = Math.min(100, stamina + 22 * dt);
       if (dashing && stamina <= 0) dashing = false;
       gameTime += dt * 1000; acc += dt * 1000;
@@ -903,7 +902,7 @@ html,body{overscroll-behavior:none;}
     getAc();
     startOverlay.classList.add('hidden'); overOverlay.classList.add('hidden'); pauseOverlay.classList.add('hidden');
     resetState(); bestEl.textContent = bests[mode];
-    running = true; paused = false; pauseBtn.textContent = '⏸'; document.body.classList.add('playing'); window.scrollTo(0, 0); if (micOK && !micOn && !window.__micTried){ window.__micTried = true; micOn = true; startMic(); }
+    running = true; paused = false; pauseBtn.textContent = '⏸'; document.body.classList.add('playing'); window.scrollTo(0, 0);
     music.start();
   }
 
@@ -918,30 +917,9 @@ html,body{overscroll-behavior:none;}
   });
   document.addEventListener('keyup', function(e){ if (e.key === 'Shift') dashHeld = false; });
   window.addEventListener('blur', function(){ dashHeld = false; });
-  /* 語音衝刺：聽到「衝啊」就衝刺 */
-  var micBtn = document.getElementById('micBtn'), voiceUntil = 0, micOn = false, rec = null, micOK = !!(window.SpeechRecognition || window.webkitSpeechRecognition), lastHit = '';
-  function micLabel(t, on){ micBtn.textContent = t; micBtn.classList.toggle('on', !!on); micBtn.setAttribute('aria-pressed', String(!!on)); }
-  function voiceDash(){ voiceUntil = performance.now() + 2200; if (running && !dead){ floatText(snake[0].x, Math.max(1, snake[0].y - 1), '衝啊！', '#FFD27A'); } }
-  function startMic(){
-    if (!micOK){ micLabel('🎤 此瀏覽器不支援語音（電腦可按 Shift）', false); return; }
-    if (rec) return;
-    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    rec = new SR(); rec.lang = 'zh-TW'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 3;
-    rec.onresult = function(ev){
-      for (var i = ev.resultIndex; i < ev.results.length; i++){
-        for (var a = 0; a < ev.results[i].length; a++){
-          var tx = ev.results[i][a].transcript || '';
-          if (/衝|沖|冲|蟲|充|重啊|chong|go|dash/i.test(tx)){ var key = i + ':' + tx; if (key !== lastHit){ lastHit = key; voiceDash(); } break; }
-        }
-      }
-    };
-    rec.onerror = function(e){ if (e.error === 'not-allowed' || e.error === 'service-not-allowed'){ micOn = false; rec = null; micLabel('🎤 麥克風未允許，點此再試', false); } };
-    rec.onend = function(){ var r = rec; rec = null; if (micOn){ setTimeout(function(){ if (micOn) startMic(); }, 250); } };
-    try { rec.start(); micLabel('🎤 聆聽中…喊「衝啊」', true); } catch (e) { rec = null; }
-  }
-  function stopMic(){ micOn = false; if (rec){ try { rec.onend = null; rec.stop(); } catch (e) {} rec = null; } micLabel(micOK ? '🎤 喊「衝啊」衝刺' : '🎤 此瀏覽器不支援語音（電腦可按 Shift）', false); }
-  micBtn.addEventListener('click', function(){ if (micOn) stopMic(); else { micOn = true; startMic(); } });
-  if (!micOK) micLabel('🎤 此瀏覽器不支援語音（電腦可按 Shift）', false);
+  var dashBtn = document.getElementById('dashBtn');
+  ['pointerdown'].forEach(function(n){ dashBtn.addEventListener(n, function(e){ e.preventDefault(); dashHeld = true; dashBtn.classList.add('on'); }); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(function(n){ dashBtn.addEventListener(n, function(){ dashHeld = false; dashBtn.classList.remove('on'); }); });
   document.addEventListener('visibilitychange', function(){ if (document.hidden && running && !paused) setPaused(true); });
   /* 滑動操控：往上滑蛇往上、往下滑蛇往下、左右同理（手指或滑鼠拖曳皆可） */
   var sw0 = null;
