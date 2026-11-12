@@ -118,6 +118,104 @@ button{font-family:inherit}
 #back.off{opacity:0;pointer-events:none}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
+<style id="uikit">
+/* uikit v2 · 統一介面質感 */
+:focus-visible{outline:3px solid rgba(255,255,255,.9);outline-offset:2px}
+.card{position:relative;border-radius:30px;box-shadow:0 24px 54px rgba(0,0,0,.5),0 7px 0 rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.38)}
+.card::before{content:"";position:absolute;left:0;right:0;top:0;bottom:0;border-radius:30px;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,0) 42%)}
+.card>*{position:relative;animation:ukRise .5s cubic-bezier(.2,.9,.3,1) both}
+.card>*:nth-child(1){animation-delay:.04s}.card>*:nth-child(2){animation-delay:.09s}.card>*:nth-child(3){animation-delay:.14s}.card>*:nth-child(4){animation-delay:.19s}.card>*:nth-child(5){animation-delay:.24s}.card>*:nth-child(6){animation-delay:.29s}.card>*:nth-child(n+7){animation-delay:.34s}
+@keyframes ukRise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.card h1,.card h2{text-shadow:0 2px 0 rgba(0,0,0,.18)}
+.btn{position:relative;overflow:hidden;min-height:56px;border-radius:18px;transition:transform .08s,box-shadow .08s,filter .15s}
+.btn::after{content:"";position:absolute;left:7%;right:7%;top:5px;height:36%;border-radius:99px;background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,0));pointer-events:none}
+.btn.ghost{min-height:48px;border-radius:16px}.btn.ghost::after{display:none}
+.btn:hover{filter:brightness(1.06)}
+#playBtn::before,.btn.main::before{content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);transform:skewX(-20deg);animation:ukShine 3.4s ease-in-out infinite;pointer-events:none}
+@keyframes ukShine{0%,55%{left:-60%}100%{left:130%}}
+.stats div{border-radius:14px;border:1px solid rgba(128,128,128,.22);padding:8px 2px}
+.stats b{font-size:22px;font-variant-numeric:tabular-nums;line-height:1.15}
+.stats small{letter-spacing:.12em}
+.seg button,.seg .opt{min-height:52px;border-radius:14px;transition:transform .08s,background .2s,box-shadow .2s}
+.seg button:active{transform:scale(.97)}
+.seg button.on{box-shadow:0 5px 14px rgba(0,0,0,.28)}
+#pauseBtn,.rb{width:44px;height:44px}
+#back{padding:9px 15px;font-size:13px;min-height:36px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.pill{border-radius:16px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-variant-numeric:tabular-nums}
+#toast{letter-spacing:.1em}
+@media (prefers-reduced-motion:reduce){.btn::before,#playBtn::before{animation:none!important}.card>*{animation:none!important}}
+</style>
+<style id="funcss">.fun-ban{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top));z-index:99;display:flex;gap:12px;align-items:center;min-width:240px;max-width:92vw;padding:10px 18px 10px 12px;border-radius:18px;background:linear-gradient(180deg,#3a2b10,#1f1708);border:2px solid #f3c453;color:#fff4d6;box-shadow:0 12px 30px rgba(0,0,0,.5),0 0 24px rgba(243,196,83,.35);transform:translate(-50%,-140%);transition:transform .38s cubic-bezier(.2,1.3,.4,1);pointer-events:none;font-family:inherit}
+.fun-ban.on{transform:translate(-50%,0)}
+.fun-ban i{font-style:normal;font-size:30px;width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 35% 30%,#ffe9a8,#e0a52a)}
+.fun-ban small{display:block;font-size:11px;letter-spacing:.2em;color:#f3c453;font-weight:800}
+.fun-ban b{font-size:17px;font-weight:900}
+#funChip{margin:10px 0 2px;padding:7px 12px;border-radius:14px;background:rgba(243,196,83,.12);border:1px solid rgba(243,196,83,.4);display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;text-align:left}
+#funChip b{font-size:13px;font-weight:900;color:#f3c453;white-space:nowrap}
+#funChip span{height:8px;border-radius:99px;background:rgba(0,0,0,.28);overflow:hidden;display:block}
+#funChip em{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#ffd666,#f3a31c);transition:width .6s}
+#funChip small{font-size:10px;opacity:.75;font-variant-numeric:tabular-nums}
+.fun-row{margin-top:2px}
+.fun-ov{position:fixed;inset:0;z-index:98;background:rgba(5,5,10,.72);display:none;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(4px)}
+.fun-ov.on{display:flex}
+.fun-card{width:min(360px,100%);max-height:86vh;overflow:auto;background:linear-gradient(180deg,#2a2335,#17121f);border:2px solid rgba(243,196,83,.5);border-radius:24px;padding:18px 16px 16px;color:#f4ead6;box-shadow:0 20px 50px rgba(0,0,0,.6);font-family:inherit}
+.fun-card h3{margin:0;font-size:22px;text-align:center}.fun-card .fun-s{margin:4px 0 12px;font-size:12px;opacity:.75;text-align:center}
+.fun-i{display:flex;gap:12px;align-items:center;padding:9px 10px;border-radius:14px;background:rgba(255,255,255,.05);margin-bottom:7px;opacity:.55}
+.fun-i.u{opacity:1;background:rgba(243,196,83,.12);border:1px solid rgba(243,196,83,.35)}
+.fun-i i{font-style:normal;font-size:24px;width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);flex:none}
+.fun-i b{display:block;font-size:14px}.fun-i small{font-size:11px;opacity:.75}
+.fun-x{width:100%;margin-top:6px;min-height:46px;border-radius:14px;border:2px solid rgba(255,255,255,.22);background:transparent;color:#f4ead6;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit}
+.fun-seg{display:flex;gap:6px;margin:10px 0 2px}
+.fun-seg button{flex:1;min-height:50px;border-radius:14px;border:2px solid rgba(128,128,128,.35);background:rgba(128,128,128,.1);color:inherit;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;transition:background .2s,transform .08s}
+.fun-seg button small{display:block;font-size:10px;font-weight:600;opacity:.7}
+.fun-seg button:active{transform:scale(.97)}
+.fun-seg button.on{border-color:#f3c453;background:rgba(243,196,83,.2);box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.fun-row{display:flex;gap:10px}.fun-row .btn{flex:1;margin-top:0}
+</style>
+<script id="funjs">/* FUN · 共用成就 / 等級 / 每日挑戰模組(整個遊戲大廳通用) */
+(function(){
+const W=window,KP='fun_profile';let G='game',DEFS=[],S={a:{},d:{}},P={xp:0};
+const $=id=>document.getElementById(id);
+const K=()=>'fun_'+G;
+function load(){try{S=Object.assign({a:{},d:{}},JSON.parse(localStorage.getItem(K())||'{}'));}catch(e){}try{P=Object.assign({xp:0},JSON.parse(localStorage.getItem(KP)||'{}'));}catch(e){}}
+function save(){try{localStorage.setItem(K(),JSON.stringify(S));localStorage.setItem(KP,JSON.stringify(P));}catch(e){}}
+const need=lv=>100+lv*60;
+function lvOf(xp){let lv=1,x=xp;while(x>=need(lv)){x-=need(lv);lv++;}return{lv,cur:x,nx:need(lv)};}
+const TITLES=['新手牌友','熟客','牌桌常客','老手','高手','大師','傳說'];
+const titleOf=lv=>TITLES[Math.min(TITLES.length-1,Math.floor((lv-1)/2))];
+let q=[],qb=false;
+function banner(ic,t1,t2){q.push([ic,t1,t2]);if(!qb)run();}
+function run(){const it=q.shift();if(!it){qb=false;return;}qb=true;const d=document.createElement('div');d.className='fun-ban';d.innerHTML='<i>'+it[0]+'</i><div><small>'+it[1]+'</small><b>'+it[2]+'</b></div>';document.body.appendChild(d);requestAnimationFrame(()=>d.classList.add('on'));setTimeout(()=>{d.classList.remove('on');setTimeout(()=>{d.remove();run();},350);},2400);}
+function xp(n){if(!n)return;const b=lvOf(P.xp);P.xp+=n;const a=lvOf(P.xp);save();if(a.lv>b.lv)banner('⬆️','等級提升','Lv.'+a.lv+' '+titleOf(a.lv));chip();}
+function unlock(id){if(S.a[id])return false;const d=DEFS.find(x=>x.id===id);if(!d)return false;S.a[id]=Date.now();save();banner(d.ic,'成就解鎖',d.name);xp(30);return true;}
+function dateKey(off){const t=new Date(Date.now()+8*3600e3+(off||0)*86400e3);return t.toISOString().slice(0,10);}
+function hashS(s){let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;}
+function rng(seed){let a=seed>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function dailySeed(extra){return hashS(dateKey()+'|'+G+(extra||''));}
+function dailyInfo(){const t=dateKey();return{done:S.d.last===t,streak:(S.d.last===t||S.d.last===dateKey(-1))?(S.d.streak||0):0,best:S.d.best||0};}
+function dailyDone(){const t=dateKey();if(S.d.last===t)return false;S.d.streak=(S.d.last===dateKey(-1)?(S.d.streak||0):0)+1;S.d.last=t;S.d.best=Math.max(S.d.best||0,S.d.streak);save();banner('📅','每日挑戰完成','連續 '+S.d.streak+' 天');xp(60+Math.min(S.d.streak,7)*10);return true;}
+function chip(){const e=$('funChip');if(!e)return;const l=lvOf(P.xp);e.querySelector('b').textContent='Lv.'+l.lv+' · '+titleOf(l.lv);e.querySelector('em').style.width=Math.round(l.cur/l.nx*100)+'%';e.querySelector('small').textContent=l.cur+' / '+l.nx+' XP';}
+function panel(){let o=$('funOv');if(!o){o=document.createElement('div');o.id='funOv';o.className='fun-ov';o.onclick=e=>{if(e.target===o)o.classList.remove('on');};document.body.appendChild(o);}
+ const n=DEFS.filter(d=>S.a[d.id]).length,di=dailyInfo();
+ o.innerHTML='<div class="fun-card"><h3>🏆 成就</h3><p class="fun-s">已解鎖 '+n+' / '+DEFS.length+(di.streak?' · 每日挑戰連續 '+di.streak+' 天':'')+'</p><div class="fun-l">'+DEFS.map(d=>{const u=S.a[d.id];return'<div class="fun-i'+(u?' u':'')+'"><i>'+(u?d.ic:'🔒')+'</i><div><b>'+d.name+'</b><small>'+d.desc+'</small></div></div>';}).join('')+'</div><button class="fun-x">關閉</button></div>';
+ o.querySelector('.fun-x').onclick=()=>o.classList.remove('on');o.classList.add('on');}
+function anchor(card){const st=card.querySelector('.stats');if(st&&st.parentNode===card)return st;const pb=$('playBtn')||$('startBtn');let n=pb;while(n&&n.parentNode!==card)n=n.parentNode;return n||null;}
+function mount(opts){opts=opts||{};const how=$('howBtn');const card=how&&how.closest('.card,.panel');if(!card||$('funChip'))return;
+ const chipEl=document.createElement('div');chipEl.id='funChip';chipEl.innerHTML='<b></b><span><em></em></span><small></small>';
+ card.insertBefore(chipEl,anchor(card));
+ const row=document.createElement('div');row.className='row fun-row';
+ if(opts.daily){const b=document.createElement('button');b.className='btn ghost g';b.id='dailyBtn';b.type='button';b.onclick=opts.daily.onclick;row.appendChild(b);W.FUN._db=b;dailyLabel(opts.daily.label);}
+ const a=document.createElement('button');a.className='btn ghost g';a.id='achBtn';a.type='button';a.textContent='🏆 成就';a.onclick=panel;row.appendChild(a);
+ card.appendChild(row);chip();}
+function segment(items,def,onchange,key){const how=$('howBtn');const card=how&&how.closest('.card,.panel');if(!card)return;let cur=def;try{const v=localStorage.getItem(key);if(v!==null&&items.some(i=>String(i[0])===v))cur=isNaN(+v)?v:+v;}catch(e){}
+ const d=document.createElement('div');d.className='fun-seg';
+ items.forEach(([v,t,sm])=>{const b=document.createElement('button');b.type='button';b.innerHTML=t+(sm?'<small>'+sm+'</small>':'');b.className=v===cur?'on':'';b.onclick=()=>{[...d.children].forEach(x=>x.classList.toggle('on',x===b));try{localStorage.setItem(key,v);}catch(e){}onchange(v);};d.appendChild(b);});
+ const ch=$('funChip');card.insertBefore(d,ch||anchor(card));onchange(cur);}
+function dailyLabel(l){const b=W.FUN._db;if(!b)return;const di=dailyInfo();b.textContent=(di.done?'✅ ':'📅 ')+(l||'每日挑戰')+(di.streak?' · '+di.streak+'天':'');}
+function init(game,defs){G=game;DEFS=defs||[];load();}
+W.FUN={segment,init,unlock,xp,mount,panel,banner,dailyInfo,dailyDone,dailySeed,rng,dateKey,dailyLabel,has:id=>!!S.a[id],_db:null,lvOf:()=>lvOf(P.xp)};
+})();
+</script>
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -176,6 +274,8 @@ return {ACESFilmicToneMapping:nt,AddEquation:M,AddOperation:K,AdditiveAnimationB
 (()=>{
 const $=id=>document.getElementById(id);
 const THUMB=location.hash==='#thumb';
+FUN.init('othello',[{id:'w1',ic:'🎉',name:'初次獲勝',desc:'贏下第一局黑白棋'},{id:'whard',ic:'👑',name:'擊敗高手',desc:'在「困難」難度獲勝'},{id:'wcorner',ic:'🏰',name:'四角稱王',desc:'終局時佔滿四個角'},{id:'wbig',ic:'💪',name:'大勝',desc:'贏對手 20 子以上'},{id:'wback',ic:'🔄',name:'逆轉勝',desc:'落後 12 子以上仍然獲勝'},{id:'wnoaid',ic:'🧠',name:'不靠神手',desc:'沒用「神手」贏一局'},{id:'wstreak',ic:'🔥',name:'三連勝',desc:'連續贏 3 局'},{id:'wday',ic:'📅',name:'每日棋局',desc:'贏下當日每日棋局'}]);
+let dailyMode=false,FRN=Math.random,openMode=0,bestN=3,maxBehind=0,wStreak=0;try{wStreak=+localStorage.getItem('ot_wstreak')||0;}catch(e){}
 /* ===== 規則 ===== */
 const DIRS=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
 function flipsAt(b,i,p){const r=i>>3,c=i&7,out=[];if(b[i])return out;
@@ -186,7 +286,11 @@ function flipsAt(b,i,p){const r=i>>3,c=i&7,out=[];if(b[i])return out;
 function movesOf(b,p){const m=[];for(let i=0;i<64;i++){if(b[i])continue;const f=flipsAt(b,i,p);if(f.length)m.push({i,f});}return m;}
 function apply(b,mv,p){const n=b.slice();n[mv.i]=p;mv.f.forEach(j=>n[j]=p);return n;}
 const count=(b,p)=>{let n=0;for(let i=0;i<64;i++)if(b[i]===p)n++;return n;};
-const startBoard=()=>{const b=new Array(64).fill(0);b[27]=-1;b[36]=-1;b[28]=1;b[35]=1;return b;};
+const startBoard=()=>{const b=new Array(64).fill(0);b[27]=-1;b[36]=-1;b[28]=1;b[35]=1;
+ if(openMode||dailyMode){const ring=[];for(let r=2;r<=5;r++)for(let c=2;c<=5;c++){const i=r*8+c;if(!b[i])ring.push(i);}
+  for(let k=ring.length-1;k>0;k--){const j=Math.floor(FRN()*(k+1));[ring[k],ring[j]]=[ring[j],ring[k]];}
+  for(let k=0;k<4;k++)b[ring[k]]=k%2?-1:1;}
+ return b;};
 /* AI */
 const W=[100,-20,10,5,5,10,-20,100,-20,-50,-2,-2,-2,-2,-50,-20,10,-2,-1,-1,-1,-1,-2,10,5,-2,-1,-1,-1,-1,-2,5,5,-2,-1,-1,-1,-1,-2,5,10,-2,-1,-1,-1,-1,-2,10,-20,-50,-2,-2,-2,-2,-50,-20,100,-20,10,5,5,10,-20,100];
 function evalB(b,p){let s=0,e=0;for(let i=0;i<64;i++){if(b[i]){s+=W[i]*b[i]*p;}else e++;}
@@ -276,6 +380,8 @@ let board=startBoard(),turn=1,lvl=2,over=false,paused=false,showHints=true,mode=
 let epoch=0,waitRes=null,history=[],lastMove=-1,busy=false;
 let stats={play:0,win:0,draw:0};try{Object.assign(stats,JSON.parse(localStorage.getItem('ot_stats')||'{}'));}catch(e){}
 const saveStats=()=>{try{localStorage.setItem('ot_stats',JSON.stringify(stats));}catch(e){}};
+FUN.mount({daily:{label:'每日棋局',onclick:()=>{dailyMode=true;newGame();}}});
+FUN.segment([[0,'標準開局','經典 4 子'],[1,'隨機開局','每局不同']],0,v=>{openMode=+v;},'ot_open');
 function showStats(){$('sPlay').textContent=stats.play;$('sWin').textContent=stats.win;$('sDraw').textContent=stats.draw;}showStats();
 try{const l=+localStorage.getItem('ot_lvl');if(l>=1&&l<=3)lvl=l;}catch(e){}
 document.querySelectorAll('#lvl button').forEach(b=>{b.classList.toggle('on',+b.dataset.l===lvl);b.onclick=()=>{lvl=+b.dataset.l;try{localStorage.setItem('ot_lvl',lvl);}catch(e){}document.querySelectorAll('#lvl button').forEach(x=>x.classList.toggle('on',x===b));SFX.sel();};});
@@ -285,7 +391,7 @@ function setMsg(t,c){const m=$('msg');m.textContent=t;m.className=c||'';}
 let tt=0;function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>e.classList.remove('on'),1300);}
 function updScore(){$('nB').textContent=count(board,1);$('nW').textContent=count(board,-1);$('scB').classList.toggle('turn',mode==='play'&&turn===1&&!over);$('scW').classList.toggle('turn',mode==='play'&&turn===-1&&!over);}
 function ui(){const g=mode==='play';$('hud').classList.toggle('off',!g);$('dock').classList.toggle('on',g);$('back').classList.toggle('off',g);}
-function showHintMarks(){hints.forEach(h=>h.visible=false);if(!showHints||!waitRes)return;movesOf(board,1).forEach(m=>hints[m.i].visible=true);}
+function showHintMarks(){hints.forEach(h=>{h.visible=false;h.scale.setScalar(1);});if(!showHints||!waitRes)return;movesOf(board,1).forEach(m=>hints[m.i].visible=true);}
 function setBtns(){const can=!!waitRes&&history.length>0&&!busy;$('undoBtn').classList.toggle('dis',!can);$('hintBtn').classList.toggle('on',showHints);}
 
 /* ===== 下棋動畫 ===== */
@@ -303,7 +409,7 @@ async function doMove(mv,p,ep){
  board=apply(board,mv,p);
  await wait(ord.length*90+520);if(ep!==epoch)return;
  lastMove=mv.i;lastM.position.set(o.x,TOPY+.16,o.z);lastM.visible=true;
- busy=false;updScore();
+ busy=false;updScore();{const bb=count(board,1),ww=count(board,-1);maxBehind=Math.max(maxBehind,ww-bb);}
 }
 function snapshot(){return{board:board.slice(),turn,last:lastMove};}
 
@@ -335,9 +441,12 @@ async function loop(ep){
  }
 }
 let autoHuman=false;
+function funEnd(b,w){const win=b>w;FUN.xp(win?25+lvl*5:8);wStreak=win?wStreak+1:0;try{localStorage.setItem('ot_wstreak',wStreak);}catch(e){}
+ if(!win)return;FUN.unlock('w1');if(lvl===3)FUN.unlock('whard');if([0,7,56,63].every(i=>board[i]===1))FUN.unlock('wcorner');if(b-w>=20)FUN.unlock('wbig');if(maxBehind>=12)FUN.unlock('wback');if(bestN===3)FUN.unlock('wnoaid');if(wStreak>=3)FUN.unlock('wstreak');
+ if(dailyMode&&FUN.dailyDone()){FUN.unlock('wday');FUN.dailyLabel('每日棋局');}}
 async function finish(ep){
  over=true;updScore();const b=count(board,1),w=count(board,-1);
- stats.play++;if(b>w)stats.win++;else if(b===w)stats.draw++;saveStats();showStats();
+ stats.play++;if(b>w)stats.win++;else if(b===w)stats.draw++;saveStats();showStats();funEnd(b,w);
  setMsg(b>w?'你贏了！':b<w?'電腦獲勝':'平手','warn');
  SFX[b>w?'win':'lose']();
  if(b>w){for(let i=0;i<6;i++)burst((Math.random()-.5)*6,(Math.random()-.5)*6,10,[0xffcf6b,0x6dffcf,0xffffff][i%3]);}
@@ -349,7 +458,7 @@ async function finish(ep){
  $('overOv').classList.remove('hidden');
 }
 function newGame(){
- ac();epoch++;const ep=epoch;
+ ac();epoch++;const ep=epoch;FRN=dailyMode?FUN.rng(FUN.dailySeed('ot')):Math.random;bestN=3;maxBehind=0;if(window.bestLabel)bestLabel();
  ['startOv','overOv','pauseOv','howOv'].forEach(i=>$(i).classList.add('hidden'));
  board=startBoard();turn=1;over=false;paused=false;history=[];lastMove=-1;busy=false;waitRes=null;lastM.visible=false;
  syncAll(board);mode='play';ui();updScore();setBtns();
@@ -373,11 +482,14 @@ cvs.addEventListener('pointerdown',e=>{ac();if(!waitRes||paused||mode!=='play')r
  if(!f.length){setMsg('這裡不能下，要夾住白棋','warn');SFX.pass();setTimeout(()=>{if(waitRes)setMsg('輪到你・點選下棋位置','me');},1000);return;}
  hov.visible=false;const r=waitRes;waitRes=null;r({i,f});});
 $('undoBtn').onclick=undo;
+{const bb=document.createElement('button');bb.className='pill';bb.id='bestBtn';bb.type='button';$('acts').appendChild(bb);
+ window.bestLabel=()=>{bb.textContent='🎯 神手 ×'+bestN;bb.classList.toggle('dis',bestN<=0);};bestLabel();
+ bb.onclick=()=>{if(!waitRes||busy||bestN<=0)return;const mv=aiPick(board,1,3);if(!mv)return;bestN--;bestLabel();showHintMarks();hints.forEach((h,i)=>{h.visible=i===mv.i;});hints[mv.i].scale.setScalar(1.9);toast('🎯 神手推薦','這步最划算');SFX.sel();};}
 $('hintBtn').onclick=()=>{showHints=!showHints;try{localStorage.setItem('ot_hint',showHints?'1':'0');}catch(e){}showHintMarks();setBtns();SFX.sel();};
 try{if(localStorage.getItem('ot_hint')==='0')showHints=false;}catch(e){}
 function pause(on){if(on&&mode==='play'&&!over){paused=true;$('pauseOv').classList.remove('hidden');}else if(!on){paused=false;$('pauseOv').classList.add('hidden');}}
 $('pauseBtn').onclick=()=>pause(!paused);$('resumeBtn').onclick=()=>pause(false);
-$('againBtn').onclick=newGame;$('playBtn').onclick=newGame;$('retryBtn').onclick=newGame;
+$('againBtn').onclick=()=>{dailyMode=false;newGame();};$('playBtn').onclick=()=>{dailyMode=false;newGame();};$('retryBtn').onclick=newGame;
 $('menuBtn').onclick=()=>{epoch++;over=false;mode='menu';waitRes=null;$('overOv').classList.add('hidden');$('startOv').classList.remove('hidden');ui();board=startBoard();syncAll(board);hints.forEach(h=>h.visible=false);lastM.visible=false;updScore();};
 $('howBtn').onclick=()=>$('howOv').classList.remove('hidden');$('howOk').onclick=()=>$('howOv').classList.add('hidden');
 function refreshMute(){const t=muted?'🔇 音效':'🔊 音效';$('muteBtn').textContent=t;$('mute2').textContent=t;}refreshMute();

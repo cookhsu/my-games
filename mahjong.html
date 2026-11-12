@@ -237,6 +237,77 @@ body.big #tip{bottom:calc(66px + var(--sab));font-size:14px}
 .rank{list-style:none;padding:0;margin:12px 0}.rank li{display:flex;align-items:center;gap:12px;padding:10px 14px;margin:7px 0;border-radius:16px;background:rgba(255,255,255,.06);font-size:16px}.rank li.me{border:1.5px solid var(--gold);background:rgba(246,207,104,.12)}.rank li span{font-size:22px;width:28px}.rank i{flex:1;text-align:left;font-style:normal;font-weight:800}.rank b{color:var(--gold);font-family:var(--serif);font-size:19px}
 #menu .btn{margin-top:10px}
 </style>
+<style id="funcss">.fun-ban{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top));z-index:99;display:flex;gap:12px;align-items:center;min-width:240px;max-width:92vw;padding:10px 18px 10px 12px;border-radius:18px;background:linear-gradient(180deg,#3a2b10,#1f1708);border:2px solid #f3c453;color:#fff4d6;box-shadow:0 12px 30px rgba(0,0,0,.5),0 0 24px rgba(243,196,83,.35);transform:translate(-50%,-140%);transition:transform .38s cubic-bezier(.2,1.3,.4,1);pointer-events:none;font-family:inherit}
+.fun-ban.on{transform:translate(-50%,0)}
+.fun-ban i{font-style:normal;font-size:30px;width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 35% 30%,#ffe9a8,#e0a52a)}
+.fun-ban small{display:block;font-size:11px;letter-spacing:.2em;color:#f3c453;font-weight:800}
+.fun-ban b{font-size:17px;font-weight:900}
+#funChip{margin:10px 0 2px;padding:7px 12px;border-radius:14px;background:rgba(243,196,83,.12);border:1px solid rgba(243,196,83,.4);display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;text-align:left}
+#funChip b{font-size:13px;font-weight:900;color:#f3c453;white-space:nowrap}
+#funChip span{height:8px;border-radius:99px;background:rgba(0,0,0,.28);overflow:hidden;display:block}
+#funChip em{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#ffd666,#f3a31c);transition:width .6s}
+#funChip small{font-size:10px;opacity:.75;font-variant-numeric:tabular-nums}
+.fun-row{margin-top:2px}
+.fun-ov{position:fixed;inset:0;z-index:98;background:rgba(5,5,10,.72);display:none;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(4px)}
+.fun-ov.on{display:flex}
+.fun-card{width:min(360px,100%);max-height:86vh;overflow:auto;background:linear-gradient(180deg,#2a2335,#17121f);border:2px solid rgba(243,196,83,.5);border-radius:24px;padding:18px 16px 16px;color:#f4ead6;box-shadow:0 20px 50px rgba(0,0,0,.6);font-family:inherit}
+.fun-card h3{margin:0;font-size:22px;text-align:center}.fun-card .fun-s{margin:4px 0 12px;font-size:12px;opacity:.75;text-align:center}
+.fun-i{display:flex;gap:12px;align-items:center;padding:9px 10px;border-radius:14px;background:rgba(255,255,255,.05);margin-bottom:7px;opacity:.55}
+.fun-i.u{opacity:1;background:rgba(243,196,83,.12);border:1px solid rgba(243,196,83,.35)}
+.fun-i i{font-style:normal;font-size:24px;width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);flex:none}
+.fun-i b{display:block;font-size:14px}.fun-i small{font-size:11px;opacity:.75}
+.fun-x{width:100%;margin-top:6px;min-height:46px;border-radius:14px;border:2px solid rgba(255,255,255,.22);background:transparent;color:#f4ead6;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit}
+.fun-seg{display:flex;gap:6px;margin:10px 0 2px}
+.fun-seg button{flex:1;min-height:50px;border-radius:14px;border:2px solid rgba(128,128,128,.35);background:rgba(128,128,128,.1);color:inherit;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;transition:background .2s,transform .08s}
+.fun-seg button small{display:block;font-size:10px;font-weight:600;opacity:.7}
+.fun-seg button:active{transform:scale(.97)}
+.fun-seg button.on{border-color:#f3c453;background:rgba(243,196,83,.2);box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.fun-row{display:flex;gap:10px}.fun-row .btn{flex:1;margin-top:0}
+</style>
+<script id="funjs">/* FUN · 共用成就 / 等級 / 每日挑戰模組(整個遊戲大廳通用) */
+(function(){
+const W=window,KP='fun_profile';let G='game',DEFS=[],S={a:{},d:{}},P={xp:0};
+const $=id=>document.getElementById(id);
+const K=()=>'fun_'+G;
+function load(){try{S=Object.assign({a:{},d:{}},JSON.parse(localStorage.getItem(K())||'{}'));}catch(e){}try{P=Object.assign({xp:0},JSON.parse(localStorage.getItem(KP)||'{}'));}catch(e){}}
+function save(){try{localStorage.setItem(K(),JSON.stringify(S));localStorage.setItem(KP,JSON.stringify(P));}catch(e){}}
+const need=lv=>100+lv*60;
+function lvOf(xp){let lv=1,x=xp;while(x>=need(lv)){x-=need(lv);lv++;}return{lv,cur:x,nx:need(lv)};}
+const TITLES=['新手牌友','熟客','牌桌常客','老手','高手','大師','傳說'];
+const titleOf=lv=>TITLES[Math.min(TITLES.length-1,Math.floor((lv-1)/2))];
+let q=[],qb=false;
+function banner(ic,t1,t2){q.push([ic,t1,t2]);if(!qb)run();}
+function run(){const it=q.shift();if(!it){qb=false;return;}qb=true;const d=document.createElement('div');d.className='fun-ban';d.innerHTML='<i>'+it[0]+'</i><div><small>'+it[1]+'</small><b>'+it[2]+'</b></div>';document.body.appendChild(d);requestAnimationFrame(()=>d.classList.add('on'));setTimeout(()=>{d.classList.remove('on');setTimeout(()=>{d.remove();run();},350);},2400);}
+function xp(n){if(!n)return;const b=lvOf(P.xp);P.xp+=n;const a=lvOf(P.xp);save();if(a.lv>b.lv)banner('⬆️','等級提升','Lv.'+a.lv+' '+titleOf(a.lv));chip();}
+function unlock(id){if(S.a[id])return false;const d=DEFS.find(x=>x.id===id);if(!d)return false;S.a[id]=Date.now();save();banner(d.ic,'成就解鎖',d.name);xp(30);return true;}
+function dateKey(off){const t=new Date(Date.now()+8*3600e3+(off||0)*86400e3);return t.toISOString().slice(0,10);}
+function hashS(s){let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;}
+function rng(seed){let a=seed>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function dailySeed(extra){return hashS(dateKey()+'|'+G+(extra||''));}
+function dailyInfo(){const t=dateKey();return{done:S.d.last===t,streak:(S.d.last===t||S.d.last===dateKey(-1))?(S.d.streak||0):0,best:S.d.best||0};}
+function dailyDone(){const t=dateKey();if(S.d.last===t)return false;S.d.streak=(S.d.last===dateKey(-1)?(S.d.streak||0):0)+1;S.d.last=t;S.d.best=Math.max(S.d.best||0,S.d.streak);save();banner('📅','每日挑戰完成','連續 '+S.d.streak+' 天');xp(60+Math.min(S.d.streak,7)*10);return true;}
+function chip(){const e=$('funChip');if(!e)return;const l=lvOf(P.xp);e.querySelector('b').textContent='Lv.'+l.lv+' · '+titleOf(l.lv);e.querySelector('em').style.width=Math.round(l.cur/l.nx*100)+'%';e.querySelector('small').textContent=l.cur+' / '+l.nx+' XP';}
+function panel(){let o=$('funOv');if(!o){o=document.createElement('div');o.id='funOv';o.className='fun-ov';o.onclick=e=>{if(e.target===o)o.classList.remove('on');};document.body.appendChild(o);}
+ const n=DEFS.filter(d=>S.a[d.id]).length,di=dailyInfo();
+ o.innerHTML='<div class="fun-card"><h3>🏆 成就</h3><p class="fun-s">已解鎖 '+n+' / '+DEFS.length+(di.streak?' · 每日挑戰連續 '+di.streak+' 天':'')+'</p><div class="fun-l">'+DEFS.map(d=>{const u=S.a[d.id];return'<div class="fun-i'+(u?' u':'')+'"><i>'+(u?d.ic:'🔒')+'</i><div><b>'+d.name+'</b><small>'+d.desc+'</small></div></div>';}).join('')+'</div><button class="fun-x">關閉</button></div>';
+ o.querySelector('.fun-x').onclick=()=>o.classList.remove('on');o.classList.add('on');}
+function anchor(card){const st=card.querySelector('.stats');if(st&&st.parentNode===card)return st;const pb=$('playBtn')||$('startBtn');let n=pb;while(n&&n.parentNode!==card)n=n.parentNode;return n||null;}
+function mount(opts){opts=opts||{};const how=$('howBtn');const card=how&&how.closest('.card,.panel');if(!card||$('funChip'))return;
+ const chipEl=document.createElement('div');chipEl.id='funChip';chipEl.innerHTML='<b></b><span><em></em></span><small></small>';
+ card.insertBefore(chipEl,anchor(card));
+ const row=document.createElement('div');row.className='row fun-row';
+ if(opts.daily){const b=document.createElement('button');b.className='btn ghost g';b.id='dailyBtn';b.type='button';b.onclick=opts.daily.onclick;row.appendChild(b);W.FUN._db=b;dailyLabel(opts.daily.label);}
+ const a=document.createElement('button');a.className='btn ghost g';a.id='achBtn';a.type='button';a.textContent='🏆 成就';a.onclick=panel;row.appendChild(a);
+ card.appendChild(row);chip();}
+function segment(items,def,onchange,key){const how=$('howBtn');const card=how&&how.closest('.card,.panel');if(!card)return;let cur=def;try{const v=localStorage.getItem(key);if(v!==null&&items.some(i=>String(i[0])===v))cur=isNaN(+v)?v:+v;}catch(e){}
+ const d=document.createElement('div');d.className='fun-seg';
+ items.forEach(([v,t,sm])=>{const b=document.createElement('button');b.type='button';b.innerHTML=t+(sm?'<small>'+sm+'</small>':'');b.className=v===cur?'on':'';b.onclick=()=>{[...d.children].forEach(x=>x.classList.toggle('on',x===b));try{localStorage.setItem(key,v);}catch(e){}onchange(v);};d.appendChild(b);});
+ const ch=$('funChip');card.insertBefore(d,ch||anchor(card));onchange(cur);}
+function dailyLabel(l){const b=W.FUN._db;if(!b)return;const di=dailyInfo();b.textContent=(di.done?'✅ ':'📅 ')+(l||'每日挑戰')+(di.streak?' · '+di.streak+'天':'');}
+function init(game,defs){G=game;DEFS=defs||[];load();}
+W.FUN={segment,init,unlock,xp,mount,panel,banner,dailyInfo,dailyDone,dailySeed,rng,dateKey,dailyLabel,has:id=>!!S.a[id],_db:null,lvOf:()=>lvOf(P.xp)};
+})();
+</script>
 </head>
 <body>
 <canvas id="gl"></canvas><div class="vig"></div>
@@ -432,6 +503,8 @@ function faceCanvas(t){
 }
 const faceURL={};const tileImg=t=>faceURL[t]||(faceURL[t]=faceCanvas(t).toDataURL('image/png'));
 
+const FUNOK=!!window.FUN;if(FUNOK)FUN.init('mahjong',[{id:'m1',ic:'🀄',name:'初胡',desc:'胡下第一把牌'},{id:'mz',ic:'✨',name:'自摸!',desc:'自己摸牌胡牌'},{id:'mbig',ic:'💎',name:'大牌',desc:'單把 5 台以上'},{id:'mhuge',ic:'🐉',name:'超級大牌',desc:'單把 10 台以上'},{id:'mlian',ic:'🔁',name:'連莊',desc:'當莊家連莊 3 次'},{id:'mtop',ic:'🥇',name:'麻將之王',desc:'整場總分第一'},{id:'mhard',ic:'👑',name:'擊敗高手',desc:'「困難」難度下整場第一'},{id:'mday',ic:'📅',name:'每日牌局',desc:'在每日牌局中胡牌'}]);
+let mjDaily=false,mjDiff=2,MRN=Math.random;
 /* ===== 場景 ===== */
 const $=id=>document.getElementById(id);
 const THUMB=location.hash==='#thumb';
@@ -624,7 +697,7 @@ let busy=false,uiResolve=null,hintTile=null;
 const SC=.62;
 const cntOf=(arr)=>{const c=Array(34).fill(0);arr.forEach(t=>{if(t.t<34)c[t.t]++;});return c;};
 function newTiles(){tiles=[];let id=0;for(let t=0;t<34;t++)for(let k=0;k<4;k++)tiles.push({id:id++,t,g:null});for(let t=34;t<42;t++)tiles.push({id:id++,t,g:null});
- for(let i=tiles.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[tiles[i],tiles[j]]=[tiles[j],tiles[i]];}
+ for(let i=tiles.length-1;i>0;i--){const j=Math.floor(MRN()*(i+1));[tiles[i],tiles[j]]=[tiles[j],tiles[i]];}
  tiles.forEach((x,i)=>{x.g=mkTile(x.t);x.g.userData.tile=x;scene.add(x.g);x.slot=i;});wall=tiles.slice();head=0;tail=143;}
 function slotPose(k){const side=Math.floor(k/36),idx=k%36,stack=Math.floor(idx/2),layer=1-idx%2;
  return{seat:side,x:(stack-8.5)*.345,y:TD*SC/2+layer*TD*SC,z:4.0};}
@@ -764,7 +837,7 @@ function aiDiscard(s){const P=pl[s],c=cntOf(P.hand),nm=P.melds.length,vis=visibl
   let sc=uk*10;const seen=pl.reduce((a,Q)=>a+Q.disc.filter(x=>x.t===t).length,0);sc+=seen*4;
   if(t>=27){sc+=c[t]===1?6:-8;if(t>=31||t===27+roundWind||t===27+((s-dealer+4)%4)){if(c[t]>=2)sc-=12;}}
   else{const n=numOf(t);if(n===0||n===8)sc+=3;}
-  sc+=Math.random()*3;if(sc>bs){bs=sc;best=t;}}
+  sc+=Math.random()*(mjDiff===1?45:mjDiff===3?1:3);if(sc>bs){bs=sc;best=t;}}
  const cands=P.hand.filter(x=>x.t===best);return cands[cands.length-1];}
 function aiHandShanten(P,extraTiles,nm){const c=cntOf(P.hand);return shanten(c,nm);}
 function aiWantClaim(q,t,kind,opt){const P=pl[q],nm=P.melds.length,c=cntOf(P.hand);const s0=shanten(c,nm);
@@ -844,7 +917,7 @@ async function turn(s,o){const P=pl[s];cur=s;chips();SFX.turn();if(s!==0)$('tip'
 function updateTip(){const P=pl[0];const c=cntOf(P.hand),nm=P.melds.length;if(selTile){c[selTile.t]--;const w=waitList(c,nm);$('tip').innerHTML=w.length?'打出「'+TN[selTile.t]+'」後聽 '+w.map(t=>'<img src="'+tileImg(t)+'" alt="'+TN[t]+'">').join(''):'再點一次打出「'+TN[selTile.t]+'」';}
  else $('tip').textContent='點一張牌選取,再點一次打出';}
 /* ===== 局 / 場 ===== */
-function reshuffleWall(){for(let i=tiles.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[tiles[i],tiles[j]]=[tiles[j],tiles[i]];}
+function reshuffleWall(){for(let i=tiles.length-1;i>0;i--){const j=Math.floor(MRN()*(i+1));[tiles[i],tiles[j]]=[tiles[j],tiles[i]];}
  tiles.forEach((t,i)=>{t.slot=i;});wall=tiles.slice();head=0;tail=143;}
 async function deal(){
  tiles.forEach(t=>{t.g.visible=true;});reshuffleWall();tiles.forEach(t=>putWall(t,0));
@@ -883,23 +956,28 @@ function showResult(r){return new Promise(res=>{const ov=$('res'),B=$('resBody')
   r.delta=d;h+='<div class="dl">'+pl.map((q,i)=>'<span class="'+(d[i]>0?'up':d[i]<0?'dn':'')+'">'+q.name+' '+(d[i]>0?'+':'')+d[i]+'</span>').join('')+'</div>';
   d.forEach((v,i)=>pl[i].pts+=v);if(r.who===0)SFX.win();else SFX.lose();}
  B.innerHTML=h;$('resNext').textContent=(rounds>=3&&(r.draw||r.who!==dealer))?'看總成績':'下一局';ov.classList.add('on');$('resNext').onclick=()=>{ov.classList.remove('on');res();};});}
+function funRound(r){if(!r.draw&&r.who===0){FUN.xp(20+r.w.tai*2);FUN.unlock('m1');if(r.zimo)FUN.unlock('mz');if(r.w.tai>=5)FUN.unlock('mbig');if(r.w.tai>=10)FUN.unlock('mhuge');
+  if(mjDaily&&FUN.dailyDone()){FUN.unlock('mday');FUN.dailyLabel('每日牌局');}}else FUN.xp(3);}
 async function matchLoop(){
  while(true){
-  winSeat=-1;const r=await playRound();chips();if(r.draw)callout('流局','draw','牌已摸完');else{winSeat=r.who;chips();avReact(r.who,'win');callout(r.zimo?'自摸':'胡',r.zimo?'zimo':'hu',pl[r.who].name);if(r.who===0)burstConfetti();}await wait(1250);await showResult(r);
+  winSeat=-1;const r=await playRound();chips();if(r.draw)callout('流局','draw','牌已摸完');else{winSeat=r.who;chips();avReact(r.who,'win');callout(r.zimo?'自摸':'胡',r.zimo?'zimo':'hu',pl[r.who].name);if(r.who===0)burstConfetti();}
+  if(FUNOK)funRound(r);await wait(1250);await showResult(r);
   if(r.draw){lian++;}
-  else if(r.who===dealer){lian++;}
+  else if(r.who===dealer){lian++;if(FUNOK&&dealer===0&&lian>=2)FUN.unlock('mlian');}
   else{lian=0;dealer=(dealer+1)%4;rounds++;}
   chips();
   if(rounds>=4){gameOver=true;await finalScreen();return;}}}
 function finalScreen(){return new Promise(res=>{const o=pl.map(P=>P).sort((a,b)=>b.pts-a.pts);
+ if(FUNOK){FUN.xp(o[0].i===0?50:15);if(o[0].i===0){FUN.unlock('mtop');if(mjDiff===3)FUN.unlock('mhard');}}
  try{const b=+localStorage.getItem('mj_best')||0;if(pl[0].pts>b)localStorage.setItem('mj_best',pl[0].pts);}catch(e){}
  $('resBody').innerHTML='<h2>牌局結束</h2><ol class="rank">'+o.map((P,i)=>'<li class="'+(P.i===0?'me':'')+'"><span>'+(['🥇','🥈','🥉','4'][i])+'</span><i>'+P.name+'</i><b>'+P.pts+'</b></li>').join('')+'</ol><p class="sub">'+(o[0].i===0?'你是今天的麻將之王!':'下次一定贏回來')+'</p>';
  $('resNext').textContent='再玩一場';$('res').classList.add('on');$('resNext').onclick=()=>{location.hash='#go';location.reload();};});}
 /* ===== 啟動 ===== */
 function startGame(){ac();titleMode=false;$('start').classList.remove('on');$('hud').classList.add('on');$('menuBtn').classList.add('on');if(window.GMB)GMB.init({style:'mj',vol:.38,button:true,key:'mj_bgm_off',muted:()=>false});
- mkPlayers();dealer=Math.floor(Math.random()*4);lian=0;rounds=0;gameOver=false;newTiles();chips();matchLoop();}
+ MRN=mjDaily?FUN.rng(FUN.dailySeed('mj')):Math.random;mkPlayers();dealer=mjDaily?Math.floor(MRN()*4):Math.floor(Math.random()*4);lian=0;rounds=0;gameOver=false;newTiles();chips();matchLoop();}
 if(window.GMB&&!THUMB)GMB.init({style:'mj',vol:.38,button:false,key:'mj_bgm_off',muted:()=>false});
-$('startBtn').onclick=startGame;
+$('startBtn').onclick=()=>{mjDaily=false;startGame();};
+if(FUNOK){FUN.mount({daily:{label:'每日牌局',onclick:()=>{mjDaily=true;startGame();}}});FUN.segment([[1,'簡單','電腦愛失誤'],[2,'普通','標準對手'],[3,'困難','精準出牌']],2,v=>{mjDiff=+v;},'mj_diff');}
 $('menuBtn').onclick=()=>$('menu').classList.add('on');
 $('mResume').onclick=()=>$('menu').classList.remove('on');
 $('mHow').onclick=()=>{$('menu').classList.remove('on');$('how').classList.add('on');};
@@ -934,7 +1012,7 @@ function frame(ts){requestAnimationFrame(frame);const dt=Math.min(.05,((ts||0)-c
  if(shake>.002){cam.position.x+=(Math.random()-.5)*shake;cam.position.y+=(Math.random()-.5)*shake;shake*=Math.exp(-dt*5);}
  R.render(scene,cam);}
 resize();snapCam();mkPlayers();dealer=0;newTiles();tiles.forEach(t=>putWall(t,0));chips();if(location.hash==='#go'||THUMB){titleMode=false;heroGone=true;hero.forEach(h=>h.g.visible=false);}
-window.__mj={show:showActs,refresh:()=>stripRefresh(),get:()=>({dealer,lian,rounds,cur,remain:remain(),pts:pl.map(P=>P.pts),hand:pl[0].hand.map(t=>t.t),busy:!!(uiResolve&&busy)}),pl:()=>pl,setTS:v=>{TS=v;},
+window.__mj={call:callout,show:showActs,refresh:()=>stripRefresh(),get:()=>({dealer,lian,rounds,cur,remain:remain(),pts:pl.map(P=>P.pts),hand:pl[0].hand.map(t=>t.t),busy:!!(uiResolve&&busy)}),pl:()=>pl,setTS:v=>{TS=v;},
  pick:i=>{const t=pl[0].hand[i];if(!(uiResolve&&busy))return false;const f=uiResolve;uiResolve=null;busy=false;selTile=null;f(t);return true;},
  act:i=>{const b=$('acts').children[i];if(b){b.click();return true;}return false;},acts:()=>$('acts').children.length,res:()=>$('res').classList.contains('on'),next:()=>$('resNext').click(),start:startGame};
 requestAnimationFrame(frame);

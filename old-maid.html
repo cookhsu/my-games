@@ -122,6 +122,104 @@ button{font-family:inherit}
 #back.off{opacity:0;pointer-events:none}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
+<style id="uikit">
+/* uikit v2 · 統一介面質感 */
+:focus-visible{outline:3px solid rgba(255,255,255,.9);outline-offset:2px}
+.card{position:relative;border-radius:30px;box-shadow:0 24px 54px rgba(0,0,0,.5),0 7px 0 rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.38)}
+.card::before{content:"";position:absolute;left:0;right:0;top:0;bottom:0;border-radius:30px;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,0) 42%)}
+.card>*{position:relative;animation:ukRise .5s cubic-bezier(.2,.9,.3,1) both}
+.card>*:nth-child(1){animation-delay:.04s}.card>*:nth-child(2){animation-delay:.09s}.card>*:nth-child(3){animation-delay:.14s}.card>*:nth-child(4){animation-delay:.19s}.card>*:nth-child(5){animation-delay:.24s}.card>*:nth-child(6){animation-delay:.29s}.card>*:nth-child(n+7){animation-delay:.34s}
+@keyframes ukRise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.card h1,.card h2{text-shadow:0 2px 0 rgba(0,0,0,.18)}
+.btn{position:relative;overflow:hidden;min-height:56px;border-radius:18px;transition:transform .08s,box-shadow .08s,filter .15s}
+.btn::after{content:"";position:absolute;left:7%;right:7%;top:5px;height:36%;border-radius:99px;background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,0));pointer-events:none}
+.btn.ghost{min-height:48px;border-radius:16px}.btn.ghost::after{display:none}
+.btn:hover{filter:brightness(1.06)}
+#playBtn::before,.btn.main::before{content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);transform:skewX(-20deg);animation:ukShine 3.4s ease-in-out infinite;pointer-events:none}
+@keyframes ukShine{0%,55%{left:-60%}100%{left:130%}}
+.stats div{border-radius:14px;border:1px solid rgba(128,128,128,.22);padding:8px 2px}
+.stats b{font-size:22px;font-variant-numeric:tabular-nums;line-height:1.15}
+.stats small{letter-spacing:.12em}
+.seg button,.seg .opt{min-height:52px;border-radius:14px;transition:transform .08s,background .2s,box-shadow .2s}
+.seg button:active{transform:scale(.97)}
+.seg button.on{box-shadow:0 5px 14px rgba(0,0,0,.28)}
+#pauseBtn,.rb{width:44px;height:44px}
+#back{padding:9px 15px;font-size:13px;min-height:36px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.pill{border-radius:16px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-variant-numeric:tabular-nums}
+#toast{letter-spacing:.1em}
+@media (prefers-reduced-motion:reduce){.btn::before,#playBtn::before{animation:none!important}.card>*{animation:none!important}}
+</style>
+<style id="funcss">.fun-ban{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top));z-index:99;display:flex;gap:12px;align-items:center;min-width:240px;max-width:92vw;padding:10px 18px 10px 12px;border-radius:18px;background:linear-gradient(180deg,#3a2b10,#1f1708);border:2px solid #f3c453;color:#fff4d6;box-shadow:0 12px 30px rgba(0,0,0,.5),0 0 24px rgba(243,196,83,.35);transform:translate(-50%,-140%);transition:transform .38s cubic-bezier(.2,1.3,.4,1);pointer-events:none;font-family:inherit}
+.fun-ban.on{transform:translate(-50%,0)}
+.fun-ban i{font-style:normal;font-size:30px;width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 35% 30%,#ffe9a8,#e0a52a)}
+.fun-ban small{display:block;font-size:11px;letter-spacing:.2em;color:#f3c453;font-weight:800}
+.fun-ban b{font-size:17px;font-weight:900}
+#funChip{margin:10px 0 2px;padding:7px 12px;border-radius:14px;background:rgba(243,196,83,.12);border:1px solid rgba(243,196,83,.4);display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;text-align:left}
+#funChip b{font-size:13px;font-weight:900;color:#f3c453;white-space:nowrap}
+#funChip span{height:8px;border-radius:99px;background:rgba(0,0,0,.28);overflow:hidden;display:block}
+#funChip em{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#ffd666,#f3a31c);transition:width .6s}
+#funChip small{font-size:10px;opacity:.75;font-variant-numeric:tabular-nums}
+.fun-row{margin-top:2px}
+.fun-ov{position:fixed;inset:0;z-index:98;background:rgba(5,5,10,.72);display:none;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(4px)}
+.fun-ov.on{display:flex}
+.fun-card{width:min(360px,100%);max-height:86vh;overflow:auto;background:linear-gradient(180deg,#2a2335,#17121f);border:2px solid rgba(243,196,83,.5);border-radius:24px;padding:18px 16px 16px;color:#f4ead6;box-shadow:0 20px 50px rgba(0,0,0,.6);font-family:inherit}
+.fun-card h3{margin:0;font-size:22px;text-align:center}.fun-card .fun-s{margin:4px 0 12px;font-size:12px;opacity:.75;text-align:center}
+.fun-i{display:flex;gap:12px;align-items:center;padding:9px 10px;border-radius:14px;background:rgba(255,255,255,.05);margin-bottom:7px;opacity:.55}
+.fun-i.u{opacity:1;background:rgba(243,196,83,.12);border:1px solid rgba(243,196,83,.35)}
+.fun-i i{font-style:normal;font-size:24px;width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.08);flex:none}
+.fun-i b{display:block;font-size:14px}.fun-i small{font-size:11px;opacity:.75}
+.fun-x{width:100%;margin-top:6px;min-height:46px;border-radius:14px;border:2px solid rgba(255,255,255,.22);background:transparent;color:#f4ead6;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit}
+.fun-seg{display:flex;gap:6px;margin:10px 0 2px}
+.fun-seg button{flex:1;min-height:50px;border-radius:14px;border:2px solid rgba(128,128,128,.35);background:rgba(128,128,128,.1);color:inherit;font-weight:800;font-size:14px;cursor:pointer;font-family:inherit;transition:background .2s,transform .08s}
+.fun-seg button small{display:block;font-size:10px;font-weight:600;opacity:.7}
+.fun-seg button:active{transform:scale(.97)}
+.fun-seg button.on{border-color:#f3c453;background:rgba(243,196,83,.2);box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.fun-row{display:flex;gap:10px}.fun-row .btn{flex:1;margin-top:0}
+</style>
+<script id="funjs">/* FUN · 共用成就 / 等級 / 每日挑戰模組(整個遊戲大廳通用) */
+(function(){
+const W=window,KP='fun_profile';let G='game',DEFS=[],S={a:{},d:{}},P={xp:0};
+const $=id=>document.getElementById(id);
+const K=()=>'fun_'+G;
+function load(){try{S=Object.assign({a:{},d:{}},JSON.parse(localStorage.getItem(K())||'{}'));}catch(e){}try{P=Object.assign({xp:0},JSON.parse(localStorage.getItem(KP)||'{}'));}catch(e){}}
+function save(){try{localStorage.setItem(K(),JSON.stringify(S));localStorage.setItem(KP,JSON.stringify(P));}catch(e){}}
+const need=lv=>100+lv*60;
+function lvOf(xp){let lv=1,x=xp;while(x>=need(lv)){x-=need(lv);lv++;}return{lv,cur:x,nx:need(lv)};}
+const TITLES=['新手牌友','熟客','牌桌常客','老手','高手','大師','傳說'];
+const titleOf=lv=>TITLES[Math.min(TITLES.length-1,Math.floor((lv-1)/2))];
+let q=[],qb=false;
+function banner(ic,t1,t2){q.push([ic,t1,t2]);if(!qb)run();}
+function run(){const it=q.shift();if(!it){qb=false;return;}qb=true;const d=document.createElement('div');d.className='fun-ban';d.innerHTML='<i>'+it[0]+'</i><div><small>'+it[1]+'</small><b>'+it[2]+'</b></div>';document.body.appendChild(d);requestAnimationFrame(()=>d.classList.add('on'));setTimeout(()=>{d.classList.remove('on');setTimeout(()=>{d.remove();run();},350);},2400);}
+function xp(n){if(!n)return;const b=lvOf(P.xp);P.xp+=n;const a=lvOf(P.xp);save();if(a.lv>b.lv)banner('⬆️','等級提升','Lv.'+a.lv+' '+titleOf(a.lv));chip();}
+function unlock(id){if(S.a[id])return false;const d=DEFS.find(x=>x.id===id);if(!d)return false;S.a[id]=Date.now();save();banner(d.ic,'成就解鎖',d.name);xp(30);return true;}
+function dateKey(off){const t=new Date(Date.now()+8*3600e3+(off||0)*86400e3);return t.toISOString().slice(0,10);}
+function hashS(s){let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;}
+function rng(seed){let a=seed>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function dailySeed(extra){return hashS(dateKey()+'|'+G+(extra||''));}
+function dailyInfo(){const t=dateKey();return{done:S.d.last===t,streak:(S.d.last===t||S.d.last===dateKey(-1))?(S.d.streak||0):0,best:S.d.best||0};}
+function dailyDone(){const t=dateKey();if(S.d.last===t)return false;S.d.streak=(S.d.last===dateKey(-1)?(S.d.streak||0):0)+1;S.d.last=t;S.d.best=Math.max(S.d.best||0,S.d.streak);save();banner('📅','每日挑戰完成','連續 '+S.d.streak+' 天');xp(60+Math.min(S.d.streak,7)*10);return true;}
+function chip(){const e=$('funChip');if(!e)return;const l=lvOf(P.xp);e.querySelector('b').textContent='Lv.'+l.lv+' · '+titleOf(l.lv);e.querySelector('em').style.width=Math.round(l.cur/l.nx*100)+'%';e.querySelector('small').textContent=l.cur+' / '+l.nx+' XP';}
+function panel(){let o=$('funOv');if(!o){o=document.createElement('div');o.id='funOv';o.className='fun-ov';o.onclick=e=>{if(e.target===o)o.classList.remove('on');};document.body.appendChild(o);}
+ const n=DEFS.filter(d=>S.a[d.id]).length,di=dailyInfo();
+ o.innerHTML='<div class="fun-card"><h3>🏆 成就</h3><p class="fun-s">已解鎖 '+n+' / '+DEFS.length+(di.streak?' · 每日挑戰連續 '+di.streak+' 天':'')+'</p><div class="fun-l">'+DEFS.map(d=>{const u=S.a[d.id];return'<div class="fun-i'+(u?' u':'')+'"><i>'+(u?d.ic:'🔒')+'</i><div><b>'+d.name+'</b><small>'+d.desc+'</small></div></div>';}).join('')+'</div><button class="fun-x">關閉</button></div>';
+ o.querySelector('.fun-x').onclick=()=>o.classList.remove('on');o.classList.add('on');}
+function anchor(card){const st=card.querySelector('.stats');if(st&&st.parentNode===card)return st;const pb=$('playBtn')||$('startBtn');let n=pb;while(n&&n.parentNode!==card)n=n.parentNode;return n||null;}
+function mount(opts){opts=opts||{};const how=$('howBtn');const card=how&&how.closest('.card,.panel');if(!card||$('funChip'))return;
+ const chipEl=document.createElement('div');chipEl.id='funChip';chipEl.innerHTML='<b></b><span><em></em></span><small></small>';
+ card.insertBefore(chipEl,anchor(card));
+ const row=document.createElement('div');row.className='row fun-row';
+ if(opts.daily){const b=document.createElement('button');b.className='btn ghost g';b.id='dailyBtn';b.type='button';b.onclick=opts.daily.onclick;row.appendChild(b);W.FUN._db=b;dailyLabel(opts.daily.label);}
+ const a=document.createElement('button');a.className='btn ghost g';a.id='achBtn';a.type='button';a.textContent='🏆 成就';a.onclick=panel;row.appendChild(a);
+ card.appendChild(row);chip();}
+function segment(items,def,onchange,key){const how=$('howBtn');const card=how&&how.closest('.card,.panel');if(!card)return;let cur=def;try{const v=localStorage.getItem(key);if(v!==null&&items.some(i=>String(i[0])===v))cur=isNaN(+v)?v:+v;}catch(e){}
+ const d=document.createElement('div');d.className='fun-seg';
+ items.forEach(([v,t,sm])=>{const b=document.createElement('button');b.type='button';b.innerHTML=t+(sm?'<small>'+sm+'</small>':'');b.className=v===cur?'on':'';b.onclick=()=>{[...d.children].forEach(x=>x.classList.toggle('on',x===b));try{localStorage.setItem(key,v);}catch(e){}onchange(v);};d.appendChild(b);});
+ const ch=$('funChip');card.insertBefore(d,ch||anchor(card));onchange(cur);}
+function dailyLabel(l){const b=W.FUN._db;if(!b)return;const di=dailyInfo();b.textContent=(di.done?'✅ ':'📅 ')+(l||'每日挑戰')+(di.streak?' · '+di.streak+'天':'');}
+function init(game,defs){G=game;DEFS=defs||[];load();}
+W.FUN={segment,init,unlock,xp,mount,panel,banner,dailyInfo,dailyDone,dailySeed,rng,dateKey,dailyLabel,has:id=>!!S.a[id],_db:null,lvOf:()=>lvOf(P.xp)};
+})();
+</script>
 </head>
 <body>
 <canvas id="gl"></canvas>
@@ -198,6 +296,8 @@ const scene=new THREE.Scene();
 const cam=new THREE.PerspectiveCamera(38,1,.1,200);
 const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
 const THUMB=location.hash==='#thumb';
+FUN.init('oldmaid',[{id:'o1',ic:'🎉',name:'安全過關',desc:'贏下第一局抽鬼牌'},{id:'ofirst',ic:'🥇',name:'搶先出完',desc:'第一個出完手牌'},{id:'ostreak',ic:'🔥',name:'三連勝',desc:'連續贏 3 局'},{id:'opeek',ic:'🔮',name:'透視眼',desc:'使用一次透視眼'},{id:'o4',ic:'👥',name:'四人過關',desc:'四人局中安全過關'},{id:'oday',ic:'📅',name:'每日挑戰',desc:'完成當日每日牌局(安全過關)'},{id:'oluck',ic:'🍀',name:'幸運局贏家',desc:'在「幸運局」中安全過關'}]);
+let dailyMode=false,RN=Math.random,peekN=1,peeking=false,luckyRound=false;
 
 /* ===== 背景 ===== */
 (function(){const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');const r=g.createRadialGradient(128,128,10,128,128,200);r.addColorStop(0,'#2a6b55');r.addColorStop(1,'#0d2a22');g.fillStyle=r;g.fillRect(0,0,256,256);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;scene.background=t;})();
@@ -382,6 +482,7 @@ let players=[],cards=[],pileN=0,np=4,mode='menu',epoch=0,timers=[],paused=false,
 let pick=null,pickTarget=null,autoHuman=false,turn=0,outOrder=[],loser=null;
 let stats={played:0,win:0,streak:0,best:0};
 try{const s=JSON.parse(localStorage.getItem('om_stats')||'null');if(s)stats=Object.assign(stats,s);}catch(e){}
+FUN.mount({daily:{label:'每日牌局',onclick:()=>{dailyMode=true;startGame();}}});
 function showStats(){$('sPlay').textContent=stats.played;$('sWin').textContent=stats.win;$('sStreak').textContent=stats.best;}
 showStats();
 try{np=parseInt(localStorage.getItem('om_np')||'4',10)||4;}catch(e){}
@@ -437,7 +538,7 @@ function clearGame(){
  heads.forEach(h=>scene.remove(h));heads.length=0;
  tagsEl.innerHTML='';$('me').innerHTML='';
  players=[];pileN=0;pick=null;pickTarget=null;outOrder=[];loser=null;
- $('confirm').classList.remove('on');$('shufBtn').style.display='none';
+ $('confirm').classList.remove('on');$('shufBtn').style.display='none';if(window.peekShow)peekShow(false);
  emotes.forEach(e=>scene.remove(e.s));emotes.length=0;
 }
 const emotes=[];
@@ -460,7 +561,7 @@ let toastTm=0;function toast(t,sub){const el=$('toast');el.innerHTML=t+(sub?'<sm
 function ui(){const inGame=mode==='play'||mode==='deal';$('hud').classList.toggle('off',!inGame&&mode!=='pause');$('back').classList.toggle('off',inGame);$('shufBtn').style.display=(mode==='play')?'block':'none';}
 
 async function startGame(){
- ac();clearGame();const ep=epoch;
+ ac();clearGame();const ep=epoch;if(dailyMode){np=4;RN=FUN.rng(FUN.dailySeed('om'));}else RN=Math.random;luckyRound=!dailyMode&&Math.random()<.25;peekN=luckyRound?2:1;
  $('startOv').classList.add('hidden');$('overOv').classList.add('hidden');$('pauseOv').classList.add('hidden');$('howOv').classList.add('hidden');
  mode='deal';ui();
  // 玩家
@@ -473,10 +574,10 @@ async function startGame(){
  players.forEach(tagFor);
  // 牌堆
  const deck=[];for(let s=0;s<4;s++)for(let r=1;r<=13;r++)deck.push([r,s]);deck.push([0,-1]);
- for(let i=deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
+ for(let i=deck.length-1;i>0;i--){const j=Math.floor(RN()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
  for(const d of deck)cards.push(mkCard(d[0],d[1]));
  layoutAll();cards.forEach(c=>{c.mesh.position.copy(c.tp);c.mesh.quaternion.copy(c.tq);c.mesh.scale.setScalar(c.ts);});
- setStatus('發牌中…','準備好你的牌！');
+ setStatus('發牌中…',luckyRound?'🍀 幸運局！透視眼 ×2':(dailyMode?'📅 每日牌局':'準備好你的牌！'));
  await wait(500);if(ep!==epoch)return;
  // 發牌
  for(let i=cards.length-1,k=0;i>=0;i--,k++){
@@ -556,12 +657,12 @@ function updStatusFor(cur,target){
 function humanPick(target,ep){
  return new Promise(res=>{
   if(autoHuman){pickTarget=target;layoutAll();const c=target.hand[Math.floor(Math.random()*target.hand.length)];wait(300).then(()=>{pickTarget=null;layoutAll();res(c);});return;}
-  pick={target,sel:null,res};pickTarget=target;target.hand.forEach(c=>c.hover=false);layoutAll();
+  pick={target,sel:null,res};peekShow(true);pickTarget=target;target.hand.forEach(c=>c.hover=false);layoutAll();
   $('confirm').classList.remove('on');
  });
 }
 function confirmPick(){
- if(!pick||!pick.sel)return;const c=pick.sel,res=pick.res;pick=null;$('confirm').classList.remove('on');
+ if(!pick||!pick.sel)return;const c=pick.sel,res=pick.res;pick=null;peekShow(false);$('confirm').classList.remove('on');
  c.hover=false;res(c);
 }
 async function aiPick(cur,target,ep){
@@ -596,6 +697,9 @@ async function transfer(from,to,card,ep){
   if(!to.human){card.faceUp=false;layoutAll();}
  }
 }
+function order0(){const o=outOrder.slice();return o.indexOf(players[0])+1;}
+function funEnd(youLose,rk){FUN.xp(youLose?8:25);if(!youLose){FUN.unlock('o1');if(rk===1)FUN.unlock('ofirst');if(stats.streak>=3)FUN.unlock('ostreak');if(np===4)FUN.unlock('o4');if(luckyRound)FUN.unlock('oluck');
+ if(dailyMode&&FUN.dailyDone()){FUN.unlock('oday');FUN.dailyLabel('每日牌局');}}}
 function endGame(ep){
  loser=alive()[0]||players.find(p=>p.hand.length>0);
  if(!loser)loser=players[players.length-1];
@@ -607,7 +711,7 @@ function endGame(ep){
  const youLose=loser.human;
  stats.played++;if(!youLose){stats.win++;stats.streak++;stats.best=Math.max(stats.best,stats.streak);}else stats.streak=0;
  try{localStorage.setItem('om_stats',JSON.stringify(stats));}catch(e){}showStats();
- youLose?SFX.lose():SFX.win();
+ funEnd(youLose,order0());youLose?SFX.lose():SFX.win();
  if(!youLose){burst(0,2,40,0xffd24a);burst(0,1,30,0xff6b8b);}else shake=.5;
  players.forEach(p=>{if(p!==loser)emote(p,'🎉');});emote(loser,'😭');
  // 排名
@@ -641,6 +745,12 @@ cv.addEventListener('pointerdown',e=>{ac();if(!pick)return;const c=pickAt(e.clie
  if(pick.sel)pick.sel.hover=false;pick.sel=c;c.hover=true;layoutAll();SFX.sel();$('confirm').classList.add('on');});
 cv.addEventListener('pointermove',e=>{if(!pick||isTouch)return;const c=pickAt(e.clientX,e.clientY);cv.style.cursor=c?'pointer':'default';});
 $('confirm').onclick=confirmPick;
+{const pb=document.createElement('button');pb.className='pbtn alt';pb.id='peekBtn';pb.style.display='none';pb.type='button';$('shufBtn').parentNode.insertBefore(pb,$('shufBtn'));
+ window.peekLabel=()=>{pb.textContent='🔮 透視 ×'+peekN;pb.classList.toggle('dis',peekN<=0);};
+ window.peekShow=on=>{pb.style.display=on?'':'none';if(on)peekLabel();};
+ pb.onclick=async()=>{if(!pick||peekN<=0||peeking)return;peeking=true;peekN--;peekLabel();FUN.unlock('opeek');const t=pick.target,jk=t.hand.find(c=>c.rank===0);
+  if(jk){jk.faceUp=true;layoutAll();SFX.sel();toast('🔮 鬼牌在這裡!','別抽它');await wait(1600);jk.faceUp=false;layoutAll();}
+  else{toast('🔮 他手上沒有鬼牌','放心抽吧');await wait(500);}peeking=false;};}
 $('shufBtn').onclick=()=>{const h=players[0].hand;for(let i=h.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[h[i],h[j]]=[h[j],h[i]];}layoutAll();SFX.shuf();};
 addEventListener('keydown',e=>{if(e.key==='p'||e.key==='P'||e.key==='Escape'){if(mode==='play')pause(true);else if(mode==='pause')pause(false);}if((e.key==='Enter'||e.key===' ')&&pick&&pick.sel){e.preventDefault();confirmPick();}});
 function pause(on){
@@ -692,8 +802,8 @@ function toggleMute(){muted=!muted;try{localStorage.setItem('om_mute',muted?'1':
 $('muteBtn').onclick=toggleMute;$('mute2').onclick=toggleMute;
 $('pauseBtn').onclick=()=>{if(mode==='play'||mode==='deal')pause(true);else if(mode==='pause')pause(false);};
 $('resumeBtn').onclick=()=>pause(false);
-$('againBtn').onclick=()=>{paused=false;mode='menu';startGame();};
-$('playBtn').onclick=startGame;$('retryBtn').onclick=startGame;
+$('againBtn').onclick=()=>{paused=false;mode='menu';dailyMode=false;startGame();};
+$('playBtn').onclick=()=>{dailyMode=false;startGame();};$('retryBtn').onclick=startGame;
 $('menuBtn').onclick=()=>{clearGame();mode='menu';$('overOv').classList.add('hidden');$('startOv').classList.remove('hidden');ui();menuScene();};
 $('howBtn').onclick=()=>{$('howOv').classList.remove('hidden');};
 $('howOk').onclick=()=>{$('howOv').classList.add('hidden');};
