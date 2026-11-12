@@ -97,6 +97,19 @@ html,body{margin:0;height:100%;overflow:hidden;background:#07130e;color:var(--in
 .tb{display:flex;align-items:center;gap:6px;padding:9px 16px;border-radius:99px;border:1.5px solid var(--line);background:var(--glass);color:var(--ink);font:800 13px inherit;font-family:inherit;letter-spacing:.06em;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.4)}
 .tb:active{transform:translateY(2px)}
 /* 操作面板 */
+#hand{position:fixed;left:6px;right:6px;bottom:calc(92px + var(--sab));display:none;z-index:4;pointer-events:none;flex-direction:column;align-items:center;gap:5px}
+body.big #hand{display:flex}
+#hm{display:flex;gap:10px;justify-content:flex-start;width:100%;max-width:520px;min-height:0;flex-wrap:wrap}
+#hm .mg{display:flex;gap:2px;padding:3px 4px;border-radius:7px;background:rgba(0,0,0,.35)}#hm img{height:34px;width:auto;border-radius:3px;box-shadow:0 2px 0 #1d8c58}
+#hg{display:grid;grid-template-columns:repeat(9,1fr);gap:5px 4px;width:100%;max-width:520px;pointer-events:auto}
+.ht{position:relative;padding:0;border:0;background:none;border-radius:7px;cursor:pointer;transition:transform .12s,filter .12s;touch-action:manipulation}
+.ht img{display:block;width:100%;aspect-ratio:3/4;object-fit:fill;border-radius:7px;box-shadow:0 3px 0 #17744a,0 6px 10px rgba(0,0,0,.45);background:#fffaf0}
+.ht.sel{transform:translateY(-12px);filter:drop-shadow(0 0 7px #ffd86b)}.ht.sel img{outline:3px solid var(--gold);outline-offset:-1px}
+.ht.hint img{outline:3px solid #7dffc4;outline-offset:-1px}
+.ht.nw::after{content:'新';position:absolute;top:-6px;right:-3px;background:var(--gold);color:#3a2400;font:900 10px/14px var(--serif);width:15px;height:15px;border-radius:50%;text-align:center}
+body.big #acts{bottom:calc(262px + var(--sab))}
+body.big #tip{bottom:calc(66px + var(--sab));font-size:14px}
+.chip .n{font-size:15px!important}.chip .p{font-size:17px!important}
 #acts{position:absolute;left:0;right:0;bottom:calc(168px + var(--sab));display:none;justify-content:center;gap:10px;flex-wrap:wrap;padding:0 10px;pointer-events:auto}#acts.on{display:flex;animation:pop .22s cubic-bezier(.2,1.4,.4,1)}
 @keyframes pop{from{opacity:0;transform:translateY(14px) scale(.9)}to{opacity:1;transform:none}}
 .act{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:9px 18px 9px;min-width:84px;border-radius:20px;border:2px solid rgba(255,255,255,.28);background:linear-gradient(180deg,rgba(26,56,44,.96),rgba(10,26,20,.96));color:var(--ink);font-family:inherit;cursor:pointer;box-shadow:0 6px 0 rgba(0,0,0,.45),0 10px 22px rgba(0,0,0,.4)}
@@ -159,8 +172,8 @@ html,body{margin:0;height:100%;overflow:hidden;background:#07130e;color:var(--in
  <div class="chip" id="c3"><div class="av"><span class="ch"></span><span class="w"></span></div><div class="meta"><span class="n"></span><span class="p"></span></div><span class="f"></span></div>
  <div id="dock"></div>
  <div class="chip" id="c0"><div class="av"><span class="ch"></span><span class="w"></span></div><div class="meta"><span class="n"></span><span class="p"></span></div><span class="f"></span></div>
- <div id="acts"></div><div id="tip"></div>
- <div id="tools"><button class="tb" id="hintBtn">💡 提示</button></div>
+ <div id="hand"><div id="hm"></div><div id="hg"></div></div><div id="acts"></div><div id="tip"></div>
+ <div id="tools"><button class="tb" id="bigBtn" title="大牌手牌列 / 3D 手牌" style="min-width:46px;padding:0 10px">🔍</button><button class="tb" id="hintBtn">💡 提示</button></div>
 </div>
 <div id="call"><b></b><small></small></div>
 <div id="toast"></div>
@@ -383,7 +396,7 @@ const dustC=document.createElement('canvas');dustC.width=dustC.height=64;{const 
 const dustG=new THREE.BufferGeometry(),dN=140,dPos=new Float32Array(dN*3),dSp=new Float32Array(dN);
 for(let i=0;i<dN;i++){dPos[i*3]=(Math.random()-.5)*26;dPos[i*3+1]=Math.random()*9;dPos[i*3+2]=(Math.random()-.5)*26;dSp[i]=.08+Math.random()*.18;}
 dustG.setAttribute('position',new THREE.BufferAttribute(dPos,3));
-const dust=new THREE.Points(dustG,new THREE.PointsMaterial({map:new THREE.CanvasTexture(dustC),size:.34,transparent:true,opacity:.55,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true}));scene.add(dust);
+const dust=new THREE.Points(dustG,new THREE.PointsMaterial({map:new THREE.CanvasTexture(dustC),size:.3,transparent:true,opacity:.28,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true}));scene.add(dust);
 /* 彩帶 */
 const cfN=220,cfG=new THREE.BufferGeometry(),cfP=new Float32Array(cfN*3),cfC=new Float32Array(cfN*3),cfV=[];
 cfG.setAttribute('position',new THREE.BufferAttribute(cfP,3));cfG.setAttribute('color',new THREE.BufferAttribute(cfC,3));
@@ -516,14 +529,15 @@ function layoutSeat(s,dur,delay){
  const tl=[];
  conc.forEach(t=>{tl.push([t,x+F.sp/2]);x+=F.sp;});
  if(P.drawn){x+=.22;tl.push([P.drawn,x+F.sp/2]);x+=F.sp;}
+ if(human){const bv=!document.body.classList.contains('big');tl.forEach(([t])=>t.g.visible=bv);P.melds.forEach(m=>m.tiles.forEach(t=>t.g.visible=bv));stripRefresh();}
  tl.forEach(([t,lx])=>{const raised=human&&selTile===t,hint=human&&hintTile===t;
   place(t.g,s,lx,yS+(raised?.34:hint?.18:0),F.z+(raised?-.18:0),-lean,0,0,F.sc,dur,delay);});
  x+=mw.length?.3:0;
  mw.forEach((m,mi)=>{const sc=human?.8:SC*.95;m.items.forEach(it=>{const ly=TD*sc/2;
    place(it.t.g,s,x+it.x,ly,F.z+(human?.12:0),it.down?Math.PI/2:-Math.PI/2,0,it.rz,sc,dur,delay);});x+=m.w;});
 }
-function layoutDisc(s,dur,delay){const P=pl[s],n=P.disc.length,rows=Math.max(4,Math.ceil(n/6)),gap=Math.min(.52,2.55/rows);
- P.disc.forEach((t,i)=>{const r=Math.floor(i/6),c=i%6;place(t.g,s,(c-2.5)*.395,TD*.72/2,1.85+r*gap+.18,-Math.PI/2,0,0,.72,dur,delay);});}
+function layoutDisc(s,dur,delay){const P=pl[s],n=P.disc.length,rows=Math.max(4,Math.ceil(n/6)),gap=Math.min(.56,2.6/rows);
+ P.disc.forEach((t,i)=>{const r=Math.floor(i/6),c=i%6;place(t.g,s,(c-2.5)*.435,TD*.8/2,1.85+r*gap+.2,-Math.PI/2,0,0,.8,dur,delay);});}
 function layoutFlowers(s,dur){const P=pl[s];P.flowers.forEach((t,i)=>{place(t.g,s,-4.3+i*.27,TD*.5/2,4.5,-Math.PI/2,0,0,.5,dur);});}
 /* ===== 音效 ===== */
 let AC=null;
@@ -571,7 +585,17 @@ const ray=new THREE.Raycaster(),mv=new THREE.Vector2();
 $('gl').addEventListener('pointerdown',e=>{ac();if(!uiResolve||!busy)return;
  const r=$('gl').getBoundingClientRect();mv.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(mv,cam);
  const cand=pl[0].hand.map(t=>t.g);const hit=ray.intersectObjects(cand,true)[0];if(!hit)return;let o=hit.object;while(o&&!o.userData.tile)o=o.parent;if(!o)return;const t=o.userData.tile;
- if(selTile===t){const f=uiResolve;uiResolve=null;busy=false;selTile=null;hintTile=null;f(t);}else{selTile=t;SFX.pick();layoutSeat(0,.12);updateTip();}});
+ tapTile(t);});
+function tapTile(t){if(!(uiResolve&&busy))return;if(selTile===t){const f=uiResolve;uiResolve=null;busy=false;selTile=null;hintTile=null;f(t);stripRefresh();}else{selTile=t;SFX.pick();layoutSeat(0,.12);updateTip();}}
+
+/* ===== 大牌手牌列(手機好讀) ===== */
+let bigOn=true;try{const v=localStorage.getItem('mj_big');bigOn=v===null?(innerWidth<760):v==='1';}catch(e){}
+function applyBig(){document.body.classList.toggle('big',bigOn&&!THUMB);$('bigBtn').textContent=bigOn?'🔍':'🀄';}
+function stripRefresh(){const hg=$('hg'),hm=$('hm');if(!hg||!document.body.classList.contains('big')||!pl[0])return;const P=pl[0];
+ const conc=P.hand.filter(t=>t!==P.drawn).sort((a,b)=>a.t-b.t);const all=P.drawn?conc.concat([P.drawn]):conc;
+ hg.innerHTML='';all.forEach(t=>{const b=document.createElement('button');b.className='ht'+(t===selTile?' sel':'')+(t===hintTile?' hint':'')+(t===P.drawn?' nw':'');const im=document.createElement('img');im.src=tileImg(t.t);im.alt=TN[t.t];b.appendChild(im);b.onclick=()=>{ac();tapTile(t);};hg.appendChild(b);});
+ hm.innerHTML=P.melds.map(m=>'<div class="mg">'+m.tiles.map(t=>'<img src="'+tileImg(t.t)+'">').join('')+'</div>').join('');
+ const n=all.length;hg.style.gridTemplateColumns='repeat('+(n>9?9:Math.max(n,6))+',1fr)';}
 /* ===== 規則輔助 ===== */
 function meldCnt(P){const c=Array(34).fill(0);P.melds.forEach(m=>m.tiles.forEach(t=>c[t.t]++));return c;}
 function visibleCnt(s){const c=cntOf(pl[s].hand);pl.forEach(P=>{P.disc.forEach(t=>c[t.t]++);P.melds.forEach(m=>m.tiles.forEach(t=>{if(!(P.i===s&&false))c[t.t]++;}));});return c;}
@@ -619,10 +643,10 @@ async function drawFor(s,back){const P=pl[s];if(remain()<=16)return null;let t=t
  await layoutSeat(s,.26);return t;}
 async function fixFlowers(s){const P=pl[s];while(true){const f=P.hand.find(t=>t.t>=34);if(!f)break;await flowerTo(s,f);const t=takeWall(true);P.hand.push(t);await layoutSeat(s,.2);}}
 function removeFrom(P,t){const i=P.hand.indexOf(t);if(i>=0)P.hand.splice(i,1);if(P.drawn===t)P.drawn=null;}
-async function doDiscard(s,t){const P=pl[s];removeFrom(P,t);P.drawn=null;P.disc.push(t);selTile=null;hintTile=null;lastDisc={t,s};SFX.disc();
- const n=P.disc.length-1,rows=Math.max(4,Math.ceil(P.disc.length/6)),gap=Math.min(.52,2.55/rows),r=Math.floor(n/6),c=n%6;
+async function doDiscard(s,t){const P=pl[s];removeFrom(P,t);P.drawn=null;P.disc.push(t);t.g.visible=true;selTile=null;hintTile=null;lastDisc={t,s};SFX.disc();
+ const n=P.disc.length-1,rows=Math.max(4,Math.ceil(P.disc.length/6)),gap=Math.min(.56,2.6/rows),r=Math.floor(n/6),c=n%6;
  layoutSeat(s,.22);layoutDisc(s,.22);
- await place(t.g,s,(c-2.5)*.395,TD*.72/2,1.85+r*gap+.18,-Math.PI/2,0,0,.72,.3,0,1.2);await wait(120);}
+ await place(t.g,s,(c-2.5)*.435,TD*.8/2,1.85+r*gap+.2,-Math.PI/2,0,0,.8,.3,0,1.2);await wait(120);}
 async function doKong(s,o){const P=pl[s];SFX.kong();
  if(o.k==='a'){const ts=P.hand.filter(t=>t.t===o.t);ts.forEach(t=>removeFrom(P,t));P.melds.push({k:'a',t:o.t,tiles:ts,from:-1});toast(P.name+' 暗槓 '+TN[o.t],900);}
  else{const t=P.hand.find(x=>x.t===o.t);removeFrom(P,t);o.m.k='k';o.m.tiles.push(t);toast(P.name+' 加槓 '+TN[o.t],900);}
@@ -735,7 +759,8 @@ $('mLobby').onclick=()=>{location.href='index.html';};
 try{$('best').textContent=(+localStorage.getItem('mj_best')||0)||'—';}catch(e){}
 $('fan').innerHTML=[31,32,33,29,27].map((t,i)=>'<img src="'+tileImg(t)+'" style="--r:'+((i-2)*7)+'deg;margin-top:'+Math.abs(i-2)*3+'px">').join('');
 $('howBtn').onclick=()=>$('how').classList.add('on');$('howX').onclick=()=>$('how').classList.remove('on');
-$('hintBtn').onclick=()=>{if(!(uiResolve&&busy))return;ac();const t=aiDiscard(0);hintTile=t;selTile=null;layoutSeat(0,.2);toast('建議打出「'+TN[t.t]+'」',1200);};
+$('bigBtn').onclick=()=>{bigOn=!bigOn;try{localStorage.setItem('mj_big',bigOn?'1':'0');}catch(e){}applyBig();layoutSeat(0,.01);};applyBig();
+$('hintBtn').onclick=()=>{if(!(uiResolve&&busy))return;ac();const t=aiDiscard(0);hintTile=t;selTile=null;layoutSeat(0,.2);stripRefresh();toast('建議打出「'+TN[t.t]+'」',1200);};
 $('sortBtn')&&($('sortBtn').onclick=()=>layoutSeat(0,.2));
 let clk=0;
 let heroGone=false;
