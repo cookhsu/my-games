@@ -454,14 +454,14 @@
   })();
   var chips=document.getElementById('chips'),empty=document.getElementById('empty'),q=document.getElementById('q'),cur='all';
   function apply(){
-    var kw=q.value.trim().toLowerCase().replace(/[\uff10-\uff19]/g,function(ch){return String.fromCharCode(ch.charCodeAt(0)-0xfee0);}),total=0,num=null,lo=null,hi=null;
+    var kw=q.value.trim().toLowerCase().replace(/[\uff10-\uff19]/g,function(ch){return String.fromCharCode(ch.charCodeAt(0)-0xfee0);}),total=0,num=null,lo=null,hi=null,numOnly=false;
     var nk=kw.replace(/^(no\.?|#|第|編號|编号)\s*/,'').replace(/\s*(款|號|号)$/,'');
     var rg=nk.match(/^(\d+)\s*[-~到至]\s*(\d+)$/);
     if(rg){ lo=Math.min(+rg[1],+rg[2]); hi=Math.max(+rg[1],+rg[2]); }
-    else if(/^\d+$/.test(nk)) num=String(parseInt(nk,10));
+    else if(/^\d+$/.test(nk)){ num=parseInt(nk,10); if(!cards.some(function(c){return parseInt(c.dataset.no,10)===num;})) num=null; else numOnly=true; }
     secs.forEach(function(sec){
       var n=0; [].forEach.call(sec.querySelectorAll('a.card'),function(c){
-        var show=(cur==='all'||cur==='new'||sec.dataset.cat===cur)&&(cur!=='new'||c.dataset.n==='1')&&(!kw||c.dataset.t.indexOf(kw)>=0||(num!==null&&c.dataset.no===num)||(lo!==null&&+c.dataset.no>=lo&&+c.dataset.no<=hi));
+        var show=(cur==='all'||cur==='new'||sec.dataset.cat===cur)&&(cur!=='new'||c.dataset.n==='1')&&(!kw||(!numOnly&&c.dataset.t.indexOf(kw)>=0)||(num!==null&&parseInt(c.dataset.no,10)===num)||(lo!==null&&+c.dataset.no>=lo&&+c.dataset.no<=hi));
         c.classList.toggle('hide',!show); if(show) n++; });
       sec.classList.toggle('hide',!n); total+=n; });
     empty.style.display=total?'none':'block';
@@ -470,7 +470,7 @@
     var b=e.target.closest('.chip'); if(!b) return; cur=b.dataset.g;
     [].forEach.call(chips.children,function(x){ x.classList.toggle('on',x===b); }); apply();
   });
-  q.addEventListener('input',apply);
+  ['input','search','change','keyup','compositionend'].forEach(function(ev){q.addEventListener(ev,apply);});
 })();
 </script>
 <script>
