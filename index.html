@@ -218,7 +218,7 @@
   </section>
   <div class="sec">ALL GAMES ・ 全部遊戲</div>
   <div class="bar" id="bar">
-  <div class="tools"><input id="q" type="search" placeholder="搜尋遊戲名稱…" aria-label="搜尋遊戲"></div>
+  <div class="tools"><input id="q" type="search" placeholder="搜尋遊戲名稱或編號…" aria-label="搜尋遊戲名稱或編號" enterkeyhint="search"></div>
   <div class="chips" id="chips" role="tablist" aria-label="分類">
     <button class="chip on" data-g="all">全部 · 70</button>
     <button class="chip" data-g="new">🆕 新作</button>
@@ -430,7 +430,7 @@
   cards.forEach(function(c,i){
     c.style.animationDelay=(Math.min(i,12)*25)+'ms';
     var no=c.querySelector('.no').textContent.trim();
-    c.dataset.t=(c.querySelector('h2').textContent+' '+c.querySelector('p').textContent+' '+c.querySelector('.tag').textContent).toLowerCase();
+    c.dataset.t=(c.querySelector('h2').textContent+' '+c.querySelector('p').textContent+' '+c.querySelector('.tag').textContent).toLowerCase(); c.dataset.no=no;
     if(NEW.indexOf(no)>=0){ c.dataset.n='1'; var r=document.createElement('span'); r.className='new'; r.textContent='NEW'; c.querySelector('.art').appendChild(r); }
   });
   /* 隨機推薦:每次開啟從全部遊戲抽 6 款 */
@@ -454,10 +454,14 @@
   })();
   var chips=document.getElementById('chips'),empty=document.getElementById('empty'),q=document.getElementById('q'),cur='all';
   function apply(){
-    var kw=q.value.trim().toLowerCase(),total=0;
+    var kw=q.value.trim().toLowerCase().replace(/[\uff10-\uff19]/g,function(ch){return String.fromCharCode(ch.charCodeAt(0)-0xfee0);}),total=0,num=null,lo=null,hi=null;
+    var nk=kw.replace(/^(no\.?|#|第|編號|编号)\s*/,'').replace(/\s*(款|號|号)$/,'');
+    var rg=nk.match(/^(\d+)\s*[-~到至]\s*(\d+)$/);
+    if(rg){ lo=Math.min(+rg[1],+rg[2]); hi=Math.max(+rg[1],+rg[2]); }
+    else if(/^\d+$/.test(nk)) num=String(parseInt(nk,10));
     secs.forEach(function(sec){
       var n=0; [].forEach.call(sec.querySelectorAll('a.card'),function(c){
-        var show=(cur==='all'||cur==='new'||sec.dataset.cat===cur)&&(cur!=='new'||c.dataset.n==='1')&&(!kw||c.dataset.t.indexOf(kw)>=0);
+        var show=(cur==='all'||cur==='new'||sec.dataset.cat===cur)&&(cur!=='new'||c.dataset.n==='1')&&(!kw||c.dataset.t.indexOf(kw)>=0||(num!==null&&c.dataset.no===num)||(lo!==null&&+c.dataset.no>=lo&&+c.dataset.no<=hi));
         c.classList.toggle('hide',!show); if(show) n++; });
       sec.classList.toggle('hide',!n); total+=n; });
     empty.style.display=total?'none':'block';
