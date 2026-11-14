@@ -140,6 +140,7 @@ html,body{margin:0;height:100%;overflow:hidden;color:var(--ink);font-family:'Not
 #res{background:rgba(4,6,14,.38);backdrop-filter:none;-webkit-backdrop-filter:none;align-items:flex-end;padding-bottom:calc(24px + var(--sab))}
 @media (min-aspect-ratio:12/10){#bar1{top:calc(64px + var(--sat));left:12px;right:auto;width:270px}#bar0{bottom:calc(64px + var(--sab));left:12px;right:auto;width:270px}#res{align-items:center;padding:0}}
 #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font:900 18px var(--serif);letter-spacing:.2em;color:var(--gold);z-index:20;background:#070a14;transition:opacity .5s}
+@media (min-aspect-ratio:12/10) and (max-height:560px){#bar1{left:10px!important;right:auto!important;width:250px!important;top:calc(60px + var(--sat))!important}#tools{left:10px!important;right:auto!important;top:calc(122px + var(--sat));bottom:auto!important;flex-direction:column;align-items:flex-start;gap:8px}#tools .tb{min-width:92px;height:40px}}
 @media (max-height:640px){.logo{font-size:30px}#start .panel{padding:12px}.row{margin-top:7px}}
 
 #bar1{top:calc(72px + var(--sat))}
@@ -589,9 +590,9 @@ function renderLv(){const tb=$('tabs');tb.innerHTML=TIERS.map((t,i)=>{let n=0;fo
 function updStart(){const cur=Math.min(LEVELS.length-1,maxCleared()+1);$('startBtn').textContent=(clearedN()?'繼續':'開始')+' 第 '+(cur+1)+' 關';}
 /* ---- 鏡頭 ---- */
 let az=0,el=.5,dist=24,tAz=0,tEl=.5,tDist=24;const tgt=new THREE.Vector3(.7,0,0);
-function freeRegion(){let top=0,bot=innerHeight;if(phase==='play'||phase==='over'||phase==='win'){const b1=$('bar1').getBoundingClientRect(),t=$('tools').getBoundingClientRect();if(b1.height)top=b1.bottom+8;if(t.height&&t.top>0)bot=t.top-8;if(bot-top<innerHeight*.4){top=0;bot=innerHeight;}}return{top,bot};}
-function fitDist(){const asp=innerWidth/innerHeight;const vf=cam.fov*Math.PI/180,hf=2*Math.atan(Math.tan(vf/2)*asp);const fr=freeRegion();const frac=(fr.bot-fr.top)/innerHeight;const need1=(BW+WALL*2+CS*1.5)/(2*Math.tan(hf/2)),need2=((BW+WALL*2)*Math.cos(tEl)+2)/(2*Math.tan(vf/2))/frac;return Math.max(need1,need2);}
-function fitCam(){cam.aspect=innerWidth/innerHeight;const fr=freeRegion();const shift=(fr.top+fr.bot)/2-innerHeight/2;cam.setViewOffset(innerWidth,innerHeight,0,-shift,innerWidth,innerHeight);cam.updateProjectionMatrix();}
+function freeRegion(){let top=0,bot=innerHeight;if((phase==='play'||phase==='over'||phase==='win')&&innerWidth/innerHeight>1.15&&innerHeight<560){return{top:52,bot:innerHeight-6};}if(phase==='play'||phase==='over'||phase==='win'){const b1=$('bar1').getBoundingClientRect(),t=$('tools').getBoundingClientRect();if(b1.height)top=b1.bottom+8;if(t.height&&t.top>0)bot=t.top-8;if(bot-top<innerHeight*.4){top=0;bot=innerHeight;}}return{top,bot};}
+function fitDist(){const asp=innerWidth/innerHeight;const vf=cam.fov*Math.PI/180,hf=2*Math.atan(Math.tan(vf/2)*asp);const fr=freeRegion();const frac=(fr.bot-fr.top)/innerHeight;const need1=(BW+WALL*2+CS*3.4)/(2*Math.tan(hf/2)),need2=((BW+WALL*2)*Math.cos(tEl)+2)/(2*Math.tan(vf/2))/frac;return Math.max(need1,need2);}
+function fitCam(){cam.aspect=innerWidth/innerHeight;const fr=freeRegion();const shift=(fr.top+fr.bot)/2-innerHeight/2;cam.setViewOffset(innerWidth,innerHeight,(innerWidth/innerHeight>1.15&&innerHeight<560)?-45:0,-shift,innerWidth,innerHeight);cam.updateProjectionMatrix();}
 function setCam(){tAz=0;tEl=innerWidth<innerHeight?.45:.6;fitCam();tDist=fitDist();az=tAz;el=tEl;dist=tDist;}
 function resize(){R.setSize(innerWidth,innerHeight,false);fitCam();tDist=fitDist();}addEventListener('resize',resize);resize();
 /* ---- 指標 ---- */

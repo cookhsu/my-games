@@ -587,9 +587,11 @@ function finishGame(win,margin,desc,aiRes){
 function toSetup(){phase='setup';thinkId++;aiBusy=false;clearAll();$('res').classList.remove('on');$('hud').classList.remove('on');$('menuBtn').classList.remove('on');$('start').classList.add('on');updHud();}
 /* ---- 相機與輸入 ---- */
 let az=0,el=.7,dist=15,tAz=0,tEl=.7,tDist=15,orbit=true;const tgt=new THREE.Vector3(0,0,.3);let userZoom=false;
-function fitCam(){const asp=innerWidth/innerHeight;let vf=36;if(asp<1.15){vf=Math.min(88,Math.max(36,2*Math.atan((7.4/15)/asp)*180/Math.PI));}cam.fov=vf;cam.aspect=asp;cam.updateProjectionMatrix();}
-function setCam(snap){tAz=0;tEl=innerWidth<innerHeight?.55:.72;tDist=15;orbit=false;userZoom=false;if(snap){az=tAz;el=tEl;dist=tDist;}}
-function resize(){R.setSize(innerWidth,innerHeight,false);fitCam();}addEventListener('resize',resize);resize();
+function fitCam(){const asp=innerWidth/innerHeight;let vf=36;if(asp<1.15){vf=Math.min(88,Math.max(36,2*Math.atan((6.7/15)/asp)*180/Math.PI));}cam.fov=vf;cam.aspect=asp;cam.updateProjectionMatrix();}
+function isLand(){return innerWidth/innerHeight>1.15&&innerHeight<560;}
+function baseD(){return isLand()?21:15;}
+function setCam(snap){tAz=0;tEl=innerWidth<innerHeight?.55:.72;tDist=baseD();orbit=false;userZoom=false;if(snap){az=tAz;el=tEl;dist=tDist;}}
+function resize(){R.setSize(innerWidth,innerHeight,false);fitCam();if(isLand())cam.setViewOffset(innerWidth,innerHeight,-70,0,innerWidth,innerHeight);else cam.clearViewOffset();cam.updateProjectionMatrix();if(!userZoom)tDist=baseD();}addEventListener('resize',resize);resize();
 const ptrs=new Map();let drag=null;const ray=new THREE.Raycaster(),mp=new THREE.Vector2(),plane=new THREE.Plane(new THREE.Vector3(0,1,0),0);let pinch0=0;
 cvs.addEventListener('pointerdown',e=>{ac();cvs.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});if(ptrs.size===1)drag={x:e.clientX,y:e.clientY,t:Date.now(),moved:0};else{drag=null;const [a,b]=[...ptrs.values()];pinch0=Math.hypot(a.x-b.x,a.y-b.y);}});
 cvs.addEventListener('pointermove',e=>{const p=ptrs.get(e.pointerId);if(!p)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;

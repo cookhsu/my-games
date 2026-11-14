@@ -236,6 +236,52 @@ body.big #tip{bottom:calc(66px + var(--sab));font-size:14px}
 .dl{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;font-size:12.5px}.dl span{display:flex;justify-content:space-between;padding:6px 10px;border-radius:10px;background:rgba(255,255,255,.07)}.dl .up{color:#8dffb2;background:rgba(60,180,110,.14)}.dl .dn{color:#ffa6a6;background:rgba(220,80,80,.12)}
 .rank{list-style:none;padding:0;margin:12px 0}.rank li{display:flex;align-items:center;gap:12px;padding:10px 14px;margin:7px 0;border-radius:16px;background:rgba(255,255,255,.06);font-size:16px}.rank li.me{border:1.5px solid var(--gold);background:rgba(246,207,104,.12)}.rank li span{font-size:22px;width:28px}.rank i{flex:1;text-align:left;font-style:normal;font-weight:800}.rank b{color:var(--gold);font-family:var(--serif);font-size:19px}
 #menu .btn{margin-top:10px}
+
+/* ===== v11 橫式版面:手牌單排、操作列右側、棋盤上移 ===== */
+@media (orientation:landscape) and (max-height:560px){
+ body.big #hand{left:8px;right:62px;width:auto;bottom:calc(8px + var(--sab));flex-direction:row;align-items:flex-end;gap:10px}
+ body.big #hm{width:auto;max-width:42%;flex:none;flex-wrap:nowrap;gap:6px;align-self:flex-end;padding-bottom:3px}
+ body.big #hm img{height:30px}
+ body.big #hg{flex:1;max-width:none;grid-template-rows:1fr;gap:3px;grid-auto-flow:column}
+ body.big #hg .ht img{border-radius:5px}
+ body.big #hg .ht.sel{transform:translateY(-10px)}
+ body.big #dock{height:calc(96px + var(--sab))}
+ body.big #tip{bottom:calc(86px + var(--sab));font-size:12px;text-align:left;padding:0 0 0 16px;pointer-events:none}
+ body.big #c0{left:8px;bottom:calc(88px + var(--sab));padding:4px 10px 4px 4px}
+ body.big #c0 .av{width:36px;height:36px}
+ body.big #riverBtn{left:auto;right:8px;top:calc(122px + var(--sat))}
+ body.big #tools{right:8px;top:calc(168px + var(--sat));bottom:auto;flex-direction:column;align-items:flex-end}
+ body.big #c2,body.big #c2.on{left:calc(50% + 132px);top:calc(8px + var(--sat));transform:none}body.big #c2.on{transform:scale(1.04)}
+ body.big #c3{top:calc(64px + var(--sat))}body.big #c1{top:calc(64px + var(--sat));right:8px}
+ body.big #acts.on{flex-direction:row;align-items:flex-end;left:auto;right:calc(8px + var(--sab));justify-content:flex-end;width:auto;max-width:calc(100% - 200px);gap:10px}
+ body.big #acts .apanel{flex-direction:row;align-items:flex-end;gap:10px}
+ body.big #acts .ahead{padding:4px 12px 4px 6px}body.big #acts .ahead img{width:26px;height:35px}body.big #acts .ahead b{font-size:15px}
+ body.big #acts .ab{padding:5px 10px 6px;min-width:84px;gap:3px;border-radius:16px}body.big #acts .ab .tag{font-size:24px}
+ body.big #acts .ab .im img{width:24px;height:32px}body.big #acts .ab.k-hu,body.big #acts .ab.k-zimo{min-width:96px}
+ body.big #acts .ab.k-hu .tag,body.big #acts .ab.k-zimo .tag{font-size:30px}
+ body.big #waitbar{left:auto;right:8px;transform:none;bottom:calc(150px + var(--sab))}
+}
+/* ===== v11 牌河 / 記牌面板 ===== */
+#riverBtn{position:absolute;left:10px;top:calc(58px + var(--sat));padding:0 13px;height:38px;pointer-events:auto;z-index:3}
+#river{position:fixed;inset:0;z-index:12;display:none;align-items:flex-end;justify-content:center;background:rgba(2,10,8,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#river.on{display:flex}
+#river .sheet{width:min(100%,560px);max-height:86vh;overflow-y:auto;padding:14px 14px calc(18px + var(--sab));border-radius:22px 22px 0 0;background:linear-gradient(180deg,#14352a,#0a1d16);border:2px solid var(--gold);border-bottom:0;box-shadow:0 -12px 40px rgba(0,0,0,.6);animation:rvup .28s cubic-bezier(.2,1.1,.4,1);touch-action:pan-y;-webkit-overflow-scrolling:touch}
+@keyframes rvup{from{transform:translateY(60px);opacity:0}}
+#river .rh{display:flex;align-items:center;gap:10px;margin-bottom:8px}#river .rh b{flex:1;font:900 18px var(--serif);color:var(--gold);letter-spacing:.14em}
+#river .rx{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--line);background:var(--glass);color:var(--ink);font:900 18px var(--serif);cursor:pointer;padding:0}
+#river .tabs{display:flex;gap:6px;margin-bottom:10px}#river .tabs button{flex:1;padding:8px 4px;border-radius:12px;border:1.5px solid rgba(242,200,103,.25);background:rgba(255,255,255,.05);color:var(--ink);font:900 13px inherit;font-family:inherit;cursor:pointer}#river .tabs button.on{background:linear-gradient(180deg,#ffe58a,#d9a02f);color:#3a2400}
+.rv{margin:0 0 10px;padding:8px 8px 6px;border-radius:12px;background:rgba(0,0,0,.25)}.rv.me{box-shadow:inset 0 0 0 1.5px rgba(242,200,103,.5)}
+.rv .rn{display:flex;align-items:center;gap:8px;font:900 13px inherit;font-family:inherit;margin-bottom:5px}.rv .rn small{color:var(--mute);font-weight:700}.rv .rn em{font-style:normal;background:var(--gold);color:#3a2400;border-radius:8px;padding:0 6px;font-size:11px}
+.rv .rt{display:flex;flex-wrap:wrap;gap:3px}.rv .rt img{width:25px;height:34px;border-radius:3px;background:#fffaf0;box-shadow:0 2px 0 #17744a;display:block}
+.rv .rt img.last{outline:2.5px solid #ffe36b;outline-offset:1px;box-shadow:0 0 10px #ffd23f;animation:ahbob 1.2s ease-in-out infinite}
+.rv .rt .mg{display:flex;gap:1px;padding:2px;border-radius:5px;background:rgba(255,255,255,.12);margin-right:4px}.rv .rt .mg img{width:20px;height:27px}
+.rv .empty{color:var(--mute);font-size:12px;font-weight:700}
+.rem .g{margin:0 0 8px}.rem .g>small{display:block;font:900 12px inherit;font-family:inherit;color:var(--gold);letter-spacing:.2em;margin:0 0 4px 2px}
+.rem .gr{display:grid;grid-template-columns:repeat(9,1fr);gap:4px}
+.rem .c{position:relative}.rem .c img{display:block;width:100%;aspect-ratio:3/4;object-fit:fill;border-radius:4px;background:#fffaf0;box-shadow:0 2px 0 #17744a}
+.rem .c i{position:absolute;right:-3px;top:-6px;min-width:16px;height:16px;border-radius:8px;background:var(--gold);color:#3a2400;font:900 11px/16px 'Noto Sans TC',sans-serif;text-align:center;font-style:normal;padding:0 3px;box-shadow:0 1px 3px rgba(0,0,0,.5)}
+.rem .c.z img{opacity:.28}.rem .c.z i{background:#777;color:#eee}.rem .c.hot i{background:#ff7a5c;color:#fff}
+.rem .hint{font-size:11px;color:var(--mute);font-weight:700;margin:2px 0 8px;line-height:1.5}
 </style>
 <style id="funcss">.fun-ban{position:fixed;left:50%;top:max(14px,env(safe-area-inset-top));z-index:99;display:flex;gap:12px;align-items:center;min-width:240px;max-width:92vw;padding:10px 18px 10px 12px;border-radius:18px;background:linear-gradient(180deg,#3a2b10,#1f1708);border:2px solid #f3c453;color:#fff4d6;box-shadow:0 12px 30px rgba(0,0,0,.5),0 0 24px rgba(243,196,83,.35);transform:translate(-50%,-140%);transition:transform .38s cubic-bezier(.2,1.3,.4,1);pointer-events:none;font-family:inherit}
 .fun-ban.on{transform:translate(-50%,0)}
@@ -263,6 +309,7 @@ body.big #tip{bottom:calc(66px + var(--sab));font-size:14px}
 .fun-seg button:active{transform:scale(.97)}
 .fun-seg button.on{border-color:#f3c453;background:rgba(243,196,83,.2);box-shadow:0 4px 12px rgba(0,0,0,.25)}
 .fun-row{display:flex;gap:10px}.fun-row .btn{flex:1;margin-top:0}
+.fun-compact{margin-top:8px}.fun-wrap{width:100%}
 </style>
 <script id="funjs">/* FUN · 共用成就 / 等級 / 每日挑戰模組(整個遊戲大廳通用) */
 (function(){
@@ -292,14 +339,17 @@ function panel(){let o=$('funOv');if(!o){o=document.createElement('div');o.id='f
  o.innerHTML='<div class="fun-card"><h3>🏆 成就</h3><p class="fun-s">已解鎖 '+n+' / '+DEFS.length+(di.streak?' · 每日挑戰連續 '+di.streak+' 天':'')+'</p><div class="fun-l">'+DEFS.map(d=>{const u=S.a[d.id];return'<div class="fun-i'+(u?' u':'')+'"><i>'+(u?d.ic:'🔒')+'</i><div><b>'+d.name+'</b><small>'+d.desc+'</small></div></div>';}).join('')+'</div><button class="fun-x">關閉</button></div>';
  o.querySelector('.fun-x').onclick=()=>o.classList.remove('on');o.classList.add('on');}
 function anchor(card){const st=card.querySelector('.stats');if(st&&st.parentNode===card)return st;const pb=$('playBtn')||$('startBtn');let n=pb;while(n&&n.parentNode!==card)n=n.parentNode;return n||null;}
-function mount(opts){opts=opts||{};const how=$('howBtn');const card=how&&how.closest('.card,.panel');if(!card||$('funChip'))return;
- const chipEl=document.createElement('div');chipEl.id='funChip';chipEl.innerHTML='<b></b><span><em></em></span><small></small>';
- card.insertBefore(chipEl,anchor(card));
- const row=document.createElement('div');row.className='row fun-row';
+function buildRow(row,opts){
  if(opts.daily){const b=document.createElement('button');b.className='btn ghost g';b.id='dailyBtn';b.type='button';b.onclick=opts.daily.onclick;row.appendChild(b);W.FUN._db=b;dailyLabel(opts.daily.label);}
  const a=document.createElement('button');a.className='btn ghost g';a.id='achBtn';a.type='button';a.textContent='🏆 成就';a.onclick=panel;row.appendChild(a);
+}
+function mount(opts){opts=opts||{};const how=$('howBtn');const card=how&&how.closest('.card,.panel,#startBox,.box,.menu');if(!card||$('funChip'))return;
+ if(opts.compact){const row0=document.createElement('div');row0.className='row fun-row fun-compact';buildRow(row0,opts);const pr=how.parentNode;if(pr.parentNode===card){const wrap=document.createElement('div');wrap.className='fun-wrap';card.insertBefore(wrap,pr);wrap.appendChild(pr);wrap.appendChild(row0);}else pr.after(row0);return;}
+ const chipEl=document.createElement('div');chipEl.id='funChip';chipEl.innerHTML='<b></b><span><em></em></span><small></small>';
+ card.insertBefore(chipEl,anchor(card));
+ const row=document.createElement('div');row.className='row fun-row';buildRow(row,opts);
  card.appendChild(row);chip();}
-function segment(items,def,onchange,key){const how=$('howBtn');const card=how&&how.closest('.card,.panel');if(!card)return;let cur=def;try{const v=localStorage.getItem(key);if(v!==null&&items.some(i=>String(i[0])===v))cur=isNaN(+v)?v:+v;}catch(e){}
+function segment(items,def,onchange,key){const how=$('howBtn');const card=how&&how.closest('.card,.panel,#startBox,.box,.menu');if(!card)return;let cur=def;try{const v=localStorage.getItem(key);if(v!==null&&items.some(i=>String(i[0])===v))cur=isNaN(+v)?v:+v;}catch(e){}
  const d=document.createElement('div');d.className='fun-seg';
  items.forEach(([v,t,sm])=>{const b=document.createElement('button');b.type='button';b.innerHTML=t+(sm?'<small>'+sm+'</small>':'');b.className=v===cur?'on':'';b.onclick=()=>{[...d.children].forEach(x=>x.classList.toggle('on',x===b));try{localStorage.setItem(key,v);}catch(e){}onchange(v);};d.appendChild(b);});
  const ch=$('funChip');card.insertBefore(d,ch||anchor(card));onchange(cur);}
@@ -321,8 +371,9 @@ W.FUN={segment,init,unlock,xp,mount,panel,banner,dailyInfo,dailyDone,dailySeed,r
  <div id="dock"></div>
  <div class="chip" id="c0"><div class="av"><span class="ch"></span><span class="w"></span></div><div class="meta"><span class="n"></span><span class="p"></span></div><span class="f"></span></div>
  <div id="hand"><div id="hm"></div><div id="hg"></div></div><div id="lastc"><img alt=""><div class="t"><small></small><b></b></div></div><div id="waitbar"><b>聽牌</b><span id="wt"></span></div><div id="acts"></div><div id="tip"></div>
- <div id="tools"><button class="tb" id="bigBtn" title="大牌手牌列 / 3D 手牌" style="min-width:46px;padding:0 10px">🔍</button><button class="tb" id="hintBtn">💡 提示</button></div>
+ <button class="tb" id="riverBtn" title="牌河與記牌">🀫 牌河</button><div id="tools"><button class="tb" id="bigBtn" title="大牌手牌列 / 3D 手牌" style="min-width:46px;padding:0 10px">🔍</button><button class="tb" id="hintBtn">💡 提示</button></div>
 </div>
+<div id="river"><div class="sheet"><div class="rh"><b>牌河 ・ 記牌</b><button class="rx" id="riverX">✕</button></div><div class="tabs"><button data-t="r" class="on">各家牌河</button><button data-t="m">剩餘牌數</button></div><div id="rbody"></div></div></div>
 <div id="call"><div class="flash"></div><div class="rays"></div><div class="ring"></div><div class="ring r2"></div><div class="sparks"></div><div class="wrap"><b></b><small></small></div></div>
 <div id="toast"></div>
 <div class="ov on" id="start"><div class="panel">
@@ -513,10 +564,12 @@ R.setPixelRatio(Math.min(devicePixelRatio||1,2));R.shadowMap.enabled=true;R.shad
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x0a1612);scene.fog=new THREE.Fog(0x0a1612,22,44);
 const cam=new THREE.PerspectiveCamera(36,1,.1,100);
 const camGoal={p:new THREE.Vector3(),l:new THREE.Vector3()},camLook=new THREE.Vector3(0,.6,0);let titleMode=true;
-function resize(){const w=innerWidth,h=innerHeight,asp=w/h;R.setSize(w,h,false);cam.aspect=asp;
+function isLS(){return innerHeight<560&&innerWidth/innerHeight>1.2;}
+function resize(){const w=innerWidth,h=innerHeight,asp=w/h;R.setSize(w,h,false);cam.aspect=asp;const hs=(isLS()&&document.body.classList.contains('big'))?80:0;
  const t=Math.tan(cam.fov*Math.PI/360),tilt=(asp<.8?57:56)*Math.PI/180;
- const dW=(asp<.8?10.4:12.4)/2/(t*asp),dH=(asp<.8?13:13.2)/2/t;const d=Math.max(dW,dH);const lz=asp<.8?-1.4:1.5;
- camGoal.p.set(0,d*Math.sin(tilt),lz+d*Math.cos(tilt));camGoal.l.set(0,0,lz);cam.updateProjectionMatrix();}
+ const dW=(asp<.8?10.4:12.4)/2/(t*asp),dH=(asp<.8?13:13.2)*(h/(h-hs))/2/t;const d=Math.max(dW,dH);const lz=asp<.8?-1.4:1.5;
+ camGoal.p.set(0,d*Math.sin(tilt),lz+d*Math.cos(tilt));camGoal.l.set(0,0,lz);if(hs)cam.setViewOffset(w,h,0,hs/2,w,h);else cam.clearViewOffset();cam.updateProjectionMatrix();}
+function snapCamSoft(){}
 function snapCam(){cam.position.copy(camGoal.p);camLook.copy(camGoal.l);cam.lookAt(camLook);}
 addEventListener('resize',resize);
 scene.add(new THREE.HemisphereLight(0xfff3dd,0x14281e,1.0));
@@ -809,14 +862,14 @@ function waitRefresh(){const wb=$('waitbar'),P=pl[0];if(!wb||!P||!P.hand)return{
  else{wb.classList.remove('on');if(n===base+1&&!titleMode&&!gameOver){const c=cntOf(P.hand);const done={};P.hand.forEach(t=>{if(done[t.t])return;done[t.t]=1;c[t.t]--;if(waitList(c,nm).length)ten.push(t.t);c[t.t]++;});}}
  return{ten};}
 /* ===== 大牌手牌列(手機好讀) ===== */
-let bigOn=true;try{const v=localStorage.getItem('mj_big');bigOn=v===null?(innerWidth<760):v==='1';}catch(e){}
-function applyBig(){document.body.classList.toggle('big',bigOn&&!THUMB);$('bigBtn').textContent=bigOn?'🔍':'🀄';}
+let bigOn=true;try{const v=localStorage.getItem('mj_big');bigOn=v===null?(innerWidth<760||innerHeight<560):v==='1';}catch(e){}
+function applyBig(){document.body.classList.toggle('big',bigOn&&!THUMB);try{resize();snapCamSoft();}catch(e){}$('bigBtn').textContent=bigOn?'🔍':'🀄';}
 function stripRefresh(){const hg=$('hg'),hm=$('hm');if(!hg||!pl[0])return;const wr=waitRefresh();if(!document.body.classList.contains('big')){$('waitbar').style.bottom='';$('acts').style.bottom='';return;}const P=pl[0];
  const conc=P.hand.filter(t=>t!==P.drawn).sort((a,b)=>a.t-b.t);const all=P.drawn?conc.concat([P.drawn]):conc;
  hg.innerHTML='';all.forEach(t=>{const b=document.createElement('button');b.className='ht'+(t===selTile?' sel':'')+(t===hintTile?' hint':'')+(t===P.drawn?' nw':'')+(wr.ten.indexOf(t.t)>=0?' ten':'');const im=document.createElement('img');im.src=tileImg(t.t);im.alt=TN[t.t];b.appendChild(im);b.onclick=()=>{ac();tapTile(t);};hg.appendChild(b);});
  hm.innerHTML=P.melds.map(m=>'<div class="mg">'+m.tiles.map(t=>'<img src="'+tileImg(t.t)+'">').join('')+'</div>').join('');
- const n=all.length;hg.style.gridTemplateColumns='repeat('+(n>9?9:Math.max(n,6))+',1fr)';
- const hh=$('hand').offsetHeight||110;$('waitbar').style.bottom='calc('+(92+hh+8)+'px + var(--sab))';$('acts').style.bottom='calc('+(92+hh+8+48)+'px + var(--sab))';}
+ const n=all.length;const LS=isLS();hg.style.gridTemplateColumns='repeat('+(LS?Math.max(n,14):(n>9?9:Math.max(n,6)))+',1fr)';
+ const hh=$('hand').offsetHeight||110,bs=LS?10:92;$('waitbar').style.bottom='calc('+(bs+hh+8)+'px + var(--sab))';$('acts').style.bottom='calc('+(bs+hh+8+(LS?0:48))+'px + var(--sab))';}
 /* ===== 規則輔助 ===== */
 function meldCnt(P){const c=Array(34).fill(0);P.melds.forEach(m=>m.tiles.forEach(t=>c[t.t]++));return c;}
 function visibleCnt(s){const c=cntOf(pl[s].hand);pl.forEach(P=>{P.disc.forEach(t=>c[t.t]++);P.melds.forEach(m=>m.tiles.forEach(t=>{if(!(P.i===s&&false))c[t.t]++;}));});return c;}
@@ -987,6 +1040,19 @@ try{$('best').textContent=(+localStorage.getItem('mj_best')||0)||'—';}catch(e)
 $('fan').innerHTML=[31,32,33,29,27].map((t,i)=>'<img src="'+tileImg(t)+'" style="--r:'+((i-2)*7)+'deg;margin-top:'+Math.abs(i-2)*3+'px">').join('');
 $('howBtn').onclick=()=>$('how').classList.add('on');$('howX').onclick=()=>$('how').classList.remove('on');
 $('bigBtn').onclick=()=>{bigOn=!bigOn;try{localStorage.setItem('mj_big',bigOn?'1':'0');}catch(e){}applyBig();layoutSeat(0,.01);};applyBig();
+
+/* ===== v11 牌河 / 記牌 ===== */
+let rvTab='r';
+function rvHTML(){const seen=seenCnt();if(rvTab==='m'){const G=[['萬子',0,9],['筒子',9,18],['條子',18,27],['字牌',27,34]];let o='<div class="rem"><div class="hint">數字是「還沒現身的張數」(已扣掉你的手牌、牌河和副露)。灰色代表 4 張都出現了,橘色代表只剩 1 張。</div>';
+  G.forEach(([n,a,b])=>{o+='<div class="g"><small>'+n+'</small><div class="gr">';for(let t=a;t<b;t++){const r=Math.max(0,4-seen[t]);o+='<div class="c'+(r?'':' z')+(r===1?' hot':'')+'"><img src="'+tileImg(t)+'" alt="'+TN[t]+'"><i>'+r+'</i></div>';}o+='</div></div>';});return o+'</div>';}
+ let o='';pl.forEach((P,s)=>{const lastIdx=(lastDisc&&lastDisc.s===s&&P.disc.length&&P.disc[P.disc.length-1]===lastDisc.t)?P.disc.length-1:-1;o+='<div class="rv'+(s===0?' me':'')+'"><div class="rn">'+P.name+(s===0?'(你)':'')+(s===dealer?'<em>莊</em>':'')+'<small>河 '+P.disc.length+' 張'+(P.melds.length?' ・ 副露 '+P.melds.length:'')+'</small></div><div class="rt">'+
+  P.melds.map(m=>'<span class="mg">'+m.tiles.map(t=>'<img src="'+tileImg(t.t)+'" alt="">').join('')+'</span>').join('')+
+  (P.disc.length?P.disc.map((t,i)=>'<img'+(i===lastIdx?' class="last"':'')+' src="'+tileImg(t.t)+'" alt="'+TN[t.t]+'">').join(''):'<span class="empty">還沒有打牌</span>')+'</div></div>';});return o;}
+function rvOpen(){ac();$('rbody').innerHTML=rvHTML();$('river').classList.add('on');}
+$('riverBtn').onclick=rvOpen;$('riverX').onclick=()=>$('river').classList.remove('on');
+$('river').addEventListener('pointerdown',e=>{if(e.target===$('river'))$('river').classList.remove('on');});
+$('river').querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{rvTab=b.dataset.t;$('river').querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));$('rbody').innerHTML=rvHTML();});
+addEventListener('resize',()=>{try{applyBig();stripRefresh();}catch(e){}});
 $('hintBtn').onclick=()=>{if(!(uiResolve&&busy))return;ac();const t=aiDiscard(0);hintTile=t;selTile=null;layoutSeat(0,.2);stripRefresh();toast('建議打出「'+TN[t.t]+'」',1200);};
 $('sortBtn')&&($('sortBtn').onclick=()=>layoutSeat(0,.2));
 let clk=0;
