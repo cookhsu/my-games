@@ -439,23 +439,49 @@ for(let r=0;r<8;r++)for(let c=0;c<8;c++){const dark=(r+c)%2===0;const m=new THRE
  for(let i=0;i<8;i++){const ch='abcdefgh'[i],nm=String(i+1);lab(ch,i-3.5,4.34);lab(ch,i-3.5,-4.34);lab(nm,-4.34,3.5-i);lab(nm,4.34,3.5-i);}}
 const fx=n=>n-3.5,fz=n=>3.5-n;const sqPos=sq=>new THREE.Vector3((sq&7)-3.5,0,3.5-(sq>>3));
 /* ---- 棋子 ---- */
-const BASE=[[0,0],[.4,0],[.43,.025],[.43,.075],[.38,.105],[.3,.135],[.26,.17]];
-function lathe(pts,mat){const g=new THREE.LatheGeometry(pts.map(p=>new THREE.Vector2(p[0],p[1])),36);const m=new THREE.Mesh(g,mat);m.castShadow=m.receiveShadow=true;return m;}
-function ball(r,y,mat,sx,sy,sz,x,z){const m=new THREE.Mesh(new THREE.SphereGeometry(r,24,16),mat);m.position.set(x||0,y,z||0);m.scale.set(sx||1,sy||1,sz||1);m.castShadow=true;return m;}
+const BASE=[[0,0],[.37,0],[.42,.02],[.435,.06],[.41,.095],[.35,.12]];
+function lathe(pts,mat){const g=new THREE.LatheGeometry(pts.map(p=>new THREE.Vector2(Math.max(0,p[0]),p[1])),48);const m=new THREE.Mesh(g,mat);m.castShadow=m.receiveShadow=true;return m;}
+function sp(ctrl,n){const c=new THREE.SplineCurve(ctrl.map(p=>new THREE.Vector2(p[0],p[1])));return c.getPoints(n||24).map(p=>[p.x,p.y]);}
+function ball(r,y,mat,sx,sy,sz,x,z){const m=new THREE.Mesh(new THREE.SphereGeometry(r,28,20),mat);m.position.set(x||0,y,z||0);m.scale.set(sx||1,sy||1,sz||1);m.castShadow=true;return m;}
 function box(w,h,d,x,y,z,mat){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=true;return m;}
-const horseShape=(()=>{const pts=[[-.22,.12],[-.25,.3],[-.21,.5],[-.15,.68],[-.18,.86],[-.1,.99],[-.03,1.12],[.04,.99],[.15,.96],[.27,.83],[.35,.71],[.31,.62],[.21,.62],[.12,.55],[.14,.42],[.22,.28],[.25,.12]].map(p=>new THREE.Vector3(p[0],p[1]*.92,0));
- const cur=new THREE.CatmullRomCurve3(pts,true,'centripetal');const sp=cur.getPoints(90).map(p=>new THREE.Vector2(p.x,p.y));return new THREE.Shape(sp);})();
-const horseGeo=(()=>{const g=new THREE.ExtrudeGeometry(horseShape,{depth:.26,bevelEnabled:true,bevelThickness:.06,bevelSize:.05,bevelSegments:3,curveSegments:1});g.translate(0,0,-.13);g.rotateY(-Math.PI/2);g.translate(0,.08,.02);return g;})();
+function ring(r,y,tube,mat){const m=new THREE.Mesh(new THREE.TorusGeometry(r,tube||.022,10,40),mat);m.rotation.x=Math.PI/2;m.position.y=y;m.castShadow=true;return m;}
+const horseShape=(()=>{const pts=[[-.28,.14],[-.31,.36],[-.28,.62],[-.2,.86],[-.12,1.04],[-.1,1.14],[-.04,1.3],[.03,1.12],[.12,1.05],[.26,.93],[.39,.78],[.45,.66],[.44,.57],[.35,.55],[.27,.6],[.17,.58],[.12,.47],[.2,.32],[.27,.19],[.3,.14]].map(p=>new THREE.Vector3(p[0],p[1],0));
+ const cur=new THREE.CatmullRomCurve3(pts,true,'centripetal');const s=cur.getPoints(140).map(p=>new THREE.Vector2(p.x,p.y));return new THREE.Shape(s);})();
+const horseGeo=(()=>{const g=new THREE.ExtrudeGeometry(horseShape,{depth:.22,bevelEnabled:true,bevelThickness:.09,bevelSize:.07,bevelSegments:5,curveSegments:1});g.translate(0,0,-.11);g.rotateY(-Math.PI/2);return g;})();
+const darkM=new THREE.MeshStandardMaterial({color:0x0e0e12,roughness:.35});
 function buildPiece(t,mat){const g=new THREE.Group();
- if(t===1){g.add(lathe(BASE.concat([[.2,.2],[.14,.32],[.14,.42],[.23,.46],[.2,.5],[.12,.52]]),mat));g.add(ball(.2,.66,mat));}
- else if(t===4){g.add(lathe(BASE.concat([[.24,.3],[.23,.55],[.3,.62],[.34,.66],[.34,.76],[.29,.78],[0,.78]]),mat));for(let i=0;i<6;i++){const a=i/6*6.283;const b=box(.15,.13,.12,Math.sin(a)*.27,.84,Math.cos(a)*.27,mat);b.rotation.y=a;g.add(b);}}
- else if(t===2){g.add(lathe(BASE.concat([[.3,.2],[0,.2]]),mat));const h=new THREE.Mesh(horseGeo,mat);h.castShadow=h.receiveShadow=true;g.add(h);g.add(ball(.03,.93,new THREE.MeshStandardMaterial({color:0x111}),1,1,1,.17,.28));}
- else if(t===3){g.add(lathe(BASE.concat([[.2,.22],[.14,.42],[.12,.56],[.21,.6],[.17,.66],[0,.66]]),mat));g.add(ball(.2,.84,mat,1,1.5,1));g.add(ball(.06,1.2,mat));const sl=box(.04,.12,.5,0,.94,0,new THREE.MeshStandardMaterial({color:0x111}));sl.rotation.x=-.5;sl.position.z=.06;g.add(sl);}
- else if(t===5){g.add(lathe(BASE.concat([[.27,.24],[.16,.55],[.14,.78],[.25,.92],[.3,1.0],[.2,1.02],[.16,.98],[0,.98]]),mat));for(let i=0;i<8;i++){const a=i/8*6.283;g.add(ball(.05,1.06,mat,1,1,1,Math.sin(a)*.27,Math.cos(a)*.27));}g.add(ball(.1,1.14,mat));}
- else{g.add(lathe(BASE.concat([[.28,.24],[.17,.55],[.15,.85],[.26,1.0],[.3,1.06],[.24,1.12],[0,1.12]]),mat));g.add(box(.09,.34,.09,0,1.3,0,mat));g.add(box(.26,.09,.09,0,1.34,0,mat));}
+ if(t===1){ /* 兵 */
+  g.add(lathe(BASE.concat(sp([[.35,.12],[.27,.19],[.19,.32],[.14,.44]],14),[[.2,.46],[.19,.5],[.12,.52],[.1,.56],[0,.56]]),mat));
+  g.add(ring(.205,.47,.035,mat));g.add(ring(.285,.17,.02,trimM));g.add(ball(.19,.69,mat));}
+ else if(t===4){ /* 城堡 */
+  g.add(lathe(BASE.concat(sp([[.35,.12],[.27,.22],[.22,.4],[.215,.58]],16),[[.25,.62],[.32,.69],[.335,.76],[.31,.78],[.26,.77],[0,.77]]),mat));
+  g.add(ring(.285,.17,.02,trimM));g.add(ring(.225,.5,.02,trimM));
+  for(let i=0;i<6;i++){const a=i/6*6.283;const b=box(.17,.19,.11,Math.sin(a)*.275,.86,Math.cos(a)*.275,mat);b.rotation.y=a;g.add(b);}
+  const fl=new THREE.Mesh(new THREE.CylinderGeometry(.27,.27,.02,24),darkM);fl.position.y=.775;g.add(fl);}
+ else if(t===2){ /* 騎士 */
+  g.add(lathe(BASE.concat(sp([[.35,.12],[.31,.2],[.28,.26]],8),[[.27,.28],[0,.29]]),mat));g.add(ring(.285,.17,.02,trimM));
+  const h=new THREE.Group();h.position.y=.2;h.scale.setScalar(.92);const hm=new THREE.Mesh(horseGeo,mat);hm.castShadow=hm.receiveShadow=true;h.add(hm);
+  for(let k=0;k<7;k++){const y=.38+k*.1,x=-.3+(k<4?0:(k-3)*.045)+k*(-.0);const m=ball(.065,y,mat,.5,1.1,1.0,-.32+(k>3?(k-3)*.07:0)+(k===0?.02:0),0);g.add(m);h.add(m);}
+  h.add(ball(.036,.94,darkM,1,1,1,.115,.15));h.add(ball(.036,.94,darkM,1,1,1,.115,-.15));
+  h.add(ball(.03,.66,darkM,1,1,1,.4,.07));h.add(ball(.03,.66,darkM,1,1,1,.4,-.07));
+  const bn=ball(.035,.9,mat);g.add(h);}
+ else if(t===3){ /* 主教 */
+  g.add(lathe(BASE.concat(sp([[.35,.12],[.27,.22],[.19,.42],[.15,.64],[.135,.82]],18),[[.22,.85],[.2,.89],[.13,.91],[.1,.95],[0,.95]]),mat));
+  g.add(ring(.215,.86,.035,mat));g.add(ring(.285,.17,.02,trimM));g.add(ring(.185,.4,.018,trimM));
+  g.add(ball(.215,1.2,mat,1,1.55,1));g.add(ball(.06,1.58,mat));g.add(ring(.145,.93,.015,trimM));
+  const sl=box(.03,.2,.3,0,1.26,.0,darkM);sl.rotation.z=-.5;sl.position.x=.02;g.add(sl);}
+ else if(t===5){ /* 皇后 */
+  g.add(lathe(BASE.concat(sp([[.35,.12],[.27,.22],[.2,.45],[.15,.75],[.14,.96]],20),[[.2,1.02],[.29,1.12],[.335,1.22],[.31,1.25],[.2,1.24],[0,1.24]]),mat));
+  g.add(ring(.285,.17,.02,trimM));g.add(ring(.205,.42,.02,trimM));g.add(ring(.17,1.04,.018,trimM));g.add(ring(.15,.98,.03,mat));
+  for(let i=0;i<8;i++){const a=i/8*6.283,sx=Math.sin(a),sz=Math.cos(a);const c=new THREE.Mesh(new THREE.ConeGeometry(.055,.2,12),mat);c.position.set(sx*.3,1.33,sz*.3);c.rotation.z=-sx*.22;c.rotation.x=sz*.22;c.castShadow=true;g.add(c);g.add(ball(.045,1.45,mat,1,1,1,sx*.33,sz*.33));}
+  g.add(ball(.105,1.36,trimM));}
+ else{ /* 國王 */
+  g.add(lathe(BASE.concat(sp([[.35,.12],[.27,.22],[.2,.45],[.15,.78],[.14,.98]],20),[[.2,1.04],[.28,1.14],[.3,1.26],[.27,1.31],[.2,1.3],[0,1.3]]),mat));
+  g.add(ring(.285,.17,.02,trimM));g.add(ring(.205,.42,.02,trimM));g.add(ring(.17,1.06,.018,trimM));g.add(ring(.15,1.0,.03,mat));
+  g.add(ball(.1,1.34,mat,1,.8,1));g.add(box(.1,.4,.1,0,1.58,0,mat));g.add(box(.3,.1,.1,0,1.62,0,mat));g.add(ball(.05,1.8,trimM));}
  g.traverse(o=>{if(o.isMesh){o.castShadow=true;}});return g;}
 const TPL={};function getTpl(t,col){const k=t+'_'+col;if(!TPL[k]){TPL[k]=buildPiece(t,col>0?whiteM:blackM);}return TPL[k];}
-function mkPiece(v,sq){const t=Math.abs(v),col=v>0?1:-1;const g=new THREE.Group();g.add(getTpl(t,col).clone());g.scale.setScalar(1.0);if(t===2)g.rotation.y=col>0?Math.PI:0;g.userData={t,col,sq,base:g.rotation.y};const p=sqPos(sq);g.position.copy(p);piecesG.add(g);return g;}
+function mkPiece(v,sq){const t=Math.abs(v),col=v>0?1:-1;const g=new THREE.Group();g.add(getTpl(t,col).clone());g.scale.setScalar(1.0);if(t===2)g.rotation.y=col>0?Math.PI-.7:.7;g.userData={t,col,sq,base:g.rotation.y};const p=sqPos(sq);g.position.copy(p);piecesG.add(g);return g;}
 const piecesG=new THREE.Group();scene.add(piecesG);
 /* ---- 高亮 ---- */
 const glowMats={sel:new THREE.MeshBasicMaterial({color:0xf2c867,transparent:true,opacity:.55,depthWrite:false,toneMapped:false}),last:new THREE.MeshBasicMaterial({color:0xbfe85a,transparent:true,opacity:.34,depthWrite:false,toneMapped:false}),chk:new THREE.MeshBasicMaterial({color:0xff3b2a,transparent:true,opacity:.7,depthWrite:false,toneMapped:false}),hint:new THREE.MeshBasicMaterial({color:0x4fd8ff,transparent:true,opacity:.6,depthWrite:false,toneMapped:false})};
