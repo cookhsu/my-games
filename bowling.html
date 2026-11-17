@@ -312,6 +312,38 @@ const pinTex=(()=>{const c=document.createElement('canvas');c.width=4;c.height=2
 const pinMat=new T.MeshPhongMaterial({map:pinTex,shininess:80,specular:0xffffff});
 const pins=[];const pinPos=[];for(let r=0;r<4;r++)for(let i=0;i<=r;i++)pinPos.push([(i-r/2)*PSP,PZ0-r*PSP*.866]);
 for(let i=0;i<10;i++){const g=new T.Group(),m=new T.Mesh(pinGeo,pinMat);g.add(m);scene.add(g);pins.push({g,x:pinPos[i][0],z:pinPos[i][1],vx:0,vz:0,fallen:false,gone:false,ang:0,ax:0,az:0,sink:0,hide:false,up:true,drop:0});}
+
+/* ---------- 保齡球館環境(外觀) ---------- */
+(function(){
+ const L=LZ0-LZ1,CZ=(LZ0+LZ1)/2;
+ const mk=(w,h,d,col,x,y,z,basic)=>{const m=new T.Mesh(new T.BoxGeometry(w,h,d),basic?new T.MeshBasicMaterial({color:col}):new T.MeshLambertMaterial({color:col}));m.position.set(x,y,z);scene.add(m);return m;};
+ /* 地毯 */
+ const cp=document.createElement('canvas');cp.width=cp.height=256;{const x=cp.getContext('2d');x.fillStyle='#120a22';x.fillRect(0,0,256,256);const cs=['#ff3ad0','#3ad8ff','#ffd24a','#6aff9a'];for(let i=0;i<14;i++){x.strokeStyle=cs[i%4];x.globalAlpha=.55;x.lineWidth=3;const a=Math.random()*256,b=Math.random()*256,r=14+Math.random()*30;x.beginPath();if(i%3===0)x.arc(a,b,r,0,7);else if(i%3===1)x.rect(a,b,r,r);else{x.moveTo(a,b);x.lineTo(a+r,b+r*.5);x.lineTo(a+r*.3,b+r*1.2);x.closePath();}x.stroke();}x.globalAlpha=1;}
+ const ct=new T.CanvasTexture(cp);ct.wrapS=ct.wrapT=T.RepeatWrapping;ct.repeat.set(6,10);ct.colorSpace=T.SRGBColorSpace;
+ const fl=new T.Mesh(new T.PlaneGeometry(28,L+14).rotateX(-Math.PI/2),new T.MeshLambertMaterial({map:ct}));fl.position.set(0,-.14,CZ-2);scene.add(fl);
+ /* 鄰道 */
+ for(const s of[-1,1]){const cx=s*(HALF+GUT+.5+HALF+GUT+.1);
+  const ln=new T.Mesh(new T.PlaneGeometry(LW,L).rotateX(-Math.PI/2),new T.MeshPhongMaterial({map:laneTex,shininess:60,specular:0x886644,emissive:0x1a1208}));ln.position.set(cx,-.01,CZ);scene.add(ln);
+  for(const g of[-1,1]){mk(GUT,.12,L,0x232030,cx+g*(HALF+GUT/2),-.06,CZ);}
+  mk(.1,.5,L,0x2a2438,cx+s*(HALF+GUT+.05),.1,CZ);
+  for(let i=0;i<4;i++)for(let j=0;j<=i;j++){const p=new T.Mesh(pinGeo,pinMat);p.position.set(cx+(j-i/2)*PSP,0,PZ0-i*PSP*.866);scene.add(p);}
+  const ln2=mk(.05,.06,L,s<0?0xff3ad0:0x3ad8ff,cx-s*(HALF+GUT+.3),.4,CZ,true);}
+ /* 天花板 + 燈條 */
+ mk(28,.2,L+14,0x0a0614,0,5.6,CZ-2);
+ for(let z=2;z>LZ1;z-=3.5){mk(3.4,.08,.22,0xb8a888,0,5.47,z,true);mk(.12,.12,.9,[0xff3ad0,0x3ad8ff][(z*10|0)%2?1:0],-4.8,5.4,z,true);mk(.12,.12,.9,[0x3ad8ff,0xff3ad0][(z*10|0)%2?1:0],4.8,5.4,z,true);}
+ /* 側牆 */
+ for(const s of[-1,1]){mk(.3,5.7,L+14,0x0e0a1a,s*9.5,2.7,CZ-2);
+  for(const[y,c]of[[1.2,0xff3ad0],[2.4,0x3ad8ff],[3.6,0xffd24a]])mk(.08,.1,L+10,c,s*9.3,y,CZ-2,true);
+  for(let z=0;z>LZ1;z-=5)mk(.1,1.6,1.6,0x1c1430,s*9.3,2.6,z);}
+ /* 球瓶機罩 */
+ const hood=mk(LW+2.4,.9,2.0,0x1a1626,0,2.5,PZ0-3.8);mk(LW+2.4,.08,.08,0xc8ccd8,0,2.0,PZ0-2.78);
+ mk(.3,.2,.3,0xff3a3a,-1.4,3.05,PZ0-3.8,true);mk(.3,.2,.3,0x6aff9a,1.4,3.05,PZ0-3.8,true);
+ /* 吊掛螢幕 */
+ for(const s of[-1,1]){const sx=s*3.6,sz=-12;const fr=mk(2.2,1.3,.2,0x14101c,sx,4.2,sz);const sc=document.createElement('canvas');sc.width=256;sc.height=150;const x=sc.getContext('2d');const g=x.createLinearGradient(0,0,256,150);g.addColorStop(0,s<0?'#ff3ad0':'#3ad8ff');g.addColorStop(1,'#220a44');x.fillStyle=g;x.fillRect(0,0,256,150);x.fillStyle='#fff';x.font='900 46px sans-serif';x.textAlign='center';x.fillText(s<0?'STRIKE!':'SPARE!',128,86);
+  const st=new T.CanvasTexture(sc);st.colorSpace=T.SRGBColorSpace;const scr=new T.Mesh(new T.PlaneGeometry(2.0,1.14),new T.MeshBasicMaterial({map:st}));scr.position.set(sx,4.2,sz+.11);scene.add(scr);mk(.05,1.2,.05,0x3a3448,sx,5.0,sz);}
+ /* 犯規線 */
+ mk(LW,.012,.035,0xd83a3a,0,.006,0,true);
+})();
 /* 球 */
 const ballTexC=(c1,c2)=>{const c=document.createElement('canvas');c.width=256;c.height=128;const x=c.getContext('2d');x.fillStyle=c1;x.fillRect(0,0,256,128);for(let i=0;i<60;i++){x.strokeStyle=c2;x.globalAlpha=.25;x.lineWidth=2+Math.random()*4;x.beginPath();x.moveTo(Math.random()*256,Math.random()*128);x.bezierCurveTo(Math.random()*256,Math.random()*128,Math.random()*256,Math.random()*128,Math.random()*256,Math.random()*128);x.stroke();}x.globalAlpha=1;const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;return t;};
 const BALLS=[['#2a62ff','#9ad0ff'],['#d8263c','#ffb0b8'],['#2ab86a','#b0ffd0'],['#8a2ad8','#e0b0ff']];

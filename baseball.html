@@ -375,7 +375,7 @@ adTex.wrapS=THREE.RepeatWrapping;
  const tp=[],ti=[];for(let i=0;i<=N;i++){const a=A0+(A1-A0)*i/N,r=fenceR(a),x=r*Math.sin(a),z=-r*Math.cos(a);tp.push(x,H,z,x,H+.35,z);}for(let i=0;i<N;i++){const k=i*2;ti.push(k,k+1,k+2,k+1,k+3,k+2);}
  const tg=new THREE.BufferGeometry();tg.setAttribute('position',new THREE.Float32BufferAttribute(tp,3));tg.setIndex(ti);tg.computeVertexNormals();scene.add(new THREE.Mesh(tg,new THREE.MeshStandardMaterial({color:0xffd24a,emissive:0x664400,side:THREE.DoubleSide})));
  // 觀眾席(三層階梯)
- const crowd=ctex(512,128,(g,w,h)=>{g.fillStyle='#1a1d33';g.fillRect(0,0,w,h);for(let i=0;i<3200;i++){const hue=Math.random()*360|0;g.fillStyle='hsl('+hue+',55%,'+(35+Math.random()*30|0)+'%)';g.beginPath();g.arc(Math.random()*w,Math.random()*h,1.5+Math.random()*2.2,0,7);g.fill();}});crowd.wrapS=crowd.wrapT=THREE.RepeatWrapping;crowd.repeat.set(6,1);
+ const crowd=ctex(512,128,(g,w,h)=>{g.fillStyle='#1a1d33';g.fillRect(0,0,w,h);const rows=16;for(let r=0;r<rows;r++){const y=r*h/rows;g.fillStyle=r%2?'#262a46':'#1e2240';g.fillRect(0,y,w,h/rows);for(let i=0;i<70;i++){const hue=[0,35,50,210,215,0,330][Math.random()*7|0];const L=30+Math.random()*28|0;g.fillStyle='hsl('+hue+',45%,'+L+'%)';g.beginPath();g.arc(Math.random()*w,y+h/rows*.6,2+Math.random()*1.6,0,7);g.fill();g.fillStyle='hsl(25,45%,'+(55+Math.random()*20|0)+'%)';g.beginPath();g.arc(Math.random()*w,y+h/rows*.25,1.4,0,7);g.fill();}g.fillStyle='rgba(0,0,0,.3)';g.fillRect(0,y+h/rows-2,w,2);}});crowd.wrapS=crowd.wrapT=THREE.RepeatWrapping;crowd.repeat.set(6,1);
  for(let tier=0;tier<3;tier++){const sp=[],su=[],si=[];const r0=0,rise=9,run=13;
   for(let i=0;i<=N;i++){const a=A0+(A1-A0)*i/N,r=fenceR(a)+2+tier*run,r2=r+run;
    sp.push(r*Math.sin(a),H+tier*rise+(tier?1.5:0),-r*Math.cos(a), r2*Math.sin(a),H+(tier+1)*rise,-r2*Math.cos(a));su.push(i/N*2,0,i/N*2,1);}
@@ -392,15 +392,24 @@ adTex.wrapS=THREE.RepeatWrapping;
 /* ---- 人物 ---- */
 function mkPerson(shirt,pants,cap,opts){opts=opts||{};const g=new THREE.Group();const M=c=>new THREE.MeshStandardMaterial({color:c,roughness:.6});
  const add=(geo,mat,par,x,y,z)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=true;(par||g).add(m);return m;};
+ const skin=M(0xe8b88e),shM=M(shirt),pnM=M(pants),capM=M(cap),wh=M(0xf4f4f4),dk=M(0x1a1a20);
  const legL=new THREE.Group(),legR=new THREE.Group();legL.position.set(-.1,.82,0);legR.position.set(.1,.82,0);g.add(legL,legR);
- add(new THREE.CapsuleGeometry(.085,.55,4,8),M(pants),legL,0,-.4,0);add(new THREE.CapsuleGeometry(.085,.55,4,8),M(pants),legR,0,-.4,0);
- add(new THREE.BoxGeometry(.16,.09,.3),M(0x222222),legL,0,-.84,.06);add(new THREE.BoxGeometry(.16,.09,.3),M(0x222222),legR,0,-.84,.06);
- const torso=add(new THREE.CapsuleGeometry(.19,.42,4,10),M(shirt),g,0,1.18,0);
- const head=add(new THREE.SphereGeometry(.14,14,12),M(0xf0c9a0),g,0,1.66,0);
- const capM=add(new THREE.SphereGeometry(.152,14,10,0,Math.PI*2,0,Math.PI*.55),M(cap),g,0,1.69,0);add(new THREE.BoxGeometry(.2,.02,.2),M(cap),g,0,1.69,.17);
+ for(const lg of[legL,legR]){add(new THREE.CapsuleGeometry(.088,.5,4,8),pnM,lg,0,-.36,0);
+  add(new THREE.CylinderGeometry(.075,.08,.2,10),capM,lg,0,-.7,0);/* 球襪 */
+  add(new THREE.CylinderGeometry(.082,.082,.04,10),wh,lg,0,-.6,0);
+  const sh=add(new THREE.SphereGeometry(.09,10,8),dk,lg,0,-.82,.07);sh.scale.set(1,.55,1.9);}
+ add(new THREE.CylinderGeometry(.205,.2,.06,12),dk,g,0,.92,0);/* 皮帶 */
+ const torso=add(new THREE.CapsuleGeometry(.19,.42,4,10),shM,g,0,1.18,0);
+ add(new THREE.CylinderGeometry(.16,.19,.05,12),wh,g,0,1.45,0);/* 領口白邊 */
+ const nb=add(new THREE.PlaneGeometry(.2,.2),new THREE.MeshBasicMaterial({map:numTex(opts.num||((Math.random()*98|0)+1),opts.numCol||'#fff')}),g,0,1.2,-.205);nb.rotation.y=Math.PI;nb.castShadow=false;
+ const head=add(new THREE.SphereGeometry(.14,14,12),skin,g,0,1.66,0);
+ for(const s of[-1,1]){add(new THREE.SphereGeometry(.018,6,5),dk,g,s*.055,1.67,.125);add(new THREE.SphereGeometry(.03,6,5),skin,g,s*.14,1.65,0);}
+ add(new THREE.SphereGeometry(.022,6,5),M(0xd8a07a),g,0,1.64,.14);
+ const topM=add(new THREE.SphereGeometry(.152,14,10,0,Math.PI*2,0,Math.PI*.55),capM,g,0,1.69,0);add(new THREE.CylinderGeometry(.11,.11,.015,12,1,false,-Math.PI*.5,Math.PI),capM,g,0,1.695,.12).scale.set(1,1,1.1);
  const armL=new THREE.Group(),armR=new THREE.Group();armL.position.set(-.25,1.42,0);armR.position.set(.25,1.42,0);g.add(armL,armR);
- add(new THREE.CapsuleGeometry(.065,.5,4,8),M(shirt),armL,0,-.3,0);add(new THREE.CapsuleGeometry(.065,.5,4,8),M(shirt),armR,0,-.3,0);
+ for(const a of[armL,armR]){add(new THREE.CapsuleGeometry(.07,.32,4,8),shM,a,0,-.2,0);add(new THREE.CapsuleGeometry(.055,.2,4,8),skin,a,0,-.5,0);add(new THREE.SphereGeometry(.065,8,6),skin,a,0,-.64,0);}
  g.userData={legL,legR,armL,armR,torso,head};return g;}
+function numTex(n,col){return ctex(64,64,(g,w,h)=>{g.fillStyle=col;g.font='900 44px Arial,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(String(n),w/2,h/2+3);});}
 /* 球 + 殘影 */
 const ballTex=ctex(128,64,(g,w,h)=>{g.fillStyle='#fff';g.fillRect(0,0,w,h);g.strokeStyle='#d33';g.lineWidth=3;for(const x of[w*.25,w*.75]){g.beginPath();for(let y=0;y<=h;y+=4){g.lineTo(x+Math.sin(y*.5)*7,y);}g.stroke();}});
 const ball=new THREE.Mesh(new THREE.SphereGeometry(.085,16,12),new THREE.MeshStandardMaterial({map:ballTex,roughness:.5,emissive:0x555555}));ball.castShadow=true;ball.visible=false;scene.add(ball);
@@ -411,6 +420,7 @@ function clearTrail(){trailPts=[];trail.forEach(m=>m.visible=false);}
 /* 角色:投手、打者、野手、跑者 */
 const pitcher=mkPerson(0x1f4fa8,0xe8e8ee,0x14306e);pitcher.position.set(0,.28,MOUND[1]);scene.add(pitcher);
 const batter=mkPerson(0xc9252b,0xf2f2f6,0x8a1218);batter.position.set(-1.1,0,.35);batter.rotation.y=Math.PI*.5;scene.add(batter);
+{const hm=new THREE.MeshStandardMaterial({color:0x8a1218,roughness:.3,metalness:.2});const hl=new THREE.Mesh(new THREE.SphereGeometry(.165,16,12,0,Math.PI*2,0,Math.PI*.58),hm);hl.position.set(0,1.69,0);batter.add(hl);const fl=new THREE.Mesh(new THREE.BoxGeometry(.012,.14,.12),hm);fl.position.set(-.16,1.62,.04);batter.add(fl);const br=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,.012,12,1,false,-Math.PI*.5,Math.PI),hm);br.position.set(0,1.69,.12);batter.add(br);}
 batter.userData.armL.rotation.set(-1.15,0,.5);batter.userData.armR.rotation.set(-1.15,0,-.5);
 const bat=new THREE.Group();(function(){const m=new THREE.Mesh(new THREE.CylinderGeometry(.028,.055,1.45,12),new THREE.MeshStandardMaterial({color:0xc99a5a,roughness:.5}));m.rotation.z=Math.PI/2;m.position.x=.72;m.castShadow=true;bat.add(m);
  const kn=new THREE.Mesh(new THREE.SphereGeometry(.05,8,8),new THREE.MeshStandardMaterial({color:0x8a5a2a}));bat.add(kn);})();scene.add(bat);

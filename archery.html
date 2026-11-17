@@ -323,32 +323,52 @@ function cnv(w,h,f){const c=document.createElement('canvas');c.width=w;c.height=
 {const gt=cnv(256,256,(x,w,h)=>{x.fillStyle='#4f9a3c';x.fillRect(0,0,w,h);x.fillStyle='#5aa846';x.fillRect(0,0,w,h/2);for(let i=0;i<1400;i++){x.fillStyle='rgba('+(i%2?'30,90,20':'120,200,80')+',.12)';x.fillRect(Math.random()*w,Math.random()*h,2,3);}});gt.wrapS=gt.wrapT=T.RepeatWrapping;gt.repeat.set(30,40);
  const g=new T.Mesh(new T.PlaneGeometry(500,500),new T.MeshLambertMaterial({map:gt}));g.rotation.x=-Math.PI/2;g.position.z=-120;scene.add(g);
  const lane=new T.Mesh(new T.PlaneGeometry(9,110),new T.MeshLambertMaterial({color:0x8fcf6a}));lane.rotation.x=-Math.PI/2;lane.position.set(0,.01,-50);scene.add(lane);
- const line=new T.Mesh(new T.PlaneGeometry(9,.25),new T.MeshBasicMaterial({color:0xffffff}));line.rotation.x=-Math.PI/2;line.position.set(0,.02,-.6);scene.add(line);}
+ const line=new T.Mesh(new T.PlaneGeometry(9,.25),new T.MeshBasicMaterial({color:0xffffff}));line.rotation.x=-Math.PI/2;line.position.set(0,.02,-.6);scene.add(line);
+ /* 割草條紋 */
+ for(let k=0;k<22;k++){const st=new T.Mesh(new T.PlaneGeometry(9,5),new T.MeshLambertMaterial({color:k%2?0x9ad672:0x84c25e,transparent:true,opacity:.55,depthWrite:false}));st.rotation.x=-Math.PI/2;st.position.set(0,.015,-2.5-k*5);scene.add(st);}
+ /* 邊線與繩欄 */
+ for(const sx of[-1,1]){const ln=new T.Mesh(new T.PlaneGeometry(.12,110),new T.MeshBasicMaterial({color:0xf4f0e0}));ln.rotation.x=-Math.PI/2;ln.position.set(sx*4.5,.02,-50);scene.add(ln);
+  const rp=new T.MeshLambertMaterial({color:0xe8dcc0}),wd=new T.MeshLambertMaterial({color:0x7a5030});
+  for(let z=0;z<=76;z+=4){const po=new T.Mesh(new T.CylinderGeometry(.06,.07,.8,6),wd);po.position.set(sx*5.6,.4,-z);scene.add(po);const cap=new T.Mesh(new T.SphereGeometry(.09,8,6),wd);cap.position.set(sx*5.6,.82,-z);scene.add(cap);}
+  for(const y of[.35,.7]){const r=new T.Mesh(new T.CylinderGeometry(.018,.018,76,4),rp);r.rotation.x=Math.PI/2;r.position.set(sx*5.6,y,-38);scene.add(r);}}
+ /* 野花 */
+ {let s=11;const r1=()=>(s=(s*16807)%2147483647)/2147483647;const fg=new T.SphereGeometry(.09,6,5);const cols=[0xffffff,0xffd23a,0xff7aa8,0xb08aff];
+  for(let i=0;i<260;i++){const m=new T.Mesh(fg,new T.MeshLambertMaterial({color:cols[i%4]}));const sd=r1()<.5?-1:1;m.position.set(sd*(6.5+r1()*18),.09,-r1()*130);m.scale.y=.7;scene.add(m);}}}
 /* 山、樹、雲、距離牌 */
 const rnd0=(()=>{let s=7;return()=>(s=(s*16807)%2147483647)/2147483647;})();
 for(let i=0;i<7;i++){const h=new T.Mesh(new T.SphereGeometry(1,16,10),new T.MeshLambertMaterial({color:new T.Color().setHSL(.28+rnd0()*.05,.35,.34+rnd0()*.1)}));h.scale.set(60+rnd0()*60,16+rnd0()*20,40);h.position.set(-210+i*70+rnd0()*30,-2,-230-rnd0()*20);scene.add(h);}
 {const trunk=new T.CylinderGeometry(.25,.35,2.2,6),leaf=new T.ConeGeometry(1.7,4.5,7),m1=new T.MeshLambertMaterial({color:0x6b4a2a});
- for(let i=0;i<90;i++){const side=i%2?1:-1,z=-rnd0()*190+10,x=side*(10+rnd0()*(z<-100?120:22));const g=new T.Group(),sc=.8+rnd0()*1.1;const t=new T.Mesh(trunk,m1);t.position.y=1.1;g.add(t);const l=new T.Mesh(leaf,new T.MeshLambertMaterial({color:new T.Color().setHSL(.26+rnd0()*.08,.5,.25+rnd0()*.12)}));l.position.y=4.2;g.add(l);g.position.set(x,0,z);g.scale.setScalar(sc);scene.add(g);}}
+ for(let i=0;i<90;i++){const side=i%2?1:-1,z=-rnd0()*190+10,x=side*(10+rnd0()*(z<-100?120:22));const g=new T.Group(),sc=.8+rnd0()*1.1;const t=new T.Mesh(trunk,m1);t.position.y=1.1;g.add(t);const l=new T.Mesh(leaf,new T.MeshLambertMaterial({color:new T.Color().setHSL(.26+rnd0()*.08,.5,.25+rnd0()*.12)}));l.position.y=4.2;g.add(l);const l2=new T.Mesh(leaf,l.material);l2.position.y=5.9;l2.scale.setScalar(.68);g.add(l2);const l3=new T.Mesh(leaf,l.material);l3.position.y=7.2;l3.scale.setScalar(.4);g.add(l3);g.position.set(x,0,z);g.scale.setScalar(sc);scene.add(g);}}
 const clouds=[];{const ct=cnv(128,64,(x,w,h)=>{for(let i=0;i<9;i++){const g=x.createRadialGradient(20+i*11,32+Math.sin(i)*6,2,20+i*11,32,22);g.addColorStop(0,'rgba(255,255,255,.9)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,w,h);}});
  for(let i=0;i<9;i++){const s=new T.Sprite(new T.SpriteMaterial({map:ct,transparent:true,opacity:.85,fog:false,depthWrite:false}));s.scale.set(90+rnd0()*60,40+rnd0()*20,1);s.position.set(-250+rnd0()*500,70+rnd0()*60,-200-rnd0()*100);scene.add(s);clouds.push(s);}}
-[20,30,40,50,60,70].forEach(d=>{const t=cnv(128,64,(x,w,h)=>{x.fillStyle='#f6efe0';x.fillRect(0,0,w,h);x.strokeStyle='#8a3a1a';x.lineWidth=6;x.strokeRect(3,3,w-6,h-6);x.fillStyle='#8a3a1a';x.font='900 40px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(d+'m',w/2,h/2+2);});
- const s=new T.Mesh(new T.PlaneGeometry(2.4,1.2),new T.MeshBasicMaterial({map:t}));s.position.set(-5.2,1.3,-d);const p=new T.Mesh(new T.CylinderGeometry(.06,.06,1.4,6),new T.MeshLambertMaterial({color:0x6b4a2a}));p.position.set(-5.2,.7,-d-.05);scene.add(s,p);});
+[20,30,40,50,60,70].forEach(d=>{const t=cnv(256,128,(x,w,h)=>{x.fillStyle='#e8d4a0';x.fillRect(0,0,w,h);for(let i=0;i<40;i++){x.strokeStyle='rgba(120,80,30,.12)';x.beginPath();x.moveTo(0,Math.random()*h);x.lineTo(w,Math.random()*h);x.stroke();}x.strokeStyle='#6a3a1a';x.lineWidth=8;x.strokeRect(5,5,w-10,h-10);x.fillStyle='#6a2a12';x.font='900 78px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(d+'m',w/2,h/2+6);});
+ const wd=new T.MeshLambertMaterial({color:0x6b4a2a});const bd=new T.Mesh(new T.BoxGeometry(2.4,1.2,.12),new T.MeshLambertMaterial({map:t}));bd.position.set(-5.2,1.5,-d);bd.rotation.y=.18;scene.add(bd);
+ for(const dx of[-.9,.9]){const p=new T.Mesh(new T.CylinderGeometry(.07,.08,1.6,6),wd);p.position.set(-5.2+dx,.8,-d-.1);scene.add(p);}
+ const ar=new T.Mesh(new T.ConeGeometry(.16,.3,3),new T.MeshLambertMaterial({color:0xc03a1a}));ar.rotation.z=-Math.PI/2;ar.position.set(-3.8,1.5,-d+.05);scene.add(ar);});
 /* 靶 */
 const face=cnv(512,512,(x,w,h)=>{const cols=['#f4f4f4','#f4f4f4','#222','#222','#2a8fd8','#2a8fd8','#e63a3a','#e63a3a','#ffd23a','#ffd23a'];for(let i=0;i<10;i++){x.beginPath();x.arc(w/2,h/2,w/2*(1-i/10),0,7);x.fillStyle=cols[i];x.fill();x.lineWidth=2;x.strokeStyle=(i>=2&&i<4)?'#888':'#333';x.stroke();}
- x.beginPath();x.arc(w/2,h/2,w/2*.05,0,7);x.lineWidth=2;x.strokeStyle='#a07000';x.stroke();});
+ x.beginPath();x.arc(w/2,h/2,w/2*.05,0,7);x.lineWidth=2;x.strokeStyle='#a07000';x.stroke();
+ for(let i=0;i<500;i++){x.fillStyle='rgba(255,255,255,'+Math.random()*.06+')';x.fillRect(Math.random()*w,Math.random()*h,2,2);}
+ const g=x.createRadialGradient(190,170,10,256,256,256);g.addColorStop(0,'rgba(255,255,255,.18)');g.addColorStop(1,'rgba(0,0,0,.15)');x.beginPath();x.arc(w/2,h/2,w/2,0,7);x.fillStyle=g;x.fill();});
 const BR=.95;
 const tgt=new T.Group();
 {const board=new T.Mesh(new T.CircleGeometry(BR,48),new T.MeshLambertMaterial({map:face}));board.position.z=.1;tgt.add(board);
- const back=new T.Mesh(new T.CylinderGeometry(BR+.06,BR+.06,.12,40),new T.MeshLambertMaterial({color:0xcaa860}));back.rotation.x=Math.PI/2;tgt.add(back);
+ const straw=new T.MeshLambertMaterial({map:cnv(64,64,(x,w,h)=>{x.fillStyle='#d2a84e';x.fillRect(0,0,w,h);for(let i=0;i<160;i++){x.strokeStyle='rgba('+(i%2?'120,80,20':'255,225,130')+',.5)';x.beginPath();const a=Math.random()*w,b=Math.random()*h;x.moveTo(a,b);x.lineTo(a+Math.random()*10-5,b+Math.random()*10-5);x.stroke();}})});
+ const back=new T.Mesh(new T.CylinderGeometry(BR+.12,BR+.12,.12,40),straw);back.rotation.x=Math.PI/2;tgt.add(back);
+ const rim=new T.Mesh(new T.TorusGeometry(BR+.04,.07,8,48),new T.MeshPhongMaterial({color:0xb8bcc8,shininess:90}));rim.position.z=.1;tgt.add(rim);
  const wood=new T.MeshLambertMaterial({color:0x7a5030});
- [[-.55,.25],[.55,.25]].forEach(([lx,lz])=>{const l=new T.Mesh(new T.CylinderGeometry(.05,.06,1.9,6),wood);l.position.set(lx,-.95,-.4);l.rotation.z=-lx*.1;l.rotation.x=.25;tgt.add(l);});
- const bk=new T.Mesh(new T.CylinderGeometry(.05,.06,1.9,6),wood);bk.position.set(0,-.95,-.9);bk.rotation.x=-.35;tgt.add(bk);}
+ [[-.55,.25],[.55,.25]].forEach(([lx,lz])=>{const l=new T.Mesh(new T.CylinderGeometry(.06,.075,1.9,6),wood);l.position.set(lx,-.95,-.4);l.rotation.z=-lx*.1;l.rotation.x=.25;tgt.add(l);});
+ const bk=new T.Mesh(new T.CylinderGeometry(.06,.075,1.9,6),wood);bk.position.set(0,-.95,-.9);bk.rotation.x=-.35;tgt.add(bk);
+ const cb=new T.Mesh(new T.BoxGeometry(1.0,.06,.06),wood);cb.position.set(0,-.7,-.45);tgt.add(cb);}
 scene.add(tgt);
-const hay=new T.Mesh(new T.BoxGeometry(5.5,3.2,1.2),new T.MeshLambertMaterial({map:cnv(128,128,(x,w,h)=>{x.fillStyle='#d8b050';x.fillRect(0,0,w,h);for(let i=0;i<500;i++){x.strokeStyle='rgba('+(i%2?'140,100,30':'250,220,120')+',.5)';x.beginPath();const a=Math.random()*w,b=Math.random()*h;x.moveTo(a,b);x.lineTo(a+Math.random()*14-7,b+Math.random()*3);x.stroke();}})}));scene.add(hay);
+const hay=new T.Mesh(new T.BoxGeometry(5.5,3.2,1.2),new T.MeshLambertMaterial({map:cnv(128,128,(x,w,h)=>{x.fillStyle='#d8b050';x.fillRect(0,0,w,h);for(let i=0;i<700;i++){x.strokeStyle='rgba('+(i%2?'140,100,30':'250,220,120')+',.5)';x.beginPath();const a=Math.random()*w,b=Math.random()*h;x.moveTo(a,b);x.lineTo(a+Math.random()*14-7,b+Math.random()*3);x.stroke();}})}));scene.add(hay);
+{const rp=new T.MeshLambertMaterial({color:0x5a3a1a});for(const dx of[-1.9,0,1.9]){const r1=new T.Mesh(new T.BoxGeometry(.1,3.26,1.26),rp);r1.position.x=dx;hay.add(r1);}
+ for(let i=0;i<3;i++){const sb=new T.Mesh(new T.BoxGeometry(1.7,1.0,1.0),hay.material);sb.position.set(-3.7+i*3.7,-1.1,.9-i*.4);sb.rotation.y=.2-i*.15;hay.add(sb);}}
 /* 風旗 */
 const flagG=new T.Group(),flagGeo=new T.PlaneGeometry(1.4,.7,8,1);flagGeo.translate(.7,0,0);
-const flag=new T.Mesh(flagGeo,new T.MeshBasicMaterial({color:0xff4a3a,side:T.DoubleSide}));flag.position.y=3.2;
-const pole=new T.Mesh(new T.CylinderGeometry(.04,.05,3.6,6),new T.MeshLambertMaterial({color:0xeeeeee}));pole.position.y=1.8;flagG.add(pole,flag);scene.add(flagG);
+const flagTx=cnv(64,32,(x,w,h)=>{x.fillStyle='#ff4a3a';x.fillRect(0,0,w,h);x.fillStyle='#fff';x.fillRect(0,12,w,8);x.fillStyle='#ffd23a';x.beginPath();x.arc(14,16,5,0,7);x.fill();});
+const flag=new T.Mesh(flagGeo,new T.MeshBasicMaterial({map:flagTx,side:T.DoubleSide}));flag.position.y=3.2;
+const pole=new T.Mesh(new T.CylinderGeometry(.04,.05,3.6,6),new T.MeshLambertMaterial({color:0xeeeeee}));pole.position.y=1.8;flagG.add(pole,flag);{const fin=new T.Mesh(new T.SphereGeometry(.08,10,8),new T.MeshPhongMaterial({color:0xffd23a,shininess:100}));fin.position.y=3.65;flagG.add(fin);const bs=new T.Mesh(new T.CylinderGeometry(.25,.3,.18,12),new T.MeshLambertMaterial({color:0x8a8a92}));bs.position.y=.09;flagG.add(bs);}scene.add(flagG);
 const flag0=flagGeo.attributes.position.array.slice();
 function updFlag(w,time){const p=flagGeo.attributes.position,k=Math.min(1,Math.abs(w)/4),amp=.05+k*.16,sp=3+k*9;for(let i=0;i<p.count;i++){const ox=flag0[i*3],oy=flag0[i*3+1];p.setZ(i,Math.sin(time*sp-ox*4)*amp*ox);p.setY(i,oy-(1-k)*ox*.5*(ox/1.4));}p.needsUpdate=true;flag.scale.x=w>=0?1:-1;}
 /* 粒子 */
@@ -356,10 +376,12 @@ const parts=[];{const g=new T.BoxGeometry(.05,.05,.05);for(let i=0;i<30;i++){con
 function burst(p,n,col){let k=0;for(const q of parts){if(q.l>0)continue;q.m.visible=true;q.m.position.copy(p);q.m.material.color.setHex(col);q.v.set((Math.random()-.5)*2,Math.random()*2.2,(Math.random()*1.4));q.l=.7;if(++k>=n)break;}}
 function updParts(dt){for(const q of parts){if(q.l<=0)continue;q.l-=dt;q.v.y-=6*dt;q.m.position.addScaledVector(q.v,dt);q.m.material.opacity=Math.max(0,q.l/.7);if(q.l<=0)q.m.visible=false;}}
 /* 箭 */
-const shaftG=new T.CylinderGeometry(.014,.014,.9,5),tipG=new T.ConeGeometry(.03,.12,6),fletG=new T.BoxGeometry(.006,.16,.2);
-const mShaft=new T.MeshLambertMaterial({color:0xe8c890}),mTip=new T.MeshLambertMaterial({color:0xcfd6dd}),mFl=new T.MeshLambertMaterial({color:0xff3a3a});
+const shaftG=new T.CylinderGeometry(.014,.012,.9,6),tipG=new T.ConeGeometry(.03,.12,8),fletG=new T.BoxGeometry(.004,.14,.22),nockG=new T.CylinderGeometry(.02,.016,.05,6),bandG=new T.CylinderGeometry(.017,.017,.03,6);
+const mShaft=new T.MeshPhongMaterial({color:0xe8c890,shininess:50}),mTip=new T.MeshPhongMaterial({color:0xd8dde6,shininess:120,specular:0xffffff}),mFl=new T.MeshLambertMaterial({color:0xff3a3a,side:T.DoubleSide}),mFl2=new T.MeshLambertMaterial({color:0xf8f8f8,side:T.DoubleSide}),mBand=new T.MeshLambertMaterial({color:0x2a6ad8}),mNock=new T.MeshLambertMaterial({color:0xffd23a});
 function mkArrow(){const g=new T.Group();const s=new T.Mesh(shaftG,mShaft);s.rotation.x=Math.PI/2;g.add(s);const t=new T.Mesh(tipG,mTip);t.rotation.x=Math.PI/2;t.position.z=.51;g.add(t);
- for(let i=0;i<3;i++){const f=new T.Mesh(fletG,mFl);f.position.z=-.36;f.rotation.z=i*Math.PI/3;g.add(f);}g.userData.arrow=true;return g;}
+ for(let i=0;i<3;i++){const f=new T.Mesh(fletG,i?mFl2:mFl);f.position.z=-.36;f.rotation.z=i*Math.PI/3;g.add(f);}
+ const nk=new T.Mesh(nockG,mNock);nk.rotation.x=Math.PI/2;nk.position.z=-.465;g.add(nk);for(const z of[-.2,-.17]){const bn=new T.Mesh(bandG,mBand);bn.rotation.x=Math.PI/2;bn.position.z=z;g.add(bn);}
+ g.userData.arrow=true;return g;}
 const trailG=new T.BufferGeometry();trailG.setAttribute('position',new T.BufferAttribute(new Float32Array(40*3),3));
 const trail=new T.Line(trailG,new T.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.55}));trail.frustumCulled=false;trail.visible=false;scene.add(trail);
 const TLEN=40;let trailN=0,trailPts=[];
