@@ -200,6 +200,7 @@ body.playing .ab{display:flex}
 @keyframes rdy{from{transform:scale(1)}to{transform:scale(1.1);box-shadow:0 0 26px 6px rgba(255,40,80,.7)}}
 #bAb{right:116px;bottom:calc(28px + var(--sab));width:64px;height:64px;background:radial-gradient(circle at 40% 35%,#8a5aff,#3a1a7a)}#bAb.cd{opacity:.35}
 #bBat{right:24px;bottom:calc(138px + var(--sab));width:54px;height:54px;background:radial-gradient(circle at 40% 35%,#5a4a8a,#1c1430);font-size:24px}
+#bMist{right:156px;bottom:calc(98px + var(--sab));width:54px;height:54px;background:radial-gradient(circle at 40% 35%,#c8d0ea,#4a5278);font-size:24px}
 #bWolf{right:90px;bottom:calc(118px + var(--sab));width:54px;height:54px;background:radial-gradient(circle at 40% 35%,#8a7a6a,#3a2a20);font-size:24px}
 .ab.on{border-color:#ffd0d8;box-shadow:0 0 18px 4px rgba(255,80,120,.8)}.ab.lock{opacity:.3;filter:grayscale(1)}
 #joy{position:fixed;width:104px;height:104px;margin:-52px 0 0 -52px;border-radius:50%;border:2px solid rgba(255,255,255,.35);background:rgba(255,255,255,.07);z-index:6;pointer-events:none;display:none}#joy.on{display:block}
@@ -210,9 +211,9 @@ body.playing .ab{display:flex}
 #hint{position:fixed;left:50%;bottom:calc(150px + var(--sab));transform:translateX(-50%);max-width:82vw;text-align:center;padding:8px 14px;border-radius:12px;background:rgba(20,6,14,.88);border:1px solid var(--line);font:900 13px var(--serif);opacity:0;pointer-events:none;transition:opacity .3s;z-index:7}#hint.on{opacity:1}
 #toast{top:30%!important}
 #big{color:#ff6a86!important}
-.lvgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 4px}
+.lvgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:12px 0 4px}
 .lvb{padding:8px 4px;border-radius:12px;border:1.5px solid rgba(255,106,134,.35);background:rgba(255,255,255,.05);color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:inherit}
-.lvb b{font:900 22px var(--serif);color:#ff6a86}.lvb span{font:700 11px 'Noto Sans TC';letter-spacing:.04em}.lvb i{font-style:normal;color:#ffd24a;font-size:12px;letter-spacing:2px}.lvb i u{text-decoration:none;color:#5a4a50}
+.lvb b{font:900 22px var(--serif);color:#ff6a86}.lvb span{font:700 10px 'Noto Sans TC';letter-spacing:.02em;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lvb i{font-style:normal;color:#ffd24a;font-size:12px;letter-spacing:2px}.lvb i u{text-decoration:none;color:#5a4a50}
 .lvb.lock{opacity:.4;cursor:default}.lvb:not(.lock):active{transform:scale(.96)}
 #introCard{text-align:center}#introCard .lvno{font:900 12px var(--serif);letter-spacing:.3em;color:#ff9aaa}#introCard h2{margin:2px 0 4px;font-size:28px}#introCard .sub{color:var(--mute);font-size:13px;margin-bottom:10px}
 #introCard .goal{padding:10px;border-radius:12px;background:rgba(255,255,255,.06);font-size:14px;line-height:1.7;margin:8px 0}#introCard .goal b{color:#ff6a86}
@@ -276,8 +277,8 @@ W.FUN={segment,init,unlock,xp,mount,panel,banner,dailyInfo,dailyDone,dailySeed,r
  <div id="stat"><div id="bloodL">血 量</div><div id="bloodB"><div id="bloodF"></div><span id="bloodN"></span></div><div id="hearts"></div><div id="formN"></div></div>
  <div id="mmw"><canvas id="mm" width="100" height="70"></canvas></div></div>
 <div id="joy"><div id="joyK"></div></div>
-<button class="ab" id="bBite">🩸<small>咬</small></button><button class="ab" id="bAb"><span>🌫</span><small id="bAbS">瞬移</small></button><button class="ab" id="bBat">🦇</button><button class="ab" id="bWolf">🐺</button>
-<div id="keys">WASD 移動 ・ 空白/E 咬 ・ Shift/F 技能 ・ 1 吸血鬼 2 蝙蝠 3 狼 ・ C 潛行 ・ Esc 暫停</div>
+<button class="ab" id="bBite">🩸<small>咬</small></button><button class="ab" id="bAb"><span>🌫</span><small id="bAbS">瞬移</small></button><button class="ab" id="bBat">🦇</button><button class="ab" id="bWolf">🐺</button><button class="ab" id="bMist">☁</button>
+<div id="keys">WASD 移動 ・ 空白/E 咬 ・ Shift/F 技能 ・ 1 吸血鬼 2 蝙蝠 3 狼 4 霧 ・ C 潛行 ・ Esc 暫停</div>
 <div id="big"></div><div id="toast"></div><div id="hint"></div>
 <div class="ov on" id="start"><div class="panel">
  <div class="logo">血族城堡</div><div class="tagline">潛入城堡 ・ 暗夜獵食 ・ 黎明前離開</div>
@@ -293,6 +294,7 @@ W.FUN={segment,init,unlock,xp,mount,panel,banner,dailyInfo,dailyDone,dailySeed,r
  <li data-i="🌫">吸血鬼技能「迷霧瞬移」(Shift):向前瞬移,可以穿過薄牆。</li>
  <li data-i="🦇">【蝙蝠】(第 3 關圖書塔內找「蝙蝠魔導器」,拿到永久使用,按 2):飛得快、能穿過<b>鐵柵欄</b>、不怕大蒜;尖嘯讓周圍的人暈眩。不能咬人,變身不耗血。</li>
  <li data-i="🐺">【狼人】(第 5 關地牢內找「狼牙魔導器」,拿到永久使用,按 3):跑得快、能撞破<b>鐵門</b>取得貴族血庫;撲殺撞暈敵人。腳步很吵!</li>
+ <li data-i="☁">【霧】(第 4 關禮拜堂內找「霧之魔導器」,拿到永久使用,按 4):幾乎不會被發現、能穿過<b>鐵柵欄</b>、不怕銀箭與大蒜;技能「瀰霧」放出濃霧讓你躲藏。移動慢、不能咬人。</li>
  <li data-i="⚠️">大蒜灼傷你;神父聖光讓你緩慢並封印變身;獵人的銀箭會受傷。血量用完就變回吸血鬼,血條可靠吸血與血瓶補充。</li>
 </ul><button class="btn" id="howOk">知道了</button></div></div>
 <div class="ov" id="intro"><div class="card" id="introCard"></div></div>
@@ -316,7 +318,7 @@ if(window.FUN)FUN.init('vampire-castle',[
  {id:'v6',ic:'🧄',name:'大蒜過敏',desc:'踩到大蒜'},
  {id:'v7',ic:'✝',name:'神聖試煉',desc:'被神父聖光照到'},
  {id:'v8',ic:'🚪',name:'破門而入',desc:'用狼撞破鐵門'},
- {id:'v9',ic:'👑',name:'血族之王',desc:'通關第 6 關'},
+ {id:'v9',ic:'👑',name:'血族之王',desc:'通關第 50 關'},
  {id:'v10',ic:'🌫',name:'迷霧穿牆',desc:'用迷霧瞬移穿過牆壁'},
  {id:'v11',ic:'💉',name:'血庫',desc:'單關吸血 8 人'},
  {id:'v12',ic:'🌅',name:'千鈞一髮',desc:'黎明前 8 秒內過關'}
@@ -345,15 +347,30 @@ const LV=[
   tip:'地上的大蒜會灼傷你,繞開它!尖叫的僕人會引來守衛。'},
  {n:'圖書塔',sub:'神父的聖光會封印你的力量',w:40,h:28,cols:3,rows:3,quota:5,time:215,maid:4,noble:3,guard:4,priest:2,hunter:0,garlic:3,grate:2,vault:0,unlock:'b',
   tip:'找到發光的「蝙蝠魔導器」(小地圖金點)後,可變【蝙蝠】:飛得快、能穿過鐵柵欄,尖嘯可讓周圍的人暈眩。蝙蝠不能咬人,變身本身不耗血。'},
- {n:'禮拜堂',sub:'獵人帶著銀弩箭等你上門',w:40,h:28,cols:3,rows:3,quota:5,time:215,maid:3,noble:3,guard:5,priest:2,hunter:2,garlic:4,grate:2,vault:0,
-  tip:'獵人的銀箭會灼傷你,別讓他們站在直線上瞄準。蝙蝠比較難被發現。'},
+ {n:'禮拜堂',sub:'獵人帶著銀弩箭等你上門',w:40,h:28,cols:3,rows:3,quota:5,time:215,maid:3,noble:3,guard:5,priest:2,hunter:2,garlic:4,grate:2,vault:0,unlock:'m',
+  tip:'找到發光的「霧之魔導器」(小地圖金點)後,可變【霧】:幾乎不會被發現、能穿過鐵柵欄、不怕銀箭與大蒜,但移動很慢、不能咬人。技能「瀰霧」會放出一團濃霧,躲在霧裡連吸血鬼也很難被看見。'},
  {n:'地牢深處',sub:'鐵門後面藏著貴族的血庫',w:42,h:28,cols:3,rows:3,quota:6,time:230,maid:4,noble:3,guard:6,priest:2,hunter:2,garlic:4,grate:2,vault:2,unlock:'w',
   tip:'找到發光的「狼牙魔導器」(小地圖金點)後,可變【狼人】:速度快、能撞破鐵門,「撲殺」可撞暈敵人。但狼的腳步很吵,會驚動附近的人。'},
- {n:'王座廳',sub:'黎明將至,拿下最後的血宴',w:52,h:33,cols:4,rows:3,quota:8,time:270,maid:5,noble:4,guard:7,priest:3,hunter:3,garlic:5,grate:3,vault:2,
-  tip:'最後一關!善用三種型態,在黎明前吸夠血、躺回棺材。'}
+ {n:'王座廳',sub:'黎明將至,王座廳守衛傾巢而出',w:52,h:33,cols:4,rows:3,quota:8,time:270,maid:5,noble:4,guard:7,priest:3,hunter:3,garlic:5,grate:3,vault:2,
+  tip:'善用四種型態,在黎明前吸夠血、躺回棺材。'}
 ];
+/* ---- 第 7~50 關:依難度曲線自動編排 ---- */
+(function(){
+ const NM=['鐘樓','溫室花園','武器庫','血宴廳','迴廊','地下水道','鏡廳','修道院','刑訊室','天文台','葡萄酒窖','騎士營房','禁書庫','王室禮拜堂','冰窖','舞廳','煉金工房','墓園地道','皇家馬廄','雙子塔','吊橋','城牆步道','暗門密室','大教堂','荊棘迴廊','骨灰堂','銀器庫','聖水池','守夜塔','審判庭','地底湖','水晶洞窟','影子長廊','獵人公會','狼穴','蝙蝠洞','霧之谷','血月祭壇','黑曜石大廳','王后寢宮','王冠密室','永夜迴廊','黎明前線','永夜王座'];
+ const SB=['守衛換班變得更頻繁','獵人躲在暗處瞄準','空氣裡全是聖水的味道','燭火忽明忽暗','每個角落都有一雙眼睛','鐵柵欄後面藏著捷徑','神父的禱告聲回盪不停','大蒜的氣味嗆得人睜不開眼'];
+ const TP=['善用蝙蝠與霧穿過鐵柵欄,繞開正面的守衛。','獵人的銀箭直線射擊,別站在他們的正前方。','需要貴族血庫的人數時,用狼人撞開鐵門。','在暗處放慢腳步,視線扇形就掃不到你。','瀰霧放在守衛巡邏的必經路口,能安全通過。','尖叫會引來守衛,先處理僕人再靠近守衛。','屍體被看到也會引來警戒,把他們留在暗角。','時間不多時,吸血量夠了就直接回棺材。'];
+ for(let i=6;i<50;i++){
+  const t=(i-5)/44,boss=(i+1)%10===0,fin=i===49,big=i>=27;
+  const c=(a,b)=>a+Math.round((b-a)*t);
+  const Q=c(5,10)+(boss?2:0);
+  LV.push({n:NM[i-6],sub:fin?'最後的血宴,黎明就在門外':boss?'血宴之夜:守備比平常森嚴':SB[(i*3)%SB.length],
+   w:big?50+Math.round(4*(t-.5)*2):40+Math.round(6*t/.5),h:big?31+Math.round(3*(t-.5)*2):28+Math.round(2*t/.5),cols:big?4:3,rows:3,
+   quota:Q,time:c(230,340)+(boss?40:0)+(fin?30:0),maid:Math.max(c(4,6),Q+1-c(3,5)),noble:c(3,5),guard:c(5,12)+(boss?2:0),priest:c(2,5),hunter:c(2,6),garlic:c(4,8),grate:c(2,4),vault:t>.5?3:2,
+   tip:fin?'最後一關!四種型態、瀰霧、魔導器,把學到的全部用上,在黎明前回到棺材。':boss?'魔王夜:守衛更多、時間更緊。善用瀰霧與蝙蝠避開正面衝突。':TP[(i*5)%TP.length]});
+ }
+})();
 const SOLID={'#':1,'x':1,'w':1};
-function passable(g,x,y,form){if(x<0||y<0||y>=g.length||x>=g[0].length)return false;const c=g[y][x];if(c==='#'||c==='x'||c==='w')return false;if(c==='D'||c==='B')return false;if(c==='G')return form==='b';return true;}
+function passable(g,x,y,form){if(x<0||y<0||y>=g.length||x>=g[0].length)return false;const c=g[y][x];if(c==='#'||c==='x'||c==='w')return false;if(c==='D'||c==='B')return false;if(c==='G')return form==='b'||form==='m';return true;}
 function bfsReach(g,sx,sy,form){const H=g.length,W=g[0].length,d=Array.from({length:H},()=>Array(W).fill(-1));const q=[[sx,sy]];d[sy][sx]=0;for(let i=0;i<q.length;i++){const[x,y]=q[i];for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const nx=x+dx,ny=y+dy;if(passable(g,nx,ny,form)&&d[ny][nx]<0){d[ny][nx]=d[y][x]+1;q.push([nx,ny]);}}}return d;}
 function genLevel(li){
  const L=LV[li];
@@ -420,8 +437,8 @@ function genLevel(li){
   // connectivity check (vampire form) for all non-vault rooms + exit
   const dd=bfsReach(g,Math.floor(start.x),Math.floor(start.y),'v');
   if(!rooms.filter(r=>!r.vault).every(r=>dd[r.my][r.mx]>=0)||dd[exit.y][exit.x]<0)continue;
-  if(grates.length<L.grate)continue;
-  if(vaults.length<L.vault)continue;
+  if(grates.length<L.grate&&att<300)continue;
+  if(vaults.length<L.vault&&att<300)continue;
   // lights: torches on walls & windows
   const torches=[],windows=[];
   const isFloor=(x,y)=>g[y]&&g[y][x]&&g[y][x]!=='#'&&g[y][x]!=='x'&&g[y][x]!=='w'&&g[y][x]!=='D'&&g[y][x]!=='G';
@@ -553,7 +570,7 @@ function buildWorld(lv){
    for(const yy of[.2,.65,1.1]){const b=new T.Mesh(BOXG,new T.MeshBasicMaterial({color:mc}));b.scale.set(horiz?.06:1,.06,horiz?1:.06);b.position.set(0,yy,0);gr.add(b);}
    const gl=sprite(glowTex,0x7aa0ff,.35,T.AdditiveBlending);gl.scale.set(1.6,1.6,1);gl.position.y=.7;gr.add(gl);gr.position.set(x+.5,0,y+.5);world.add(gr);grateMesh[x+','+y]=gr;}}
  // relic (magic device)
- relicObj=null;if(lv.relic&&!SAVE.items[lv.relic.k]){const k=lv.relic.k,cc=k==='b'?0xb06aff:0x9ad0ff;const gr=new T.Group();const core=new T.Mesh(new T.OctahedronGeometry(.28,0),new T.MeshBasicMaterial({color:cc}));core.position.y=.9;gr.add(core);
+ relicObj=null;if(lv.relic&&!SAVE.items[lv.relic.k]){const k=lv.relic.k,cc=k==='b'?0xb06aff:k==='m'?0xe6eeff:0x9ad0ff;const gr=new T.Group();const core=new T.Mesh(new T.OctahedronGeometry(.28,0),new T.MeshBasicMaterial({color:cc}));core.position.y=.9;gr.add(core);
   const r1=new T.Mesh(new T.TorusGeometry(.45,.025,6,28),MB(cc,{transparent:true,opacity:.85}));r1.position.y=.9;gr.add(r1);const r2=new T.Mesh(new T.TorusGeometry(.36,.02,6,24),MB(0xffffff,{transparent:true,opacity:.7}));r2.position.y=.9;gr.add(r2);
   const pd=new T.Mesh(new T.CylinderGeometry(.28,.36,.18,8),M(0x2a2040));pd.position.y=.09;gr.add(pd);const gl=sprite(glowTex,cc,.7,T.AdditiveBlending);gl.scale.set(3.2,3.2,1);gl.position.y=.9;gr.add(gl);
   gr.position.set(lv.relic.x+.5,0,lv.relic.y+.5);world.add(gr);relicObj={gr,core,r1,r2,gl,k};}
@@ -713,12 +730,17 @@ function mkHuman(k){return polish(mkHuman0(k));}
 function mkVamp(){return polish(mkVamp0(),.026);}
 function mkBat(){return polish(mkBat0(),.018);}
 function mkWolf(){return polish(mkWolf0(),.026);}
+function mkMist(){const G=new T.Group(),B=new T.Group();G.add(B);const P={G,B,puffs:[]};
+ for(let i=0;i<9;i++){const s=sprite(glowTex,i%3===0?0x6a76a8:i%3===1?0x8892c0:0x5a6498,.5,T.NormalBlending);const z=.4+Math.random()*.35;s.scale.set(z,z,1);s.position.set(0,.4,0);B.add(s);P.puffs.push({s,a:Math.random()*6.28,r:.1+Math.random()*.22,h:.25+Math.random()*.5,sp:.6+Math.random()*1.2});}
+ const core=sprite(glowTex,0x8fa0e0,.12,T.AdditiveBlending);core.scale.set(.35,.35,1);core.position.y=.45;B.add(core);
+ for(const sx of[-1,1]){const eg=sprite(glowTex,0xff2040,.95,T.AdditiveBlending);eg.scale.set(.13,.13,1);eg.position.set(sx*.07,.5,.16);B.add(eg);}
+ P.shadow=shadow(.35);G.add(P.shadow);return P;}
 
 /* ---------- state ---------- */
-const SAVE=Object.assign({unlocked:0,stars:[0,0,0,0,0,0]},lod('vc_save',{}));if(!SAVE.items)SAVE.items={b:SAVE.unlocked>=3,w:SAVE.unlocked>=5};
+const SAVE=Object.assign({unlocked:0,stars:[]},lod('vc_save',{}));while(SAVE.stars.length<LV.length)SAVE.stars.push(0);if(!SAVE.items)SAVE.items={b:SAVE.unlocked>=3,w:SAVE.unlocked>=5,m:SAVE.unlocked>=4};
 let phase='menu',li=0,lv=null,LS=null,paused=false;
-const FORMS={v:{n:'吸血鬼'},b:{n:'蝙蝠'},w:{n:'狼人'}};
-const hasForm=f=>f==='v'||(f==='b'&&SAVE.items.b)||(f==='w'&&SAVE.items.w)||(window.__vcAll===true);
+const FORMS={v:{n:'吸血鬼'},b:{n:'蝙蝠'},w:{n:'狼人'},m:{n:'霧'}};
+const hasForm=f=>f==='v'||(f==='b'&&SAVE.items.b)||(f==='w'&&SAVE.items.w)||(f==='m'&&SAVE.items.m)||(window.__vcAll===true);
 const ents=[],bolts=[],items=[];let P=null;
 const EK={
  maid:{spd:1.3,chase:2.5,rng:5,cone:62,rate:1.7,gain:25,name:'女僕',civ:1},
@@ -727,8 +749,8 @@ const EK={
  priest:{spd:1.3,chase:2.7,rng:7,cone:62,rate:1.8,gain:48,name:'神父'},
  hunter:{spd:1.5,chase:3.2,rng:8.5,cone:52,rate:2.0,gain:55,name:'獵人'}
 };
-const pmodels={v:mkVamp(),b:mkBat(),w:mkWolf()};
-const pg=new T.Group();pg.add(pmodels.v.G,pmodels.b.G,pmodels.w.G);scene.add(pg);
+const pmodels={v:mkVamp(),b:mkBat(),w:mkWolf(),m:mkMist()};
+const pg=new T.Group();pg.add(pmodels.v.G,pmodels.b.G,pmodels.w.G,pmodels.m.G);scene.add(pg);
 const ringTex=cvt(64,64,g=>{g.strokeStyle='#ff3050';g.lineWidth=6;g.beginPath();g.arc(32,32,24,0,6.283);g.stroke();g.strokeStyle='rgba(255,255,255,.7)';g.lineWidth=2;g.beginPath();g.arc(32,32,18,0,6.283);g.stroke();});
 const biteMark=new T.Mesh(new T.PlaneGeometry(1,1),new T.MeshBasicMaterial({map:ringTex,transparent:true,depthWrite:false,blending:T.AdditiveBlending}));biteMark.rotation.x=-Math.PI/2;biteMark.visible=false;scene.add(biteMark);
 const arrow=new T.Mesh(new T.ConeGeometry(.22,.6,3),new T.MeshBasicMaterial({color:0xff3a5a,transparent:true,opacity:.9}));arrow.rotation.x=Math.PI/2;arrow.visible=false;scene.add(arrow);
@@ -769,7 +791,7 @@ function followPath(e,tx,ty,spd,dt,replan){e.pt-=dt;if(!e.path||e.pt<=0||replan)
  while(e.path.length&&Math.hypot(e.path[0][0]-e.x,e.path[0][1]-e.y)<.22)e.path.shift();
  if(!e.path.length)return enemyMoveTo(e,tx,ty,spd,dt);const n=e.path[0];enemyMoveTo(e,n[0],n[1],spd,dt);return Math.hypot(tx-e.x,ty-e.y)<.3;}
 function playerVis(e){const dx=P.x-e.x,dy=P.y-e.y,d=Math.hypot(dx,dy);const lit=inLight(P.x,P.y);
- let rng=e.def.rng*(lit>.15?1:.62);if(P.sneak&&P.form!=='b')rng*=.72;if(P.form==='b')rng*=.58;if(P.form==='w')rng*=1.12;if(P.invis>0)rng*=.3;
+ let rng=e.def.rng*(lit>.15?1:.62);if(P.sneak&&P.form!=='b'&&P.form!=='m')rng*=.72;if(P.form==='b')rng*=.58;if(P.form==='m')rng*=.28;if(P.fogT>0&&Math.hypot(P.x-P.fogX,P.y-P.fogY)<3.1)rng*=.25;if(P.form==='w')rng*=1.12;if(P.invis>0)rng*=.3;
  if(d>rng)return{vis:false,d,rng,lit};
  const close=d<1.15;if(!close){const ha=Math.sin(e.a),hb=Math.cos(e.a);const dot=(dx*ha+dy*hb)/d;if(dot<Math.cos(e.def.cone*Math.PI/360))return{vis:false,d,rng,lit};}
  if(!los(e.x,e.y,P.x,P.y))return{vis:false,d,rng,lit};return{vis:true,d,rng,lit};}
@@ -834,12 +856,12 @@ function holyHit(e){const dd=Math.hypot(P.x-e.x,P.y-e.y);if(dd>6.2||!los(e.x,e.y
 /* ---------- player ---------- */
 function newPlayer(){return{x:lv.start.x,y:lv.start.y,vx:0,vy:0,a:0,form:'v',hp:5,hpMax:5,blood:55,bloodMax:100,bite:null,tfCd:0,abCd:0,slow:0,noTf:0,holyT:0,hurtT:0,sneak:false,dash:0,dvx:0,dvy:0,kx:0,ky:0,invis:0,anim:0,stepT:0,garlicT:0};}
 function showForm(f){for(const k in pmodels)pmodels[k].G.visible=(k===f);}
-const FR={v:.3,b:.22,w:.33};
+const FR={v:.3,b:.22,w:.33,m:.2};
 function unstick(){const r=FR[P.form];if(!blockedAt(P.x,P.y,r,P.form))return false;let best=null,bd=1e9;const cx=Math.floor(P.x),cy=Math.floor(P.y);
  for(let dy=-5;dy<=5;dy++)for(let dx=-5;dx<=5;dx++){const x=cx+dx+.5,y=cy+dy+.5;if(blockedAt(x,y,r,P.form))continue;const d=(x-P.x)**2+(y-P.y)**2;if(d<bd){bd=d;best={x,y};}}
  if(best){P.x=best.x;P.y=best.y;P.kx=P.ky=0;if(typeof smokePuff==='function')smokePuff(P.x,.4,P.y,6,0x3a2a5a);return true;}return false;}
-function setForm(f,force){if(f===P.form)return;if(!force){if(!hasForm(f)){toast(f==='b'?'還沒取得蝙蝠魔導器(第3關圖書塔)':'還沒取得狼牙魔導器(第5關地牢)',2200);return;}if(f!=='v'&&P.noTf>0){toast('聖光封印中,無法變身');return;}if(P.bite)return;if(P.tfCd>0)return;}
- P.form=f;unstick();P.tfCd=.45;showForm(f);smokePuff(P.x,.4,P.y,12,f==='b'?0x3a2a5a:0x4a3a2a);SFX.morph();
+function setForm(f,force){if(f===P.form)return;if(!force){if(!hasForm(f)){toast(f==='b'?'還沒取得蝙蝠魔導器(第3關圖書塔)':f==='m'?'還沒取得霧之魔導器(第4關禮拜堂)':'還沒取得狼牙魔導器(第5關地牢)',2200);return;}if(f!=='v'&&P.noTf>0){toast('聖光封印中,無法變身');return;}if(P.bite)return;if(P.tfCd>0)return;}
+ P.form=f;unstick();P.tfCd=.45;showForm(f);smokePuff(P.x,.4,P.y,12,f==='b'?0x3a2a5a:f==='m'?0xb8c0e8:0x4a3a2a);SFX.morph();
  if(f==='b')ach('v3');if(f==='w')ach('v4');updBtns();}
 function hurtPlayer(d,fx,fy){if(P.hurtT>0||phase!=='play'||god)return;P.hp-=d;P.hurtT=1.2;SFX.hit();LS.hits++;
  const dx=P.x-fx,dy=P.y-fy,l=Math.hypot(dx,dy)||1;P.kx=dx/l*5;P.ky=dy/l*5;if(P.bite)cancelBite(1.6);shake=.35;$('flash').classList.remove('on');void $('flash').offsetWidth;$('flash').classList.add('on');
@@ -848,7 +870,7 @@ let shake=0;
 /* bite */
 function eligible(e){if(e.dead||e.held)return false;if(e.def.civ)return true;if(e.st>0)return true;if(e.state==='chase')return false;const dx=P.x-e.x,dy=P.y-e.y,d=Math.hypot(dx,dy)||1;const dot=(dx*Math.sin(e.a)+dy*Math.cos(e.a))/d;return dot<.2;}
 function nearestBite(){let best=null,bd=1.2;for(const e of ents){if(e.dead||e.held)continue;const d=Math.hypot(e.x-P.x,e.y-P.y);if(d<bd){const ok=eligible(e);if(ok){best=e;bd=d;}}}return best;}
-function tryBite(){if(phase!=='play'||P.bite||P.stunned)return;if(P.form==='b'){toast('蝙蝠不能咬人,先變回來');return;}if(P.holyT>0&&false)return;
+function tryBite(){if(phase!=='play'||P.bite||P.stunned)return;if(P.form==='b'||P.form==='m'){toast((P.form==='m'?'霧':'蝙蝠')+'不能咬人,先變回來');return;}if(P.holyT>0&&false)return;
  const e=nearestBite();if(!e){let any=null,bd=1.3;for(const x of ents){if(x.dead||x.held)continue;const d=Math.hypot(x.x-P.x,x.y-P.y);if(d<bd){any=x;bd=d;}}if(any&&!any.def.civ)toast('要從背後偷襲,或等他暈眩');else toast('靠近目標再按咬');return;}
  P.bite={e,t:0,dur:(P.form==='w'?.75:1.15)*(e.state==='flee'?1.35:1)*(e.vip?1.2:1)};e.held=true;e.prevState=e.state;e.state='held';e.det=0;e.mark.visible=false;
  const dx=e.x-P.x,dy=e.y-P.y;P.a=Math.atan2(dx,dy);e.a=P.a+Math.PI;SFX.bite();bloodBurst(e.x,e.y,5);if(P.form==='w')noiseAt(P.x,P.y,5);}
@@ -869,6 +891,7 @@ function ability(){if(phase!=='play'||P.bite||P.abCd>0)return;
   if(!landed){toast('前方沒有落腳處');return;}P.blood-=6;P.abCd=2.8;P.invis=.8;SFX.blink();if(thru)ach('v10');}
  else if(P.form==='b'){if(P.blood<10){toast('血量不足');return;}P.blood-=10;P.abCd=6;SFX.screech();let n=0;for(const e of ents){if(e.dead||e.held)continue;if(Math.hypot(e.x-P.x,e.y-P.y)<4.6){e.st=Math.max(e.st,3);e.state='stun';e.det=0;n++;}}
   for(let i=0;i<18;i++){const a=i/18*6.283;spark(P.x+Math.sin(a)*.3,.9,P.y+Math.cos(a)*.3,Math.sin(a)*4,0,Math.cos(a)*4,.6,0xb8a0ff,.2,glowTex,true,0);}if(!n)toast('周圍沒有人');}
+ else if(P.form==='m'){if(P.blood<8){toast('血量不足');return;}P.blood-=8;P.abCd=8;P.fogT=7;P.fogX=P.x;P.fogY=P.y;SFX.morph();for(let i=0;i<26;i++){const a=Math.random()*6.283,rr2=Math.random()*2.6;spark(P.x+Math.sin(a)*rr2,rr(.2,.9),P.y+Math.cos(a)*rr2,Math.sin(a)*.5,rr(0,.2),Math.cos(a)*.5,1.8,0xd5dcf5,1,glowTex,false,0);}hintTxt('濃霧籠罩!躲在霧裡很難被發現',2200);}
  else if(P.form==='w'){P.abCd=2.4;P.dash=.3;P.dvx=Math.sin(P.a)*11;P.dvy=Math.cos(P.a)*11;SFX.morph();noiseAt(P.x,P.y,6);}
  updBtns();}
 function wolfDashHits(){for(const e of ents){if(e.dead||e.held||e.st>0)continue;if(Math.hypot(e.x-P.x,e.y-P.y)<.9){e.st=5;e.state='stun';e.det=0;bloodBurst(e.x,e.y,5);SFX.hit();hintTxt('撞暈了!趁現在咬他',1800);e.x+=Math.sin(P.a)*.5;e.y+=Math.cos(P.a)*.5;}}}
@@ -1034,16 +1057,16 @@ function startLevel(i){li=i;lv=genLevel(i);if(!lv){toast('地圖生成失敗');r
  for(let k=0;k<2+(L.vault?0:1);k++){const s=pick(6);if(s)addVial(s.p.x,s.p.y,25);}
  phase='intro';$('hud').classList.remove('on');showIntro();updHud();camSnap=true;}
 function addVial(x,y,v){const g=new T.Group();g.add(mesh(new T.CylinderGeometry(.09,.11,.26,8),MB(0xc01030,{transparent:true,opacity:.9}),0,.2,0));g.add(mesh(new T.CylinderGeometry(.04,.04,.1,6),MB(0xdddddd),0,.38,0));const gl=sprite(glowTex,0xff2050,.8,T.AdditiveBlending);gl.scale.set(1,1,1);gl.position.y=.25;g.add(gl);g.position.set(x,0,y);scene.add(g);items.push({m:g,x,y,v,ph:Math.random()*6});}
-function pickRelic(){const k=relicObj.k;SAVE.items[k]=true;sav('vc_save',SAVE);world.remove(relicObj.gr);relicObj=null;SFX.win&&SFX.win();smokePuff(P.x,.6,P.y,14,k==='b'?0xb06aff:0x9ad0ff);
- bigTxt(k==='b'?'獲得 蝙蝠魔導器!':'獲得 狼牙魔導器!');toast(k==='b'?'按 2 / 🦇 變身蝙蝠(可穿過鐵柵欄)':'按 3 / 🐺 變身狼人(可撞開鐵門)',3600);updBtns();}
-function showIntro(){const L=lv.L;const ul=L.unlock?(SAVE.items[L.unlock]?'<div class="unl">'+(L.unlock==='b'?'🦇 蝙蝠魔導器':'🐺 狼牙魔導器')+' 已持有</div>':'<div class="unl">'+(L.unlock==='b'?'🦇 本關藏有「蝙蝠魔導器」':'🐺 本關藏有「狼牙魔導器」')+'<br><small>找到並拿取,即可永久使用該形態</small></div>'):'';
+function pickRelic(){const k=relicObj.k;SAVE.items[k]=true;sav('vc_save',SAVE);world.remove(relicObj.gr);relicObj=null;SFX.win&&SFX.win();smokePuff(P.x,.6,P.y,14,k==='b'?0xb06aff:k==='m'?0xe6eeff:0x9ad0ff);
+ bigTxt(k==='b'?'獲得 蝙蝠魔導器!':k==='m'?'獲得 霧之魔導器!':'獲得 狼牙魔導器!');toast(k==='b'?'按 2 / 🦇 變身蝙蝠(可穿過鐵柵欄)':k==='m'?'按 4 / ☁ 變成霧(幾乎不會被發現,可穿過鐵柵欄)':'按 3 / 🐺 變身狼人(可撞開鐵門)',3600);updBtns();}
+function showIntro(){const L=lv.L;const ul=L.unlock?(SAVE.items[L.unlock]?'<div class="unl">'+(L.unlock==='b'?'🦇 蝙蝠魔導器':L.unlock==='m'?'☁ 霧之魔導器':'🐺 狼牙魔導器')+' 已持有</div>':'<div class="unl">'+(L.unlock==='b'?'🦇 本關藏有「蝙蝠魔導器」':L.unlock==='m'?'☁ 本關藏有「霧之魔導器」':'🐺 本關藏有「狼牙魔導器」')+'<br><small>找到並拿取,即可永久使用該形態</small></div>'):'';
  $('introCard').innerHTML='<div class="lvno">第 '+(li+1)+' 關</div><h2>'+L.n+'</h2><div class="sub">'+L.sub+'</div>'+ul+'<div class="goal">🩸 目標:吸血 <b>'+L.quota+'</b> 人 → 躺進棺材<br>⏳ 黎明倒數 <b>'+Math.floor(L.time/60)+':'+String(L.time%60).padStart(2,'0')+'</b></div><div class="tip">'+L.tip+'</div><button class="btn" id="goBtn">潛入城堡</button>';
  $('intro').classList.add('on');$('goBtn').onclick=()=>{ac();$('intro').classList.remove('on');phase='play';$('hud').classList.add('on');document.body.classList.add('playing');if(li===0)hintTxt('靠近背對你的人,按「咬」吸血。黃色扇形是視線範圍',6000);};}
 function win(){if(phase!=='play')return;phase='win';document.body.classList.remove('playing');SFX.win();
  const left=LS.time/LS.total;let stars=1;if(left>=.35)stars=2;if(!LS.alarmed)stars=3;if(stars===3&&left<.2)stars=2;
  const prev=SAVE.stars[li]||0;if(stars>prev)SAVE.stars[li]=stars;SAVE.unlocked=Math.max(SAVE.unlocked,li+1);sav('vc_save',SAVE);
- if(window.FUN){if(li===0)ach('v2');if(li===5)ach('v9');if(!LS.alarmed)ach('v5');if(LS.time<8)ach('v12');FUN.xp(30+stars*20+li*10);}
- const nextOk=li<5;
+ if(window.FUN){if(li===0)ach('v2');if(li===LV.length-1)ach('v9');if(!LS.alarmed)ach('v5');if(LS.time<8)ach('v12');FUN.xp(30+stars*20+li*10);}
+ const nextOk=li<LV.length-1;
  $('resCard').innerHTML='<h2>🌙 潛入成功</h2><div class="stars">'+'★'.repeat(stars)+'<span>'+'★'.repeat(3-stars)+'</span></div><div class="stat">吸血 '+LS.bites+' 人 ・ 剩餘 '+Math.floor(LS.time)+' 秒<br>'+(LS.alarmed?'被發現過(未達三星)':'全程未被發現!')+'</div>'+(nextOk?'<button class="btn" id="rNext">下一關</button>':'<div class="stat">🏰 你征服了整座城堡!</div>')+'<button class="btn g" id="rAgain">重玩本關</button><button class="btn g" id="rMenu">選關</button><button class="btn g" id="rLobby">回遊戲大廳</button>';
  $('res').classList.add('on');if(nextOk)$('rNext').onclick=()=>{$('res').classList.remove('on');startLevel(li+1);};$('rAgain').onclick=()=>{$('res').classList.remove('on');startLevel(li);};$('rMenu').onclick=()=>{$('res').classList.remove('on');toMenu();};$('rLobby').onclick=()=>{location.href='index.html';};}
 function lose(why){if(phase!=='play')return;phase='lose';document.body.classList.remove('playing');SFX.lose();
@@ -1051,14 +1074,14 @@ function lose(why){if(phase!=='play')return;phase='lose';document.body.classList
  $('res').classList.add('on');$('rAgain').onclick=()=>{$('res').classList.remove('on');startLevel(li);};$('rMenu').onclick=()=>{$('res').classList.remove('on');toMenu();};$('rLobby').onclick=()=>{location.href='index.html';};}
 function toMenu(){phase='menu';document.body.classList.remove('playing');$('hud').classList.remove('on');buildMenu();$('start').classList.add('on');}
 function buildMenu(){const box=$('lvGrid');box.innerHTML='';LV.forEach((L,i)=>{const lock=i>SAVE.unlocked;const b=document.createElement('button');b.className='lvb'+(lock?' lock':'');b.innerHTML='<b>'+(i+1)+'</b><span>'+L.n+'</span><i>'+(lock?'🔒':'★'.repeat(SAVE.stars[i]||0)+'<u>'+'★'.repeat(3-(SAVE.stars[i]||0))+'</u>')+'</i>';if(!lock)b.onclick=()=>{ac();$('start').classList.remove('on');startLevel(i);};box.appendChild(b);});
- const fnow=Math.min(SAVE.unlocked,5);$('contBtn').textContent='繼續:第 '+(fnow+1)+' 關';$('contBtn').onclick=()=>{ac();$('start').classList.remove('on');startLevel(fnow);};}
+ const fnow=Math.min(SAVE.unlocked,LV.length-1);$('contBtn').textContent='繼續:第 '+(fnow+1)+' 關';$('contBtn').onclick=()=>{ac();$('start').classList.remove('on');startLevel(fnow);};}
 /* ---------- input ---------- */
 const keys={};const inp={x:0,y:0};let joy=null;
 addEventListener('keydown',e=>{if(e.repeat&&['Space','KeyE'].includes(e.code))return;const k=e.code;keys[k]=true;
  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(k))e.preventDefault();
  if(k==='Space'||k==='KeyE')tryBite();if(k==='ShiftLeft'||k==='ShiftRight'||k==='KeyF')ability();
- if(k==='Digit1')setForm('v');if(k==='Digit2')setForm('b');if(k==='Digit3')setForm('w');
- if(k==='KeyQ'&&P){const o=['v','b','w'].filter(hasForm);setForm(o[(o.indexOf(P.form)+1)%o.length]);}
+ if(k==='Digit1')setForm('v');if(k==='Digit2')setForm('b');if(k==='Digit3')setForm('w');if(k==='Digit4')setForm('m');
+ if(k==='KeyQ'&&P){const o=['v','b','w','m'].filter(hasForm);setForm(o[(o.indexOf(P.form)+1)%o.length]);}
  if(k==='Escape'||k==='KeyP')togglePause();});
 addEventListener('keyup',e=>{keys[e.code]=false;});
 function readKeys(){let x=0,y=0;if(keys.ArrowLeft||keys.KeyA)x--;if(keys.ArrowRight||keys.KeyD)x++;if(keys.ArrowUp||keys.KeyW)y--;if(keys.ArrowDown||keys.KeyS)y++;return[x,y];}
@@ -1067,7 +1090,7 @@ $('gl').addEventListener('pointerdown',e=>{if(phase!=='play')return;if(e.clientX
 addEventListener('pointermove',e=>{if(!joy||e.pointerId!==joy.id)return;let dx=e.clientX-joy.ox,dy=e.clientY-joy.oy;const R=52;const d=Math.hypot(dx,dy);if(d>R){joy.ox+=dx/d*(d-R);joy.oy+=dy/d*(d-R);joyEl.style.left=joy.ox+'px';joyEl.style.top=joy.oy+'px';dx=dx/d*R;dy=dy/d*R;}joy.x=dx/R;joy.y=dy/R;joy.m=Math.hypot(joy.x,joy.y);joyK.style.transform='translate('+dx+'px,'+dy+'px)';});
 const joyEnd=e=>{if(joy&&e.pointerId===joy.id){joy=null;joyEl.classList.remove('on');}};addEventListener('pointerup',joyEnd);addEventListener('pointercancel',joyEnd);
 const bind=(id,fn)=>{const el=$(id);el.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();ac();fn();});};
-bind('bBite',tryBite);bind('bAb',ability);bind('bBat',()=>setForm(P&&P.form==='b'?'v':'b'));bind('bWolf',()=>setForm(P&&P.form==='w'?'v':'w'));
+bind('bBite',tryBite);bind('bAb',ability);bind('bBat',()=>setForm(P&&P.form==='b'?'v':'b'));bind('bWolf',()=>setForm(P&&P.form==='w'?'v':'w'));bind('bMist',()=>setForm(P&&P.form==='m'?'v':'m'));
 function togglePause(){if(phase!=='play'&&!(paused))return;paused=!paused;$('menu').classList.toggle('on',paused);}
 $('menuBtn').onclick=()=>{if(phase==='play'){paused=true;$('menu').classList.add('on');}};
 $('mResume').onclick=()=>{paused=false;$('menu').classList.remove('on');};$('mAgain').onclick=()=>{paused=false;$('menu').classList.remove('on');startLevel(li);};$('mMenu').onclick=()=>{paused=false;$('menu').classList.remove('on');toMenu();};$('mLobby').onclick=()=>{location.href='index.html';};
@@ -1084,13 +1107,14 @@ function update(dt){
  // timers
  P.tfCd=Math.max(0,P.tfCd-dt);P.abCd=Math.max(0,P.abCd-dt);P.noTf=Math.max(0,P.noTf-dt);P.hurtT=Math.max(0,P.hurtT-dt);P.invis=Math.max(0,P.invis-dt);P.garlicT=Math.max(0,P.garlicT-dt);
  if(P.holyT>0){P.holyT-=dt;P.blood=Math.max(0,P.blood-6*dt);}
+ if(P.fogT>0){P.fogT-=dt;if(Math.random()<dt*22){const a=Math.random()*6.283,r2=Math.random()*2.8;spark(P.fogX+Math.sin(a)*r2,rr(.15,1),P.fogY+Math.cos(a)*r2,rr(-.25,.25),rr(0,.15),rr(-.25,.25),1.6,0xd5dcf5,rr(.7,1.1),glowTex,false,0);}}
  // input
  let ix=0,iy=0;const[kx,ky]=readKeys();if(kx||ky){ix=kx;iy=ky;}else if(joy){ix=joy.x;iy=joy.y;}
  let m=Math.hypot(ix,iy);if(m>1){ix/=m;iy/=m;m=1;}if(m<.12){ix=iy=0;m=0;}
- P.sneak=P.form!=='b'&&(keys.KeyC||(joy&&!kx&&!ky&&m>0&&m<.55));
+ P.sneak=P.form!=='b'&&P.form!=='m'&&(keys.KeyC||(joy&&!kx&&!ky&&m>0&&m<.55));
  // camera-relative: screen up = -y tile (camera looks toward -z)
- const form=P.form,r={v:.3,b:.22,w:.33}[form];unstick();
- let spd={v:3.3,b:5.0,w:4.7}[form];if(P.sneak)spd*=.55;if(P.holyT>0)spd*=.5;if(P.garlicT>0&&form!=='b')spd*=.55;
+ const form=P.form,r={v:.3,b:.22,w:.33,m:.2}[form];unstick();
+ let spd={v:3.3,b:5.0,w:4.7,m:2.7}[form];if(P.sneak)spd*=.55;if(P.holyT>0)spd*=.5;if(P.garlicT>0&&form!=='b'&&form!=='m')spd*=.55;
  let vx=0,vy=0;
  if(P.bite){P.bite.t+=dt;P.bite.e.mdl.B.rotation.x=Math.sin(P.bite.t*14)*.05;if(Math.random()<dt*14)spark(P.bite.e.x,.9,P.bite.e.y,rr(-.5,.5),rr(.5,1.5),rr(-.5,.5),.5,0xc01030,.12,dotTex,false,1);if(Math.random()<dt*6)SFX.drink();
   if(P.bite.t>=P.bite.dur){finishBite();}}
@@ -1103,18 +1127,18 @@ function update(dt){
  if(!blockedAt(nx,P.y,r,form))P.x=nx;if(!blockedAt(P.x,ny,r,form))P.y=ny;
  const moving=Math.hypot(vx,vy)>.3;P.anim+=dt*(moving?(form==='b'?16:Math.hypot(vx,vy)*2.6):2);
  if(moving&&form==='w'&&!P.sneak&&!P.dash){P.noiseT=(P.noiseT||0)-dt;if(P.noiseT<=0){P.noiseT=.5;noiseAt(P.x,P.y,4.2);}}
- if(moving&&form!=='b'&&!P.sneak){P.stepT-=dt;if(P.stepT<=0){P.stepT=.32;SFX.step();}}
+ if(moving&&form!=='b'&&form!=='m'&&!P.sneak){P.stepT-=dt;if(P.stepT<=0){P.stepT=.32;SFX.step();}}
  // blood upkeep
  if(P.blood<=0&&form!=='v'){P.blood=0;setForm('v',true);toast('血量耗盡,變回吸血鬼');}
  // garlic
  const tc=lv.g[Math.floor(P.y)][Math.floor(P.x)];
- if(tc==='g'&&form!=='b'){P.garlicT=.3;P.blood=Math.max(0,P.blood-9*dt);ach('v6');if(Math.random()<dt*8)spark(P.x+rr(-.3,.3),.3,P.y+rr(-.3,.3),0,1,0,.6,0x9aff7a,.14,dotTex,false,0);if(P.blood<=0&&P.hurtT<=0)hurtPlayer(1,P.x,P.y+.3);}
+ if(tc==='g'&&form!=='b'&&form!=='m'){P.garlicT=.3;P.blood=Math.max(0,P.blood-9*dt);ach('v6');if(Math.random()<dt*8)spark(P.x+rr(-.3,.3),.3,P.y+rr(-.3,.3),0,1,0,.6,0x9aff7a,.14,dotTex,false,0);if(P.blood<=0&&P.hurtT<=0)hurtPlayer(1,P.x,P.y+.3);}
  // enemies
  for(const e of ents)updEnemy(e,dt);
  // bolts
  for(let i=bolts.length-1;i>=0;i--){const b=bolts[i];b.life-=dt;b.x+=b.vx*dt;b.y+=b.vy*dt;b.m.position.set(b.x,.7,b.y);const c=(lv.g[Math.floor(b.y)]||[])[Math.floor(b.x)];
   if(b.life<=0||c===undefined||c==='#'||c==='x'||c==='w'||c==='D'){scene.remove(b.m);bolts.splice(i,1);continue;}
-  if(Math.hypot(b.x-P.x,b.y-P.y)<(form==='b'?.3:.4)){hurtPlayer(1,b.x-b.vx*.1,b.y-b.vy*.1);P.blood=Math.max(0,P.blood-12);scene.remove(b.m);bolts.splice(i,1);}}
+  if(form!=='m'&&Math.hypot(b.x-P.x,b.y-P.y)<(form==='b'?.3:.4)){hurtPlayer(1,b.x-b.vx*.1,b.y-b.vy*.1);P.blood=Math.max(0,P.blood-12);scene.remove(b.m);bolts.splice(i,1);}}
  // items
  for(let i=items.length-1;i>=0;i--){const it=items[i];if(Math.hypot(it.x-P.x,it.y-P.y)<.65){P.blood=Math.min(P.bloodMax,P.blood+it.v);SFX.done();smokePuff(it.x,.3,it.y,6,0xc01030);scene.remove(it.m);items.splice(i,1);floatText('+'+it.v+' 🩸',it.x,it.y);}}
  // exit
@@ -1139,6 +1163,7 @@ function visuals(dt,now){
   pm.cape.rotation.x=.15+Math.sin(t*3)*.05+(Math.abs(Math.sin(P.anim))*.1);pm.cape2.rotation.x=pm.cape.rotation.x;pm.B.position.y=Math.abs(Math.sin(P.anim))*.04;pm.aura.material.opacity=.22+.08*Math.sin(t*4)+(P.bite?.25:0);
   pm.B.scale.y=P.sneak?.88:1;}
  else if(f==='b'){const fl=Math.sin(P.anim);pm.wings[0].rotation.z=.15+fl*.75;pm.wings[1].rotation.z=-.15-fl*.75;pm.B.position.y=.85+Math.sin(t*5)*.06;pm.G.children[1];}
+ else if(f==='m'){let k=0;for(const q of pm.puffs){q.a+=dt*q.sp;q.s.position.set(Math.sin(q.a)*q.r,q.h+Math.sin(t*1.7+k)*.06,Math.cos(q.a*1.3)*q.r);q.s.material.opacity=.42+.14*Math.sin(t*2+k*1.3);k++;}pm.B.position.y=.12+Math.sin(t*2.2)*.05;}
  else{const mv=Math.sin(P.anim);pm.legs[0].rotation.x=mv*.8;pm.legs[3].rotation.x=mv*.8;pm.legs[1].rotation.x=-mv*.8;pm.legs[2].rotation.x=-mv*.8;pm.tail.rotation.z=Math.sin(t*6)*.35;pm.B.position.y=Math.abs(Math.sin(P.anim*.5))*.05;pm.head.rotation.x=P.bite?.4:0;}
  pg.visible=!(P.hurtT>0&&Math.floor(t*20)%2===0);
  pm.G.traverse(o=>{if(o.material&&o.material.opacity!==undefined&&o.material.transparent===false)return;});
@@ -1166,7 +1191,7 @@ function visuals(dt,now){
   if(e.kind==='hunter'&&e.cast>0){e.fan.material.color.setHex(0xff2030);e.fan.material.opacity=.45;}
  }
  // bite marker
- const bt=(phase==='play'&&P.form!=='b'&&!P.bite)?nearestBite():null;biteMark.visible=!!bt;if(bt){biteMark.position.set(bt.x,.06,bt.y);const s=1.1+Math.sin(t*8)*.12;biteMark.scale.set(s,s,1);}
+ const bt=(phase==='play'&&P.form!=='b'&&P.form!=='m'&&!P.bite)?nearestBite():null;biteMark.visible=!!bt;if(bt){biteMark.position.set(bt.x,.06,bt.y);const s=1.1+Math.sin(t*8)*.12;biteMark.scale.set(s,s,1);}
  // items
  for(const it of items){it.m.position.y=Math.sin(t*2+it.ph)*.05;it.m.rotation.y=t;}
  // flames
@@ -1197,9 +1222,9 @@ function updHud(){if(!P||!lv)return;const q=lv.L.quota;
  const m=Math.floor(LS.time/60),s=Math.floor(LS.time%60);setTxt('timeN',m+':'+String(s).padStart(2,'0'));
  let ch=0;for(const e of ents)if(!e.dead&&e.state==='chase')ch++;$('alarm').style.opacity=Math.min(1,ch*.6);
  $('formN').textContent=FORMS[P.form].n;
- $('bAb').className='ab '+(P.abCd>0?'cd':'');$('bAb').firstElementChild.textContent={v:'🌫',b:'🔊',w:'💨'}[P.form];$('bAbS').textContent={v:'瞬移',b:'尖嘯',w:'撲殺'}[P.form];
- $('bBat').className='ab '+(P.form==='b'?'on ':'')+(hasForm('b')?'':'lock');$('bWolf').className='ab '+(P.form==='w'?'on ':'')+(hasForm('w')?'':'lock');
- $('bBite').className='ab '+(P.form==='b'?'dis':(nearestBite()?'rdy':''));}
+ $('bAb').className='ab '+(P.abCd>0?'cd':'');$('bAb').firstElementChild.textContent={v:'🌫',b:'🔊',w:'💨',m:'☁'}[P.form];$('bAbS').textContent={v:'瞬移',b:'尖嘯',w:'撲殺',m:'瀰霧'}[P.form];
+ $('bBat').className='ab '+(P.form==='b'?'on ':'')+(hasForm('b')?'':'lock');$('bWolf').className='ab '+(P.form==='w'?'on ':'')+(hasForm('w')?'':'lock');$('bMist').className='ab '+(P.form==='m'?'on ':'')+(hasForm('m')?'':'lock');
+ $('bBite').className='ab '+((P.form==='b'||P.form==='m')?'dis':(nearestBite()?'rdy':''));}
 function updBtns(){updHud();}
 const mmc=$('mm'),mmx=mmc.getContext('2d');
 function drawMini(){if(phase!=='play'||!lv)return;const W=lv.W,H=lv.H,s=Math.floor(Math.min(130/W,96/H)*10)/10;mmc.width=Math.ceil(W*s);mmc.height=Math.ceil(H*s);mmx.clearRect(0,0,mmc.width,mmc.height);
