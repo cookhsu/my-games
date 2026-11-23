@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>/*audio-unlock*/(function(){if(window.__au)return;var ctxs=[];window.__au=ctxs;var A=window.AudioContext||window.webkitAudioContext;
+if(A){var P=function(a,b){var c=new A(a,b);ctxs.push(c);return c;};P.prototype=A.prototype;try{Object.setPrototypeOf(P,A);}catch(e){}window.AudioContext=P;window.webkitAudioContext=P;}
+var el=null;function unlock(){try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch(e){}
+try{if(!el){el=document.createElement('audio');el.src="data:audio/wav;base64,UklGRmQGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YUAGAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA";el.loop=true;el.preload='auto';el.setAttribute('playsinline','');el.setAttribute('webkit-playsinline','');el.style.display='none';}
+var pr=el.play();if(pr&&pr.catch)pr.catch(function(){});}catch(e){}
+for(var i=0;i<ctxs.length;i++){var c=ctxs[i];try{if(c.state!=='running'&&c.resume){var r=c.resume();if(r&&r.catch)r.catch(function(){});}var b=c.createBuffer(1,1,22050),s=c.createBufferSource();s.buffer=b;s.connect(c.destination);s.start(0);}catch(e){}}}
+['touchstart','touchend','pointerdown','pointerup','mousedown','click','keydown'].forEach(function(ev){addEventListener(ev,unlock,{capture:true,passive:true});});
+document.addEventListener('visibilitychange',function(){if(document.hidden){try{el&&el.pause();}catch(e){}}else{unlock();}});
+addEventListener('pageshow',unlock);})();</script>
+<script id="gmb-js">/*gmb:背景音樂引擎(程式合成,無外部檔案)*/
+(function(){if(window.GMB)return;
+var ST={
+ zen:{bpm:70,root:57,sc:[0,2,4,7,9],prog:[[0,4,7],[5,9,12],[7,11,14],[2,5,9]],lead:'sine',arp:'triangle',bass:'sine',vol:.9,mel:.5},
+ cards:{bpm:104,root:55,sc:[0,2,4,5,7,9,11],prog:[[0,4,7],[5,9,12],[7,11,14],[0,4,7]],lead:'triangle',arp:'triangle',bass:'triangle',vol:1,mel:.6,swing:1},
+ calm:{bpm:76,root:60,sc:[0,2,4,5,7,9,11],prog:[[0,4,7],[9,12,16],[5,9,12],[7,11,14]],lead:'sine',arp:'sine',bass:'sine',vol:.9,mel:.45},
+ cute:{bpm:126,root:60,sc:[0,2,4,7,9],prog:[[0,4,7],[7,11,14],[9,12,16],[5,9,12]],lead:'square',arp:'triangle',bass:'triangle',vol:.8,mel:.75,bounce:1},
+ circuit:{bpm:112,root:52,sc:[0,3,5,7,10],prog:[[0,3,7],[8,12,15],[5,8,12],[7,10,14]],lead:'sawtooth',arp:'square',bass:'sawtooth',vol:.6,mel:.55,lp:1800},
+ gu:{bpm:84,root:57,sc:[0,2,4,7,9],prog:[[0,7,12],[5,12,16],[7,14,19],[0,7,12]],lead:'triangle',arp:'sine',bass:'sine',vol:.95,mel:.6,pluck:1},
+ spooky:{bpm:100,root:57,sc:[0,2,3,5,7,8,10],prog:[[0,3,7],[8,12,15],[5,8,12],[7,11,14]],lead:'triangle',arp:'square',bass:'triangle',vol:.8,mel:.6,bounce:1}
+};
+var ctx=null,master=null,flt=null,cfg=null,mutedFn=function(){return false},timer=0,nextT=0,step=0,motif=[],gainT=.075,vis=true,armed=false,key='',userOff=false,btn=null;
+function mtof(m){return 440*Math.pow(2,(m-69)/12);}
+function mk(){if(ctx)return ctx;var A=window.AudioContext||window.webkitAudioContext;if(!A)return null;try{ctx=new A();}catch(e){return null;}
+ master=ctx.createGain();master.gain.value=0;flt=ctx.createBiquadFilter();flt.type='lowpass';flt.frequency.value=(cfg&&cfg.lp)||5200;master.connect(flt);flt.connect(ctx.destination);return ctx;}
+function note(f,t,d,type,v,att){var o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.value=f;att=att||.012;g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(v,t+att);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.05);}
+function mkMotif(){var n=cfg.sc.length,m=[],p=Math.floor(n/2),sd=(cfg.bpm*7)|0;for(var i=0;i<16;i++){sd=(sd*9301+49297)%233280;var r=sd/233280;if(r<.3)p+=1;else if(r<.55)p-=1;else if(r<.68)p+=2;else if(r<.78)p-=2;p=Math.max(0,Math.min(n+2,p));m.push(r<.22?-1:p);}motif=m;}
+function sc(deg){var n=cfg.sc.length;var o=Math.floor(deg/n),i=((deg%n)+n)%n;return cfg.root+12+cfg.sc[i]+12*o;}
+function play(t,s){var c=cfg,beat=60/c.bpm/2,bar=Math.floor(s/16)%c.prog.length,ch=c.prog[bar],k=s%16,V=c.vol;
+ if(k%4===0){var bf=mtof(c.root-12+ch[0]);note(bf,t,beat*(c.bounce?1.4:3.4),c.bass,.16*V,.02);}
+ if(c.bounce&&k%4===2)note(mtof(c.root-12+ch[0]+(k%8===2?7:0)),t,beat*.9,c.bass,.08*V,.01);
+ if(k%2===0){var an=ch[(k/2)%ch.length];note(mtof(c.root+12+an),t,beat*(c.pluck?1.6:1.2),c.arp,.06*V,.008);}
+ var m=motif[k];if(m>=0&&(k%2===0||c.mel>.65)){if(((s*37)%10)/10<c.mel+.25)note(mtof(sc(m+(bar%2?1:0))),t+(c.swing&&k%2?beat*.15:0),beat*(c.pluck?1.8:1.5),c.lead,.075*V,c.pluck?.004:.02);}
+ if(k===0&&bar===c.prog.length-1&&!(Math.floor(s/16)%8))mkMotif();}
+function tick(){if(!ctx||!cfg)return;var want=!mutedFn()&&!userOff&&vis&&!document.hidden;
+ try{master.gain.setTargetAtTime(want?gainT:0,ctx.currentTime,.25);}catch(e){}
+ if(!want){nextT=0;return;}
+ if(ctx.state==='suspended'){try{ctx.resume();}catch(e){}return;}
+ var beat=60/cfg.bpm/2;if(!nextT||nextT<ctx.currentTime-.2)nextT=ctx.currentTime+.08;
+ while(nextT<ctx.currentTime+.45){play(nextT,step);step++;nextT+=beat;}}
+function arm(){if(armed)return;armed=true;var go=function(){if(mk()){try{if(ctx.state==='suspended')ctx.resume();}catch(e){}if(!timer)timer=setInterval(tick,120);tick();}};
+ ['pointerdown','touchend','mousedown','keydown','click'].forEach(function(e){addEventListener(e,go,{capture:true,passive:true});});}
+function button(){if(btn||!key)return;btn=document.createElement('button');btn.id='gmb-btn';btn.setAttribute('aria-label','背景音樂');
+ btn.style.cssText='position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));z-index:99990;width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(255,255,255,.35);background:rgba(20,16,40,.62);color:#fff;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);opacity:.85';
+ var up=function(){btn.textContent=userOff?'🔇':'🎵';};up();
+ btn.addEventListener('click',function(e){e.stopPropagation();userOff=!userOff;try{localStorage.setItem(key,userOff?'1':'0');}catch(_){}up();tick();});
+ (document.body||document.documentElement).appendChild(btn);}
+document.addEventListener('visibilitychange',function(){tick();});
+window.GMB={init:function(o){cfg=ST[o.style]||ST.cards;if(o.vol)gainT=o.vol;mutedFn=o.muted||mutedFn;key=o.key||'';try{userOff=key&&localStorage.getItem(key)==='1';}catch(e){}
+  step=0;mkMotif();if(o.button){if(document.body)button();else addEventListener('DOMContentLoaded',button);}arm();},
+ pause:function(){vis=false;tick();},resume:function(){vis=true;tick();}};
+})();
+</script>
+<meta charset="utf-8">
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#120d0a"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>辦公室破壞王</title>
+
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap">
+<style>
+/* 解壓敲爆遊戲:用誇張的螢幕震動、碎片爆炸跟合成音效,把辦公用品一件一件敲爛。 */
+:root{
+  --bg:#f5efe6; --bg-raise:#ffffff; --fg:#1c1410; --fg-dim:#7a6a5a;
+  --accent:#e2432e; --accent-2:#1f8f5f; --warn:#d99a1f; --line:#e3d8c8;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#120d0a; --bg-raise:#1d1713; --fg:#f5ece2; --fg-dim:#a89686;
+    --accent:#ff6b4a; --accent-2:#36d17a; --warn:#ffc24a; --line:#2e2520;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#120d0a; --bg-raise:#1d1713; --fg:#f5ece2; --fg-dim:#a89686;
+  --accent:#ff6b4a; --accent-2:#36d17a; --warn:#ffc24a; --line:#2e2520;
+  color-scheme: dark;
+}
+*{box-sizing:border-box;}
+html,body{overscroll-behavior:none;}
+body{
+  margin:0;background:var(--bg);color:var(--fg);
+  font-family:"Inter",-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  -webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none;
+}
+h1,h2,h3{font-family:"Archivo Black","Space Grotesk",sans-serif;text-wrap:balance;margin:0;}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;}
+
+#shakeStage{
+  min-height:100vh;
+}
+#shakeStage.shk1{animation:shk1 .22s ease;}
+#shakeStage.shk2{animation:shk2 .24s ease;}
+#shakeStage.shk3{animation:shk3 .26s ease;}
+#shakeStage.shk4{animation:shk4 .3s ease;}
+#shakeStage.shk5{animation:shk5 .34s ease;}
+@keyframes shk1{10%{transform:translate(2px,-1px)}30%{transform:translate(-2px,1px)}50%{transform:translate(1px,2px)}70%{transform:translate(-1px,-2px)}100%{transform:translate(0,0)}}
+@keyframes shk2{10%{transform:translate(4px,-2px) rotate(.3deg)}30%{transform:translate(-4px,2px) rotate(-.3deg)}50%{transform:translate(2px,3px)}70%{transform:translate(-2px,-3px)}100%{transform:translate(0,0)}}
+@keyframes shk3{10%{transform:translate(6px,-3px) rotate(.5deg)}30%{transform:translate(-6px,3px) rotate(-.5deg)}50%{transform:translate(4px,4px)}70%{transform:translate(-4px,-4px)}90%{transform:translate(2px,1px)}100%{transform:translate(0,0)}}
+@keyframes shk4{10%{transform:translate(9px,-4px) rotate(.8deg)}30%{transform:translate(-9px,4px) rotate(-.8deg)}50%{transform:translate(6px,6px)}70%{transform:translate(-6px,-6px)}90%{transform:translate(3px,2px)}100%{transform:translate(0,0)}}
+@keyframes shk5{8%{transform:translate(13px,-6px) rotate(1.2deg)}24%{transform:translate(-13px,6px) rotate(-1.2deg)}40%{transform:translate(9px,9px)}56%{transform:translate(-9px,-9px)}72%{transform:translate(6px,-4px)}88%{transform:translate(-3px,3px)}100%{transform:translate(0,0)}}
+
+.wrap{
+  max-width:460px;margin:0 auto;position:relative;
+  padding-left:max(16px, env(safe-area-inset-left,0px));
+  padding-right:max(16px, env(safe-area-inset-right,0px));
+  padding-top:calc(env(safe-area-inset-top,0px) + 22px);
+  padding-bottom:40px;
+}
+header{margin-bottom:14px;}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:7px;
+  font:700 11px "JetBrains Mono",monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);
+  margin-bottom:8px;
+}
+.eyebrow::before{content:"";width:6px;height:6px;border-radius:2px;background:var(--accent);}
+h1{font-size:26px;letter-spacing:-.01em;}
+.sub{font-size:13.5px;color:var(--fg-dim);margin-top:6px;max-width:48ch;}
+.rulesBtn{margin-top:10px;background:none;border:1px solid var(--line);color:var(--fg-dim);font:600 12px "Inter";padding:6px 12px;border-radius:999px;cursor:pointer;}
+.rulesBtn:hover{border-color:var(--accent);color:var(--accent);}
+.rules{margin-top:10px;background:var(--bg-raise);border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-size:13px;color:var(--fg-dim);line-height:1.65;}
+.rules b{color:var(--fg);}
+.rules[hidden]{display:none;}
+
+.stats{display:grid;grid-template-columns:1.1fr 1fr 0.8fr;gap:8px;margin:16px 0 10px;}
+.stat{background:var(--bg-raise);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-width:0;}
+.stat .lbl{font:700 10px "JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-dim);}
+.stat .val{font:800 21px "Archivo Black";margin-top:2px;transition:transform .12s ease;}
+.stat .val.bump{animation:bump .25s ease;}
+@keyframes bump{0%{transform:scale(1)}45%{transform:scale(1.22)}100%{transform:scale(1)}}
+#timeStat .val{color:var(--fg);}
+#timeStat.low .val{color:var(--accent);animation:pulseTime .5s ease infinite;}
+@keyframes pulseTime{0%,100%{opacity:1}50%{opacity:.45}}
+#comboStat .val{color:var(--accent-2);}
+.multBadge{display:inline-block;margin-left:4px;font:700 11px "JetBrains Mono";padding:1px 6px;border-radius:999px;background:color-mix(in srgb, var(--accent-2) 18%, transparent);color:var(--accent-2);vertical-align:2px;}
+.multBadge.m3{background:color-mix(in srgb, var(--warn) 22%, transparent);color:var(--warn);}
+.multBadge.m5{background:color-mix(in srgb, var(--accent) 24%, transparent);color:var(--accent);}
+
+.weaponBar{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:10px;}
+.wBtn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 4px;border-radius:12px;
+  border:1.5px solid var(--line);background:var(--bg-raise);color:var(--fg);cursor:pointer;font-size:20px;}
+.wBtn .wn{font:700 11px "Inter";}
+.wBtn .wd{font:600 9.5px "JetBrains Mono",monospace;color:var(--fg-dim);}
+.wBtn.active{border-color:var(--accent);background:color-mix(in srgb, var(--accent) 12%, var(--bg-raise));}
+.wBtn.active .wn{color:var(--accent);}
+.wBtn:active{transform:scale(.95);}
+.wBtn.bombBtn{border-color:var(--warn);}
+.wBtn.bombBtn .wd{color:var(--warn);}
+.wBtn.bombBtn:disabled{opacity:.35;cursor:not-allowed;}
+.sparkIcon{position:absolute;font-size:28px;z-index:7;animation:sparkPulse .48s ease;pointer-events:none;}
+@keyframes sparkPulse{0%{transform:scale(.4);opacity:0}30%{transform:scale(1.3);opacity:1}100%{transform:scale(1);opacity:.9}}
+.objEmoji.sparkWarn{filter:drop-shadow(0 0 10px var(--accent)) drop-shadow(0 10px 18px rgba(0,0,0,.25));}
+
+.smashWrap{position:relative;}
+.smashZone{
+  position:relative;height:300px;border-radius:16px;overflow:hidden;touch-action:none;
+  background:
+    radial-gradient(ellipse at 50% 112%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%),
+    var(--bg-raise);
+  border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+}
+.smashZone.bossOn{background:
+    radial-gradient(ellipse at 50% 112%, color-mix(in srgb, var(--warn) 16%, transparent), transparent 60%),
+    var(--bg-raise);
+  box-shadow:inset 0 0 0 3px var(--warn);
+}
+.objHold{position:relative;display:flex;align-items:center;justify-content:center;width:200px;height:200px;}
+.objEmoji{font-size:118px;line-height:1;filter:drop-shadow(0 10px 18px rgba(0,0,0,.25));transition:filter .15s ease;}
+.objEmoji.impact{animation:impact .16s ease;}
+@keyframes impact{0%{transform:scale(1) rotate(0)}30%{transform:scale(.86,1.1) rotate(-4deg)}60%{transform:scale(1.08,.92) rotate(3deg)}100%{transform:scale(1) rotate(0)}}
+.objEmoji.destroying{animation:destroyPop .42s cubic-bezier(.3,.9,.4,1) forwards;}
+@keyframes destroyPop{0%{transform:scale(1) rotate(0);opacity:1}35%{transform:scale(1.35) rotate(8deg);opacity:1}100%{transform:scale(.2) rotate(50deg);opacity:0}}
+.objEmoji.entering{animation:enterPop .3s cubic-bezier(.2,.9,.3,1.3);}
+@keyframes enterPop{0%{transform:scale(.3) rotate(-14deg);opacity:0}100%{transform:scale(1) rotate(0);opacity:1}}
+.crackMark{position:absolute;font-size:15px;opacity:.85;pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4));}
+.hpBarWrap{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);width:72%;height:7px;background:color-mix(in srgb, var(--fg) 12%, transparent);border-radius:999px;overflow:hidden;}
+.hpBar{height:100%;background:linear-gradient(90deg, var(--accent-2), var(--accent));width:100%;transition:width .12s ease;}
+.objLabel{position:absolute;top:10px;left:50%;transform:translateX(-50%);font:700 11px "JetBrains Mono";letter-spacing:.04em;color:var(--fg-dim);background:color-mix(in srgb, var(--bg-raise) 70%, transparent);padding:3px 10px;border-radius:999px;}
+
+.popup{position:absolute;pointer-events:none;font:800 16px "Archivo Black";color:var(--accent-2);z-index:6;animation:floatUp .7s ease forwards;white-space:nowrap;}
+.popup.pen{color:var(--accent);}
+.popup.bonus{color:var(--warn);}
+@keyframes floatUp{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-150%) scale(1.3)}}
+
+.particleLayer{position:absolute;inset:0;overflow:visible;pointer-events:none;z-index:5;}
+.pt{position:absolute;will-change:transform,opacity;font-size:16px;}
+
+.bossBanner{
+  position:absolute;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:4px;
+  background:color-mix(in srgb, var(--warn) 22%, transparent);backdrop-filter:blur(1px);z-index:8;text-align:center;
+}
+.bossBanner.on{display:flex;}
+.bossBanner .bt1{font:800 20px "Archivo Black";color:var(--warn);text-shadow:0 2px 6px rgba(0,0,0,.3);}
+.bossBanner .bt2{font-size:12px;color:var(--fg);}
+
+.actions{display:flex;gap:8px;margin-top:14px;padding-right:50px;}
+.btn{flex:1;padding:11px;border-radius:10px;border:1px solid var(--line);background:var(--bg-raise);color:var(--fg);font:700 13.5px "Inter";cursor:pointer;}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn:active{transform:scale(.97);}
+
+.tally{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;}
+.tally .ti{display:flex;align-items:center;gap:5px;font-size:12px;background:var(--bg-raise);border:1px solid var(--line);border-radius:999px;padding:4px 10px;}
+.tally .ti .ic{font-size:14px;}
+
+footer{margin-top:16px;}
+footer p{font-size:12px;color:var(--fg-dim);margin:0;}
+
+.ov{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:20;background:color-mix(in srgb, var(--bg) 72%, transparent);backdrop-filter:blur(3px);padding:20px;}
+.ov.on{display:flex;}
+.modal{background:var(--bg-raise);border:1px solid var(--line);border-radius:14px;padding:26px 24px;max-width:360px;width:100%;text-align:center;}
+.modal h2{font-size:21px;margin-bottom:6px;}
+.modal .lede{font-size:13px;color:var(--fg-dim);margin-bottom:14px;}
+.durList{display:flex;flex-direction:column;gap:10px;}
+.durBtn{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-radius:10px;border:1px solid var(--line);background:var(--bg);cursor:pointer;text-align:left;width:100%;}
+.durBtn:active{transform:scale(.98);}
+.durBtn .t1{font:800 15px "Archivo Black";}
+.durBtn .t2{font-size:11.5px;color:var(--fg-dim);margin-top:2px;}
+.durBtn .n{font:800 20px "Archivo Black";color:var(--accent);}
+
+.rankLine{font:800 26px "Archivo Black";color:var(--accent);margin:8px 0 2px;}
+.rankDesc{font-size:13px;color:var(--fg-dim);margin-bottom:12px;}
+.modalStats{display:flex;justify-content:center;gap:16px;margin-bottom:14px;}
+.modalStats div{text-align:center;}
+.modalStats .n{font:800 18px "Archivo Black";}
+.modalStats .l{font-size:10.5px;color:var(--fg-dim);}
+</style>
+</head>
+<body>
+
+
+<a href="index.html" id="back" style="position:fixed;top:max(10px,env(safe-area-inset-top,0px));left:max(10px,env(safe-area-inset-left,0px));z-index:30;background:var(--bg-raise);border:1px solid var(--line);color:var(--fg);font:700 12px 'Inter',sans-serif;text-decoration:none;border-radius:999px;padding:6px 14px;box-shadow:0 2px 10px rgba(0,0,0,.15);">‹ 大廳</a>
+<div id="shakeStage">
+<div class="wrap">
+  <header>
+    <div class="eyebrow">解壓破壞模擬器</div>
+    <h1>辦公室破壞王</h1>
+    <p class="sub">螢幕、鍵盤、印表機通通敲爆!連擊越高畫面震動越誇張,小心老闆突然經過。</p>
+    <button class="rulesBtn" id="rulesToggle">怎麼玩?</button>
+    <div class="rules" id="rulesBox" hidden>
+      <p>點擊畫面中央的辦公用品造成傷害,<b>血條歸零就會被你砸爛</b>,馬上換下一件上場。</p>
+      <p>手速夠快、<b>連擊不中斷</b>就會疊加「連擊倍率」,敲擊分數跟著翻倍,畫面震動跟碎片量也會變大。</p>
+      <p>上方可以切換<b>武器</b>:⚾球棒出手快、🔨鐵鎚傷害高但較慢、🔥噴火槍按住不放連續輸出,各自剋制不同材質的物品,配對正確會有額外加成。💣炸彈每局限用 2 次,點下去直接秒殺當前目標。</p>
+      <p>敲玻璃、陶瓷類物品(螢幕、馬克杯、時鐘)有機率<b>彈回玻璃渣</b>,出現紅色警示時千萬別手滑點下去,會被反彈歸零連擊!</p>
+      <p>偶爾會出現<b>「老闆經過」</b>警報——這時候千萬別出手,忍住可以拿額外加分;手滑打下去會被抓包,連擊直接歸零!</p>
+      <p style="margin-bottom:0">時間到結算總分跟破壞清單,看看你是哪一種社畜等級。</p>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat" id="timeStat"><div class="lbl">剩餘時間</div><div class="val" id="statTime">60</div></div>
+    <div class="stat"><div class="lbl">分數</div><div class="val" id="statScore">0</div></div>
+    <div class="stat" id="comboStat"><div class="lbl">連擊</div><div class="val" id="statCombo">0<span class="multBadge" id="multBadge" hidden>x1</span></div></div>
+  </div>
+
+  <div class="weaponBar" id="weaponBar">
+    <button class="wBtn active" data-w="bat"><span>⚾</span><span class="wn">球棒</span><span class="wd">剋塑膠</span></button>
+    <button class="wBtn" data-w="hammer"><span>🔨</span><span class="wn">鐵鎚</span><span class="wd">剋金屬</span></button>
+    <button class="wBtn" data-w="torch"><span>🔥</span><span class="wn">噴火槍</span><span class="wd">剋布料</span></button>
+    <button class="wBtn bombBtn" id="bombBtn"><span>💣</span><span class="wn">炸彈</span><span class="wd" id="bombCount">x2</span></button>
+  </div>
+
+  <div class="smashWrap">
+    <div class="smashZone" id="smashZone">
+      <div class="objLabel" id="objLabel">電腦螢幕</div>
+      <div class="objHold" id="objHold">
+        <div class="objEmoji" id="objEmoji">🖥️</div>
+      </div>
+      <div class="hpBarWrap"><div class="hpBar" id="hpBar"></div></div>
+      <div class="particleLayer" id="particleLayer"></div>
+      <div class="bossBanner" id="bossBanner"><div class="bt1">⚠ 老闆經過了!</div><div class="bt2">先別出手...</div></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn" id="btnRestart">重新開始</button>
+    <button class="btn primary" id="btnPause">暫停</button>
+  </div>
+
+  <div class="tally" id="liveTally"></div>
+
+  <footer><p>最佳紀錄只存在你自己的瀏覽器裡。這是一款純解壓小遊戲,沒有真的辦公用品受到傷害。</p></footer>
+</div>
+</div>
+
+<div class="ov" id="startOv">
+  <div class="modal">
+    <h2>選一場破壞時長</h2>
+    <p class="lede">時間到結算分數,連擊越穩、倍率越高,分數翻得越快。</p>
+    <div class="durList">
+      <button class="durBtn" data-dur="30"><div><div class="t1">快速宣洩</div><div class="t2">30 秒・精華濃縮版</div></div><div class="n">30s</div></button>
+      <button class="durBtn" data-dur="60"><div><div class="t1">標準班表</div><div class="t2">60 秒・最多人選</div></div><div class="n">60s</div></button>
+      <button class="durBtn" data-dur="90"><div><div class="t1">今晚要加班</div><div class="t2">90 秒・耐力挑戰</div></div><div class="n">90s</div></button>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="endOv">
+  <div class="modal">
+    <h2>破壞結算</h2>
+    <div class="rankLine" id="rankTitle">辦公室破壞王</div>
+    <div class="rankDesc" id="rankDesc">今天的業績很不錯</div>
+    <div class="modalStats">
+      <div><div class="n" id="endScore">0</div><div class="l mono">總分</div></div>
+      <div><div class="n" id="endMaxCombo">0</div><div class="l mono">最高連擊</div></div>
+      <div><div class="n" id="endBest">0</div><div class="l mono">最佳紀錄</div></div>
+    </div>
+    <div class="tally" id="endTally" style="justify-content:center;margin-bottom:16px;"></div>
+    <button class="btn primary" style="width:100%" id="btnAgain">再破壞一次</button>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+var OBJECTS = [
+  { id:'monitor', icon:'🖥️', name:'電腦螢幕', material:'glass', hp:6, value:8 },
+  { id:'keyboard', icon:'⌨️', name:'鍵盤', material:'plastic', hp:4, value:5 },
+  { id:'printer', icon:'🖨️', name:'印表機', material:'metal', hp:9, value:13 },
+  { id:'phone', icon:'☎️', name:'辦公電話', material:'plastic', hp:3, value:4 },
+  { id:'mouse', icon:'🖱️', name:'滑鼠', material:'plastic', hp:2, value:3 },
+  { id:'fax', icon:'📠', name:'傳真機', material:'metal', hp:8, value:11 },
+  { id:'mug', icon:'☕', name:'馬克杯', material:'ceramic', hp:1, value:2 },
+  { id:'chair', icon:'🪑', name:'辦公椅', material:'fabric', hp:5, value:7 },
+  { id:'clock', icon:'🕰️', name:'牆上時鐘', material:'glass', hp:3, value:6 },
+  { id:'plant', icon:'🪴', name:'辦公室盆栽', material:'fabric', hp:2, value:4 },
+];
+var CRACKS = ['✺','⚡','✦','▲','✹','◆'];
+var RANKS = [
+  { min:0, title:'見習社畜', desc:'輕輕敲,心裡苦。' },
+  { min:200, title:'壓力山大操作員', desc:'手開始有感覺了。' },
+  { min:500, title:'辦公室破壞王', desc:'整層樓都聽到你的戰績。' },
+  { min:1000, title:'傳說拆除大隊長', desc:'人資已經在路上了。' },
+  { min:1800, title:'CEO眼中釘・年度破壞神', desc:'下一秒就要被請去喝咖啡。' },
+];
+
+var running=false, paused=false, dur=60, timeLeft=60, score=0, combo=0, maxCombo=0;
+var lastHitTime=0, cur=null, destroyedCounts={}, bossActive=false, bossTimeout=null, nextBossAt=0;
+var tickHandle=null, particles=[], rafHandle=null, prevObjId=null;
+
+var WEAPONS = {
+  bat:    { icon:'⚾', name:'球棒',   dmg:1, cooldown:130, best:'plastic', label:'塑膠' },
+  hammer: { icon:'🔨', name:'鐵鎚',   dmg:2, cooldown:380, best:'metal',   label:'金屬' },
+  torch:  { icon:'🔥', name:'噴火槍', dmg:1, cooldown:170, best:'fabric',  label:'布料', tick:true },
+};
+var activeWeapon='bat', lastActionTime=0, bombCount=2;
+var sparkActive=false, sparkTimeout=null;
+var torchInterval=null, holdPoint=null;
+
+/* ---------- 音效(合成,不需外部音源) ---------- */
+var actx=null;
+function ac(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return actx; }
+function tone(f,t0,dur,type,vol,slideTo){
+  var c=ac(); if(!c) return;
+  var o=c.createOscillator(), g=c.createGain();
+  o.type=type||'sine'; o.frequency.setValueAtTime(f, c.currentTime+t0);
+  if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, c.currentTime+t0+dur);
+  g.gain.setValueAtTime(.0001, c.currentTime+t0);
+  g.gain.linearRampToValueAtTime(vol||.2, c.currentTime+t0+.008);
+  g.gain.exponentialRampToValueAtTime(.0001, c.currentTime+t0+dur);
+  o.connect(g); g.connect(c.destination);
+  o.start(c.currentTime+t0); o.stop(c.currentTime+t0+dur+.05);
+}
+function noiseBurst(t0, dur, freq, q, vol, type){
+  var c=ac(); if(!c) return;
+  var n = Math.floor(c.sampleRate*dur);
+  var buf = c.createBuffer(1, n, c.sampleRate);
+  var d = buf.getChannelData(0);
+  for (var i=0;i<n;i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/n, 1.3);
+  var src = c.createBufferSource(); src.buffer = buf;
+  var filt = c.createBiquadFilter(); filt.type = type||'bandpass'; filt.frequency.value = freq; filt.Q.value = q;
+  var g = c.createGain(); g.gain.setValueAtTime(vol, c.currentTime+t0); g.gain.exponentialRampToValueAtTime(.0001, c.currentTime+t0+dur);
+  src.connect(filt); filt.connect(g); g.connect(c.destination);
+  src.start(c.currentTime+t0); src.stop(c.currentTime+t0+dur+.02);
+}
+function hitSFX(material, big){
+  var v = big ? 1.4 : 1;
+  if (material==='glass'){ noiseBurst(0, .18*v, 3400, 2.2, .22, 'bandpass'); tone(2000,.02,.08,'sine',.08,3200); }
+  else if (material==='metal'){ tone(220,0,.22*v,'triangle',.16,160); tone(660,0,.16*v,'sine',.08,520); noiseBurst(0,.05,900,4,.08,'highpass'); }
+  else if (material==='ceramic'){ noiseBurst(0,.12*v,5200,3,.2,'bandpass'); }
+  else if (material==='fabric'){ tone(110,0,.14*v,'sine',.16); }
+  else { tone(160,0,.1*v,'square',.14,80); noiseBurst(0,.06,1400,2,.1,'bandpass'); } // plastic
+}
+function destroySFX(){
+  noiseBurst(0,.3,1800,1.4,.26,'bandpass');
+  tone(180,0,.3,'sawtooth',.18,60);
+  [0,.08,.16].forEach(function(t,i){ tone([392,523,659][i],t,.18,'triangle',.14); });
+}
+function comboStingSFX(mult){
+  var base = 440 + mult*80;
+  [0,.07,.14].forEach(function(t,i){ tone(base*(1+i*.26), t, .12, 'triangle', .12); });
+}
+function bossAlertSFX(){ tone(500,0,.5,'sawtooth',.12,120); }
+function penaltySFX(){ tone(300,0,.25,'sawtooth',.16,80); noiseBurst(0,.15,600,2,.14,'lowpass'); }
+function screamSFX(){ tone(760,0,.09,'sawtooth',.2,1500); tone(320,.07,.16,'sawtooth',.16,110); }
+function bombSFX(){ noiseBurst(0,.4,1200,1.1,.3,'bandpass'); tone(140,0,.4,'sawtooth',.22,40); tone(90,0,.5,'sine',.2,30); }
+function bonusSFX(){ [0,.09,.18].forEach(function(t,i){ tone([523,659,784][i],t,.16,'sine',.14); }); }
+function tickSFX(){ tone(900,0,.05,'square',.08); }
+function fanfareSFX(){ [0,.12,.24,.4].forEach(function(t,i){ tone([523,659,784,1046][i],t,.3,'triangle',.16); }); }
+
+/* ---------- storage ---------- */
+function loadBest(d){ try{ var o=JSON.parse(localStorage.getItem('officesmash_best')||'{}'); return o[d]||0; }catch(e){ return 0; } }
+function saveBest(d,v){ try{ var o=JSON.parse(localStorage.getItem('officesmash_best')||'{}'); o[d]=v; localStorage.setItem('officesmash_best', JSON.stringify(o)); }catch(e){} }
+
+function multFor(c){ return c<5?1 : c<10?2 : c<18?3 : c<28?4 : 5; }
+
+function pickNext(){
+  var pool = OBJECTS.filter(function(o){ return o.id!==prevObjId; });
+  var o = pool[Math.floor(Math.random()*pool.length)];
+  prevObjId = o.id;
+  return { id:o.id, icon:o.icon, name:o.name, material:o.material, hp:o.hp, maxHp:o.hp, value:o.value };
+}
+
+function clearSpark(){
+  sparkActive = false;
+  if (sparkTimeout){ clearTimeout(sparkTimeout); sparkTimeout = null; }
+  var icons = document.querySelectorAll('.sparkIcon');
+  icons.forEach(function(i){ i.remove(); });
+  document.getElementById('objEmoji').classList.remove('sparkWarn');
+}
+
+function spawnObject(){
+  cur = pickNext();
+  clearSpark();
+  var emoji = document.getElementById('objEmoji');
+  emoji.textContent = cur.icon;
+  emoji.className = 'objEmoji entering';
+  document.getElementById('objLabel').textContent = cur.name;
+  document.getElementById('hpBar').style.width = '100%';
+  var hold = document.getElementById('objHold');
+  var marks = hold.querySelectorAll('.crackMark');
+  marks.forEach(function(m){ m.remove(); });
+}
+
+function setActiveWeapon(w){
+  activeWeapon = w;
+  document.querySelectorAll('.wBtn[data-w]').forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('data-w')===w);
+  });
+}
+function updateBombUI(){
+  document.getElementById('bombCount').textContent = 'x'+bombCount;
+  document.getElementById('bombBtn').disabled = bombCount<=0;
+}
+function maybeTriggerSpark(){
+  if (!cur || (cur.material!=='glass' && cur.material!=='ceramic')) return;
+  if (Math.random() >= .22) return;
+  sparkActive = true;
+  document.getElementById('objEmoji').classList.add('sparkWarn');
+  var hold = document.getElementById('objHold');
+  var icon = document.createElement('div');
+  icon.className = 'sparkIcon'; icon.textContent = '⚡';
+  icon.style.left = (30+Math.random()*40)+'%'; icon.style.top = (10+Math.random()*30)+'%';
+  hold.appendChild(icon);
+  sparkTimeout = setTimeout(function(){ clearSpark(); }, 480);
+}
+
+function renderStats(){
+  bumpSet('statTime', timeLeft);
+  bumpSet('statScore', score);
+  var badge = document.getElementById('multBadge');
+  var m = multFor(combo);
+  document.getElementById('statCombo').firstChild.textContent = combo;
+  if (m>1){ badge.hidden=false; badge.textContent='x'+m; badge.className='multBadge'+(m>=5?' m5':m>=3?' m3':''); }
+  else { badge.hidden = true; }
+  document.getElementById('timeStat').classList.toggle('low', timeLeft<=10);
+}
+function bumpSet(id, val){
+  var el = document.getElementById(id);
+  if (el.textContent != val){ el.textContent = val; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+}
+
+function shake(mag){
+  var s = document.getElementById('shakeStage');
+  var cls = 'shk'+Math.max(1,Math.min(5,mag));
+  s.classList.remove('shk1','shk2','shk3','shk4','shk5');
+  void s.offsetWidth;
+  s.classList.add(cls);
+}
+
+function popupAt(x, y, text, cls){
+  var layer = document.getElementById('particleLayer');
+  var el = document.createElement('div');
+  el.className = 'popup' + (cls?(' '+cls):'');
+  el.textContent = text;
+  el.style.left = x+'px'; el.style.top = y+'px';
+  layer.appendChild(el);
+  setTimeout(function(){ el.remove(); }, 720);
+}
+
+var DEBRIS = { glass:['◆','▲','✦'], metal:['⚙️','🔩','▪️'], plastic:['◼️','▫️','●'], ceramic:['◆','▫️'], fabric:['❖','●'] };
+function burst(x, y, material, count){
+  var icons = DEBRIS[material] || DEBRIS.plastic;
+  for (var i=0;i<count;i++){
+    var ang = Math.random()*Math.PI*2;
+    var spd = 2 + Math.random()*5;
+    particles.push({
+      x:x, y:y, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd-3,
+      rot: Math.random()*360, vrot:(Math.random()-.5)*30,
+      born: performance.now(), life: 550+Math.random()*300,
+      icon: icons[Math.floor(Math.random()*icons.length)]
+    });
+  }
+  ensureParticleLoop();
+}
+function ensureParticleLoop(){
+  if (rafHandle) return;
+  var layer = document.getElementById('particleLayer');
+  var els = new Map();
+  function step(){
+    var now = performance.now();
+    particles = particles.filter(function(p){
+      var age = now - p.born;
+      if (age > p.life){ var e = els.get(p); if (e){ e.remove(); els.delete(p); } return false; }
+      p.vy += 0.25; p.x += p.vx; p.y += p.vy; p.rot += p.vrot;
+      var e = els.get(p);
+      if (!e){ e = document.createElement('div'); e.className='pt'; e.textContent=p.icon; layer.appendChild(e); els.set(p,e); }
+      var op = 1 - age/p.life;
+      e.style.transform = 'translate('+p.x+'px,'+p.y+'px) rotate('+p.rot+'deg)';
+      e.style.opacity = op;
+      return true;
+    });
+    if (particles.length){ rafHandle = requestAnimationFrame(step); }
+    else { rafHandle = null; }
+  }
+  rafHandle = requestAnimationFrame(step);
+}
+
+function destroyCurrent(lx, ly, mult, bonusMult){
+  var emoji = document.getElementById('objEmoji');
+  destroyedCounts[cur.id] = (destroyedCounts[cur.id]||0) + 1;
+  var bonus = Math.round(cur.value * mult * (bonusMult||1));
+  score += bonus;
+  renderStats();
+  popupAt(lx, ly-26, '+'+bonus+' 破壞獎勵!', 'bonus');
+  destroySFX(); shake(5);
+  burst(lx, ly, cur.material, 18);
+  emoji.classList.remove('impact'); emoji.classList.add('destroying');
+  renderTally();
+  setTimeout(function(){ if (running && !paused) spawnObject(); }, 420);
+}
+
+function hit(clientX, clientY){
+  if (!running || paused || !cur) return;
+  var zone = document.getElementById('smashZone');
+  var rect = zone.getBoundingClientRect();
+  var lx = clientX - rect.left, ly = clientY - rect.top;
+
+  if (bossActive){
+    combo = 0; renderStats();
+    popupAt(lx, ly, '被抓包了!', 'pen');
+    penaltySFX(); shake(3);
+    return;
+  }
+  if (sparkActive){
+    combo = 0; score = Math.max(0, score-8); renderStats();
+    clearSpark();
+    popupAt(lx, ly, '打到手了! -8', 'pen');
+    screamSFX(); shake(4);
+    return;
+  }
+
+  var weapon = WEAPONS[activeWeapon];
+  var now = performance.now();
+  if (now - lastActionTime < weapon.cooldown) return;
+  lastActionTime = now;
+
+  combo = (now - lastHitTime < 750) ? combo+1 : 1;
+  lastHitTime = now;
+  maxCombo = Math.max(maxCombo, combo);
+  var mult = multFor(combo);
+  if (combo>1 && (combo===5 || combo===10 || combo===18 || combo===28)) comboStingSFX(mult);
+
+  var matched = weapon.best === cur.material;
+  cur.hp -= weapon.dmg;
+  var gained = Math.round(weapon.dmg * mult * (matched ? 1.5 : 1));
+  score += gained;
+  renderStats();
+
+  var emoji = document.getElementById('objEmoji');
+  emoji.classList.remove('impact'); void emoji.offsetWidth; emoji.classList.add('impact');
+  document.getElementById('hpBar').style.width = Math.max(0, cur.hp/cur.maxHp*100)+'%';
+  popupAt(lx, ly, (matched?'★ ':'')+'+'+gained, matched?'bonus':'');
+  hitSFX(cur.material, matched);
+  shake(Math.min(5, 1+Math.floor(mult/2)));
+  burst(lx, ly, cur.material, 3+mult*2);
+
+  if (cur.hp > 0 && Math.random() < .7){
+    var hold = document.getElementById('objHold');
+    var mark = document.createElement('div');
+    mark.className = 'crackMark';
+    mark.textContent = CRACKS[Math.floor(Math.random()*CRACKS.length)];
+    mark.style.left = (20+Math.random()*60)+'%';
+    mark.style.top = (15+Math.random()*60)+'%';
+    mark.style.transform = 'rotate('+(Math.random()*360)+'deg)';
+    hold.appendChild(mark);
+  }
+
+  if (cur.hp <= 0){
+    destroyCurrent(lx, ly, mult, matched?1.5:1);
+  } else {
+    maybeTriggerSpark();
+  }
+}
+
+function useBomb(){
+  if (!running || paused || !cur || bombCount<=0) return;
+  bombCount--; updateBombUI();
+  clearSpark();
+  var zone = document.getElementById('smashZone').getBoundingClientRect();
+  var lx = zone.width/2, ly = zone.height/2;
+  var now = performance.now();
+  combo = (now - lastHitTime < 750) ? combo+1 : 1;
+  lastHitTime = now; lastActionTime = now;
+  maxCombo = Math.max(maxCombo, combo);
+  var mult = multFor(combo);
+  bombSFX(); shake(5);
+  popupAt(lx, ly, '💥 引爆!', 'bonus');
+  cur.hp = 0;
+  destroyCurrent(lx, ly, mult, 2);
+}
+
+function renderTally(){
+  [['liveTally',destroyedCounts],['endTally',destroyedCounts]].forEach(function(pair){
+    var el = document.getElementById(pair[0]);
+    if (!el) return;
+    el.innerHTML = '';
+    OBJECTS.forEach(function(o){
+      var n = destroyedCounts[o.id];
+      if (!n) return;
+      var d = document.createElement('div'); d.className='ti';
+      d.innerHTML = '<span class="ic">'+o.icon+'</span><span>'+o.name+' x'+n+'</span>';
+      el.appendChild(d);
+    });
+  });
+}
+
+function scheduleBoss(){
+  nextBossAt = timeLeft - (8 + Math.random()*9);
+}
+function triggerBoss(){
+  bossActive = true;
+  document.getElementById('smashZone').classList.add('bossOn');
+  document.getElementById('bossBanner').classList.add('on');
+  bossAlertSFX();
+  var resisted = true;
+  var startCombo = combo;
+  bossTimeout = setTimeout(function(){
+    bossActive = false;
+    document.getElementById('smashZone').classList.remove('bossOn');
+    document.getElementById('bossBanner').classList.remove('on');
+    if (resisted && combo===startCombo){
+      score += 50; renderStats();
+      var zone = document.getElementById('smashZone').getBoundingClientRect();
+      popupAt(zone.width/2, zone.height/2, '機智回避 +50', 'bonus');
+      bonusSFX();
+    }
+    scheduleBoss();
+  }, 1800);
+  // mark that any hit() during this window sets resisted=false via combo reset path already (combo=0 triggers penalty)
+  var origHit = hit;
+}
+
+function tick(){
+  timeLeft -= 1;
+  if (bossActive === false && nextBossAt !== null && timeLeft <= nextBossAt && timeLeft > 2){
+    triggerBoss();
+  }
+  if (timeLeft <= 5 && timeLeft > 0) tickSFX();
+  renderStats();
+  if (timeLeft <= 0){ endGame(); return; }
+}
+
+function startGame(duration){
+  dur = duration; timeLeft = duration; score = 0; combo = 0; maxCombo = 0;
+  destroyedCounts = {}; bossActive = false; prevObjId = null;
+  bombCount = 2; updateBombUI();
+  stopTorch();
+  if (bossTimeout) clearTimeout(bossTimeout);
+  document.getElementById('smashZone').classList.remove('bossOn');
+  document.getElementById('bossBanner').classList.remove('on');
+  document.getElementById('liveTally').innerHTML = '';
+  document.getElementById('startOv').classList.remove('on');
+  document.getElementById('endOv').classList.remove('on');
+  running = true; paused = false;
+  document.getElementById('btnPause').textContent = '暫停';
+  spawnObject();
+  renderStats();
+  scheduleBoss();
+  if (tickHandle) clearInterval(tickHandle);
+  tickHandle = setInterval(tick, 1000);
+}
+
+function rankFor(s){
+  var r = RANKS[0];
+  RANKS.forEach(function(x){ if (s>=x.min) r=x; });
+  return r;
+}
+
+function endGame(){
+  running = false;
+  stopTorch();
+  if (tickHandle) clearInterval(tickHandle);
+  if (bossTimeout) clearTimeout(bossTimeout);
+  bossActive = false;
+  document.getElementById('bossBanner').classList.remove('on');
+  document.getElementById('smashZone').classList.remove('bossOn');
+  var best = loadBest(dur);
+  var improved = score > best;
+  if (improved) saveBest(dur, score);
+  var r = rankFor(score);
+  document.getElementById('rankTitle').textContent = r.title;
+  document.getElementById('rankDesc').textContent = r.desc + (improved ? '(創新紀錄!)' : '');
+  document.getElementById('endScore').textContent = score;
+  document.getElementById('endMaxCombo').textContent = maxCombo;
+  document.getElementById('endBest').textContent = improved ? score : best;
+  renderTally();
+  fanfareSFX();
+  document.getElementById('endOv').classList.add('on');
+}
+
+document.getElementById('rulesToggle').onclick = function(){
+  var box = document.getElementById('rulesBox');
+  box.hidden = !box.hidden;
+  this.textContent = box.hidden ? '怎麼玩?' : '收起說明';
+};
+function stopTorch(){
+  if (torchInterval){ clearInterval(torchInterval); torchInterval = null; }
+  holdPoint = null;
+}
+var smashZoneEl = document.getElementById('smashZone');
+smashZoneEl.addEventListener('pointerdown', function(e){
+  e.preventDefault();
+  try{ smashZoneEl.setPointerCapture(e.pointerId); }catch(err){}
+  if (torchInterval){ clearInterval(torchInterval); torchInterval = null; }
+  holdPoint = { x: e.clientX, y: e.clientY };
+  hit(e.clientX, e.clientY);
+  if (activeWeapon === 'torch'){
+    torchInterval = setInterval(function(){ if (holdPoint) hit(holdPoint.x, holdPoint.y); }, WEAPONS.torch.cooldown);
+  }
+});
+smashZoneEl.addEventListener('pointermove', function(e){ if (holdPoint) holdPoint = { x: e.clientX, y: e.clientY }; });
+smashZoneEl.addEventListener('pointerup', stopTorch);
+smashZoneEl.addEventListener('pointercancel', stopTorch);
+
+document.querySelectorAll('.wBtn[data-w]').forEach(function(btn){
+  btn.addEventListener('click', function(){ setActiveWeapon(btn.getAttribute('data-w')); });
+});
+document.getElementById('bombBtn').addEventListener('click', useBomb);
+document.getElementById('btnRestart').onclick = function(){
+  running = false; if (tickHandle) clearInterval(tickHandle); if (bossTimeout) clearTimeout(bossTimeout);
+  document.getElementById('startOv').classList.add('on');
+};
+document.getElementById('btnPause').onclick = function(){
+  if (!running) return;
+  paused = !paused;
+  this.textContent = paused ? '繼續' : '暫停';
+};
+document.getElementById('btnAgain').onclick = function(){
+  document.getElementById('endOv').classList.remove('on');
+  document.getElementById('startOv').classList.add('on');
+};
+document.querySelectorAll('.durBtn').forEach(function(btn){
+  btn.onclick = function(){ startGame(parseInt(btn.getAttribute('data-dur'),10)); };
+});
+
+document.getElementById('startOv').classList.add('on');
+if (window.GMB) GMB.init({style:'circuit', button:true, key:'officesmash_bgm_off'});
+
+window.__dbg = {
+  get cur(){ return cur; },
+  get sparkActive(){ return sparkActive; },
+  get combo(){ return combo; },
+  get activeWeapon(){ return activeWeapon; },
+  hit: hit,
+};
+})();
+</script>
+
+</body>
+</html>
