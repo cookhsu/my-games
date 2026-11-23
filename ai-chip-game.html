@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>/*audio-unlock*/(function(){if(window.__au)return;var ctxs=[];window.__au=ctxs;var A=window.AudioContext||window.webkitAudioContext;
+if(A){var P=function(a,b){var c=new A(a,b);ctxs.push(c);return c;};P.prototype=A.prototype;try{Object.setPrototypeOf(P,A);}catch(e){}window.AudioContext=P;window.webkitAudioContext=P;}
+var el=null;function unlock(){try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch(e){}
+try{if(!el){el=document.createElement('audio');el.src="data:audio/wav;base64,UklGRmQGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YUAGAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA";el.loop=true;el.preload='auto';el.setAttribute('playsinline','');el.setAttribute('webkit-playsinline','');el.style.display='none';}
+var pr=el.play();if(pr&&pr.catch)pr.catch(function(){});}catch(e){}
+for(var i=0;i<ctxs.length;i++){var c=ctxs[i];try{if(c.state!=='running'&&c.resume){var r=c.resume();if(r&&r.catch)r.catch(function(){});}var b=c.createBuffer(1,1,22050),s=c.createBufferSource();s.buffer=b;s.connect(c.destination);s.start(0);}catch(e){}}}
+['touchstart','touchend','pointerdown','pointerup','mousedown','click','keydown'].forEach(function(ev){addEventListener(ev,unlock,{capture:true,passive:true});});
+document.addEventListener('visibilitychange',function(){if(document.hidden){try{el&&el.pause();}catch(e){}}else{unlock();}});
+addEventListener('pageshow',unlock);})();</script>
+<script id="gmb-js">/*gmb:背景音樂引擎(程式合成,無外部檔案)*/
+(function(){if(window.GMB)return;
+var ST={
+ zen:{bpm:70,root:57,sc:[0,2,4,7,9],prog:[[0,4,7],[5,9,12],[7,11,14],[2,5,9]],lead:'sine',arp:'triangle',bass:'sine',vol:.9,mel:.5},
+ cards:{bpm:104,root:55,sc:[0,2,4,5,7,9,11],prog:[[0,4,7],[5,9,12],[7,11,14],[0,4,7]],lead:'triangle',arp:'triangle',bass:'triangle',vol:1,mel:.6,swing:1},
+ calm:{bpm:76,root:60,sc:[0,2,4,5,7,9,11],prog:[[0,4,7],[9,12,16],[5,9,12],[7,11,14]],lead:'sine',arp:'sine',bass:'sine',vol:.9,mel:.45},
+ cute:{bpm:126,root:60,sc:[0,2,4,7,9],prog:[[0,4,7],[7,11,14],[9,12,16],[5,9,12]],lead:'square',arp:'triangle',bass:'triangle',vol:.8,mel:.75,bounce:1},
+ circuit:{bpm:112,root:52,sc:[0,3,5,7,10],prog:[[0,3,7],[8,12,15],[5,8,12],[7,10,14]],lead:'sawtooth',arp:'square',bass:'sawtooth',vol:.6,mel:.55,lp:1800},
+ gu:{bpm:84,root:57,sc:[0,2,4,7,9],prog:[[0,7,12],[5,12,16],[7,14,19],[0,7,12]],lead:'triangle',arp:'sine',bass:'sine',vol:.95,mel:.6,pluck:1},
+ spooky:{bpm:100,root:57,sc:[0,2,3,5,7,8,10],prog:[[0,3,7],[8,12,15],[5,8,12],[7,11,14]],lead:'triangle',arp:'square',bass:'triangle',vol:.8,mel:.6,bounce:1}
+};
+var ctx=null,master=null,flt=null,cfg=null,mutedFn=function(){return false},timer=0,nextT=0,step=0,motif=[],gainT=.075,vis=true,armed=false,key='',userOff=false,btn=null;
+function mtof(m){return 440*Math.pow(2,(m-69)/12);}
+function mk(){if(ctx)return ctx;var A=window.AudioContext||window.webkitAudioContext;if(!A)return null;try{ctx=new A();}catch(e){return null;}
+ master=ctx.createGain();master.gain.value=0;flt=ctx.createBiquadFilter();flt.type='lowpass';flt.frequency.value=(cfg&&cfg.lp)||5200;master.connect(flt);flt.connect(ctx.destination);return ctx;}
+function note(f,t,d,type,v,att){var o=ctx.createOscillator(),g=ctx.createGain();o.type=type;o.frequency.value=f;att=att||.012;g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(v,t+att);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(master);o.start(t);o.stop(t+d+.05);}
+function mkMotif(){var n=cfg.sc.length,m=[],p=Math.floor(n/2),sd=(cfg.bpm*7)|0;for(var i=0;i<16;i++){sd=(sd*9301+49297)%233280;var r=sd/233280;if(r<.3)p+=1;else if(r<.55)p-=1;else if(r<.68)p+=2;else if(r<.78)p-=2;p=Math.max(0,Math.min(n+2,p));m.push(r<.22?-1:p);}motif=m;}
+function sc(deg){var n=cfg.sc.length;var o=Math.floor(deg/n),i=((deg%n)+n)%n;return cfg.root+12+cfg.sc[i]+12*o;}
+function play(t,s){var c=cfg,beat=60/c.bpm/2,bar=Math.floor(s/16)%c.prog.length,ch=c.prog[bar],k=s%16,V=c.vol;
+ if(k%4===0){var bf=mtof(c.root-12+ch[0]);note(bf,t,beat*(c.bounce?1.4:3.4),c.bass,.16*V,.02);}
+ if(c.bounce&&k%4===2)note(mtof(c.root-12+ch[0]+(k%8===2?7:0)),t,beat*.9,c.bass,.08*V,.01);
+ if(k%2===0){var an=ch[(k/2)%ch.length];note(mtof(c.root+12+an),t,beat*(c.pluck?1.6:1.2),c.arp,.06*V,.008);}
+ var m=motif[k];if(m>=0&&(k%2===0||c.mel>.65)){if(((s*37)%10)/10<c.mel+.25)note(mtof(sc(m+(bar%2?1:0))),t+(c.swing&&k%2?beat*.15:0),beat*(c.pluck?1.8:1.5),c.lead,.075*V,c.pluck?.004:.02);}
+ if(k===0&&bar===c.prog.length-1&&!(Math.floor(s/16)%8))mkMotif();}
+function tick(){if(!ctx||!cfg)return;var want=!mutedFn()&&!userOff&&vis&&!document.hidden;
+ try{master.gain.setTargetAtTime(want?gainT:0,ctx.currentTime,.25);}catch(e){}
+ if(!want){nextT=0;return;}
+ if(ctx.state==='suspended'){try{ctx.resume();}catch(e){}return;}
+ var beat=60/cfg.bpm/2;if(!nextT||nextT<ctx.currentTime-.2)nextT=ctx.currentTime+.08;
+ while(nextT<ctx.currentTime+.45){play(nextT,step);step++;nextT+=beat;}}
+function arm(){if(armed)return;armed=true;var go=function(){if(mk()){try{if(ctx.state==='suspended')ctx.resume();}catch(e){}if(!timer)timer=setInterval(tick,120);tick();}};
+ ['pointerdown','touchend','mousedown','keydown','click'].forEach(function(e){addEventListener(e,go,{capture:true,passive:true});});}
+function button(){if(btn||!key)return;btn=document.createElement('button');btn.id='gmb-btn';btn.setAttribute('aria-label','背景音樂');
+ btn.style.cssText='position:fixed;right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));z-index:99990;width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(255,255,255,.35);background:rgba(20,16,40,.62);color:#fff;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);opacity:.85';
+ var up=function(){btn.textContent=userOff?'🔇':'🎵';};up();
+ btn.addEventListener('click',function(e){e.stopPropagation();userOff=!userOff;try{localStorage.setItem(key,userOff?'1':'0');}catch(_){}up();tick();});
+ (document.body||document.documentElement).appendChild(btn);}
+document.addEventListener('visibilitychange',function(){tick();});
+window.GMB={init:function(o){cfg=ST[o.style]||ST.cards;if(o.vol)gainT=o.vol;mutedFn=o.muted||mutedFn;key=o.key||'';try{userOff=key&&localStorage.getItem(key)==='1';}catch(e){}
+  step=0;mkMotif();if(o.button){if(document.body)button();else addEventListener('DOMContentLoaded',button);}arm();},
+ pause:function(){vis=false;tick();},resume:function(){vis=true;tick();}};
+})();
+</script>
+<meta charset="utf-8">
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0b0e13"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>AI晶片佈局挑戰</title>
+
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+<style>
+/* 版面概念:像在焊一片真實的晶粒——上方是料號佇列(下一片要焊的元件),
+   中央是晶粒網格,元件之間用「供電網路」連起來才算數,還要繞過瑕疵格、壓制超頻核心的熱度。 */
+:root{
+  --bg:#f3f1ec;
+  --bg-raise:#ffffff;
+  --fg:#15181e;
+  --fg-dim:#5b6472;
+  --accent:#0f7a6b;
+  --accent-2:#b45309;
+  --bad:#b4423a;
+  --line:#d8d3c4;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b0e13; --bg-raise:#12161d; --fg:#e7ebf1; --fg-dim:#8a94a3;
+    --accent:#4fd8c4; --accent-2:#f2a65a; --bad:#ef6b62; --line:#242b36;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b0e13; --bg-raise:#12161d; --fg:#e7ebf1; --fg-dim:#8a94a3;
+  --accent:#4fd8c4; --accent-2:#f2a65a; --bad:#ef6b62; --line:#242b36;
+  color-scheme: dark;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;background:var(--bg);color:var(--fg);
+  font-family:"Inter",-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  position:relative;
+}
+h1,h2{font-family:"Space Grotesk",sans-serif;text-wrap:balance;letter-spacing:-.01em;margin:0;}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace;}
+
+.wrap{
+  max-width:460px;margin:0 auto;
+  padding-left:max(16px, env(safe-area-inset-left,0px));
+  padding-right:max(16px, env(safe-area-inset-right,0px));
+  padding-top:calc(env(safe-area-inset-top,0px) + 22px);
+  padding-bottom:40px;
+}
+
+header{margin-bottom:16px;}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:7px;
+  font:600 11px "JetBrains Mono",monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);
+  margin-bottom:8px;
+}
+.eyebrow::before{content:"";width:6px;height:6px;border-radius:2px;background:var(--accent);}
+h1{font-size:24px;font-weight:700;}
+.sub{font-size:13.5px;color:var(--fg-dim);margin-top:6px;max-width:48ch;}
+
+/* ---- rules toggle ---- */
+.rulesBtn{
+  margin-top:10px;background:none;border:1px solid var(--line);color:var(--fg-dim);
+  font:500 12px "Inter";padding:6px 12px;border-radius:999px;cursor:pointer;
+}
+.rulesBtn:hover{border-color:var(--accent);color:var(--accent);}
+.rules{
+  margin-top:10px;background:var(--bg-raise);border:1px solid var(--line);border-radius:10px;
+  padding:14px 16px;font-size:13px;color:var(--fg-dim);line-height:1.6;
+}
+.rules b{color:var(--fg);}
+.rules[hidden]{display:none;}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;}
+.legend .li{display:flex;align-items:center;gap:6px;font-size:12.5px;}
+.legend .ic{width:20px;height:20px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px;flex:none;}
+
+/* ---- level badge in header ---- */
+.lvBadge{
+  display:inline-flex;align-items:center;gap:6px;margin-top:10px;
+  font:600 12px "Inter";color:var(--fg-dim);background:var(--bg-raise);border:1px solid var(--line);
+  border-radius:999px;padding:5px 12px;
+}
+.lvBadge b{color:var(--accent);}
+.lvBadge[hidden]{display:none;}
+
+/* ---- stat bar ---- */
+.stats{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:16px 0;
+}
+.stat{
+  background:var(--bg-raise);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0;
+}
+.stat .lbl{font:600 10px "JetBrains Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-dim);}
+.stat .val{font:700 20px "Space Grotesk";margin-top:2px;transition:transform .15s ease;}
+.stat .val.accent{color:var(--accent);}
+.stat .val small{font-size:12px;font-weight:600;color:var(--fg-dim);}
+.stat .val.bump{animation:bump .3s ease;}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
+
+/* ---- queue ---- */
+.queueRow{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.nowTile{
+  display:flex;align-items:center;gap:10px;background:var(--bg-raise);border:1.5px solid var(--accent);
+  border-radius:12px;padding:8px 14px;box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.nowTile.oc{border-color:var(--bad);box-shadow:0 0 0 3px color-mix(in srgb, var(--bad) 16%, transparent);}
+.nowTile .ic{font-size:22px;}
+.nowTile .tx{display:flex;flex-direction:column;line-height:1.2;}
+.nowTile .tx .t1{font:600 11px "JetBrains Mono",monospace;color:var(--fg-dim);text-transform:uppercase;letter-spacing:.06em;}
+.nowTile .tx .t2{font:700 14px "Space Grotesk";}
+.nextq{display:flex;gap:6px;flex:1;min-width:0;}
+.nextq .ic{
+  width:28px;height:28px;border-radius:8px;background:var(--bg-raise);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;font-size:14px;opacity:.75;flex:none;
+}
+.rerollBtn{
+  flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+  width:48px;height:48px;border-radius:10px;border:1px solid var(--line);background:var(--bg-raise);
+  color:var(--fg-dim);font:600 10px "JetBrains Mono",monospace;cursor:pointer;
+}
+.rerollBtn .ic{font-size:16px;}
+.rerollBtn:disabled{opacity:.35;cursor:not-allowed;}
+.rerollBtn:not(:disabled):active{transform:scale(.92);}
+
+/* ---- grid ---- */
+.boardWrap{position:relative;}
+.board{
+  display:grid;gap:4px;
+  background:var(--bg-raise);border:1px solid var(--line);border-radius:12px;padding:8px;
+}
+.cell{
+  position:relative;aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;
+  font-size:clamp(12px,4.2vw,19px);cursor:pointer;border:1.5px dashed var(--line);background:transparent;
+  transition:transform .08s ease, background .15s ease;
+}
+.cell.empty:hover{border-color:var(--accent);background:color-mix(in srgb, var(--accent) 8%, transparent);}
+.cell.empty:active{transform:scale(.92);}
+.cell.filled{cursor:default;border-style:solid;border-width:1px;}
+.cell.placed{animation:pop .22s ease;}
+@keyframes pop{0%{transform:scale(.55);opacity:.4}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+.cell.core.powered{background:color-mix(in srgb, var(--accent) 20%, var(--bg-raise));border-color:var(--accent);}
+.cell.core.starved{background:color-mix(in srgb, var(--accent-2) 14%, var(--bg-raise));border-color:var(--accent-2);opacity:.75;filter:saturate(.7);}
+.cell.mem{background:color-mix(in srgb, var(--accent) 32%, var(--bg-raise));border-color:var(--accent);}
+.cell.link{background:color-mix(in srgb, var(--accent) 10%, var(--bg-raise));border-color:var(--line);}
+.cell.cool{background:color-mix(in srgb, #3a8fd8 18%, var(--bg-raise));border-color:#3a8fd8;}
+.cell.oc.powered{background:color-mix(in srgb, var(--bad) 22%, var(--bg-raise));border-color:var(--bad);}
+.cell.oc.starved{background:color-mix(in srgb, var(--accent-2) 14%, var(--bg-raise));border-color:var(--accent-2);opacity:.75;}
+.cell.oc.hot{animation:hotPulse 1s ease-in-out infinite;}
+@keyframes hotPulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb, var(--bad) 45%, transparent)}50%{box-shadow:0 0 0 4px color-mix(in srgb, var(--bad) 0%, transparent)}}
+.cell.defect{background:repeating-linear-gradient(135deg, color-mix(in srgb, var(--bad) 10%, transparent) 0 6px, transparent 6px 12px);border-style:solid;border-color:var(--bad);opacity:.55;cursor:not-allowed;font-size:11px;}
+.cell.justPowered{animation:flip .5s ease;}
+@keyframes flip{0%{box-shadow:0 0 0 0 color-mix(in srgb, var(--accent) 70%, transparent);}70%{box-shadow:0 0 0 7px color-mix(in srgb, var(--accent) 0%, transparent);}}
+
+.popup{
+  position:absolute;pointer-events:none;font:700 13px "Space Grotesk";color:var(--accent);
+  animation:floatUp .7s ease forwards;z-index:5;
+}
+.popup.bad{color:var(--bad);}
+@keyframes floatUp{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-26px)}}
+
+.actions{display:flex;gap:8px;margin-top:16px;padding-right:50px;}
+.btn{
+  flex:1;padding:11px;border-radius:10px;border:1px solid var(--line);background:var(--bg-raise);color:var(--fg);
+  font:600 13.5px "Inter";cursor:pointer;
+}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--bg);}
+.btn.text{border:none;background:none;color:var(--fg-dim);text-decoration:underline;flex:none;padding:8px;}
+.btn:active{transform:scale(.98);}
+
+footer{margin-top:18px;}
+footer p{font-size:12px;color:var(--fg-dim);margin:0;}
+
+/* ---- overlays ---- */
+.ov{
+  position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:20;
+  background:color-mix(in srgb, var(--bg) 70%, transparent);backdrop-filter:blur(3px);
+  padding:20px;
+}
+.ov.on{display:flex;}
+.modal{
+  background:var(--bg-raise);border:1px solid var(--line);border-radius:14px;padding:26px 24px;
+  max-width:360px;width:100%;text-align:center;
+}
+.modal h2{font-size:20px;margin-bottom:6px;}
+.modal .lede{font-size:13px;color:var(--fg-dim);margin-bottom:14px;}
+.modeTabs{display:flex;gap:6px;margin-bottom:16px;background:var(--bg);border-radius:10px;padding:4px;}
+.modeTab{flex:1;padding:9px;border:none;border-radius:8px;background:none;color:var(--fg-dim);font:600 13px "Inter";cursor:pointer;}
+.modeTab.active{background:var(--accent);color:var(--bg);}
+.diffList{display:flex;flex-direction:column;gap:10px;}
+.diffBtn{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:14px 16px;border-radius:10px;border:1px solid var(--line);background:var(--bg);
+  cursor:pointer;text-align:left;width:100%;
+}
+.diffBtn:active{transform:scale(.98);}
+.diffBtn .t1{font:700 15px "Space Grotesk";}
+.diffBtn .t2{font-size:11.5px;color:var(--fg-dim);margin-top:2px;}
+.diffBtn .pct{font:700 20px "Space Grotesk";color:var(--accent);}
+
+.lvScroll{max-height:56vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding-right:2px;text-align:left;}
+.chTitle{font:700 11px "JetBrains Mono",monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--accent);margin:10px 0 2px;}
+.chTitle:first-child{margin-top:0;}
+.lvRow{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;
+  padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);cursor:pointer;text-align:left;
+}
+.lvRow:active{transform:scale(.98);}
+.lvRow.locked{opacity:.45;cursor:not-allowed;}
+.lvRow .lvName{font:700 13.5px "Space Grotesk";}
+.lvRow .lvMeta{font-size:11px;color:var(--fg-dim);margin-top:2px;}
+.lvRow .lvStars{font-size:14px;letter-spacing:1px;color:var(--accent-2);flex:none;}
+
+.grade{
+  font:700 40px "Space Grotesk";color:var(--accent);margin:10px 0 2px;
+}
+.gradeDesc{font-size:13px;color:var(--fg-dim);margin-bottom:6px;}
+.warnLine{font-size:12px;color:var(--bad);margin-bottom:14px;min-height:16px;}
+.modalStats{display:flex;justify-content:center;gap:18px;margin-bottom:18px;}
+.modalStats div{text-align:center;}
+.modalStats .n{font:700 18px "Space Grotesk";}
+.modalStats .l{font-size:11px;color:var(--fg-dim);}
+</style>
+</head>
+<body>
+
+
+<a href="index.html" id="back" style="position:fixed;top:max(10px,env(safe-area-inset-top,0px));left:max(10px,env(safe-area-inset-left,0px));z-index:30;background:var(--bg-raise);border:1px solid var(--line);color:var(--fg);font:600 12px 'Inter',sans-serif;text-decoration:none;border-radius:999px;padding:6px 14px;box-shadow:0 2px 10px rgba(0,0,0,.15);">‹ 大廳</a>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">模擬佈局遊戲</div>
+    <h1>AI晶片佈局挑戰</h1>
+    <p class="sub">在晶圓上擺放運算核心、記憶體與互聯,避開瑕疵格、壓住超頻核心的熱度,衝出最高算力。</p>
+    <div class="lvBadge" id="lvBadge" hidden>第<b id="lvBadgeCh"></b>章 ・ 第<b id="lvBadgeNo"></b>關・<span id="lvBadgeName"></span></div>
+    <button class="rulesBtn" id="rulesToggle">怎麼玩?</button>
+    <div class="rules" id="rulesBox" hidden>
+      <p><b>核心</b>要連到「記憶體+互聯」組成的網路才能滿載,沒接上網路會<b>頻寬不足</b>,算力大打折扣。</p>
+      <p><b>超頻核心🔥</b>算力是一般核心的兩倍,但會發熱;旁邊擠太多超頻核心、又沒有散熱片降溫,就會<b>過熱降頻</b>——真實晶片一樣要在效能跟散熱之間拉鋸。</p>
+      <p><b>瑕疵格⛔</b>是晶圓製造時天生壞掉的格子,放不了任何東西,良率越低的晶圓,瑕疵格越多。</p>
+      <div class="legend">
+        <div class="li"><span class="ic" style="background:color-mix(in srgb, var(--accent) 20%, var(--bg-raise));border:1px solid var(--accent)">💠</span>運算核心</div>
+        <div class="li"><span class="ic" style="background:color-mix(in srgb, var(--bad) 22%, var(--bg-raise));border:1px solid var(--bad)">🔥</span>超頻核心</div>
+        <div class="li"><span class="ic" style="background:color-mix(in srgb, var(--accent) 32%, var(--bg-raise));border:1px solid var(--accent)">🧠</span>記憶體</div>
+        <div class="li"><span class="ic" style="background:color-mix(in srgb, var(--accent) 10%, var(--bg-raise));border:1px solid var(--line)">🔗</span>互聯</div>
+        <div class="li"><span class="ic" style="background:color-mix(in srgb, #3a8fd8 18%, var(--bg-raise));border:1px solid #3a8fd8">❄️</span>散熱片</div>
+        <div class="li"><span class="ic" style="background:repeating-linear-gradient(135deg, color-mix(in srgb, var(--bad) 10%, transparent) 0 6px, transparent 6px 12px);border:1px solid var(--bad)">⛔</span>瑕疵</div>
+      </div>
+      <p style="margin-top:10px;margin-bottom:0">每局有 3 次「重抽」機會。闖關模式裡每一關的瑕疵分布跟料號順序都固定,總算力達到目標就能拿星、解鎖下一關;自由模式則是隨機棋盤,純粹衝高分。</p>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="lbl">總算力</div><div class="val accent" id="statScore">0</div></div>
+    <div class="stat"><div class="lbl">頻寬利用率</div><div class="val" id="statUtil">—</div></div>
+    <div class="stat"><div class="lbl">已佈局</div><div class="val" id="statPlaced">0<small>/0</small></div></div>
+  </div>
+
+  <div class="queueRow">
+    <div class="nowTile" id="nowTile">
+      <span class="ic" id="nowIcon">💠</span>
+      <div class="tx"><span class="t1">下一片</span><span class="t2" id="nowName">運算核心</span></div>
+    </div>
+    <div class="nextq" id="nextQueue"></div>
+    <button class="rerollBtn" id="btnReroll"><span class="ic">🔄</span><span id="rerollNum">x3</span></button>
+  </div>
+
+  <div class="boardWrap">
+    <div class="board" id="board"></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn" id="btnRestart">重新開始</button>
+    <button class="btn primary" id="btnEnd">結束佈局</button>
+  </div>
+
+  <footer><p>最佳紀錄只存在你自己的瀏覽器裡。晶片相關科普可以參考另一篇〈AI晶片是什麼〉。</p></footer>
+</div>
+
+<div class="ov" id="pickOv">
+  <div class="modal">
+    <div class="modeTabs">
+      <button class="modeTab active" id="tabFree">自由模式</button>
+      <button class="modeTab" id="tabCampaign">闖關模式</button>
+    </div>
+    <div id="freePane">
+      <p class="lede">良率越低,晶圓上天生壞掉的瑕疵格越多,佈局難度也越高。</p>
+      <div class="diffList">
+        <button class="diffBtn" data-defect="5"><div><div class="t1">良率 90%</div><div class="t2">簡單・瑕疵格少</div></div><div class="pct">90%</div></button>
+        <button class="diffBtn" data-defect="10"><div><div class="t1">良率 75%</div><div class="t2">普通・標準挑戰</div></div><div class="pct">75%</div></button>
+        <button class="diffBtn" data-defect="16"><div><div class="t1">良率 55%</div><div class="t2">困難・步步驚心</div></div><div class="pct">55%</div></button>
+      </div>
+    </div>
+    <div id="campaignPane" hidden>
+      <p class="lede">20 關晶圓設計師之路,固定佈局與料號順序,憑實力拿星解鎖下一關。</p>
+      <div class="lvScroll" id="lvScroll"></div>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="endOv">
+  <div class="modal">
+    <h2 id="endTitle">佈局結算</h2>
+    <div class="grade" id="endGrade">A</div>
+    <div class="gradeDesc" id="endGradeDesc">資料中心等級設計</div>
+    <div class="warnLine" id="endWarn"></div>
+    <div class="modalStats">
+      <div><div class="n" id="endScore">0</div><div class="l mono">總算力</div></div>
+      <div><div class="n" id="endUtil">0%</div><div class="l mono">利用率</div></div>
+      <div><div class="n" id="endBest">0</div><div class="l mono">最佳紀錄</div></div>
+    </div>
+    <button class="btn primary" style="width:100%" id="btnAgain">再挑戰一次</button>
+    <button class="btn text" id="btnBackToLevels" hidden style="margin-top:6px">回到關卡列表</button>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+var SIZE = 7, N = SIZE*SIZE;
+var TYPES = {
+  core: { icon:'💠', name:'運算核心' },
+  oc:   { icon:'🔥', name:'超頻核心' },
+  mem:  { icon:'🧠', name:'記憶體(HBM)' },
+  link: { icon:'🔗', name:'互聯' },
+  cool: { icon:'❄️', name:'散熱片' },
+};
+var FREEPLAY_WEIGHTS = { core:.42, mem:.18, link:.22, cool:.09, oc:.09 };
+var W1 = { core:.55, mem:.20, link:.25 };
+var W2 = { core:.50, mem:.20, link:.30 };
+var W3 = { core:.40, mem:.16, link:.24, cool:.10, oc:.10 };
+var W4 = { core:.38, mem:.15, link:.22, cool:.12, oc:.13 };
+
+var CH_NAME = { 1:'入門良率', 2:'瑕疵考驗', 3:'散熱與超頻', 4:'大師良率' };
+
+var LEVELS = [
+  {id:1, chapter:1, name:'初試啼聲', size:6, defectCount:0,  weights:W1, seed:101, thresholds:[130,180,220]},
+  {id:2, chapter:1, name:'小瑕疵',   size:6, defectCount:2,  weights:W1, seed:102, thresholds:[130,170,210]},
+  {id:3, chapter:1, name:'繞道而行', size:6, defectCount:4,  weights:W1, seed:103, thresholds:[120,160,190]},
+  {id:4, chapter:1, name:'擴大規模', size:7, defectCount:3,  weights:W1, seed:104, thresholds:[170,220,280]},
+  {id:5, chapter:1, name:'第一次連線', size:7, defectCount:6, weights:W1, seed:105, thresholds:[150,200,260]},
+
+  {id:6, chapter:2, name:'蜂巢瑕疵', size:7, defectCount:8,  weights:W2, seed:206, thresholds:[130,170,210]},
+  {id:7, chapter:2, name:'斷層帶',   size:7, defectCount:10, weights:W2, seed:207, thresholds:[120,160,200]},
+  {id:8, chapter:2, name:'迷宮晶圓', size:7, defectCount:12, weights:W2, seed:208, thresholds:[110,150,190]},
+  {id:9, chapter:2, name:'棋盤裂紋', size:7, defectCount:14, weights:W2, seed:209, thresholds:[100,140,170]},
+  {id:10,chapter:2, name:'滿目瘡痍', size:7, defectCount:16, weights:W2, seed:210, thresholds:[100,130,160]},
+
+  {id:11,chapter:3, name:'初次超頻', size:7, defectCount:6,  weights:W3, seed:311, thresholds:[150,200,250]},
+  {id:12,chapter:3, name:'降溫演練', size:7, defectCount:8,  weights:W3, seed:312, thresholds:[140,190,230]},
+  {id:13,chapter:3, name:'熱點管理', size:7, defectCount:10, weights:W3, seed:313, thresholds:[130,170,220]},
+  {id:14,chapter:3, name:'高密度陣列', size:7, defectCount:12, weights:W3, seed:314, thresholds:[120,160,200]},
+  {id:15,chapter:3, name:'極限超頻', size:7, defectCount:14, weights:W3, seed:315, thresholds:[110,150,190]},
+
+  {id:16,chapter:4, name:'綜合考驗', size:7, defectCount:12, weights:W4, seed:416, thresholds:[120,160,200]},
+  {id:17,chapter:4, name:'破碎晶圓', size:7, defectCount:16, weights:W4, seed:417, thresholds:[110,140,180]},
+  {id:18,chapter:4, name:'放大挑戰', size:8, defectCount:18, weights:W4, seed:418, thresholds:[150,190,240]},
+  {id:19,chapter:4, name:'巨型晶圓', size:8, defectCount:22, weights:W4, seed:419, thresholds:[130,170,220]},
+  {id:20,chapter:4, name:'巔峰良率', size:9, defectCount:26, weights:W4, seed:420, thresholds:[170,220,280]},
+];
+
+var cells, queue, placed, ended, best, rerolls, usable, rngFn, weightsTable, currentLevel, lastTab;
+var progress = loadProgress();
+
+/* ---------- 種子亂數(讓闖關模式每關都可重現) ---------- */
+function mulberry32(seed){
+  var s = seed >>> 0;
+  return function(){
+    s = (s + 0x6D2B79F5) >>> 0;
+    var t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* ---------- 音效(簡單合成,呼應大廳遊戲風格) ---------- */
+var actx = null;
+function ac(){ if (!actx){ try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return actx; }
+function tone(f, t0, dur, type, vol, slideTo){
+  var c = ac(); if (!c) return;
+  var o = c.createOscillator(), g = c.createGain();
+  o.type = type||'sine'; o.frequency.setValueAtTime(f, c.currentTime+t0);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, c.currentTime+t0+dur);
+  g.gain.setValueAtTime(0.0001, c.currentTime+t0);
+  g.gain.linearRampToValueAtTime(vol||.2, c.currentTime+t0+.01);
+  g.gain.exponentialRampToValueAtTime(.0001, c.currentTime+t0+dur);
+  o.connect(g); g.connect(c.destination);
+  o.start(c.currentTime+t0); o.stop(c.currentTime+t0+dur+.05);
+}
+var SFX = {
+  core: function(){ tone(520,0,.06,'triangle',.14); },
+  mem: function(){ tone(660,0,.07,'sine',.14); tone(880,.05,.09,'sine',.1); },
+  oc: function(){ tone(260,0,.1,'sawtooth',.12,180); },
+  cool: function(){ tone(900,0,.08,'sine',.12,1200); },
+  reroll: function(){ tone(400,0,.05,'triangle',.1,600); },
+  flip: function(){ tone(784,0,.07,'sine',.14); tone(1046,.06,.1,'sine',.1); },
+  win: function(){ [0,.09,.18,.3].forEach(function(t,i){ tone([523,659,784,1046][i],t,.2,'triangle',.18); }); },
+};
+
+function loadBest(){ try{ return parseInt(localStorage.getItem('aichip_best')||'0',10)||0; }catch(e){ return 0; } }
+function saveBest(v){ try{ localStorage.setItem('aichip_best', String(v)); }catch(e){} }
+function loadProgress(){ try{ return JSON.parse(localStorage.getItem('aichip_progress')||'{}'); }catch(e){ return {}; } }
+function saveProgress(p){ try{ localStorage.setItem('aichip_progress', JSON.stringify(p)); }catch(e){} }
+function isUnlocked(lv){ if (lv.id===1) return true; var prev=progress[lv.id-1]; return !!(prev && prev.stars>=1); }
+function starsStr(n){ var s=''; for (var i=0;i<3;i++) s += (i<n?'★':'☆'); return s; }
+
+function pickType(weights, rng){
+  var r = rng ? rng() : Math.random();
+  var acc = 0, keys = Object.keys(weights), last = keys[keys.length-1];
+  for (var i=0;i<keys.length;i++){ acc += weights[keys[i]]; if (r < acc) return keys[i]; }
+  return last;
+}
+function randType(){ return pickType(weightsTable, rngFn); }
+
+function shuffle(arr, rng){
+  for (var s=arr.length-1;s>0;s--){
+    var j = Math.floor((rng?rng():Math.random()) * (s+1));
+    var tmp = arr[s]; arr[s] = arr[j]; arr[j] = tmp;
+  }
+}
+
+function neighbors(i){
+  var r = Math.floor(i/SIZE), c = i%SIZE, res = [];
+  if (r>0) res.push(i-SIZE);
+  if (r<SIZE-1) res.push(i+SIZE);
+  if (c>0) res.push(i-1);
+  if (c<SIZE-1) res.push(i+1);
+  return res;
+}
+
+function networkSet(){
+  var visited = {}, stack = [];
+  for (var i=0;i<N;i++){ if (cells[i]==='mem'){ visited[i]=true; stack.push(i); } }
+  while (stack.length){
+    var i = stack.pop();
+    neighbors(i).forEach(function(n){
+      if (!visited[n] && (cells[n]==='mem' || cells[n]==='link')){ visited[n]=true; stack.push(n); }
+    });
+  }
+  return visited;
+}
+
+function heatAt(i){
+  var h = 2;
+  neighbors(i).forEach(function(n){
+    if (cells[n]==='oc') h += 1;
+    if (cells[n]==='cool') h -= 1;
+  });
+  return Math.max(0, h);
+}
+
+function computeStats(){
+  var net = networkSet();
+  var total=0, poweredCount=0, coreCount=0, throttledCount=0;
+  var poweredMap = {};
+  for (var i=0;i<N;i++){
+    var t = cells[i];
+    if (t==='core' || t==='oc'){
+      coreCount++;
+      var powered = neighbors(i).some(function(n){ return net[n]; });
+      if (powered){ poweredCount++; poweredMap[i] = true; }
+      var out = t==='core' ? (powered?12:4) : (powered?24:8);
+      if (t==='oc' && heatAt(i) >= 3){ out = Math.round(out/2); throttledCount++; }
+      total += out;
+    }
+  }
+  return { net:net, total:total, poweredCount:poweredCount, coreCount:coreCount, throttledCount:throttledCount, poweredMap:poweredMap };
+}
+
+function newGame(cfg){
+  SIZE = cfg.size; N = SIZE*SIZE;
+  rngFn = cfg.rng || null;
+  weightsTable = cfg.weights;
+  currentLevel = cfg.level || null;
+
+  cells = new Array(N).fill(null);
+  var idx = []; for (var i=0;i<N;i++) idx.push(i);
+  shuffle(idx, rngFn);
+  for (var k=0;k<cfg.defectCount;k++) cells[idx[k]] = 'defect';
+  usable = N - cfg.defectCount;
+  queue = [randType(), randType(), randType(), randType()];
+  placed = 0; ended = false; rerolls = 3;
+
+  document.getElementById('board').style.gridTemplateColumns = 'repeat('+SIZE+',1fr)';
+  var badge = document.getElementById('lvBadge');
+  if (currentLevel){
+    badge.hidden = false;
+    document.getElementById('lvBadgeCh').textContent = currentLevel.chapter;
+    document.getElementById('lvBadgeNo').textContent = currentLevel.id;
+    document.getElementById('lvBadgeName').textContent = currentLevel.name;
+  } else {
+    badge.hidden = true;
+  }
+
+  document.getElementById('endOv').classList.remove('on');
+  document.getElementById('pickOv').classList.remove('on');
+  render([], null);
+}
+
+function startFreeplay(defectCount){
+  newGame({ size:7, defectCount:defectCount, weights:FREEPLAY_WEIGHTS, rng:null, level:null });
+}
+function startLevel(lv){
+  newGame({ size:lv.size, defectCount:lv.defectCount, weights:lv.weights, rng:mulberry32(lv.seed), level:lv });
+}
+
+function cellRectIn(board, i){
+  var r = Math.floor(i/SIZE), c = i%SIZE;
+  var bw = board.clientWidth;
+  var cw = (bw - 8*2 - 4*(SIZE-1)) / SIZE;
+  return { x: 8 + c*(cw+4) + cw/2, y: 8 + r*(cw+4) + cw/2 };
+}
+
+function popup(board, i, text, bad){
+  var p = cellRectIn(board, i);
+  var el = document.createElement('div');
+  el.className = 'popup' + (bad?' bad':'');
+  el.textContent = text;
+  el.style.left = p.x + 'px'; el.style.top = p.y + 'px'; el.style.transform = 'translate(-50%,-50%)';
+  board.parentElement.appendChild(el);
+  setTimeout(function(){ el.remove(); }, 720);
+}
+
+function bump(id){
+  var el = document.getElementById(id);
+  el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump');
+}
+
+function render(justPowered, st){
+  st = st || computeStats();
+  document.getElementById('statScore').textContent = st.total;
+  document.getElementById('statUtil').textContent = st.coreCount ? Math.round(st.poweredCount/st.coreCount*100)+'%' : '—';
+  document.getElementById('statPlaced').innerHTML = placed + '<small>/'+usable+'</small>';
+
+  var curType = queue[0];
+  var cur = TYPES[curType];
+  document.getElementById('nowIcon').textContent = cur.icon;
+  document.getElementById('nowName').textContent = cur.name;
+  document.getElementById('nowTile').className = 'nowTile' + (curType==='oc' ? ' oc' : '');
+  var nq = document.getElementById('nextQueue');
+  nq.innerHTML = '';
+  for (var k=1;k<queue.length;k++){
+    var d = document.createElement('div');
+    d.className = 'ic'; d.textContent = TYPES[queue[k]].icon;
+    nq.appendChild(d);
+  }
+  document.getElementById('rerollNum').textContent = 'x'+rerolls;
+  document.getElementById('btnReroll').disabled = (rerolls<=0 || ended);
+
+  var board = document.getElementById('board');
+  board.innerHTML = '';
+  for (var i=0;i<N;i++){
+    var b = document.createElement('div');
+    var t = cells[i];
+    if (t === 'defect'){
+      b.className = 'cell defect';
+      b.textContent = '⛔';
+    } else if (!t){
+      b.className = 'cell empty';
+      b.textContent = '';
+      if (!ended) b.onclick = (function(idx){ return function(){ place(idx); }; })(i);
+    } else if (t === 'core' || t === 'oc'){
+      var powered = !!st.poweredMap[i];
+      var hot = t==='oc' && heatAt(i) >= 3;
+      var cls = 'cell filled ' + t + ' ' + (powered ? 'powered' : 'starved') + (hot ? ' hot' : '');
+      if (justPowered.indexOf(i) >= 0) cls += ' justPowered';
+      b.className = cls;
+      b.textContent = TYPES[t].icon;
+    } else {
+      b.className = 'cell filled ' + t;
+      b.textContent = TYPES[t].icon;
+    }
+    board.appendChild(b);
+  }
+}
+
+function place(i){
+  if (ended || cells[i]) return;
+  var type = queue[0];
+  var before = computeStats();
+  cells[i] = type;
+  queue.shift(); queue.push(randType());
+  placed++;
+
+  var after = computeStats();
+  var justPowered = [];
+  Object.keys(after.poweredMap).forEach(function(k){ if (!before.poweredMap[k]) justPowered.push(parseInt(k,10)); });
+
+  var board = document.getElementById('board');
+  render(justPowered, after);
+  bump('statScore'); bump('statUtil');
+
+  var placedEl = board.children[i];
+  placedEl.classList.add('placed');
+  if (type==='core' || type==='oc'){
+    var powered = !!after.poweredMap[i];
+    var out = type==='core' ? (powered?12:4) : (powered?24:8);
+    if (type==='oc' && heatAt(i)>=3) out = Math.round(out/2);
+    popup(board, i, '+'+out, !powered);
+    type==='oc' ? SFX.oc() : SFX.core();
+  } else if (type==='cool'){ SFX.cool(); }
+  else { SFX.mem(); }
+  if (justPowered.length) setTimeout(function(){ SFX.flip(); }, 120);
+
+  if (placed >= usable) endGame();
+}
+
+function reroll(){
+  if (rerolls<=0 || ended) return;
+  rerolls--;
+  queue[0] = randType();
+  SFX.reroll();
+  render([]);
+}
+
+function grade(util){
+  if (util >= 80) return { g:'S', d:'旗艦資料中心晶片' };
+  if (util >= 60) return { g:'A', d:'高效能運算晶片' };
+  if (util >= 40) return { g:'B', d:'堪用,但頻寬吃緊' };
+  return { g:'C', d:'嚴重頻寬瓶頸,邊緣裝置等級' };
+}
+
+function endGame(){
+  ended = true;
+  var st = computeStats();
+  var util = st.coreCount ? Math.round(st.poweredCount/st.coreCount*100) : 0;
+  render([], st);
+  SFX.win();
+  document.getElementById('endScore').textContent = st.total;
+  document.getElementById('endUtil').textContent = util+'%';
+  document.getElementById('endWarn').textContent = st.throttledCount>0 ? ('⚠ '+st.throttledCount+' 顆核心過熱降頻') : '';
+  document.getElementById('btnBackToLevels').hidden = !currentLevel;
+
+  if (currentLevel){
+    var th = currentLevel.thresholds;
+    var stars = st.total>=th[2] ? 3 : st.total>=th[1] ? 2 : st.total>=th[0] ? 1 : 0;
+    var rec = progress[currentLevel.id] || { stars:0, bestScore:0 };
+    var improved = stars > rec.stars;
+    if (improved) rec.stars = stars;
+    if (st.total > rec.bestScore) rec.bestScore = st.total;
+    progress[currentLevel.id] = rec;
+    saveProgress(progress);
+    document.getElementById('endGrade').textContent = starsStr(stars);
+    document.getElementById('endGradeDesc').textContent = stars>0
+      ? ('過關!'+(improved?'創下本關新紀錄':'')+' ・ 目標 '+th[0]+'/'+th[1]+'/'+th[2])
+      : ('未達最低目標('+th[0]+'),再挑戰一次吧');
+    document.getElementById('endBest').textContent = rec.bestScore;
+  } else {
+    if (st.total > best){ best = st.total; saveBest(best); }
+    var gr = grade(util);
+    document.getElementById('endGrade').textContent = gr.g;
+    document.getElementById('endGradeDesc').textContent = gr.d;
+    document.getElementById('endBest').textContent = best;
+  }
+  document.getElementById('endOv').classList.add('on');
+}
+
+/* ---------- 選單:自由模式 / 闖關模式 ---------- */
+function renderLevelList(){
+  var box = document.getElementById('lvScroll');
+  box.innerHTML = '';
+  var curCh = 0;
+  LEVELS.forEach(function(lv){
+    if (lv.chapter !== curCh){
+      curCh = lv.chapter;
+      var h = document.createElement('div');
+      h.className = 'chTitle';
+      h.textContent = '第'+curCh+'章・'+CH_NAME[curCh];
+      box.appendChild(h);
+    }
+    var unlocked = isUnlocked(lv);
+    var rec = progress[lv.id];
+    var row = document.createElement('button');
+    row.className = 'lvRow' + (unlocked?'':' locked');
+    row.innerHTML =
+      '<div><div class="lvName">'+lv.id+'. '+lv.name+'</div>'+
+      '<div class="lvMeta">'+lv.size+'×'+lv.size+' ・ 瑕疵 '+lv.defectCount+'</div></div>'+
+      '<div class="lvStars">'+(unlocked ? starsStr(rec?rec.stars:0) : '🔒')+'</div>';
+    if (unlocked) row.onclick = function(){ startLevel(lv); };
+    else row.disabled = true;
+    box.appendChild(row);
+  });
+}
+
+function showTab(tab){
+  lastTab = tab;
+  document.getElementById('tabFree').classList.toggle('active', tab==='free');
+  document.getElementById('tabCampaign').classList.toggle('active', tab==='campaign');
+  document.getElementById('freePane').hidden = tab!=='free';
+  document.getElementById('campaignPane').hidden = tab!=='campaign';
+  if (tab==='campaign') renderLevelList();
+}
+function showPicker(){
+  document.getElementById('endOv').classList.remove('on');
+  document.getElementById('pickOv').classList.add('on');
+  showTab(lastTab||'free');
+}
+
+document.getElementById('rulesToggle').onclick = function(){
+  var box = document.getElementById('rulesBox');
+  box.hidden = !box.hidden;
+  this.textContent = box.hidden ? '怎麼玩?' : '收起說明';
+};
+document.getElementById('btnRestart').onclick = function(){ showPicker(); };
+document.getElementById('btnEnd').onclick = function(){ if (!ended) endGame(); };
+document.getElementById('btnAgain').onclick = function(){ if (currentLevel) startLevel(currentLevel); else showPicker(); };
+document.getElementById('btnBackToLevels').onclick = function(){ lastTab='campaign'; showPicker(); };
+document.getElementById('btnReroll').onclick = function(){ reroll(); };
+document.getElementById('tabFree').onclick = function(){ showTab('free'); };
+document.getElementById('tabCampaign').onclick = function(){ showTab('campaign'); };
+document.querySelectorAll('.diffBtn').forEach(function(btn){
+  btn.onclick = function(){ startFreeplay(parseInt(btn.getAttribute('data-defect'),10)); };
+});
+
+best = loadBest();
+showTab('free');
+document.getElementById('pickOv').classList.add('on');
+if (window.GMB) GMB.init({style:'circuit', button:true, key:'aichip_bgm_off'});
+})();
+</script>
+
+</body>
+</html>
