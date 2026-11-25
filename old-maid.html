@@ -239,6 +239,7 @@ W.FUN={segment,init,unlock,xp,mount,panel,banner,dailyInfo,dailyDone,dailySeed,r
     <h1>抽鬼牌</h1>
     <p style="margin:4px 0 0">別讓鬼牌留在你手上！</p>
     <div class="seg" id="seg"><button data-n="2">2 人</button><button data-n="3">3 人</button><button data-n="4" class="on">4 人</button></div>
+    <div class="seg" id="specSeg"><button data-v="1" class="on">✨ 絕招卡 開</button><button data-v="0">絕招卡 關</button></div>
     <p class="tiny">你 + 可愛的電腦對手</p>
     <div class="stats"><div><b id="sPlay">0</b><small>玩過</small></div><div><b id="sWin">0</b><small>安全過關</small></div><div><b id="sStreak">0</b><small>最長連勝</small></div></div>
     <button class="btn" id="playBtn">▶ 開始發牌</button>
@@ -256,6 +257,7 @@ W.FUN={segment,init,unlock,xp,mount,panel,banner,dailyInfo,dailyDone,dailySeed,r
       <li>抽到能配對的牌就會自動丟掉。</li>
       <li>手牌最先出完的人最安全；<b>最後手上留著鬼牌的人就輸了</b>！</li>
       <li>可以按「洗牌」把自己的牌打亂，讓對手猜不到鬼牌在哪。</li>
+      <li>牌堆中可能混入<b>絕招卡</b>(🔄 換手／❄️ 凍結／👁️ 透視／🔀 混亂)，抽到會立即發動效果！可在開始畫面關閉。</li>
     </ul>
     <button class="btn" id="howOk">知道了</button>
   </div>
@@ -296,7 +298,7 @@ const scene=new THREE.Scene();
 const cam=new THREE.PerspectiveCamera(38,1,.1,200);
 const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
 const THUMB=location.hash==='#thumb';
-FUN.init('oldmaid',[{id:'o1',ic:'🎉',name:'安全過關',desc:'贏下第一局抽鬼牌'},{id:'ofirst',ic:'🥇',name:'搶先出完',desc:'第一個出完手牌'},{id:'ostreak',ic:'🔥',name:'三連勝',desc:'連續贏 3 局'},{id:'opeek',ic:'🔮',name:'透視眼',desc:'使用一次透視眼'},{id:'o4',ic:'👥',name:'四人過關',desc:'四人局中安全過關'},{id:'oday',ic:'📅',name:'每日挑戰',desc:'完成當日每日牌局(安全過關)'},{id:'oluck',ic:'🍀',name:'幸運局贏家',desc:'在「幸運局」中安全過關'}]);
+FUN.init('oldmaid',[{id:'o1',ic:'🎉',name:'安全過關',desc:'贏下第一局抽鬼牌'},{id:'ofirst',ic:'🥇',name:'搶先出完',desc:'第一個出完手牌'},{id:'ostreak',ic:'🔥',name:'三連勝',desc:'連續贏 3 局'},{id:'opeek',ic:'🔮',name:'透視眼',desc:'使用一次透視眼'},{id:'o4',ic:'👥',name:'四人過關',desc:'四人局中安全過關'},{id:'oday',ic:'📅',name:'每日挑戰',desc:'完成當日每日牌局(安全過關)'},{id:'oluck',ic:'🍀',name:'幸運局贏家',desc:'在「幸運局」中安全過關'},{id:'ospecial',ic:'✨',name:'妙手絕招',desc:'成功發動一次絕招卡效果'}]);
 let dailyMode=false,RN=Math.random,peekN=1,peeking=false,luckyRound=false;
 
 /* ===== 背景 ===== */
@@ -337,7 +339,8 @@ const SFX={
  win:()=>{[523,659,784,1047,1319,1568].forEach((f,i)=>tone(f,.2,'triangle',.07,0,i*.09));},
  lose:()=>{[392,330,262,196,147].forEach((f,i)=>tone(f,.3,'sawtooth',.07,0,i*.15));},
  sel:()=>tone(660,.06,'square',.03,880),
- shuf:()=>{for(let i=0;i<5;i++)tone(300+Math.random()*400,.05,'triangle',.03,0,i*.05);}
+ shuf:()=>{for(let i=0;i<5;i++)tone(300+Math.random()*400,.05,'triangle',.03,0,i*.05);},
+ special:()=>{tone(660,.09,'sawtooth',.05,1300);tone(988,.14,'triangle',.06,0,.09);}
 };
 
 /* ===== 工具 ===== */
@@ -372,7 +375,13 @@ function faceTex(rank,suit){
  const W=256,H=372,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
  g.fillStyle='#fffdf6';rr(g,2,2,W-4,H-4,20);g.fill();g.lineWidth=4;g.strokeStyle='#cfc6b0';g.stroke();
  g.textAlign='center';g.textBaseline='middle';
- if(rank===0){
+ if(rank<0){
+  const SPEC={'-1':{bg:['#ffd6e8','#ffe9c7'],ic:'🔄',label:'換手',col:'#c23a7a'},'-2':{bg:['#cfefff','#eafcff'],ic:'❄️',label:'凍結',col:'#1a6fa0'},'-3':{bg:['#fff3c2','#ffe9a3'],ic:'👁️',label:'透視',col:'#9a6b00'},'-4':{bg:['#e6d8ff','#f3e6ff'],ic:'🔀',label:'混亂',col:'#5a2aa0'}}[String(rank)];
+  const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,SPEC.bg[0]);gr.addColorStop(1,SPEC.bg[1]);g.fillStyle=gr;rr(g,10,10,W-20,H-20,16);g.fill();g.lineWidth=4;g.strokeStyle=SPEC.col;g.stroke();
+  g.font='110px sans-serif';g.fillText(SPEC.ic,W/2,H/2-30);
+  g.fillStyle=SPEC.col;g.font='900 34px sans-serif';g.fillText(SPEC.label,W/2,H/2+88);
+  g.font='900 20px sans-serif';g.fillStyle='#6a5a80';g.fillText('絕招卡',W/2,H-34);
+ }else if(rank===0){
   const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#efe0ff');gr.addColorStop(1,'#ffe0ef');g.fillStyle=gr;rr(g,10,10,W-20,H-20,16);g.fill();
   // 帽子
   const hat=(x,y,col,rot)=>{g.save();g.translate(x,y);g.rotate(rot);g.fillStyle=col;g.beginPath();g.moveTo(-26,0);g.quadraticCurveTo(-30,-70,-60,-80);g.quadraticCurveTo(-20,-58,0,-30);g.quadraticCurveTo(20,-58,60,-80);g.quadraticCurveTo(30,-70,26,0);g.closePath();g.fill();g.lineWidth=4;g.strokeStyle='#2a1b3d';g.stroke();g.restore();};
@@ -479,7 +488,8 @@ const SEATS={ // 玩家座位 (index 0 為自己)
  2:[null,{x:0,z:-4.6}]
 };
 let players=[],cards=[],pileN=0,np=4,mode='menu',epoch=0,timers=[],paused=false,TS=1,pausedFrom='menu';
-let pick=null,pickTarget=null,autoHuman=false,turn=0,outOrder=[],loser=null;
+let pick=null,pickTarget=null,autoHuman=false,turn=0,outOrder=[],loser=null,forcedTarget=null;
+let useSpecial=true;try{useSpecial=(localStorage.getItem('om_special')||'1')==='1';}catch(e){}
 let stats={played:0,win:0,streak:0,best:0};
 try{const s=JSON.parse(localStorage.getItem('om_stats')||'null');if(s)stats=Object.assign(stats,s);}catch(e){}
 FUN.mount({daily:{label:'每日牌局',onclick:()=>{dailyMode=true;startGame();}}});
@@ -488,6 +498,8 @@ showStats();
 try{np=parseInt(localStorage.getItem('om_np')||'4',10)||4;}catch(e){}
 function setSeg(){[...$('seg').children].forEach(b=>b.classList.toggle('on',+b.dataset.n===np));}setSeg();
 [...$('seg').children].forEach(b=>b.onclick=()=>{np=+b.dataset.n;try{localStorage.setItem('om_np',np);}catch(e){}setSeg();});
+function setSpecSeg(){[...$('specSeg').children].forEach(b=>b.classList.toggle('on',((b.dataset.v==='1'))===useSpecial));}setSpecSeg();
+[...$('specSeg').children].forEach(b=>b.onclick=()=>{useSpecial=b.dataset.v==='1';try{localStorage.setItem('om_special',useSpecial?'1':'0');}catch(e){}setSpecSeg();});
 
 function wait(ms){return new Promise(r=>timers.push({t:ms/TS,r}));}
 function tickTimers(dt){if(paused)return;const done=[];for(const tm of timers){tm.t-=dt*1000;if(tm.t<=0)done.push(tm);}if(done.length){timers=timers.filter(t=>!done.includes(t));done.forEach(t=>t.r());}}
@@ -574,6 +586,7 @@ async function startGame(){
  players.forEach(tagFor);
  // 牌堆
  const deck=[];for(let s=0;s<4;s++)for(let r=1;r<=13;r++)deck.push([r,s]);deck.push([0,-1]);
+ if(useSpecial){deck.push([-1,-1],[-2,-1],[-3,-1],[-4,-1]);}
  for(let i=deck.length-1;i>0;i--){const j=Math.floor(RN()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}
  for(const d of deck)cards.push(mkCard(d[0],d[1]));
  layoutAll();cards.forEach(c=>{c.mesh.position.copy(c.tp);c.mesh.quaternion.copy(c.tq);c.mesh.scale.setScalar(c.ts);});
@@ -600,7 +613,7 @@ async function discardPairs(p,ep){
  let guard=0;
  while(guard++<30){
   const by={};let pr=null;
-  for(const c of p.hand){if(c.rank===0)continue;if(by[c.rank]){pr=[by[c.rank],c];break;}by[c.rank]=c;}
+  for(const c of p.hand){if(c.rank<=0)continue;if(by[c.rank]){pr=[by[c.rank],c];break;}by[c.rank]=c;}
   if(!pr)return;
   await flyPair(p,pr[0],pr[1]);if(ep!==epoch)return;
  }
@@ -627,7 +640,9 @@ async function turnLoop(ep){
   if(al.length<=1){break;}
   const cur=players[turn];
   if(cur.out||cur.hand.length===0){turn=(turn+1)%players.length;continue;}
-  const target=nextAliveFrom(turn);
+  if(cur.skipNext){cur.skipNext=false;emote(cur,'❄️');setStatus(cur.human?'你被凍結了！':cur.name+' 被凍結了！','暫停這一輪');toast('❄️ 凍結中','跳過這一輪');await wait(700);if(ep!==epoch)return;turn=(turn+1)%players.length;continue;}
+  let target=(forcedTarget&&alive().includes(forcedTarget)&&forcedTarget!==cur)?forcedTarget:nextAliveFrom(turn);
+  forcedTarget=null;
   // 只剩下自己跟 target？target 必須 != cur
   if(!target||target===cur)break;
   updStatusFor(cur,target);
@@ -684,6 +699,7 @@ async function transfer(from,to,card,ep){
  card.faceUp=to.human||from.human;card.lift=2.4;
  layoutAll();SFX.draw();
  await wait(650);if(ep!==epoch)return;
+ if(card.rank<0){await resolveSpecial(card,from,to,ep);return;}
  if(card.rank===0){SFX.joker();emote(to,'😖');if(!to.human)emote(from,'😏');shake=.3;if(to.human)toast('抽到鬼牌了！','🃏 小心藏好');else if(from.human)toast(to.name+' 拿走了你的鬼牌！','');}
  // 配對？
  const mate=card.rank===0?null:to.hand.find(c=>c!==card&&c.rank===card.rank);
@@ -696,6 +712,34 @@ async function transfer(from,to,card,ep){
   // 對手端：牌回到牌背
   if(!to.human){card.faceUp=false;layoutAll();}
  }
+}
+async function resolveSpecial(card,from,to,ep){
+ to.hand=to.hand.filter(c=>c!==card);
+ card.owner=-1;card.pile=pileN++;card.faceUp=true;card.hover=false;
+ layoutAll();SFX.special();
+ await wait(200);if(ep!==epoch)return;
+ const t=card.rank;
+ if(t===-1){
+  const tmp=to.hand;to.hand=from.hand;from.hand=tmp;layoutAll();
+  emote(to,'🔄');emote(from,'🔄');
+  toast('🔄 换手卡發動！',to.human?'你和 '+from.name+' 交換了手牌':(from.human?to.name+' 跟你交換了手牌':to.name+' 和 '+from.name+' 交換了手牌'));
+  if(to.human||from.human)FUN.unlock('ospecial');
+ }else if(t===-2){
+  const cands=alive().filter(p=>p!==to);
+  const victim=cands[Math.floor(Math.random()*cands.length)]||to;
+  victim.skipNext=true;emote(victim,'❄️');
+  toast('❄️ 凍結卡發動！',victim.human?'你的下一輪被凍結了':victim.name+' 的下一輪被凍結了');
+  if(to.human)FUN.unlock('ospecial');
+ }else if(t===-3){
+  if(to.human){peekN++;if(window.peekLabel)peekLabel();toast('👁️ 透視卡發動！','獲得一次免費透視眼');FUN.unlock('ospecial');}
+  else{toast(to.name+' 抽到透視卡','嗅到了鬼牌的氣息…');emote(to,'👁️');}
+ }else if(t===-4){
+  const cands=alive().filter(p=>p!==to);
+  forcedTarget=cands[Math.floor(Math.random()*cands.length)]||null;
+  toast('🔀 混亂卡發動！','下一位的抽牌對象被打亂了');
+  if(to.human)FUN.unlock('ospecial');
+ }
+ await wait(500);if(ep!==epoch)return;
 }
 function order0(){const o=outOrder.slice();return o.indexOf(players[0])+1;}
 function funEnd(youLose,rk){FUN.xp(youLose?8:25);if(!youLose){FUN.unlock('o1');if(rk===1)FUN.unlock('ofirst');if(stats.streak>=3)FUN.unlock('ostreak');if(np===4)FUN.unlock('o4');if(luckyRound)FUN.unlock('oluck');
@@ -819,6 +863,19 @@ if(THUMB){[['cat',-2.5,-1.6],['bear',2.5,-1.7]].forEach(a=>{const h=mkHead(a[0])
 requestAnimationFrame(frame);
 
 window.__om={get:()=>({mode,turn,np,hands:players.map(p=>p.hand.length),out:players.map(p=>p.out),pile:pileN,loser:loser&&loser.name,timers:timers.length}),start:startGame,setNP:n=>{np=n;},auto:v=>{autoHuman=v;},ts:v=>{TS=v;},shot:()=>0};
+window.__om.getPlayers=()=>players.map(p=>({id:p.id,human:p.human,name:p.name,hand:p.hand.map(c=>c.rank),out:p.out,skipNext:!!p.skipNext}));
+window.__om.getUseSpecial=()=>useSpecial;
+window.__om.setUseSpecial=v=>{useSpecial=!!v;};
+window.__om.getForcedTarget=()=>forcedTarget&&forcedTarget.id;
+window.__om.setForcedTarget=id=>{forcedTarget=players.find(p=>p.id===id)||null;};
+window.__om.getPeekN=()=>peekN;
+window.__om.getPick=()=>pick?{targetId:pick.target.id,hand:pick.target.hand.map(c=>c.rank)}:null;
+window.__om.injectSpecial=(playerId,rank)=>{const p=players.find(pp=>pp.id===playerId);if(!p||!p.hand.length)return false;const c=p.hand[0];c.rank=rank;c.suit=-1;c.mesh.material[2]=faceMat(rank,-1);return true;};
+window.__om.confirmPickRank=rank=>{if(!pick)return false;const c=pick.target.hand.find(x=>x.rank===rank);if(!c)return false;pick.sel=c;c.hover=true;confirmPick();return true;};
+window.__om.getStats=()=>({...stats});
+window.__om.getAllCardRanks=()=>cards.map(c=>c.rank);
+window.__om.getUseSpecialRaw=()=>useSpecial;
+
 })();
 </script>
 </body>
