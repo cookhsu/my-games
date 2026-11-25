@@ -82,6 +82,7 @@ canvas#cv{max-width:100%;max-height:100%;touch-action:none;cursor:pointer}
 .fun-i small{color:var(--sub);font-size:11px}
 .fun-x{margin-top:14px;width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#2a1c12;color:#fff;cursor:pointer}
 #gmb-btn{display:none!important}
+#nogl{display:none;position:absolute;inset:0;z-index:30;align-items:center;justify-content:center;text-align:center;padding:2em;background:#120b06;color:var(--sub);line-height:1.7}
 </style>
 </head>
 <body>
@@ -93,7 +94,7 @@ canvas#cv{max-width:100%;max-height:100%;touch-action:none;cursor:pointer}
     <button id="speedBtn" type="button">1x</button>
     <button id="spellBtn" type="button">🔥 烽火連天<div class="cd" id="spellCdUI" hidden></div></button>
   </div>
-  <div id="wrap"><canvas id="cv" width="960" height="540"></canvas></div>
+  <div id="wrap"><canvas id="cv" width="960" height="540"></canvas><div id="nogl">無法載入 3D 引擎(three.module.min.js)<br>請確認檔案與本頁放在同一個資料夾,<br>並使用支援 WebGL 的瀏覽器。</div></div>
   <div id="towerBar">
     <div class="tbtn" data-t="arrow"><div class="ic" style="background:#8fbc5a"></div>弓箭塔<b>$50</b></div>
     <div class="tbtn" data-t="cannon"><div class="ic" style="background:#b06a3a"></div>砲塔<b>$90</b></div>
@@ -229,27 +230,30 @@ W.FUN={segment,init,unlock,xp,mount,panel,banner,dailyInfo,dailyDone,dailySeed,r
 })();
 </script>
 
-<script>
-(function(){
-'use strict';
+<script type="module">
+let THREE=null;
+for(const u of ['./three.module.min.js','https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js','https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js']){try{THREE=await import(u);break;}catch(e){}}
 const $=id=>document.getElementById(id);
-const cv=$('cv'),ctx=cv.getContext('2d');
-const W=960,H=540,CX=480,CY=270,ELY=0.56;
+if(!THREE){$('nogl').style.display='flex';}
+else try{(()=>{
+'use strict';
+const cv=$('cv');
+const W=960,H=540;
 
 /* ---------- 音效 ---------- */
 let sfxOn=true;
 function beep(freq,dur,type,vol){if(!sfxOn)return;try{const Ax=window.AudioContext||window.webkitAudioContext;const c=new Ax();const o=c.createOscillator(),g=c.createGain();o.type=type||'square';o.frequency.value=freq;g.gain.setValueAtTime(vol||.12,c.currentTime);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+dur);o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+dur);setTimeout(()=>c.close&&c.close(),dur*1000+120);}catch(e){}}
 const SFX={build:()=>beep(520,.08,'triangle',.1),hit:()=>beep(260,.05,'square',.05),die:()=>beep(150,.12,'sawtooth',.08),leak:()=>beep(90,.25,'sawtooth',.14),spell:()=>beep(700,.3,'sine',.12),wave:()=>beep(440,.15,'triangle',.1),win:()=>beep(880,.4,'sine',.14),lose:()=>beep(110,.5,'sawtooth',.14),warn:()=>beep(330,.06,'triangle',.05)};
 
-/* ---------- 環形戰場:無固定走道,敵人從任意角度直線衝向中央城堡 ---------- */
+/* ---------- 環形戰場:無固定走道,敵人從任意角度直線衝向中央城堡(3D 世界座標 x/z,y 為高度) ---------- */
 const R_CASTLE=52, R_SPAWN=560, TOTAL_LEN=R_SPAWN-R_CASTLE;
-function posForAngR(angle,r){return{x:CX+r*Math.cos(angle),y:CY+r*ELY*Math.sin(angle)};}
+function posForAngR(angle,r){return{x:r*Math.cos(angle),z:r*Math.sin(angle)};}
 function posForEnemy(e){return posForAngR(e.angle,R_SPAWN-e.dist);}
 
 /* 內外兩圈共 16 個建塔點,環繞城堡 */
 const SLOTS=[];
-for(let i=0;i<8;i++){const a=i*Math.PI/4;const p=posForAngR(a,130);SLOTS.push({x:p.x,y:p.y});}
-for(let i=0;i<8;i++){const a=i*Math.PI/4+Math.PI/8;const p=posForAngR(a,215);SLOTS.push({x:p.x,y:p.y});}
+for(let i=0;i<8;i++){const a=i*Math.PI/4;const p=posForAngR(a,130);SLOTS.push({x:p.x,z:p.z});}
+for(let i=0;i<8;i++){const a=i*Math.PI/4+Math.PI/8;const p=posForAngR(a,215);SLOTS.push({x:p.x,z:p.z});}
 
 /* ---------- 塔種定義 ---------- */
 const TOWER={
@@ -396,14 +400,14 @@ function castSpell(){
  if(spellCd>0||gameOver)return false;
  spellCd=18000;spellUses++;
  SFX.spell();
- enemies.forEach(e=>{e.hp-=45;const p=posForEnemy(e);particles.push({x:p.x,y:p.y,t:400,r:6,c:'#ffd9a0'});});
+ enemies.forEach(e=>{e.hp-=45;const p=posForEnemy(e);particles.push({x:p.x,z:p.z,t:400,r:6,c:'#ffd9a0'});});
  if(spellUses>=10)FUN.unlock('spell10');
  return true;
 }
 
 /* ---------- 主迴圈 ---------- */
 function dist2targets(from,range){
- return enemies.filter(e=>{const p=posForEnemy(e);return Math.hypot(p.x-from.x,p.y-from.y)<=range&&e.hp>0;});
+ return enemies.filter(e=>{const p=posForEnemy(e);return Math.hypot(p.x-from.x,p.z-from.z)<=range&&e.hp>0;});
 }
 function step(dtMs){
  const dt=dtMs/1000;
@@ -421,7 +425,7 @@ function step(dtMs){
   if(e.hp<=0){
    gold+=e.reward;
    const p=posForEnemy(e);
-   particles.push({x:p.x,y:p.y,t:260,r:e.r+4,c:'#ffe08a'});
+   particles.push({x:p.x,z:p.z,t:260,r:e.r+4,c:'#ffe08a'});
    SFX.die();
    if(e.boss)FUN.unlock('boss1');
    enemies.splice(i,1);
@@ -451,10 +455,10 @@ function step(dtMs){
   const dmg=def.dmg*DMGMUL[tw.lvl-1];
   tw.cd=def.rate;
   const tp=posForEnemy(tgt);
-  bullets.push({x:slot.x,y:slot.y,tx:tp.x,ty:tp.y,t:140,type:tw.type});
+  bullets.push({x:slot.x,z:slot.z,tx:tp.x,tz:tp.z,t:140,type:tw.type});
   applyDamage(tgt,dmg,def);
   if(def.splash){
-   enemies.forEach(e2=>{if(e2===tgt)return;const p2=posForEnemy(e2);if(Math.hypot(p2.x-tp.x,p2.y-tp.y)<=def.splash)applyDamage(e2,dmg*0.6,def);});
+   enemies.forEach(e2=>{if(e2===tgt)return;const p2=posForEnemy(e2);if(Math.hypot(p2.x-tp.x,p2.z-tp.z)<=def.splash)applyDamage(e2,dmg*0.6,def);});
   }
  });
  for(let i=bullets.length-1;i>=0;i--){bullets[i].t-=dtMs;if(bullets[i].t<=0)bullets.splice(i,1);}
@@ -493,70 +497,198 @@ function endGame(win){
  updateHud();
 }
 
-/* ---------- 繪製 ---------- */
-function draw(){
- ctx.clearRect(0,0,W,H);
- const g=ctx.createRadialGradient(CX,CY,40,CX,CY,560);
- g.addColorStop(0,'#2a1c10');g.addColorStop(1,'#120b06');
- ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
- // 防線引導圈
- [130,215].forEach(r=>{
-  ctx.beginPath();ctx.ellipse(CX,CY,r,r*ELY,0,0,7);
-  ctx.strokeStyle='rgba(255,201,107,.14)';ctx.lineWidth=2;ctx.setLineDash([6,8]);ctx.stroke();ctx.setLineDash([]);
- });
- // 城堡
- ctx.beginPath();ctx.arc(CX,CY,R_CASTLE,0,7);
- ctx.fillStyle='#8a6a42';ctx.fill();ctx.strokeStyle='#5a4026';ctx.lineWidth=4;ctx.stroke();
- ctx.font='34px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🏯',CX,CY);
- // 建塔點
- SLOTS.forEach((s,idx)=>{
-  if(towers[idx])return;
-  ctx.beginPath();ctx.arc(s.x,s.y,20,0,7);
-  ctx.fillStyle=selType?'rgba(255,201,107,.18)':'rgba(255,255,255,.06)';
-  ctx.fill();
-  ctx.strokeStyle=selType?'#ffc96b':'rgba(255,255,255,.25)';ctx.lineWidth=2;ctx.stroke();
- });
+/* ---------- 3D 場景(three.js / WebGL) ---------- */
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,powerPreference:'high-performance'});
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+renderer.setSize(W,H,false);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x1c130b);
+scene.fog=new THREE.Fog(0x1c130b,620,1150);
+const camera=new THREE.PerspectiveCamera(42,W/H,1,1800);
+camera.position.set(0,640,560);
+camera.lookAt(0,0,0);
+
+const hemi=new THREE.HemisphereLight(0xffe8c0,0x3a281a,1.65);
+const sun=new THREE.DirectionalLight(0xffecc8,1.85);
+sun.position.set(260,520,180);
+scene.add(hemi,sun,new THREE.AmbientLight(0x8a6240,.55));
+
+/* 地面 */
+const ground=new THREE.Mesh(new THREE.CircleGeometry(640,48),new THREE.MeshStandardMaterial({color:0x241a10,roughness:1,metalness:0}));
+ground.rotation.x=-Math.PI/2;
+scene.add(ground);
+
+/* 防線引導圈(虛線圓) */
+function dashedCircle(r,color,opacity){
+ const pts=[];for(let i=0;i<=96;i++){const a=i/96*Math.PI*2;pts.push(new THREE.Vector3(r*Math.cos(a),.6,r*Math.sin(a)));}
+ const geo=new THREE.BufferGeometry().setFromPoints(pts);
+ const mat=new THREE.LineDashedMaterial({color,transparent:true,opacity,dashSize:8,gapSize:7});
+ const line=new THREE.LineLoop(geo,mat);line.computeLineDistances();
+ return line;
+}
+scene.add(dashedCircle(130,0xffc96b,.35),dashedCircle(215,0xffc96b,.35));
+
+/* 城堡 */
+const castle=new THREE.Group();
+const keep=new THREE.Mesh(new THREE.CylinderGeometry(40,46,66,8),new THREE.MeshStandardMaterial({color:0x8a6a42,roughness:.9}));
+keep.position.y=33;castle.add(keep);
+const roof=new THREE.Mesh(new THREE.ConeGeometry(48,46,8),new THREE.MeshStandardMaterial({color:0x5a4026,roughness:.85}));
+roof.position.y=66+23;castle.add(roof);
+const flagPole=new THREE.Mesh(new THREE.CylinderGeometry(.8,.8,22,6),new THREE.MeshStandardMaterial({color:0x3a2a1a}));
+flagPole.position.y=66+46+11;castle.add(flagPole);
+const flag=new THREE.Mesh(new THREE.PlaneGeometry(14,9),new THREE.MeshBasicMaterial({color:0xffc96b,side:THREE.DoubleSide}));
+flag.position.set(7,66+46+16,0);castle.add(flag);
+scene.add(castle);
+
+/* 建塔點標記 */
+const slotMeshes=SLOTS.map((s,idx)=>{
+ const m=new THREE.Mesh(new THREE.CircleGeometry(22,24),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.06,side:THREE.DoubleSide}));
+ m.rotation.x=-Math.PI/2;m.position.set(s.x,.5,s.z);m.userData.slotIndex=idx;
+ scene.add(m);return m;
+});
+const slotRings=SLOTS.map(s=>{
+ const geo=new THREE.BufferGeometry().setFromPoints(Array.from({length:25},(_,i)=>{const a=i/24*Math.PI*2;return new THREE.Vector3(20*Math.cos(a),.7,20*Math.sin(a));}));
+ const line=new THREE.LineLoop(geo,new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.25}));
+ line.position.set(s.x,0,s.z);scene.add(line);return line;
+});
+
+/* 塔樓模型 */
+function makeTowerMesh(type){
+ const def=TOWER[type];const g=new THREE.Group();
+ const base=new THREE.Mesh(new THREE.CylinderGeometry(9,11,10,8),new THREE.MeshStandardMaterial({color:def.dark,roughness:.8}));
+ base.position.y=5;g.add(base);
+ const body=new THREE.Mesh(new THREE.CylinderGeometry(6.5,7.5,20,8),new THREE.MeshStandardMaterial({color:def.color,roughness:.6}));
+ body.position.y=20;g.add(body);
+ let top;
+ if(type==='arrow')top=new THREE.Mesh(new THREE.ConeGeometry(7,12,8),new THREE.MeshStandardMaterial({color:def.color,roughness:.5}));
+ else if(type==='cannon')top=new THREE.Mesh(new THREE.SphereGeometry(8,10,8),new THREE.MeshStandardMaterial({color:def.color,roughness:.4,metalness:.3}));
+ else if(type==='mage')top=new THREE.Mesh(new THREE.OctahedronGeometry(9),new THREE.MeshStandardMaterial({color:def.color,emissive:0x3a1a5a,emissiveIntensity:.5,roughness:.3}));
+ else top=new THREE.Mesh(new THREE.IcosahedronGeometry(8,0),new THREE.MeshStandardMaterial({color:def.color,emissive:0x0a3a4a,emissiveIntensity:.4,roughness:.3}));
+ top.position.y=34;g.add(top);
+ g.userData.levelRings=[];
+ return g;
+}
+const towerMeshes=new Array(SLOTS.length).fill(null);
+
+/* 敵人模型 */
+function makeEnemyMesh(type){
+ const def=ENEMY[type];const g=new THREE.Group();
+ let body;
+ if(type==='goblin')body=new THREE.Mesh(new THREE.ConeGeometry(def.r*.8,def.r*1.8,6),new THREE.MeshStandardMaterial({color:def.color,roughness:.7}));
+ else if(type==='orc')body=new THREE.Mesh(new THREE.BoxGeometry(def.r*1.5,def.r*1.8,def.r*1.5),new THREE.MeshStandardMaterial({color:def.color,roughness:.8}));
+ else if(type==='knight'){
+  body=new THREE.Group();
+  const torso=new THREE.Mesh(new THREE.CylinderGeometry(def.r*.8,def.r*.8,def.r*1.9,8),new THREE.MeshStandardMaterial({color:def.color,roughness:.5,metalness:.4}));
+  torso.position.y=def.r*.9;body.add(torso);
+  const helm=new THREE.Mesh(new THREE.ConeGeometry(def.r*.6,def.r*.8,6),new THREE.MeshStandardMaterial({color:0x5a6270,roughness:.4,metalness:.5}));
+  helm.position.y=def.r*1.9;body.add(helm);
+ }else body=new THREE.Mesh(new THREE.IcosahedronGeometry(def.r,0),new THREE.MeshStandardMaterial({color:def.color,emissive:0x1a0a2a,emissiveIntensity:.4,roughness:.5}));
+ g.add(body);g.userData.bodyMat=[];
+ g.traverse(o=>{if(o.isMesh)g.userData.bodyMat.push(o.material);});
+ const barBg=new THREE.Sprite(new THREE.SpriteMaterial({color:0x000000,opacity:.55,transparent:true,depthTest:false}));
+ barBg.scale.set(def.r*2.4,4,1);barBg.position.y=def.r*2+10;g.add(barBg);
+ const barFg=new THREE.Sprite(new THREE.SpriteMaterial({color:0x58d68d,depthTest:false}));
+ barFg.scale.set(def.r*2.4,3,1);barFg.position.y=def.r*2+10;barFg.renderOrder=1;g.add(barFg);
+ g.userData.barBg=barBg;g.userData.barFg=barFg;g.userData.barW=def.r*2.4;
+ return g;
+}
+
+/* 子彈 / 粒子 / 警示箭頭的可視物件(以陣列同步) */
+const bulletObjs=[],particleObjs=[],warningObjs=[];
+function syncByArray(dataArr,objArr,makeFn,updateFn){
+ while(objArr.length<dataArr.length){const o=makeFn();scene.add(o.mesh);objArr.push(o);}
+ while(objArr.length>dataArr.length){const o=objArr.pop();scene.remove(o.mesh);}
+ for(let i=0;i<dataArr.length;i++)updateFn(dataArr[i],objArr[i]);
+}
+
+/* ---------- 畫面渲染(每幀同步 three.js 物件到遊戲狀態) ---------- */
+function render3D(){
  // 塔
  towers.forEach((tw,idx)=>{
-  if(!tw)return;
-  const def=TOWER[tw.type];const s=SLOTS[idx];
-  ctx.beginPath();ctx.arc(s.x,s.y,18+tw.lvl*2,0,7);
-  ctx.fillStyle=def.color;ctx.fill();
-  ctx.strokeStyle=def.dark;ctx.lineWidth=4;ctx.stroke();
-  if(tw.lvl>1){ctx.fillStyle='#fff';ctx.font='bold 12px sans-serif';ctx.textAlign='center';ctx.fillText('★'.repeat(tw.lvl-1),s.x,s.y+4);}
-  if(selTowerSlot===idx){ctx.beginPath();ctx.arc(s.x,s.y,def.range*def.rangeMul[tw.lvl-1],0,7);ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1.5;ctx.stroke();}
+  const cur=towerMeshes[idx];
+  if(!tw){if(cur){scene.remove(cur);towerMeshes[idx]=null;}return;}
+  if(!cur){const m=makeTowerMesh(tw.type);const s=SLOTS[idx];m.position.set(s.x,0,s.z);scene.add(m);towerMeshes[idx]=m;}
+  const m=towerMeshes[idx];
+  const scale=1+(tw.lvl-1)*.12;
+  m.scale.set(scale,scale,scale);
+  while(m.userData.levelRings.length<tw.lvl-1){
+   const ring=new THREE.Mesh(new THREE.TorusGeometry(10+m.userData.levelRings.length*4,.6,6,16),new THREE.MeshBasicMaterial({color:0xffffff}));
+   ring.rotation.x=Math.PI/2;ring.position.y=42+m.userData.levelRings.length*4;
+   m.add(ring);m.userData.levelRings.push(ring);
+  }
+  m.visible=true;
  });
- // 邊緣方位警示
- warnings.forEach(w=>{
-  const edge=posForAngR(w.angle,250);
-  const a=Math.max(0,w.t/900);
-  ctx.save();ctx.translate(edge.x,edge.y);ctx.rotate(w.angle);
-  ctx.globalAlpha=a;ctx.fillStyle='#ff5a3a';
-  ctx.beginPath();ctx.moveTo(14,0);ctx.lineTo(-6,-8);ctx.lineTo(-6,8);ctx.closePath();ctx.fill();
-  ctx.restore();ctx.globalAlpha=1;
+ // 建塔點顯示(已建塔的淡出標記,但保持 visible=true 以維持可點擊/可開啟升級面板)
+ slotMeshes.forEach((m,idx)=>{
+  const empty=!towers[idx];
+  slotRings[idx].visible=empty;
+  m.material.color.set(selType?0xffc96b:0xffffff);
+  m.material.opacity=empty?(selType?.22:.06):0;
  });
+ // 範圍提示圈(選中塔時顯示)
+ if(selTowerSlot>=0&&towers[selTowerSlot]){
+  const tw=towers[selTowerSlot];const def=TOWER[tw.type];const s=SLOTS[selTowerSlot];
+  if(!render3D._rangeRing){
+   const geo=new THREE.BufferGeometry().setFromPoints(Array.from({length:49},(_,i)=>{const a=i/48*Math.PI*2;return new THREE.Vector3(Math.cos(a),0,Math.sin(a));}));
+   render3D._rangeRing=new THREE.LineLoop(geo,new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.4}));
+   scene.add(render3D._rangeRing);
+  }
+  const r=def.range*def.rangeMul[tw.lvl-1];
+  render3D._rangeRing.visible=true;
+  render3D._rangeRing.position.set(s.x,.8,s.z);
+  render3D._rangeRing.scale.set(r,1,r);
+ }else if(render3D._rangeRing){render3D._rangeRing.visible=false;}
  // 敵人
+ const seen=new Set();
  enemies.forEach(e=>{
+  seen.add(e.id);
+  let m=render3D._enemyMeshes.get(e.id);
+  if(!m){m=makeEnemyMesh(e.type);render3D._enemyMeshes.set(e.id,m);scene.add(m);}
   const p=posForEnemy(e);
-  ctx.beginPath();ctx.arc(p.x,p.y,e.r,0,7);
-  ctx.fillStyle=e.slowT>0?'#bfe6ff':e.color;ctx.fill();
-  ctx.strokeStyle='rgba(0,0,0,.4)';ctx.lineWidth=2;ctx.stroke();
-  const w=e.r*2;
-  ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(p.x-w/2,p.y-e.r-10,w,5);
-  ctx.fillStyle=e.boss?'#ff7a7a':'#58d68d';
-  ctx.fillRect(p.x-w/2,p.y-e.r-10,w*Math.max(0,e.hp/e.maxHp),5);
+  m.position.set(p.x,ENEMY[e.type].r*.9,p.z);
+  const slowColor=e.slowT>0;
+  m.userData.bodyMat.forEach(mat=>{mat.color.set(slowColor?0xbfe6ff:ENEMY[e.type].color);});
+  const frac=Math.max(0,e.hp/e.maxHp);
+  m.userData.barFg.scale.x=m.userData.barW*frac;
+  m.userData.barFg.position.x=-(m.userData.barW*(1-frac))/2;
+  m.userData.barFg.material.color.set(e.boss?0xff7a7a:0x58d68d);
  });
+ render3D._enemyMeshes.forEach((m,id)=>{if(!seen.has(id)){scene.remove(m);render3D._enemyMeshes.delete(id);}});
  // 子彈
- bullets.forEach(b=>{
-  ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.tx,b.ty);
-  ctx.strokeStyle=TOWER[b.type]?TOWER[b.type].color:'#fff';ctx.lineWidth=2;ctx.globalAlpha=b.t/140;ctx.stroke();ctx.globalAlpha=1;
+ syncByArray(bullets,bulletObjs,()=>{
+  const geo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]);
+  const mesh=new THREE.Line(geo,new THREE.LineBasicMaterial({color:0xffffff,transparent:true}));
+  return{mesh};
+ },(b,o)=>{
+  const col=TOWER[b.type]?TOWER[b.type].color:'#ffffff';
+  o.mesh.material.color.set(col);o.mesh.material.opacity=Math.max(0,b.t/140);
+  const pos=o.mesh.geometry.attributes.position;
+  pos.setXYZ(0,b.x,16,b.z);pos.setXYZ(1,b.tx,10,b.tz);pos.needsUpdate=true;
  });
  // 粒子
- particles.forEach(pt=>{
-  ctx.beginPath();ctx.arc(pt.x,pt.y,pt.r*(pt.t/400+0.3),0,7);
-  ctx.fillStyle=pt.c;ctx.globalAlpha=Math.max(0,pt.t/400);ctx.fill();ctx.globalAlpha=1;
+ syncByArray(particles,particleObjs,()=>{
+  const mesh=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,depthTest:false}));
+  return{mesh};
+ },(pt,o)=>{
+  o.mesh.material.color.set(pt.c);o.mesh.material.opacity=Math.max(0,pt.t/400);
+  const sc=pt.r*(pt.t/400+.3)*2;o.mesh.scale.set(sc,sc,1);
+  o.mesh.position.set(pt.x,14,pt.z);
+ });
+ // 方位警示箭頭
+ syncByArray(warnings,warningObjs,()=>{
+  const geo=new THREE.ConeGeometry(9,20,3);
+  const mesh=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0xff5a3a,transparent:true}));
+  mesh.rotation.z=-Math.PI/2;
+  return{mesh};
+ },(w,o)=>{
+  const edge=posForAngR(w.angle,250);
+  o.mesh.position.set(edge.x,10,edge.z);
+  o.mesh.rotation.y=-(w.angle+Math.PI);
+  o.mesh.material.opacity=Math.max(0,w.t/900);
  });
 }
+render3D._enemyMeshes=new Map();
 
 function loop(ts){
  if(!last)last=ts;
@@ -565,12 +697,18 @@ function loop(ts){
  if(!gameOver){
   for(let i=0;i<gameSpeed;i++)step(dt);
  }
- draw();
+ render3D();
+ renderer.render(scene,camera);
  raf=requestAnimationFrame(loop);
 }
 
-/* ---------- 互動 ---------- */
+/* ---------- 互動(3D 射線檢測) ---------- */
 function closePopup(){const p=$('towerPopup');if(p)p.remove();selTowerSlot=-1;}
+function worldToScreen(x,y,z){
+ const v=new THREE.Vector3(x,y,z).project(camera);
+ const rect=cv.getBoundingClientRect();
+ return{x:rect.left+(v.x+1)/2*rect.width,y:rect.top+(1-v.y)/2*rect.height};
+}
 function openPopup(idx){
  closePopup();
  selTowerSlot=idx;
@@ -582,40 +720,40 @@ function openPopup(idx){
   (upCost!==null?'<button class="up" '+(gold<upCost?'disabled':'')+' id="pUp">升級 $'+upCost+'</button>':'<button disabled>已滿級</button>')+
   '<button class="sl" id="pSell">賣出 +$'+refund+'</button></div>';
  document.body.appendChild(p);
- const rect=cv.getBoundingClientRect();
- const sx=rect.width/W,sy=rect.height/H;
- let left=rect.left+SLOTS[idx].x*sx-70,top=rect.top+SLOTS[idx].y*sy-70;
+ const s=SLOTS[idx];
+ const scr=worldToScreen(s.x,30,s.z);
+ let left=scr.x-70,top=scr.y-90;
  left=Math.max(6,Math.min(window.innerWidth-156,left));
  top=Math.max(6,top);
  p.style.left=left+'px';p.style.top=top+'px';
  if(upCost!==null)$('pUp').onclick=e=>{e.stopPropagation();upgradeTower(idx);openPopup(idx);};
  $('pSell').onclick=e=>{e.stopPropagation();sellTower(idx);closePopup();};
 }
-function canvasPoint(ev){
+const raycaster=new THREE.Raycaster();
+const pointerNDC=new THREE.Vector2();
+function pointerToNDC(ev){
  const rect=cv.getBoundingClientRect();
- const cx=(ev.touches?ev.touches[0].clientX:ev.clientX)-rect.left;
- const cy=(ev.touches?ev.touches[0].clientY:ev.clientY)-rect.top;
- return{x:cx*(W/rect.width),y:cy*(H/rect.height)};
+ const px=(ev.touches?ev.touches[0].clientX:ev.clientX)-rect.left;
+ const py=(ev.touches?ev.touches[0].clientY:ev.clientY)-rect.top;
+ pointerNDC.x=(px/rect.width)*2-1;
+ pointerNDC.y=-((py/rect.height)*2-1);
 }
 cv.addEventListener('click',e=>{
  if(gameOver)return;
- const p=canvasPoint(e);
- for(let i=0;i<SLOTS.length;i++){
-  const s=SLOTS[i];
-  if(Math.hypot(p.x-s.x,p.y-s.y)<=24){
-   if(towers[i]){openPopup(i);return;}
-   if(selType){
-    const ok=buildTower(i,selType);
-    if(!ok&&gold<TOWER[selType].cost)toast('金幣不足');
-    closePopup();
-    return;
-   }else{
-    toast('請先選擇下方塔種');
-    return;
-   }
-  }
+ pointerToNDC(e);
+ raycaster.setFromCamera(pointerNDC,camera);
+ const hits=raycaster.intersectObjects(slotMeshes,false);
+ if(!hits.length){closePopup();return;}
+ const i=hits[0].object.userData.slotIndex;
+ if(towers[i]){openPopup(i);return;}
+ if(selType){
+  const ok=buildTower(i,selType);
+  if(!ok&&gold<TOWER[selType].cost)toast('金幣不足');
+  closePopup();
+  return;
+ }else{
+  toast('請先選擇下方塔種');
  }
- closePopup();
 });
 document.querySelectorAll('.tbtn[data-t]').forEach(b=>{
  b.addEventListener('click',()=>{
@@ -673,11 +811,15 @@ window.__td={
  setSpeed(n){gameSpeed=n;},
  skipToWave(n){wave=Math.max(0,n-1);updateHud();},
  reset(){reset();},
- slotsCount(){return SLOTS.length;}
+ slotsCount(){return SLOTS.length;},
+ isWebGL(){return !!(renderer&&renderer.getContext());},
+ towerMeshCount(){return towerMeshes.filter(Boolean).length;},
+ enemyMeshCount(){return render3D._enemyMeshes.size;},
+ slotScreenPos(idx){const s=SLOTS[idx];return worldToScreen(s.x,0,s.z);}
 };
 
 raf=requestAnimationFrame(loop);
-})();
+})();}catch(err){console.error(err);$('nogl').style.display='flex';}
 </script>
 </body>
 </html>
