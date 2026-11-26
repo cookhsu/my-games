@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop','');
+    a.setAttribute('playsinline','');
+    a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__EB_AC && window.__EB_AC.state==='suspended'){ window.__EB_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>電流節拍</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0620; --ink:#F3EEFF; --muted:#9D8FC7;
+    --l0:#FF2E6C; --l1:#00E5FF; --l2:#FFD60A; --l3:#39FF14;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Noto Sans TC','Fredoka',sans-serif; color:var(--ink);
+    min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #1b0f44 0%, #0A0620 65%);
+  }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh;
+    aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; width:100%; height:100%; touch-action:none; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; align-items:center; justify-content:space-between;
+    padding:10px 14px 0; font-family:'Fredoka',sans-serif; pointer-events:none; }
+  .topbar.on{ display:flex; }
+  .topbar .pill{ background:rgba(12,8,30,.6); border:1px solid rgba(255,255,255,.1); padding:5px 11px; border-radius:999px; font-size:13px; }
+  .topbar .pill b{ color:var(--l2); }
+  .healthWrap{ position:absolute; top:40px; left:14px; right:14px; height:7px; border-radius:4px; background:rgba(255,255,255,.1); overflow:hidden; display:none; }
+  .healthWrap.on{ display:block; }
+  .healthBar{ height:100%; width:100%; background:linear-gradient(90deg,var(--l3),var(--l1)); transition:width .15s; }
+
+  .ctrl{ position:absolute; left:0; right:0; bottom:0; display:none; height:130px; }
+  .ctrl.on{ display:flex; }
+  .lane{ flex:1; position:relative; border-left:1px solid rgba(255,255,255,.06); display:flex; align-items:flex-end; justify-content:center; padding-bottom:14px; }
+  .lane:first-child{ border-left:none; }
+  .lane .key{ width:52px; height:52px; border-radius:16px; background:rgba(255,255,255,.06); border:2px solid rgba(255,255,255,.14);
+    display:flex; align-items:center; justify-content:center; font-family:'Fredoka',sans-serif; font-size:13px; color:var(--muted);
+    transition:transform .06s, background .06s, border-color .06s; }
+  .lane .key.press{ transform:scale(.88); }
+  .lane:nth-child(1) .key.press{ background:rgba(255,46,108,.35); border-color:var(--l0); }
+  .lane:nth-child(2) .key.press{ background:rgba(0,229,255,.35); border-color:var(--l1); }
+  .lane:nth-child(3) .key.press{ background:rgba(255,214,10,.35); border-color:var(--l2); }
+  .lane:nth-child(4) .key.press{ background:rgba(57,255,20,.35); border-color:var(--l3); }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(12,8,30,.6); border:1px solid rgba(255,255,255,.1); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:28px; background:rgba(8,5,20,.75); backdrop-filter:blur(6px); z-index:10; gap:14px; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:30px; margin:0; letter-spacing:1px;
+    background:linear-gradient(90deg,var(--l0),var(--l1),var(--l2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:22px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.7; max-width:280px; }
+  .ov .grade{ font-family:'Fredoka',sans-serif; font-size:52px; font-weight:700; margin:2px 0; }
+  .ov .stat{ font-size:13.5px; color:var(--muted); display:flex; gap:18px; }
+  .ov .stat b{ color:var(--l2); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; color:#0a0618;
+    background:linear-gradient(135deg,var(--l1),#8af3ff); border:none; padding:13px 32px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(0,229,255,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+
+  <div class="topbar" id="topbar">
+    <div class="pill">第 <b id="lvTxt">1</b> 首</div>
+    <div class="pill">分數 <b id="scTxt">0</b></div>
+    <div class="pill">連擊 <b id="cbTxt">0</b></div>
+  </div>
+  <div class="healthWrap" id="healthWrap"><div class="healthBar" id="healthBar"></div></div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="ctrl" id="ctrl">
+    <div class="lane"><div class="key" id="k0">A</div></div>
+    <div class="lane"><div class="key" id="k1">S</div></div>
+    <div class="lane"><div class="key" id="k2">D</div></div>
+    <div class="lane"><div class="key" id="k3">F</div></div>
+  </div>
+
+  <div class="ov" id="ovMenu">
+    <h1>電流節拍</h1>
+    <p class="sub">四條音軌、四個按鍵。音符落到光線時按下對應按鍵，打出 PERFECT 連擊，别讓音符漏接耗盡電力！</p>
+    <div class="stat">最高紀錄 <b id="bestTxt">0</b></div>
+    <button class="btn" id="btnStart">開始遊戲</button>
+  </div>
+
+  <div class="ov hidden" id="ovClear">
+    <h2>第 <span id="clearLv"></span> 首 完成</h2>
+    <div class="grade" id="gradeTxt">S</div>
+    <div class="stat"><div>準確率 <b id="accTxt">0%</b></div><div>最高連擊 <b id="maxcbTxt">0</b></div></div>
+    <div class="btnrow">
+      <button class="btn" id="btnNext">下一首 →</button>
+      <button class="btn alt" id="btnMenu0">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovLose">
+    <h2>⚡ 電力耗盡</h2>
+    <p class="sub">漏接太多音符了，再試一次這首吧。</p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetry">重新挑戰</button>
+      <button class="btn alt" id="btnMenu1">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var $=function(id){return document.getElementById(id);};
+
+// ---------- rng ----------
+function mulberry32(seed){
+  return function(){
+    seed|=0; seed=(seed+0x6D2B79F5)|0;
+    var t=Math.imul(seed^seed>>>15,1|seed);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296;
+  };
+}
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+
+// ---------- audio ----------
+var AC=null;
+function ac(){
+  if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__EB_AC=AC; }catch(e){} }
+  return AC;
+}
+var noiseBuf=null;
+function getNoiseBuf(){
+  var c=ac(); if(!c) return null;
+  if(!noiseBuf){
+    noiseBuf=c.createBuffer(1, c.sampleRate*0.3, c.sampleRate);
+    var d=noiseBuf.getChannelData(0);
+    for(var i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  }
+  return noiseBuf;
+}
+function playKick(t){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type='sine';
+    o.frequency.setValueAtTime(140,t);
+    o.frequency.exponentialRampToValueAtTime(42,t+0.13);
+    g.gain.setValueAtTime(0.55,t);
+    g.gain.exponentialRampToValueAtTime(0.001,t+0.2);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t+0.22);
+  }catch(e){}
+}
+function playHat(t,vol){
+  var c=ac(); var buf=getNoiseBuf(); if(!c||!buf) return;
+  try{
+    var src=c.createBufferSource(); src.buffer=buf;
+    var hp=c.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=7000;
+    var g=c.createGain(); g.gain.setValueAtTime(vol||0.12,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.05);
+    src.connect(hp); hp.connect(g); g.connect(c.destination);
+    src.start(t); src.stop(t+0.06);
+  }catch(e){}
+}
+function playSnare(t){
+  var c=ac(); var buf=getNoiseBuf(); if(!c||!buf) return;
+  try{
+    var src=c.createBufferSource(); src.buffer=buf;
+    var bp=c.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1800;
+    var g=c.createGain(); g.gain.setValueAtTime(0.35,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.16);
+    src.connect(bp); bp.connect(g); g.connect(c.destination);
+    src.start(t); src.stop(t+0.18);
+  }catch(e){}
+}
+function playTone(t,freq,dur,vol){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type='triangle'; o.frequency.setValueAtTime(freq,t);
+    g.gain.setValueAtTime(vol||0.2,t);
+    g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t+dur+0.02);
+  }catch(e){}
+}
+
+// ---------- state ----------
+var LANE_COLOR=['#FF2E6C','#00E5FF','#FFD60A','#39FF14'];
+var HIT_Y=560, SPAWN_Y=-20, TRAVEL=1.15; // seconds for a note to travel from spawn to hit line
+var PERFECT_W=0.07, GOOD_W=0.14;
+
+var S={
+  phase:'menu', level:1, score:0, best:0, combo:0, maxCombo:0,
+  health:100, hits:0, total:0, perfects:0, goods:0,
+  bpm:96, stepDur:0, totalSteps:0, songEndTime:0,
+  notes:[], // {lane, hitTime, resolved, judged}
+  popups:[], // floating judgement text
+  pressFlash:[0,0,0,0]
+};
+try{ S.best=parseInt(localStorage.getItem('eb_best')||'0',10)||0; }catch(e){}
+
+function songParams(level){
+  var bpm=clamp(92+level*7, 92, 180);
+  var bars=4;
+  var steps=bars*16;
+  var density=clamp(0.22+level*0.035, 0.22, 0.52);
+  var chordChance=clamp(level*0.015, 0, 0.18);
+  return {bpm:bpm, steps:steps, density:density, chordChance:chordChance};
+}
+function genPattern(level){
+  var p=songParams(level);
+  var rng=mulberry32(5000+level*131);
+  var pattern=[]; // pattern[step] = array of lanes
+  for(var i=0;i<p.steps;i++){
+    var lanes=[];
+    if(rng()<p.density){
+      lanes.push(Math.floor(rng()*4));
+      if(rng()<p.chordChance){
+        var l2=Math.floor(rng()*4);
+        if(l2!==lanes[0]) lanes.push(l2);
+      }
+    }
+    pattern.push(lanes);
+  }
+  return {bpm:p.bpm, pattern:pattern, steps:p.steps};
+}
+
+function renderHUD(){
+  $('lvTxt').textContent=S.level;
+  $('scTxt').textContent=S.score;
+  $('cbTxt').textContent=S.combo;
+  $('bestTxt').textContent=S.best;
+  $('healthBar').style.width=clamp(S.health,0,100)+'%';
+}
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+
+var LEAD_IN = TRAVEL + 0.3;
+function startSong(level){
+  var c=ac();
+  if(c.state==='suspended'){ c.resume().catch(function(){}); }
+  var song=genPattern(level);
+  S.level=level; S.bpm=song.bpm; S.pattern=song.pattern; S.totalSteps=song.steps;
+  S.stepDur=60/S.bpm/4; // 16th note duration
+  S.notes=[]; S.popups=[];
+  S.score=0; S.combo=0; S.maxCombo=0; S.health=100; S.hits=0; S.total=0; S.perfects=0; S.goods=0;
+  S.total = song.pattern.reduce(function(a,l){return a+l.length;},0);
+  S.phase='playing';
+  $('topbar').classList.add('on');
+  $('healthWrap').classList.add('on');
+  $('ctrl').classList.add('on');
+  $('menuBtn').classList.add('on');
+  renderHUD();
+  // whole song is known upfront, so schedule every drum hit and note object
+  // right away with their absolute AudioContext time -- Web Audio handles
+  // far-future scheduling natively, no manual lookahead loop needed.
+  var audioStart = c.currentTime + LEAD_IN;
+  for(var step=0; step<S.totalSteps; step++){
+    var t = audioStart + step*S.stepDur;
+    if(step%4===0) playKick(t);
+    if(step%8===4) playSnare(t);
+    playHat(t, step%2===0?0.1:0.05);
+    var lanes=song.pattern[step];
+    for(var i=0;i<lanes.length;i++){
+      S.notes.push({lane:lanes[i], hitTime:t, resolved:false, judge:null});
+    }
+  }
+  S.songEndTime = audioStart + S.totalSteps*S.stepDur;
+}
+function finishSong(){
+  S.phase='clear';
+  $('ctrl').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  var acc = S.total>0 ? (S.hits/S.total) : 1;
+  var pct=Math.round(acc*100);
+  var grade = pct>=98?'S':pct>=90?'A':pct>=75?'B':pct>=55?'C':'D';
+  if(S.score>S.best){ S.best=S.score; try{localStorage.setItem('eb_best',String(S.best));}catch(e){} }
+  renderHUD();
+  $('clearLv').textContent=S.level;
+  $('gradeTxt').textContent=grade;
+  $('accTxt').textContent=pct+'%';
+  $('maxcbTxt').textContent=S.maxCombo;
+  playTone(ac().currentTime, 660, 0.15, 0.2);
+  playTone(ac().currentTime+0.12, 990, 0.25, 0.2);
+  show('ovClear');
+}
+function loseSong(){
+  S.phase='lose';
+  $('ctrl').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  playTone(ac().currentTime, 180, 0.4, 0.2);
+  show('ovLose');
+}
+
+function addPopup(lane,text,color){
+  S.popups.push({lane:lane, text:text, life:1, color:color});
+}
+
+function tapLane(lane){
+  if(S.phase!=='playing') return;
+  var c=ac(); if(!c) return;
+  var now=c.currentTime;
+  S.pressFlash[lane]=1;
+  var best=null, bestDiff=1e9;
+  for(var i=0;i<S.notes.length;i++){
+    var n=S.notes[i];
+    if(n.lane!==lane || n.resolved) continue;
+    var diff=Math.abs(n.hitTime-now);
+    if(diff<bestDiff){ bestDiff=diff; best=n; }
+  }
+  if(best && bestDiff<=GOOD_W){
+    best.resolved=true;
+    S.hits++;
+    if(bestDiff<=PERFECT_W){
+      best.judge='perfect'; S.perfects++; S.score+=100; S.health=clamp(S.health+1.4,0,100);
+      addPopup(lane,'PERFECT','#FFD60A');
+      playTone(now, 1200, 0.08, 0.14);
+    }else{
+      best.judge='good'; S.goods++; S.score+=55;
+      addPopup(lane,'GOOD','#00E5FF');
+      playTone(now, 820, 0.08, 0.12);
+    }
+    S.combo++;
+    if(S.combo>S.maxCombo) S.maxCombo=S.combo;
+    S.score += Math.min(S.combo,40);
+    renderHUD();
+  }
+}
+
+function updateMisses(){
+  var c=ac(); if(!c) return;
+  var now=c.currentTime;
+  for(var i=0;i<S.notes.length;i++){
+    var n=S.notes[i];
+    if(!n.resolved && now > n.hitTime+GOOD_W){
+      n.resolved=true; n.judge='miss';
+      S.combo=0;
+      S.health=clamp(S.health-9,0,100);
+      addPopup(n.lane,'MISS','#FF2E6C');
+      renderHUD();
+      if(S.health<=0 && S.phase==='playing'){ loseSong(); return; }
+    }
+  }
+  if(S.phase==='playing' && now > S.songEndTime + GOOD_W + 0.25){
+    finishSong();
+  }
+}
+
+// ---------- input ----------
+var keyLane={a:0,s:1,d:2,f:3};
+window.addEventListener('keydown',function(e){
+  var k=e.key.toLowerCase();
+  if(k in keyLane) tapLane(keyLane[k]);
+});
+for(var li=0;li<4;li++){
+  (function(idx){
+    var el=$('k'+idx);
+    function down(e){ el.classList.add('press'); tapLane(idx); if(e) e.preventDefault(); }
+    function up(){ el.classList.remove('press'); }
+    el.addEventListener('mousedown',down);
+    el.addEventListener('mouseup',up);
+    el.addEventListener('mouseleave',up);
+    el.addEventListener('touchstart',down,{passive:false});
+    el.addEventListener('touchend',up);
+  })(li);
+}
+
+// ---------- UI buttons ----------
+$('btnStart').addEventListener('click',function(){ hide('ovMenu'); startSong(1); });
+$('btnNext').addEventListener('click',function(){ hide('ovClear'); startSong(S.level+1); });
+$('btnRetry').addEventListener('click',function(){ hide('ovLose'); startSong(S.level); });
+$('btnMenu0').addEventListener('click',function(){ hide('ovClear'); backToMenu(); });
+$('btnMenu1').addEventListener('click',function(){ hide('ovLose'); backToMenu(); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){
+  if(S.phase==='paused'){
+    hide('ovPause');
+    S.phase='playing';
+    var c=ac(); if(c&&c.state==='suspended') c.resume().catch(function(){});
+  }
+});
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='playing') return;
+  S.phase='paused';
+  var c=ac(); if(c&&c.state==='running') c.suspend().catch(function(){});
+  show('ovPause');
+});
+function backToMenu(){
+  var c=ac(); if(c&&c.state==='suspended') c.resume().catch(function(){});
+  S.phase='menu';
+  $('topbar').classList.remove('on');
+  $('healthWrap').classList.remove('on');
+  $('ctrl').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  show('ovMenu');
+}
+
+// ---------- draw ----------
+function laneX(lane){ return (lane+0.5)*(W/4); }
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  var grd=ctx.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0,'#150b36'); grd.addColorStop(1,'#0A0620');
+  ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+
+  if(S.phase!=='menu'){
+    // lane dividers
+    for(var i=1;i<4;i++){
+      ctx.strokeStyle='rgba(255,255,255,.05)'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(i*W/4,60); ctx.lineTo(i*W/4,H); ctx.stroke();
+    }
+    // hit line
+    ctx.strokeStyle='rgba(255,255,255,.35)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(0,HIT_Y); ctx.lineTo(W,HIT_Y); ctx.stroke();
+    for(var i=0;i<4;i++){
+      var x=laneX(i);
+      var glow=S.pressFlash[i];
+      if(glow>0.02){
+        ctx.fillStyle=LANE_COLOR[i].replace(')','').replace('#','');
+        ctx.save();
+        ctx.globalAlpha=glow*0.35;
+        ctx.fillStyle=LANE_COLOR[i];
+        ctx.beginPath(); ctx.arc(x,HIT_Y,34,0,6.3); ctx.fill();
+        ctx.restore();
+        S.pressFlash[i]*=0.88;
+      }
+      ctx.fillStyle=LANE_COLOR[i];
+      ctx.globalAlpha=0.9;
+      ctx.beginPath(); ctx.arc(x,HIT_Y,5,0,6.3); ctx.fill();
+      ctx.globalAlpha=1;
+    }
+    // notes
+    var c=ac(); var now=c?c.currentTime:0;
+    for(var i=0;i<S.notes.length;i++){
+      var n=S.notes[i];
+      if(n.resolved && n.judge!=='miss') continue;
+      var tRemain=n.hitTime-now;
+      var yy=HIT_Y - (tRemain/TRAVEL)*(HIT_Y-SPAWN_Y);
+      if(yy< -30 || yy>H+30) continue;
+      var x=laneX(n.lane);
+      ctx.fillStyle=LANE_COLOR[n.lane];
+      ctx.globalAlpha = n.judge==='miss' ? 0.25 : 1;
+      var w=46,h=14;
+      ctx.beginPath();
+      if(ctx.roundRect) ctx.roundRect(x-w/2,yy-h/2,w,h,7); else ctx.rect(x-w/2,yy-h/2,w,h);
+      ctx.fill();
+      ctx.globalAlpha=1;
+    }
+    // popups
+    for(var i=S.popups.length-1;i>=0;i--){
+      var p=S.popups[i];
+      p.life-=0.025;
+      if(p.life<=0){ S.popups.splice(i,1); continue; }
+      ctx.save();
+      ctx.globalAlpha=Math.max(p.life,0);
+      ctx.fillStyle=p.color;
+      ctx.font='bold 15px Fredoka, sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText(p.text, laneX(p.lane), HIT_Y-40-(1-p.life)*30);
+      ctx.restore();
+    }
+    if(S.phase==='playing') updateMisses();
+  }
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+renderHUD();
+
+// ---------- debug / test hook ----------
+window.__EB = {
+  state:S,
+  start:function(){ $('btnStart').click(); },
+  next:function(){ if(!$('ovClear').classList.contains('hidden')) $('btnNext').click(); },
+  retry:function(){ if(!$('ovLose').classList.contains('hidden')) $('btnRetry').click(); },
+  tap:function(lane){ tapLane(lane); },
+  now:function(){ var c=ac(); return c?c.currentTime:0; }
+};
+})();
+</script>
+</body>
+</html>
