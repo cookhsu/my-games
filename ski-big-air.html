@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop','');
+    a.setAttribute('playsinline','');
+    a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__SB_AC && window.__SB_AC.state==='suspended'){ window.__SB_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>滑雪大跳台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B1E33; --ink:#EAF6FF; --muted:#8FB3D1;
+    --cyan:#6EC8FF; --sun:#FF8F5E; --gold:#FFD23F; --red:#FF4D6D;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Noto Sans TC','Fredoka',sans-serif; color:var(--ink);
+    min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #163a5c 0%, #0B1E33 65%);
+  }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh;
+    aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; width:100%; height:100%; touch-action:none; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; align-items:center; justify-content:space-between;
+    padding:10px 14px 0; font-family:'Fredoka',sans-serif; pointer-events:none; }
+  .topbar.on{ display:flex; }
+  .topbar .pill{ background:rgba(8,18,32,.6); border:1px solid rgba(255,255,255,.12); padding:5px 11px; border-radius:999px; font-size:13px; }
+  .topbar .pill b{ color:var(--gold); }
+
+  .airbar{ position:absolute; top:40px; left:14px; right:14px; height:7px; border-radius:4px; background:rgba(255,255,255,.12); overflow:hidden; display:none; }
+  .airbar.on{ display:block; }
+  .airbarFill{ height:100%; width:100%; background:linear-gradient(90deg,var(--cyan),var(--sun)); transition:width .08s linear; }
+
+  .ctrl{ position:absolute; left:0; right:0; bottom:0; display:none; height:118px; padding:0 14px 16px; gap:10px;
+    background:linear-gradient(0deg, rgba(5,12,22,.72) 55%, rgba(5,12,22,0) 100%); }
+  .ctrl.on{ display:flex; }
+  .ctrl .btnTrick{ flex:1; border-radius:20px; background:rgba(8,18,32,.6); border:2px solid rgba(255,255,255,.22);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    font-family:'Fredoka',sans-serif; font-size:12.5px; color:var(--ink); transition:transform .06s, background .06s; }
+  .ctrl .btnTrick .ic{ font-size:26px; }
+  .ctrl .btnTrick.press{ transform:scale(.9); background:rgba(110,200,255,.35); border-color:var(--cyan); }
+  .ctrl .btnTrick.grab.press{ background:rgba(255,143,94,.38); border-color:var(--sun); }
+  .ctrl .btnTrick.used{ opacity:.4; }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(8,18,32,.6); border:1px solid rgba(255,255,255,.12); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:28px; background:rgba(5,12,22,.72); backdrop-filter:blur(6px); z-index:10; gap:14px; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:29px; margin:0; letter-spacing:1px;
+    background:linear-gradient(90deg,var(--cyan),#bfe9ff,var(--sun)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:21px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.7; max-width:280px; }
+  .ov .grade{ font-family:'Fredoka',sans-serif; font-size:50px; font-weight:700; margin:2px 0; color:var(--gold); }
+  .ov .stat{ font-size:13.5px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; color:#071424;
+    background:linear-gradient(135deg,var(--cyan),#bfe9ff); border:none; padding:13px 32px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(110,200,255,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+
+  <div class="topbar" id="topbar">
+    <div class="pill">第 <b id="jumpTxt">1</b>/3 跳</div>
+    <div class="pill">旋轉 <b id="rotTxt">0°</b></div>
+    <div class="pill">分數 <b id="scTxt">0</b></div>
+  </div>
+  <div class="airbar" id="airbar"><div class="airbarFill" id="airbarFill"></div></div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="ctrl" id="ctrl">
+    <div class="btnTrick" id="bLeft"><div class="ic">⟲</div><div>左旋</div></div>
+    <div class="btnTrick grab" id="bGrab"><div class="ic">🤙</div><div>抓板</div></div>
+    <div class="btnTrick" id="bRight"><div class="ic">⟳</div><div>右旋</div></div>
+  </div>
+
+  <div class="ov" id="ovMenu">
+    <h1>滑雪大跳台</h1>
+    <p class="sub">衝下跳台後騰空而起，在空中按左右旋轉鍵轉體、按抓板鍵做出花式，落地前記得轉回平衡角度，不然會摔倒！三跳定勝負。</p>
+    <div class="stat">最高紀錄 <b id="bestTxt">0</b></div>
+    <button class="btn" id="btnStart">開始挑戰</button>
+  </div>
+
+  <div class="ov hidden" id="ovJumpResult">
+    <h2 id="jrTitle">漂亮落地！</h2>
+    <p class="sub" id="jrDetail"></p>
+    <div class="stat"><div>本跳得分 <b id="jrScore">0</b></div></div>
+    <div class="btnrow">
+      <button class="btn" id="btnNextJump">下一跳 →</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovFinal">
+    <h2>三跳總結</h2>
+    <div class="grade" id="finalGrade">A</div>
+    <div class="stat"><div>總分 <b id="finalScore">0</b></div><div>最高紀錄 <b id="finalBest">0</b></div></div>
+    <div class="btnrow">
+      <button class="btn" id="btnAgain">再挑戰一次</button>
+      <button class="btn alt" id="btnMenu0">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var $=function(id){return document.getElementById(id);};
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+
+// ---------- audio ----------
+var AC=null;
+function ac(){
+  if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__SB_AC=AC; }catch(e){} }
+  return AC;
+}
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.linearRampToValueAtTime(sweepTo, c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.18, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sfxSpin(){ playTone(700,0.06,'square',0.08,900); }
+function sfxGrab(){ playTone(420,0.18,'sawtooth',0.12,520); }
+function sfxClean(){ playTone(660,0.14,'sine',0.2,880); setTimeout(function(){playTone(990,0.22,'sine',0.2,1320);},110); }
+function sfxRough(){ playTone(380,0.18,'triangle',0.16,300); }
+function sfxCrash(){ playTone(160,0.45,'square',0.2,40); }
+
+// ---------- state ----------
+var JUMP_SIZES=[2.0, 2.35, 2.7]; // air time in seconds, per jump index
+var SPIN_STEP=45; // degrees per tap
+var S={
+  phase:'menu', // menu, approach, air, result, final, paused
+  jumpIdx:0, totalScore:0, best:0,
+  rotation:0, grabbed:false, airDur:0, airElapsed:0,
+  approachElapsed:0,
+  lastJumpScore:0, lastJumpLabel:'',
+  snow:[], speedLines:[],
+  pausedFrom:null
+};
+try{ S.best=parseInt(localStorage.getItem('sb_best')||'0',10)||0; }catch(e){}
+
+(function initSnow(){
+  for(var i=0;i<60;i++){
+    S.snow.push({x:Math.random()*W, y:Math.random()*H, r:Math.random()*1.8+0.6, sp:Math.random()*0.6+0.3});
+  }
+})();
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+function renderHUD(){
+  $('jumpTxt').textContent = Math.min(S.jumpIdx+1,3);
+  $('rotTxt').textContent = Math.round(S.rotation)+'°';
+  $('scTxt').textContent = S.totalScore;
+  $('bestTxt').textContent = S.best;
+}
+
+function startRun(){
+  S.jumpIdx=0; S.totalScore=0;
+  renderHUD();
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  startApproach();
+}
+function startApproach(){
+  S.phase='approach';
+  S.approachElapsed=0;
+  S.rotation=0; S.grabbed=false;
+  $('airbar').classList.remove('on');
+  $('ctrl').classList.remove('on');
+  renderHUD();
+}
+function startAir(){
+  S.phase='air';
+  S.airDur=JUMP_SIZES[S.jumpIdx];
+  S.airElapsed=0;
+  S.rotation=0; S.grabbed=false;
+  $('airbar').classList.add('on');
+  $('airbarFill').style.width='100%';
+  $('ctrl').classList.add('on');
+  $('bGrab').classList.remove('used');
+  renderHUD();
+}
+function doSpin(dir){
+  if(S.phase!=='air') return;
+  S.rotation += dir*SPIN_STEP;
+  renderHUD();
+  sfxSpin();
+  flashBtn(dir<0?'bLeft':'bRight');
+}
+function doGrab(){
+  if(S.phase!=='air' || S.grabbed) return;
+  S.grabbed=true;
+  sfxGrab();
+  $('bGrab').classList.add('used');
+  flashBtn('bGrab');
+}
+function flashBtn(id){
+  var el=$(id);
+  el.classList.add('press');
+  setTimeout(function(){ el.classList.remove('press'); },110);
+}
+
+function resolveLanding(){
+  var norm = ((S.rotation % 360) + 360) % 360;
+  var err = Math.min(norm, 360-norm); // distance to nearest clean 360 multiple
+  var spins = Math.round(Math.abs(S.rotation)/180); // number of half-spins performed
+  var rotationScore = spins*55;
+  var grabScore = S.grabbed?35:0;
+  var landing, landingBonus, mult, title, detail;
+  if(err<=25){
+    landing='clean'; landingBonus=120; mult=1; title='🎿 漂亮落地！'; detail='乾淨落地，轉體與花式全額計分。';
+    sfxClean();
+  }else if(err<=65){
+    landing='rough'; landingBonus=40; mult=0.55; title='😅 搖晃落地'; detail='落地有點不穩，分數打了折扣。';
+    sfxRough();
+  }else{
+    landing='crash'; landingBonus=0; mult=0; title='💥 摔倒了'; detail='轉體角度太偏，重重摔在雪地上。';
+    sfxCrash();
+  }
+  var jumpScore = Math.round((rotationScore+grabScore)*mult + (mult>0?landingBonus:0));
+  S.totalScore += jumpScore;
+  S.lastJumpScore=jumpScore;
+  S.lastLanding=landing;
+  renderHUD();
+  $('jrTitle').textContent=title;
+  $('jrDetail').textContent=detail+'（'+spins+' 次半轉'+(S.grabbed?'、完成抓板':'')+'）';
+  $('jrScore').textContent=jumpScore;
+  S.phase='result';
+  $('ctrl').classList.remove('on');
+  $('airbar').classList.remove('on');
+  show('ovJumpResult');
+}
+
+function nextJumpOrFinish(){
+  hide('ovJumpResult');
+  S.jumpIdx++;
+  if(S.jumpIdx>=3){
+    finishRun();
+  }else{
+    startApproach();
+  }
+}
+function finishRun(){
+  S.phase='final';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  if(S.totalScore>S.best){ S.best=S.totalScore; try{localStorage.setItem('sb_best',String(S.best));}catch(e){} }
+  var pct = clamp(S.totalScore/9, 0, 100); // rough scale: ~900 max -> 100
+  var grade = S.totalScore>=760?'S':S.totalScore>=600?'A':S.totalScore>=420?'B':S.totalScore>=220?'C':'D';
+  $('finalGrade').textContent=grade;
+  $('finalScore').textContent=S.totalScore;
+  $('finalBest').textContent=S.best;
+  renderHUD();
+  show('ovFinal');
+}
+function backToMenu(){
+  S.phase='menu';
+  $('topbar').classList.remove('on');
+  $('airbar').classList.remove('on');
+  $('ctrl').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  show('ovMenu');
+}
+
+// ---------- input ----------
+function bindBtn(id,fn){
+  var el=$(id);
+  function down(e){ fn(); if(e) e.preventDefault(); }
+  el.addEventListener('mousedown',down);
+  el.addEventListener('touchstart',down,{passive:false});
+}
+bindBtn('bLeft',function(){ doSpin(-1); });
+bindBtn('bRight',function(){ doSpin(1); });
+bindBtn('bGrab',function(){ doGrab(); });
+window.addEventListener('keydown',function(e){
+  if(e.key==='ArrowLeft') doSpin(-1);
+  else if(e.key==='ArrowRight') doSpin(1);
+  else if(e.key===' '||e.key==='g') doGrab();
+});
+
+$('btnStart').addEventListener('click',function(){ hide('ovMenu'); startRun(); });
+$('btnNextJump').addEventListener('click', nextJumpOrFinish);
+$('btnAgain').addEventListener('click',function(){ hide('ovFinal'); startRun(); });
+$('btnMenu0').addEventListener('click',function(){ hide('ovFinal'); backToMenu(); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){
+  if(S.phase==='paused'){ hide('ovPause'); S.phase=S.pausedFrom; }
+});
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='air' && S.phase!=='approach') return;
+  S.pausedFrom=S.phase; S.phase='paused';
+  show('ovPause');
+});
+
+// ---------- update ----------
+var lastT=performance.now();
+function update(dt){
+  for(var i=0;i<S.snow.length;i++){
+    var s=S.snow[i];
+    s.y += s.sp*dt*60*0.5;
+    s.x -= s.sp*dt*20;
+    if(s.y>H){ s.y=-5; s.x=Math.random()*W; }
+    if(s.x<-5){ s.x=W+5; }
+  }
+  if(S.phase==='approach'){
+    S.approachElapsed+=dt;
+    if(S.approachElapsed>=1.0){ startAir(); }
+  }else if(S.phase==='air'){
+    S.airElapsed+=dt;
+    var remain=clamp(1-(S.airElapsed/S.airDur),0,1);
+    $('airbarFill').style.width=(remain*100)+'%';
+    if(S.airElapsed>=S.airDur){ resolveLanding(); }
+  }
+}
+
+// ---------- draw ----------
+function laneGroundY(){ return H*0.78; }
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  var grd=ctx.createLinearGradient(0,0,0,H);
+  if(S.phase==='menu'){
+    grd.addColorStop(0,'#1c3f63'); grd.addColorStop(1,'#0B1E33');
+  }else{
+    grd.addColorStop(0,'#2a5a8a'); grd.addColorStop(0.6,'#163a5c'); grd.addColorStop(1,'#0B1E33');
+  }
+  ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+
+  // mountains silhouette
+  ctx.fillStyle='rgba(234,246,255,.06)';
+  ctx.beginPath(); ctx.moveTo(0,H*0.55);
+  ctx.lineTo(60,H*0.42); ctx.lineTo(140,H*0.52); ctx.lineTo(230,H*0.38); ctx.lineTo(320,H*0.5); ctx.lineTo(W,H*0.44);
+  ctx.lineTo(W,H*0.7); ctx.lineTo(0,H*0.7); ctx.closePath(); ctx.fill();
+
+  // ground / slope
+  ctx.fillStyle='rgba(234,246,255,.95)';
+  ctx.beginPath();
+  ctx.moveTo(0,laneGroundY());
+  ctx.lineTo(W,laneGroundY()-18);
+  ctx.lineTo(W,H); ctx.lineTo(0,H);
+  ctx.closePath(); ctx.fill();
+
+  // snow particles
+  for(var i=0;i<S.snow.length;i++){
+    var sp=S.snow[i];
+    ctx.fillStyle='rgba(255,255,255,.75)';
+    ctx.beginPath(); ctx.arc(sp.x,sp.y,sp.r,0,6.3); ctx.fill();
+  }
+
+  if(S.phase==='approach'){
+    var t=S.approachElapsed/1.0;
+    var sx = 40+t*180;
+    var sy = laneGroundY()-18 - t*6;
+    drawSkier(sx,sy,0,false,1);
+  }else if(S.phase==='air'||S.phase==='paused'&&S.pausedFrom==='air'){
+    var t=clamp(S.airElapsed/S.airDur,0,1);
+    var arcH=130+S.jumpIdx*18;
+    var sx = 60+t*240;
+    var sy = (laneGroundY()-18) - Math.sin(t*Math.PI)*arcH - 30;
+    drawSkier(sx,sy,S.rotation,S.grabbed,1);
+    // landing warning
+    if(t>0.78){
+      ctx.save();
+      ctx.globalAlpha = 0.6+0.4*Math.sin(performance.now()/90);
+      ctx.fillStyle='#FFD23F';
+      ctx.font='bold 15px Fredoka, sans-serif';
+      ctx.textAlign='center';
+      ctx.fillText('準備落地！對齊角度',W/2,H*0.3);
+      ctx.restore();
+    }
+  }else if(S.phase==='result'||S.phase==='final'){
+    drawSkier(W/2,laneGroundY()-28,0,false, S.lastLanding==='crash'?0:1, S.lastLanding);
+  }else if(S.phase==='menu'){
+    drawSkier(W/2,laneGroundY()-28,0,false,1);
+  }else if(S.phase==='paused'){
+    drawSkier(W/2,laneGroundY()-40,S.rotation,S.grabbed,1);
+  }
+  requestAnimationFrame(loop);
+}
+function drawSkier(x,y,rotDeg,grabbed,scale,landing){
+  ctx.save();
+  ctx.translate(x,y);
+  ctx.scale(scale,scale);
+  ctx.rotate(rotDeg*Math.PI/180);
+  if(landing==='crash'){
+    ctx.rotate(0.9);
+  }
+  // skis
+  ctx.fillStyle='#FF8F5E';
+  ctx.fillRect(-22,14,44,5);
+  // body
+  ctx.fillStyle='#EAF6FF';
+  ctx.beginPath(); ctx.ellipse(0,0,10,16,0,0,6.3); ctx.fill();
+  // head
+  ctx.fillStyle='#FFD23F';
+  ctx.beginPath(); ctx.arc(0,-20,7,0,6.3); ctx.fill();
+  // arms
+  ctx.strokeStyle='#6EC8FF'; ctx.lineWidth=4; ctx.lineCap='round';
+  if(grabbed){
+    ctx.beginPath(); ctx.moveTo(-8,2); ctx.lineTo(-16,16); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(8,2); ctx.lineTo(16,16); ctx.stroke();
+  }else{
+    ctx.beginPath(); ctx.moveTo(-8,-2); ctx.lineTo(-20,-14); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(8,-2); ctx.lineTo(20,-14); ctx.stroke();
+  }
+  ctx.restore();
+}
+function loop(ts){
+  var dt=Math.min((ts-lastT)/1000,0.05);
+  lastT=ts;
+  if(S.phase!=='paused') update(dt);
+  draw();
+}
+requestAnimationFrame(loop);
+renderHUD();
+
+// ---------- debug / test hook ----------
+window.__SB = {
+  state:S,
+  start:function(){ $('btnStart').click(); },
+  spin:function(dir){ doSpin(dir); },
+  grab:function(){ doGrab(); },
+  nextJump:function(){ if(!$('ovJumpResult').classList.contains('hidden')) $('btnNextJump').click(); },
+  again:function(){ if(!$('ovFinal').classList.contains('hidden')) $('btnAgain').click(); },
+  forceAirEnd:function(){ if(S.phase==='air'){ S.airElapsed=S.airDur; } },
+  skipApproach:function(){ if(S.phase==='approach'){ S.approachElapsed=1.0; } }
+};
+})();
+</script>
+</body>
+</html>
