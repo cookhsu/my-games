@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop','');
+    a.setAttribute('playsinline','');
+    a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__BW_AC && window.__BW_AC.state==='suspended'){ window.__BW_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>電流急急棒</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#15100C; --ink:#FDF3E3; --muted:#B9A98F;
+    --steel:#C9CFD6; --red:#FF4D4D; --green:#5CE68C; --gold:#FFC83D;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Noto Sans TC','Fredoka',sans-serif; color:var(--ink);
+    min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #2a1f16 0%, #15100C 65%);
+  }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh;
+    aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; width:100%; height:100%; touch-action:none; }
+
+  .flash{ position:absolute; inset:0; background:var(--red); opacity:0; pointer-events:none; z-index:5; transition:opacity .08s; }
+  .flash.on{ opacity:.38; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 14px 0; font-family:'Fredoka',sans-serif; pointer-events:none; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; justify-content:space-between; }
+  .topbar .pill{ background:rgba(20,14,8,.6); border:1px solid rgba(255,255,255,.12); padding:5px 11px; border-radius:999px; font-size:13px; }
+  .topbar .pill b{ color:var(--gold); }
+  .lives{ display:flex; gap:4px; }
+  .lives i{ width:16px; height:16px; }
+  .progWrap{ height:6px; border-radius:4px; background:rgba(255,255,255,.1); overflow:hidden; }
+  .progFill{ height:100%; width:0%; background:linear-gradient(90deg,var(--green),var(--gold)); transition:width .1s linear; }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(20,14,8,.6); border:1px solid rgba(255,255,255,.12); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:28px; background:rgba(10,7,4,.74); backdrop-filter:blur(6px); z-index:10; gap:14px; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:29px; margin:0; letter-spacing:1px;
+    background:linear-gradient(90deg,var(--steel),var(--gold)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:21px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13.5px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; color:#1a1208;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:13px 32px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+  <div class="flash" id="flash"></div>
+
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill">第 <b id="lvTxt">1</b> 關</div>
+      <div class="pill" id="livesWrap">❤️❤️❤️</div>
+      <div class="pill">分數 <b id="scTxt">0</b></div>
+    </div>
+    <div class="progWrap"><div class="progFill" id="progFill"></div></div>
+  </div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="ov" id="ovMenu">
+    <h1>電流急急棒</h1>
+    <p class="sub">用手指拖著圓環沿著彎曲的鐵絲，從起點移到終點。環碰到鐵絲就會「嗶！」扣一條命，三條命用完就得重來。</p>
+    <div class="stat">最高紀錄 <b id="bestTxt">0</b></div>
+    <button class="btn" id="btnStart">開始挑戰</button>
+  </div>
+
+  <div class="ov hidden" id="ovClear">
+    <h2>⚡ 第 <span id="clearLv"></span> 關 成功過關！</h2>
+    <p class="sub" id="clearDetail"></p>
+    <div class="stat"><div>本關得分 <b id="clearScore">0</b></div></div>
+    <div class="btnrow">
+      <button class="btn" id="btnNext">下一關 →</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovLose">
+    <h2>💥 鐵絲碰太多次了</h2>
+    <p class="sub">三條命用完了，重新挑戰這一關吧。</p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetry">重新挑戰</button>
+      <button class="btn alt" id="btnMenu1">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var $=function(id){return document.getElementById(id);};
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+
+// ---------- rng ----------
+function mulberry32(seed){
+  return function(){
+    seed|=0; seed=(seed+0x6D2B79F5)|0;
+    var t=Math.imul(seed^seed>>>15,1|seed);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296;
+  };
+}
+
+// ---------- audio ----------
+var AC=null;
+function ac(){
+  if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__BW_AC=AC; }catch(e){} }
+  return AC;
+}
+var noiseBuf=null;
+function getNoiseBuf(){
+  var c=ac(); if(!c) return null;
+  if(!noiseBuf){
+    noiseBuf=c.createBuffer(1, c.sampleRate*0.3, c.sampleRate);
+    var d=noiseBuf.getChannelData(0);
+    for(var i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  }
+  return noiseBuf;
+}
+function sfxBuzz(){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type='square'; o.frequency.setValueAtTime(110,c.currentTime);
+    g.gain.setValueAtTime(0.22,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+0.35);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+0.36);
+    var buf=getNoiseBuf();
+    if(buf){
+      var src=c.createBufferSource(); src.buffer=buf;
+      var hp=c.createBiquadFilter(); hp.type='bandpass'; hp.frequency.value=900;
+      var g2=c.createGain(); g2.gain.setValueAtTime(0.18,c.currentTime); g2.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+0.3);
+      src.connect(hp); hp.connect(g2); g2.connect(c.destination);
+      src.start(); src.stop(c.currentTime+0.3);
+    }
+  }catch(e){}
+}
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.linearRampToValueAtTime(sweepTo, c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.18, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur+0.02);
+  }catch(e){}
+}
+function sfxWin(){ playTone(660,0.14,'sine',0.2,880); setTimeout(function(){playTone(990,0.22,'sine',0.2,1320);},110); }
+function sfxLose(){ playTone(180,0.4,'triangle',0.2,60); }
+
+// ---------- path / state ----------
+var START_Y=580, END_Y=70, CENTER=W/2;
+var RING_R=22, WIRE_R=6; // the wire threads through the ring's hole, so danger is DRIFTING AWAY from it
+var SAFE_MARGIN=3; // extra forgiveness inside the hole
+var SAFE_RADIUS=RING_R-WIRE_R-SAFE_MARGIN; // allowed sideways drift before the loop touches the wire
+
+var S={
+  phase:'menu', level:1, score:0, best:0,
+  lives:3, buzzCount:0, elapsed:0,
+  pathA:0,pathA2:0,pathF:0,pathF2:0,ph1:0,ph2:0,
+  ringX:CENTER, ringY:START_Y, held:false, invuln:0,
+  pointerX:CENTER, pointerY:START_Y
+};
+try{ S.best=parseInt(localStorage.getItem('bw_best')||'0',10)||0; }catch(e){}
+
+function pathX(t){ // t: 0 at start(bottom) .. 1 at end(top)
+  var ang=t*Math.PI; // half turn total sweep keeps it from being too periodic-looking at edges
+  return CENTER + S.pathA*Math.sin(t*S.pathF*Math.PI*2+S.ph1) + S.pathA2*Math.sin(t*S.pathF2*Math.PI*2+S.ph2);
+}
+function tOf(y){ return clamp((START_Y-y)/(START_Y-END_Y),0,1); }
+
+function genLevel(level){
+  var rng=mulberry32(4200+level*613);
+  var maxA = Math.min(130, 46+level*9);
+  S.pathF = 1.1+level*0.18 + rng()*0.3;
+  S.pathF2 = S.pathF*(2.1+rng()*0.6);
+  S.pathA = maxA;
+  S.pathA2 = maxA*0.32;
+  S.ph1 = rng()*6.28;
+  S.ph2 = rng()*6.28;
+  // normalize amplitude so path stays within safe horizontal bounds
+  var maxObserved=0;
+  for(var i=0;i<=40;i++){
+    var t=i/40;
+    var x=CENTER + S.pathA*Math.sin(t*S.pathF*Math.PI*2+S.ph1) + S.pathA2*Math.sin(t*S.pathF2*Math.PI*2+S.ph2);
+    maxObserved=Math.max(maxObserved, Math.abs(x-CENTER));
+  }
+  var limit=CENTER-50;
+  if(maxObserved>limit){
+    var scale=limit/maxObserved;
+    S.pathA*=scale; S.pathA2*=scale;
+  }
+}
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+function renderHUD(){
+  $('lvTxt').textContent=S.level;
+  $('scTxt').textContent=S.score;
+  $('bestTxt').textContent=S.best;
+  var hearts=''; for(var i=0;i<3;i++) hearts += i<S.lives?'❤️':'🖤';
+  $('livesWrap').textContent=hearts;
+  var t=tOf(S.ringY);
+  $('progFill').style.width=(t*100)+'%';
+}
+
+function startLevel(level){
+  S.level=level;
+  genLevel(level);
+  S.lives=3; S.buzzCount=0; S.elapsed=0; S.invuln=0;
+  S.ringX=pathX(0); S.ringY=START_Y;
+  S.pointerX=S.ringX; S.pointerY=S.ringY;
+  S.held=false;
+  S.phase='playing';
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  renderHUD();
+}
+function doBuzz(){
+  if(S.invuln>0) return;
+  S.buzzCount++;
+  S.lives--;
+  S.invuln=0.7;
+  sfxBuzz();
+  $('flash').classList.add('on');
+  setTimeout(function(){ $('flash').classList.remove('on'); },90);
+  renderHUD();
+  if(S.lives<=0){
+    loseLevel();
+  }
+}
+function winLevel(){
+  S.phase='clear';
+  var timeBonus=Math.max(0, Math.round(1200 - S.elapsed*140));
+  var cleanBonus = S.buzzCount===0 ? 250 : 0;
+  var jumpScore = 300 + timeBonus + cleanBonus;
+  S.score += jumpScore;
+  if(S.score>S.best){ S.best=S.score; try{localStorage.setItem('bw_best',String(S.best));}catch(e){} }
+  renderHUD();
+  sfxWin();
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  $('clearLv').textContent=S.level;
+  $('clearDetail').textContent='用時 '+S.elapsed.toFixed(1)+' 秒，碰到鐵絲 '+S.buzzCount+' 次'+(S.buzzCount===0?'（完美無瑕！）':'');
+  $('clearScore').textContent=jumpScore;
+  show('ovClear');
+}
+function loseLevel(){
+  S.phase='lose';
+  sfxLose();
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  show('ovLose');
+}
+function backToMenu(){
+  S.phase='menu';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  show('ovMenu');
+}
+
+// ---------- input ----------
+function localPos(e){
+  var r=cv.getBoundingClientRect();
+  var t=(e.touches&&e.touches[0])||(e.changedTouches&&e.changedTouches[0])||e;
+  return { x:(t.clientX-r.left)*(W/r.width), y:(t.clientY-r.top)*(H/r.height) };
+}
+function onDown(e){
+  if(S.phase!=='playing') return;
+  var p=localPos(e);
+  // must start near the current ring position (the start handle) to grab it
+  if(S.ringY===START_Y && Math.hypot(p.x-S.ringX,p.y-S.ringY) > 60) return;
+  S.held=true;
+  S.pointerX=p.x; S.pointerY=p.y;
+  if(e.preventDefault) e.preventDefault();
+}
+function onMove(e){
+  if(!S.held) return;
+  var p=localPos(e);
+  S.pointerX=p.x; S.pointerY=clamp(p.y, END_Y-20, START_Y+20);
+  if(e.preventDefault) e.preventDefault();
+}
+function onUp(){ S.held=false; }
+cv.addEventListener('mousedown',onDown);
+cv.addEventListener('mousemove',onMove);
+window.addEventListener('mouseup',onUp);
+cv.addEventListener('touchstart',onDown,{passive:false});
+cv.addEventListener('touchmove',onMove,{passive:false});
+cv.addEventListener('touchend',onUp,{passive:false});
+
+// ---------- UI buttons ----------
+$('btnStart').addEventListener('click',function(){ hide('ovMenu'); S.score=0; startLevel(1); });
+$('btnNext').addEventListener('click',function(){ hide('ovClear'); startLevel(S.level+1); });
+$('btnRetry').addEventListener('click',function(){ hide('ovLose'); startLevel(S.level); });
+$('btnMenu1').addEventListener('click',function(){ hide('ovLose'); backToMenu(); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){ if(S.phase==='paused'){ hide('ovPause'); S.phase='playing'; } });
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='playing') return;
+  S.phase='paused';
+  show('ovPause');
+});
+
+// ---------- update ----------
+function update(dt){
+  if(S.phase!=='playing') return;
+  S.elapsed += dt;
+  if(S.invuln>0) S.invuln=Math.max(0,S.invuln-dt);
+  if(S.held){
+    S.ringX=S.pointerX; S.ringY=S.pointerY;
+  }
+  renderHUDLive();
+  // collision with wire (skip right at the very start handle to avoid instant buzz)
+  var t=tOf(S.ringY);
+  if(t>0.02 && t<0.995){
+    var px=pathX(t);
+    var d=Math.abs(S.ringX-px);
+    if(d > SAFE_RADIUS){
+      doBuzz();
+    }
+  }
+  if(t>=0.995){
+    winLevel();
+  }
+}
+function renderHUDLive(){
+  var t=tOf(S.ringY);
+  $('progFill').style.width=(t*100)+'%';
+}
+
+// ---------- draw ----------
+function drawWire(){
+  ctx.save();
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.beginPath();
+  for(var i=0;i<=80;i++){
+    var t=i/80;
+    var y=START_Y+(END_Y-START_Y)*t;
+    var x=pathX(t);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  }
+  ctx.lineWidth=WIRE_R*2;
+  ctx.strokeStyle='#4a4f57';
+  ctx.stroke();
+  ctx.lineWidth=WIRE_R*2*0.55;
+  ctx.strokeStyle='#d7dde3';
+  ctx.stroke();
+  ctx.restore();
+}
+function drawPoles(){
+  // start pole (bottom)
+  ctx.fillStyle='#5CE68C';
+  ctx.beginPath(); ctx.arc(pathX(0),START_Y,16,0,6.3); ctx.fill();
+  ctx.fillStyle='#0b2015'; ctx.font='bold 12px Fredoka, sans-serif'; ctx.textAlign='center';
+  ctx.fillText('START',pathX(0),START_Y+4);
+  // end pole (top) - buzzer box
+  ctx.fillStyle='#FF4D4D';
+  ctx.fillRect(pathX(1)-20,END_Y-16,40,32);
+  ctx.fillStyle='#2a0505'; ctx.font='bold 11px Fredoka, sans-serif';
+  ctx.fillText('END',pathX(1),END_Y+4);
+}
+function drawRing(){
+  var shakeX=0,shakeY=0;
+  if(S.invuln>0.5){
+    shakeX=(Math.random()-0.5)*6; shakeY=(Math.random()-0.5)*6;
+  }
+  ctx.save();
+  ctx.translate(shakeX,shakeY);
+  ctx.beginPath();
+  ctx.arc(S.ringX,S.ringY,RING_R,0,6.3);
+  ctx.lineWidth=6;
+  ctx.strokeStyle = S.invuln>0 ? '#FF4D4D' : '#FFC83D';
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(S.ringX,S.ringY,RING_R-3,0,6.3);
+  ctx.lineWidth=2;
+  ctx.strokeStyle='rgba(255,255,255,.5)';
+  ctx.stroke();
+  ctx.restore();
+}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  var grd=ctx.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0,'#241a10'); grd.addColorStop(1,'#15100C');
+  ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+
+  if(S.phase!=='menu'){
+    drawWire();
+    drawPoles();
+    drawRing();
+  }else{
+    // idle preview wire for menu background
+    ctx.save(); ctx.globalAlpha=0.5;
+    S.pathA=70; S.pathA2=22; S.pathF=1.6; S.pathF2=3.4; S.ph1=0.6; S.ph2=2.1;
+    drawWire();
+    ctx.restore();
+  }
+}
+var lastT=performance.now();
+function loop(ts){
+  var dt=Math.min((ts-lastT)/1000,0.05);
+  lastT=ts;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+renderHUD();
+
+// ---------- debug / test hook ----------
+window.__BW = {
+  state:S,
+  start:function(){ $('btnStart').click(); },
+  next:function(){ if(!$('ovClear').classList.contains('hidden')) $('btnNext').click(); },
+  retry:function(){ if(!$('ovLose').classList.contains('hidden')) $('btnRetry').click(); },
+  grabStart:function(){ S.held=true; S.pointerX=S.ringX; S.pointerY=S.ringY; },
+  moveTo:function(x,y){ S.pointerX=x; S.pointerY=y; },
+  release:function(){ S.held=false; },
+  pathXAt:function(t){ return pathX(t); },
+  tOf:tOf
+};
+})();
+</script>
+</body>
+</html>
