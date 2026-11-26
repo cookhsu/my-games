@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop','');
+    a.setAttribute('playsinline','');
+    a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__FS_AC && window.__FS_AC.state==='suspended'){ window.__FS_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>鮮果切切樂</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0E1A14; --ink:#FAFBE8; --muted:#A9B9A6;
+    --red:#FF5A4D; --green:#5CE68C; --gold:#FFC83D;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Noto Sans TC','Fredoka',sans-serif; color:var(--ink);
+    min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #16271c 0%, #0E1A14 65%);
+  }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh;
+    aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; width:100%; height:100%; touch-action:none; }
+
+  .flash{ position:absolute; inset:0; background:var(--red); opacity:0; pointer-events:none; z-index:5; transition:opacity .08s; }
+  .flash.on{ opacity:.4; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 56px 0 14px; font-family:'Fredoka',sans-serif; pointer-events:none; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; justify-content:space-between; }
+  .topbar .pill{ background:rgba(10,18,12,.6); border:1px solid rgba(255,255,255,.12); padding:5px 11px; border-radius:999px; font-size:13px; }
+  .topbar .pill b{ color:var(--gold); }
+  .combo{ position:absolute; top:84px; left:0; right:0; text-align:center; z-index:4; pointer-events:none;
+    font-family:'Fredoka',sans-serif; font-weight:700; font-size:22px; color:var(--gold);
+    text-shadow:0 2px 10px rgba(0,0,0,.6); opacity:0; transform:scale(.8); transition:opacity .12s, transform .12s; }
+  .combo.on{ opacity:1; transform:scale(1); }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(10,18,12,.6); border:1px solid rgba(255,255,255,.12); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:28px; background:rgba(5,10,7,.76); backdrop-filter:blur(6px); z-index:10; gap:14px; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:29px; margin:0; letter-spacing:1px;
+    background:linear-gradient(90deg,var(--green),var(--gold)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:21px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13.5px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; color:#0c1a10;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:13px 32px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+  <div class="flash" id="flash"></div>
+  <div class="combo" id="comboTxt"></div>
+
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill" id="livesWrap">❤️❤️❤️</div>
+      <div class="pill">分數 <b id="scTxt">0</b></div>
+    </div>
+  </div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="ov" id="ovMenu">
+    <h1>鮮果切切樂</h1>
+    <p class="sub">手指滑過畫面，把拋飛的水果一刀切開！漏接水果會扣命，不小心切到炸彈直接遊戲結束，連續一刀切中好幾顆有連擊加分。</p>
+    <div class="stat">最高紀錄 <b id="bestTxt">0</b></div>
+    <button class="btn" id="btnStart">開始切水果</button>
+  </div>
+
+  <div class="ov hidden" id="ovLoseMiss">
+    <h2>🍉 水果掉滿地了</h2>
+    <p class="sub" id="missDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetry1">再玩一次</button>
+      <button class="btn alt" id="btnMenu1">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovLoseBomb">
+    <h2>💣 切到炸彈了！</h2>
+    <p class="sub" id="bombDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetry2">再玩一次</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnMenu3">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var $=function(id){return document.getElementById(id);};
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+function rand(a,b){ return a+Math.random()*(b-a); }
+
+// ---------- rng (seeded, for deterministic spawn variety while still feeling random) ----------
+function mulberry32(seed){
+  return function(){
+    seed|=0; seed=(seed+0x6D2B79F5)|0;
+    var t=Math.imul(seed^seed>>>15,1|seed);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296;
+  };
+}
+var rng=mulberry32(Date.now()|0);
+
+// ---------- audio ----------
+var AC=null;
+function ac(){
+  if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__FS_AC=AC; }catch(e){} }
+  return AC;
+}
+var noiseBuf=null;
+function getNoiseBuf(){
+  var c=ac(); if(!c) return null;
+  if(!noiseBuf){
+    noiseBuf=c.createBuffer(1, c.sampleRate*0.4, c.sampleRate);
+    var d=noiseBuf.getChannelData(0);
+    for(var i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  }
+  return noiseBuf;
+}
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.linearRampToValueAtTime(sweepTo, c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.18, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur+0.02);
+  }catch(e){}
+}
+function sfxSlice(pitch){ playTone(520+pitch*40,0.09,'sine',0.16,900+pitch*40); }
+function sfxCombo(){ playTone(760,0.12,'sine',0.2,1200); setTimeout(function(){playTone(1040,0.16,'sine',0.2,1500);},70); }
+function sfxMiss(){ playTone(180,0.22,'triangle',0.16,90); }
+function sfxBoom(){
+  var c=ac(); if(!c) return;
+  try{
+    var buf=getNoiseBuf();
+    if(buf){
+      var src=c.createBufferSource(); src.buffer=buf;
+      var lp=c.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=700;
+      var g=c.createGain(); g.gain.setValueAtTime(0.5,c.currentTime); g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+0.5);
+      src.connect(lp); lp.connect(g); g.connect(c.destination);
+      src.start(); src.stop(c.currentTime+0.5);
+    }
+    var o=c.createOscillator(), g2=c.createGain();
+    o.type='sawtooth'; o.frequency.setValueAtTime(90,c.currentTime); o.frequency.exponentialRampToValueAtTime(30,c.currentTime+0.45);
+    g2.gain.setValueAtTime(0.3,c.currentTime); g2.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+0.45);
+    o.connect(g2); g2.connect(c.destination);
+    o.start(); o.stop(c.currentTime+0.46);
+  }catch(e){}
+}
+
+// ---------- state ----------
+var GRAV=1500;
+var FRUIT_TYPES=[
+  {name:'watermelon', r:26, body:'#3DBE5C', inner:'#FF5A6B', seedCol:'#2b2b2b'},
+  {name:'orange', r:21, body:'#FF9A3D', inner:'#FFC36B'},
+  {name:'kiwi', r:20, body:'#8BAE3D', inner:'#CFE07A', seedCol:'#3a2a12'},
+  {name:'grape', r:18, body:'#8A4FD1', inner:'#B98CE8'},
+  {name:'lemon', r:19, body:'#F4E04D', inner:'#FAF0A0'}
+];
+
+var S={
+  phase:'menu', score:0, best:0, lives:3,
+  items:[], halves:[], particles:[],
+  spawnTimer:0, spawnInterval:1.1, elapsed:0,
+  strokePts:[], strokeHitIds:{}, strokeComboCount:0, strokeActive:false,
+  missedCount:0
+};
+try{ S.best=parseInt(localStorage.getItem('fs_best')||'0',10)||0; }catch(e){}
+var nextId=1;
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+function renderHUD(){
+  $('scTxt').textContent=S.score;
+  $('bestTxt').textContent=S.best;
+  var hearts=''; for(var i=0;i<3;i++) hearts += i<S.lives?'❤️':'🖤';
+  $('livesWrap').textContent=hearts;
+}
+
+function spawnWave(){
+  // occasionally spawn 2-3 fruits together (a "combo fling"), otherwise a single fruit; rare bomb
+  var r=rng();
+  var isBomb = r<0.12;
+  var count = isBomb ? 1 : (rng()<0.3 ? (rng()<0.4?3:2) : 1);
+  for(var i=0;i<count;i++){
+    var x=rand(50,W-50)+ (count>1 ? (i-((count-1)/2))*34 : 0);
+    x=clamp(x,40,W-40);
+    var vy=-rand(620,780);
+    var vx=rand(-50,50);
+    if(isBomb && i===0){
+      S.items.push({id:nextId++, type:'bomb', x:x, y:H+30, vx:vx, vy:vy, rot:0, vrot:rand(-2,2), r:22});
+    }else{
+      var ft=FRUIT_TYPES[Math.floor(rng()*FRUIT_TYPES.length)];
+      S.items.push({id:nextId++, type:'fruit', ft:ft, x:x, y:H+30, vx:vx, vy:vy, rot:rand(0,6.28), vrot:rand(-3,3), r:ft.r});
+    }
+  }
+}
+
+function startGame(){
+  S.phase='playing'; S.score=0; S.lives=3; S.elapsed=0;
+  S.items=[]; S.halves=[]; S.particles=[];
+  S.spawnTimer=0; S.spawnInterval=1.15; S.missedCount=0;
+  S.strokePts=[]; S.strokeHitIds={}; S.strokeComboCount=0; S.strokeActive=false;
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  renderHUD();
+}
+function endGameMiss(){
+  S.phase='loseMiss';
+  sfxMiss();
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  if(S.score>S.best){ S.best=S.score; try{localStorage.setItem('fs_best',String(S.best));}catch(e){} }
+  $('bestTxt').textContent=S.best;
+  $('missDetail').textContent='得分 '+S.score+'，漏接了 3 顆水果。';
+  show('ovLoseMiss');
+}
+function endGameBomb(){
+  S.phase='loseBomb';
+  sfxBoom();
+  $('flash').classList.add('on');
+  setTimeout(function(){ $('flash').classList.remove('on'); },160);
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  if(S.score>S.best){ S.best=S.score; try{localStorage.setItem('fs_best',String(S.best));}catch(e){} }
+  $('bestTxt').textContent=S.best;
+  $('bombDetail').textContent='得分 '+S.score+'，下次小心一點！';
+  show('ovLoseBomb');
+}
+function backToMenu(){
+  S.phase='menu';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  show('ovMenu');
+}
+
+function sliceFruit(item, cutAngle){
+  // remove from items, spawn two drifting halves + juice particles
+  var idx=S.items.indexOf(item);
+  if(idx>=0) S.items.splice(idx,1);
+  var dirx=Math.cos(cutAngle+1.5708), diry=Math.sin(cutAngle+1.5708);
+  [1,-1].forEach(function(s){
+    S.halves.push({
+      ft:item.ft, r:item.r, x:item.x, y:item.y,
+      vx:item.vx + dirx*s*90, vy:item.vy - 40 + diry*s*40,
+      rot:item.rot, vrot:item.vrot + s*2.5, side:s, life:0.9
+    });
+  });
+  for(var i=0;i<8;i++){
+    var a=rng()*6.28;
+    S.particles.push({
+      x:item.x, y:item.y, vx:Math.cos(a)*rand(60,180), vy:Math.sin(a)*rand(60,180)-60,
+      col:item.ft.inner, life:0.5, r:rand(2,4)
+    });
+  }
+}
+
+function tryCutAt(x1,y1,x2,y2){
+  // returns list of items whose circle intersects segment (x1,y1)-(x2,y2)
+  var hits=[];
+  var dx=x2-x1, dy=y2-y1;
+  var len2=dx*dx+dy*dy;
+  S.items.forEach(function(it){
+    if(S.strokeHitIds[it.id]) return; // already cut this stroke
+    var t = len2>0 ? clamp(((it.x-x1)*dx+(it.y-y1)*dy)/len2, 0, 1) : 0;
+    var px=x1+dx*t, py=y1+dy*t;
+    var d=Math.hypot(it.x-px, it.y-py);
+    if(d < it.r+10){ hits.push(it); }
+  });
+  return hits;
+}
+
+function processStrokeSegment(x1,y1,x2,y2){
+  var hits=tryCutAt(x1,y1,x2,y2);
+  if(!hits.length) return;
+  var angle=Math.atan2(y2-y1,x2-x1);
+  hits.forEach(function(it){
+    S.strokeHitIds[it.id]=true;
+    if(it.type==='bomb'){
+      endGameBomb();
+      return;
+    }
+    sliceFruit(it, angle);
+    S.score += 10;
+    S.strokeComboCount++;
+    sfxSlice(S.strokeComboCount);
+    renderHUD();
+  });
+  if(S.strokeComboCount>=2){
+    var bonus=(S.strokeComboCount-1)*15;
+    S.score += bonus;
+    renderHUD();
+    sfxCombo();
+    var ct=$('comboTxt');
+    ct.textContent='連擊 x'+S.strokeComboCount+'！ +'+bonus;
+    ct.classList.add('on');
+    clearTimeout(ct._t);
+    ct._t=setTimeout(function(){ ct.classList.remove('on'); },550);
+  }
+}
+
+// ---------- input ----------
+function localPos(e){
+  var r=cv.getBoundingClientRect();
+  var t=(e.touches&&e.touches[0])||(e.changedTouches&&e.changedTouches[0])||e;
+  return { x:(t.clientX-r.left)*(W/r.width), y:(t.clientY-r.top)*(H/r.height) };
+}
+function onDown(e){
+  if(S.phase!=='playing') return;
+  var p=localPos(e);
+  S.strokeActive=true; S.strokeHitIds={}; S.strokeComboCount=0;
+  S.strokePts=[{x:p.x,y:p.y,t:performance.now()}];
+  if(e.preventDefault) e.preventDefault();
+}
+function onMove(e){
+  if(!S.strokeActive || S.phase!=='playing') return;
+  var p=localPos(e);
+  var pts=S.strokePts;
+  var last=pts[pts.length-1];
+  pts.push({x:p.x,y:p.y,t:performance.now()});
+  if(pts.length>14) pts.shift();
+  if(last) processStrokeSegment(last.x,last.y,p.x,p.y);
+  if(e.preventDefault) e.preventDefault();
+}
+function onUp(){ S.strokeActive=false; S.strokePts=[]; }
+cv.addEventListener('mousedown',onDown);
+cv.addEventListener('mousemove',onMove);
+window.addEventListener('mouseup',onUp);
+cv.addEventListener('touchstart',onDown,{passive:false});
+cv.addEventListener('touchmove',onMove,{passive:false});
+cv.addEventListener('touchend',onUp,{passive:false});
+
+// ---------- UI buttons ----------
+$('btnStart').addEventListener('click',function(){ hide('ovMenu'); startGame(); });
+$('btnRetry1').addEventListener('click',function(){ hide('ovLoseMiss'); startGame(); });
+$('btnRetry2').addEventListener('click',function(){ hide('ovLoseBomb'); startGame(); });
+$('btnMenu1').addEventListener('click',function(){ hide('ovLoseMiss'); backToMenu(); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovLoseBomb'); backToMenu(); });
+$('btnMenu3').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){ if(S.phase==='paused'){ hide('ovPause'); S.phase='playing'; } });
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='playing') return;
+  S.phase='paused';
+  show('ovPause');
+});
+
+// ---------- update ----------
+function update(dt){
+  if(S.phase!=='playing'){
+    // still animate menu-background particles minimally; nothing else
+    return;
+  }
+  S.elapsed += dt;
+  S.spawnInterval = Math.max(0.55, 1.15 - S.elapsed*0.012);
+  S.spawnTimer += dt;
+  if(S.spawnTimer >= S.spawnInterval){
+    S.spawnTimer=0;
+    spawnWave();
+  }
+  for(var i=S.items.length-1;i>=0;i--){
+    var it=S.items[i];
+    it.vy += GRAV*dt;
+    it.x += it.vx*dt;
+    it.y += it.vy*dt;
+    it.rot += it.vrot*dt;
+    if(it.y > H+60){
+      S.items.splice(i,1);
+      if(it.type==='fruit'){
+        S.lives--;
+        S.missedCount++;
+        renderHUD();
+        if(S.lives<=0){ endGameMiss(); return; }
+      }
+    }
+  }
+  for(i=S.halves.length-1;i>=0;i--){
+    var h=S.halves[i];
+    h.vy += GRAV*dt;
+    h.x += h.vx*dt; h.y += h.vy*dt; h.rot += h.vrot*dt;
+    h.life -= dt;
+    if(h.life<=0 || h.y>H+80) S.halves.splice(i,1);
+  }
+  for(i=S.particles.length-1;i>=0;i--){
+    var p=S.particles[i];
+    p.vy += GRAV*0.6*dt;
+    p.x += p.vx*dt; p.y += p.vy*dt;
+    p.life -= dt;
+    if(p.life<=0) S.particles.splice(i,1);
+  }
+}
+
+// ---------- draw ----------
+function drawFruitShape(ft,r,extra){
+  ctx.beginPath(); ctx.arc(0,0,r,0,6.3);
+  ctx.fillStyle=ft.body; ctx.fill();
+  ctx.beginPath(); ctx.arc(-r*0.3,-r*0.3,r*0.35,0,6.3);
+  ctx.fillStyle='rgba(255,255,255,.25)'; ctx.fill();
+}
+function drawItem(it){
+  ctx.save();
+  ctx.translate(it.x,it.y);
+  ctx.rotate(it.rot);
+  if(it.type==='bomb'){
+    ctx.beginPath(); ctx.arc(0,0,it.r,0,6.3);
+    ctx.fillStyle='#1b1b1f'; ctx.fill();
+    ctx.beginPath(); ctx.arc(-it.r*0.3,-it.r*0.3,it.r*0.3,0,6.3);
+    ctx.fillStyle='rgba(255,255,255,.15)'; ctx.fill();
+    ctx.strokeStyle='#FF5A4D'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(it.r*0.3,-it.r*0.9); ctx.lineTo(it.r*0.7,-it.r*1.4); ctx.stroke();
+    ctx.fillStyle='#FFC83D';
+    ctx.beginPath(); ctx.arc(it.r*0.7,-it.r*1.4,3,0,6.3); ctx.fill();
+  }else{
+    drawFruitShape(it.ft, it.r);
+  }
+  ctx.restore();
+}
+function drawHalf(h){
+  ctx.save();
+  ctx.translate(h.x,h.y);
+  ctx.rotate(h.rot);
+  ctx.globalAlpha=clamp(h.life/0.9,0,1);
+  ctx.beginPath();
+  ctx.arc(0,0,h.r,h.side>0?-1.5708:1.5708, h.side>0?1.5708:4.7124);
+  ctx.closePath();
+  ctx.fillStyle=h.ft.body; ctx.fill();
+  ctx.beginPath();
+  ctx.arc(0,0,h.r*0.6,h.side>0?-1.5708:1.5708, h.side>0?1.5708:4.7124);
+  ctx.closePath();
+  ctx.fillStyle=h.ft.inner; ctx.fill();
+  ctx.restore();
+}
+function drawTrail(){
+  var pts=S.strokePts;
+  if(pts.length<2) return;
+  ctx.save();
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  for(var i=1;i<pts.length;i++){
+    var alpha=i/pts.length;
+    ctx.beginPath();
+    ctx.moveTo(pts[i-1].x,pts[i-1].y);
+    ctx.lineTo(pts[i].x,pts[i].y);
+    ctx.lineWidth=7*alpha;
+    ctx.strokeStyle='rgba(255,255,255,'+(alpha*0.85)+')';
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  var grd=ctx.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0,'#1b2e22'); grd.addColorStop(1,'#0E1A14');
+  ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+
+  S.particles.forEach(function(p){
+    ctx.globalAlpha=clamp(p.life/0.5,0,1);
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.3);
+    ctx.fillStyle=p.col; ctx.fill();
+  });
+  ctx.globalAlpha=1;
+  S.halves.forEach(drawHalf);
+  S.items.forEach(drawItem);
+  if(S.phase==='playing') drawTrail();
+}
+var lastT=performance.now();
+function loop(ts){
+  var dt=Math.min((ts-lastT)/1000,0.05);
+  lastT=ts;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+renderHUD();
+
+// ---------- debug / test hook ----------
+window.__FS = {
+  state:S,
+  start:function(){ $('btnStart').click(); },
+  retryMiss:function(){ if(!$('ovLoseMiss').classList.contains('hidden')) $('btnRetry1').click(); },
+  retryBomb:function(){ if(!$('ovLoseBomb').classList.contains('hidden')) $('btnRetry2').click(); },
+  spawnFruit:function(x,y,vx,vy,ftIndex){
+    var ft=FRUIT_TYPES[ftIndex||0];
+    var it={id:nextId++, type:'fruit', ft:ft, x:x, y:y, vx:vx||0, vy:vy||0, rot:0, vrot:0, r:ft.r};
+    S.items.push(it); return it.id;
+  },
+  spawnBomb:function(x,y,vx,vy){
+    var it={id:nextId++, type:'bomb', x:x, y:y, vx:vx||0, vy:vy||0, rot:0, vrot:0, r:22};
+    S.items.push(it); return it.id;
+  },
+  swipeDown:function(x,y){ S.strokeActive=true; S.strokeHitIds={}; S.strokeComboCount=0; S.strokePts=[{x:x,y:y,t:performance.now()}]; },
+  swipeTo:function(x,y){
+    if(!S.strokeActive) return;
+    var pts=S.strokePts; var last=pts[pts.length-1];
+    pts.push({x:x,y:y,t:performance.now()});
+    if(last) processStrokeSegment(last.x,last.y,x,y);
+  },
+  swipeUp:function(){ S.strokeActive=false; S.strokePts=[]; },
+  itemCount:function(){ return S.items.length; }
+};
+})();
+</script>
+</body>
+</html>
