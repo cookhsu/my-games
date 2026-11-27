@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop',''); a.setAttribute('playsinline',''); a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__CS_AC && window.__CS_AC.state==='suspended'){ window.__CS_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>疊杯大賽</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#10141F; --ink:#F2F4FF; --muted:#9AA3C0; --gold:#FFC83D; --red:#FF5A6B; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{ display:flex; align-items:center; justify-content:center; font-family:'Noto Sans TC','Fredoka',sans-serif;
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #1b2236 0%, #10141F 65%); }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh; aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; position:absolute; touch-action:none; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 56px 0 14px; font-family:'Fredoka',sans-serif; pointer-events:none; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; justify-content:space-between; }
+  .topbar .pill{ background:rgba(10,14,24,.6); border:1px solid rgba(255,255,255,.12); padding:5px 11px; border-radius:999px; font-size:13px; }
+  .topbar .pill b{ color:var(--gold); }
+  .topbar .pill.fault b{ color:var(--red); }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(10,14,24,.6); border:1px solid rgba(255,255,255,.12); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .hint{ position:absolute; left:0; right:0; bottom:16px; text-align:center; font-size:12.5px; color:var(--muted);
+    display:none; z-index:4; pointer-events:none; padding:0 20px; }
+  .hint.on{ display:block; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:28px; background:rgba(8,10,18,.76); backdrop-filter:blur(6px); z-index:10; gap:14px; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:29px; margin:0; letter-spacing:1px;
+    background:linear-gradient(90deg,#FF5A6B,var(--gold)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:21px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13.5px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; color:#10141f;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:13px 32px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill">時間 <b id="timeTxt">0.00</b></div>
+      <div class="pill fault">失誤 <b id="faultTxt">0</b></div>
+      <div class="pill">最佳 <b id="bestTxt2">—</b></div>
+    </div>
+  </div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+  <div class="hint" id="hint">依序 1→2→3 往上疊，再 3→2→1 拆下，三組做完計時停止</div>
+
+  <div class="ov" id="ovMenu">
+    <h1>疊杯大賽</h1>
+    <p class="sub">經典速疊杯 3-3-3！依序點擊杯子把同組的 3 個杯子疊成金字塔，再依相反順序拆下，三組都完成後計時停止。點錯杯子會加罰時，越快越準分數越高！</p>
+    <div class="stat">最佳時間 <b id="bestTxt">—</b></div>
+    <button class="btn" id="btnStart">開始挑戰</button>
+  </div>
+
+  <div class="ov hidden" id="ovWin">
+    <h2>🏆 完成！</h2>
+    <p class="sub" id="winDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetryWin">再玩一次</button>
+      <button class="btn alt" id="btnMenuWin">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var $=function(id){return document.getElementById(id);};
+
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__CS_AC=AC; }catch(e){} } return AC; }
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.exponentialRampToValueAtTime(sweepTo,c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.14,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sfxGood(){ playTone(620,0.07,'sine',0.12,780); }
+function sfxFault(){ playTone(180,0.22,'sawtooth',0.17,90); }
+function sfxFinish(){ playTone(660,0.1,'triangle',0.14,880); setTimeout(function(){playTone(990,0.16,'triangle',0.13);},90); }
+
+var GROUP_COLORS=['#FF5A6B','#FFC83D','#5CE68C'];
+var GROUPS=[[0,1,2],[3,4,5],[6,7,8]];
+var FAULT_PENALTY=0.5;
+
+// build expected tap sequence: for each group, up order then down (reverse) order
+function buildSequence(){
+  var seq=[];
+  for(var g=0; g<GROUPS.length; g++){
+    var grp=GROUPS[g];
+    for(var i=0;i<3;i++) seq.push({cup:grp[i], phase:'up', group:g});
+    for(var j=2;j>=0;j--) seq.push({cup:grp[j], phase:'down', group:g});
+  }
+  return seq;
+}
+var SEQUENCE=buildSequence();
+
+function cupGroup(idx){ return Math.floor(idx/3); }
+
+function S0(){
+  var best=null;
+  try{ var v=localStorage.getItem('cs_best'); if(v) best=parseFloat(v); }catch(e){}
+  var cups=[];
+  for(var i=0;i<9;i++) cups.push({ state:'down', anim:0 }); // anim 0=table,1=stacked
+  return {
+    phase:'menu',
+    prePausePhase:null,
+    seqIndex:0,
+    faults:0,
+    elapsed:0,
+    best:best,
+    cups:cups,
+    flashT:0
+  };
+}
+var S=S0();
+
+function resetState(){
+  var fresh=S0();
+  for(var k in S){ if(Object.prototype.hasOwnProperty.call(S,k)) delete S[k]; }
+  for(var k2 in fresh){ if(Object.prototype.hasOwnProperty.call(fresh,k2)) S[k2]=fresh[k2]; }
+}
+
+function startGame(){
+  resetState();
+  S.phase='playing';
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  $('hint').classList.add('on');
+  renderHUD();
+}
+
+function renderHUD(){
+  $('timeTxt').textContent=S.elapsed.toFixed(2);
+  $('faultTxt').textContent=String(S.faults);
+  $('bestTxt2').textContent= S.best===null ? '—' : S.best.toFixed(2);
+  $('bestTxt').textContent= S.best===null ? '—' : S.best.toFixed(2);
+}
+
+function tapCup(idx){
+  if(S.phase!=='playing') return;
+  if(idx<0||idx>8) return;
+  var expected=SEQUENCE[S.seqIndex];
+  if(expected && idx===expected.cup){
+    S.cups[idx].state = expected.phase==='up' ? 'up' : 'down';
+    S.seqIndex++;
+    sfxGood();
+    if(S.seqIndex>=SEQUENCE.length){
+      finishRun();
+    }
+  }else{
+    S.faults++;
+    S.elapsed+=FAULT_PENALTY;
+    S.flashT=0.25;
+    sfxFault();
+  }
+  renderHUD();
+}
+
+function finishRun(){
+  S.phase='win';
+  sfxFinish();
+  if(S.best===null || S.elapsed<S.best){ S.best=S.elapsed; try{localStorage.setItem('cs_best',String(S.best));}catch(e){} }
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  $('hint').classList.remove('on');
+  $('winDetail').textContent='用時 '+S.elapsed.toFixed(2)+' 秒（含 '+S.faults+' 次失誤罰時），最佳 '+S.best.toFixed(2)+' 秒。';
+  show('ovWin');
+  renderHUD();
+}
+
+function backToMenu(){
+  S.phase='menu';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  $('hint').classList.remove('on');
+  show('ovMenu');
+}
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+
+$('btnStart').addEventListener('click',function(){ hide('ovMenu'); startGame(); });
+$('btnRetryWin').addEventListener('click',function(){ hide('ovWin'); startGame(); });
+$('btnMenuWin').addEventListener('click',function(){ hide('ovWin'); backToMenu(); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){
+  if(S.phase==='paused'){ hide('ovPause'); S.phase=S.prePausePhase||'playing'; }
+});
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='playing') return;
+  S.prePausePhase=S.phase;
+  S.phase='paused';
+  show('ovPause');
+});
+
+// layout
+var ZONE_X=[18,138,258];
+var ZONE_W=104;
+var TABLE_Y=500;
+var TABLE_SLOT_X=[20,52,84]; // offsets within zone
+var PYRAMID_Y_BOTTOM=360;
+var PYRAMID_Y_TOP=320;
+var PYRAMID_SLOT_X=[16,68,42]; // bottom-left, bottom-right, top (within zone), matched to local cup index 0,1,2
+var PYRAMID_SLOT_Y=[PYRAMID_Y_BOTTOM,PYRAMID_Y_BOTTOM,PYRAMID_Y_TOP];
+var CUP_R=22;
+
+function cupTargetPos(idx){
+  var g=cupGroup(idx), local=idx%3;
+  var zx=ZONE_X[g];
+  var cup=S.cups[idx];
+  if(cup.state==='up'){
+    return { x: zx+PYRAMID_SLOT_X[local], y: PYRAMID_SLOT_Y[local] };
+  }else{
+    return { x: zx+TABLE_SLOT_X[local], y: TABLE_Y };
+  }
+}
+
+function hitTestCup(px,py){
+  for(var i=0;i<9;i++){
+    var p=cupTargetPos(i);
+    var dx=px-p.x, dy=py-p.y;
+    if(dx*dx+dy*dy <= (CUP_R+6)*(CUP_R+6)) return i;
+  }
+  return -1;
+}
+
+function getPos(e){
+  var rect=cv.getBoundingClientRect();
+  var cx = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+  var cy = (e.touches && e.touches[0]) ? e.touches[0].clientY : e.clientY;
+  var scaleX=W/rect.width, scaleY=H/rect.height;
+  return { x:(cx-rect.left)*scaleX, y:(cy-rect.top)*scaleY };
+}
+cv.addEventListener('pointerdown',function(e){
+  e.preventDefault();
+  if(S.phase!=='playing') return;
+  var p=getPos(e);
+  var idx=hitTestCup(p.x,p.y);
+  if(idx>=0) tapCup(idx);
+},{passive:false});
+
+function update(dt){
+  // cup animations always ease regardless of phase (purely cosmetic)
+  for(var i=0;i<9;i++){
+    var cup=S.cups[i];
+    var target = cup.state==='up' ? 1 : 0;
+    cup.anim += (target-cup.anim) * Math.min(1, dt*10);
+  }
+  if(S.flashT>0) S.flashT=Math.max(0,S.flashT-dt);
+  if(S.phase!=='playing') return;
+  S.elapsed += dt;
+  renderHUD();
+}
+
+function lerp(a,b,t){ return a+(b-a)*t; }
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  var grd=ctx.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0,'#1b2236'); grd.addColorStop(1,'#10141F');
+  ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+
+  // zone labels + table surface
+  for(var g=0; g<3; g++){
+    var zx=ZONE_X[g];
+    ctx.fillStyle='rgba(255,255,255,.06)';
+    ctx.fillRect(zx-6, TABLE_Y+CUP_R-4, ZONE_W, 10);
+    ctx.font='12px Fredoka, sans-serif';
+    ctx.fillStyle='rgba(255,255,255,.35)';
+    ctx.textAlign='center';
+    ctx.fillText('第'+(g+1)+'組', zx+ZONE_W/2-10, TABLE_Y+CUP_R+34);
+  }
+
+  // cups (draw stacked ones after table ones for nicer depth, but simplest: draw in index order)
+  for(var i=0;i<9;i++){
+    drawCup(i);
+  }
+
+  // current step indicator
+  if(S.phase==='playing' && S.seqIndex<SEQUENCE.length){
+    var exp=SEQUENCE[S.seqIndex];
+    var pos=cupTargetPosForIndicator(exp.cup, exp.phase);
+    ctx.save();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2.5;
+    ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.arc(pos.x,pos.y,CUP_R+8,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+  }
+
+  // fault flash
+  if(S.flashT>0){
+    ctx.fillStyle='rgba(255,90,107,'+(S.flashT/0.25*0.28)+')';
+    ctx.fillRect(0,0,W,H);
+  }
+}
+
+function cupTargetPosForIndicator(idx,phase){
+  var g=cupGroup(idx), local=idx%3;
+  var zx=ZONE_X[g];
+  if(phase==='up'){
+    return { x: zx+PYRAMID_SLOT_X[local], y: PYRAMID_SLOT_Y[local] };
+  }else{
+    return { x: zx+TABLE_SLOT_X[local], y: TABLE_Y };
+  }
+}
+
+function drawCup(idx){
+  var cup=S.cups[idx];
+  var g=cupGroup(idx), local=idx%3;
+  var zx=ZONE_X[g];
+  var tablePos={x: zx+TABLE_SLOT_X[local], y: TABLE_Y};
+  var stackPos={x: zx+PYRAMID_SLOT_X[local], y: PYRAMID_SLOT_Y[local]};
+  var x=lerp(tablePos.x, stackPos.x, cup.anim);
+  var y=lerp(tablePos.y, stackPos.y, cup.anim);
+  var col=GROUP_COLORS[g];
+
+  ctx.save();
+  ctx.translate(x,y);
+  // trapezoid cup shape (classic stacking cup silhouette)
+  var topW=CUP_R*1.15, botW=CUP_R*0.72, hgt=CUP_R*1.5;
+  ctx.beginPath();
+  ctx.moveTo(-topW, -hgt*0.55);
+  ctx.lineTo(topW, -hgt*0.55);
+  ctx.lineTo(botW, hgt*0.55);
+  ctx.lineTo(-botW, hgt*0.55);
+  ctx.closePath();
+  ctx.fillStyle=col;
+  ctx.globalAlpha=0.95;
+  ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,.35)'; ctx.lineWidth=2;
+  ctx.stroke();
+  // rim highlight
+  ctx.strokeStyle='rgba(255,255,255,.45)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(-topW,-hgt*0.55); ctx.lineTo(topW,-hgt*0.55); ctx.stroke();
+  ctx.restore();
+}
+
+var lastT=null;
+function loop(ts){
+  if(lastT===null) lastT=ts;
+  var dt=Math.min(0.05,(ts-lastT)/1000);
+  lastT=ts;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+renderHUD();
+
+window.__CS = {
+  state:S,
+  sequence:SEQUENCE,
+  start:function(){ $('btnStart').click(); },
+  retry:function(){ if(!$('ovWin').classList.contains('hidden')) $('btnRetryWin').click(); },
+  tap:function(idx){ tapCup(idx); },
+  advance:function(seconds){
+    var steps=Math.round(seconds/0.016);
+    for(var i=0;i<steps;i++) update(0.016);
+  }
+};
+})();
+</script>
+</body>
+</html>
