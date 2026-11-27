@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop',''); a.setAttribute('playsinline',''); a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__RR_AC && window.__RR_AC.state==='suspended'){ window.__RR_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>節奏複誦</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#1C1430; --ink:#F6F3FF; --muted:#B2A6D6; --gold:#FFC83D; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{ display:flex; align-items:center; justify-content:center; font-family:'Noto Sans TC','Fredoka',sans-serif;
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #2b2052 0%, #1C1430 65%); }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh; aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+
+  .bgGrad{ position:absolute; inset:0; background:linear-gradient(180deg,#2b2052,#1C1430); z-index:0; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 56px 0 14px; font-family:'Fredoka',sans-serif; pointer-events:none; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; justify-content:space-between; }
+  .topbar .pill{ background:rgba(20,14,36,.6); border:1px solid rgba(255,255,255,.12); padding:5px 11px; border-radius:999px; font-size:13px; }
+  .topbar .pill b{ color:var(--gold); }
+
+  .statusTxt{ position:absolute; top:76px; left:0; right:0; text-align:center; z-index:4; pointer-events:none;
+    font-family:'Fredoka',sans-serif; font-size:15px; color:var(--muted); display:none; }
+  .statusTxt.on{ display:block; }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(20,14,36,.6); border:1px solid rgba(255,255,255,.12); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .padGrid{ position:absolute; left:50%; top:54%; transform:translate(-50%,-50%);
+    width:280px; height:280px; display:none; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:14px; z-index:3; }
+  .padGrid.on{ display:grid; }
+  .pad{ border-radius:20px; border:none; cursor:pointer; opacity:.55; transition:opacity .08s, transform .08s, box-shadow .08s; }
+  .pad:active{ transform:scale(.96); }
+  .pad.lit{ opacity:1; box-shadow:0 0 28px 6px var(--glow); }
+  .pad0{ background:#FF5A6B; --glow:rgba(255,90,107,.8); border-radius:20px 6px 6px 6px; }
+  .pad1{ background:#5CE68C; --glow:rgba(92,230,140,.8); border-radius:6px 20px 6px 6px; }
+  .pad2{ background:#4DD0FF; --glow:rgba(77,208,255,.8); border-radius:6px 6px 6px 20px; }
+  .pad3{ background:#FFC83D; --glow:rgba(255,200,61,.8); border-radius:6px 6px 20px 6px; }
+  .padGrid.disabled .pad{ cursor:default; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:28px; background:rgba(10,7,20,.76); backdrop-filter:blur(6px); z-index:10; gap:14px; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:29px; margin:0; letter-spacing:1px;
+    background:linear-gradient(90deg,#4DD0FF,var(--gold)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:21px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13.5px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; color:#1c1430;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:13px 32px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <div class="bgGrad"></div>
+
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill">回合 <b id="roundTxt">0</b></div>
+      <div class="pill">最佳 <b id="bestTxt2">0</b></div>
+    </div>
+  </div>
+  <div class="statusTxt" id="statusTxt">看仔細...</div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="padGrid" id="padGrid">
+    <button class="pad pad0" data-p="0"></button>
+    <button class="pad pad1" data-p="1"></button>
+    <button class="pad pad2" data-p="2"></button>
+    <button class="pad pad3" data-p="3"></button>
+  </div>
+
+  <div class="ov" id="ovMenu">
+    <h1>節奏複誦</h1>
+    <p class="sub">四個音階板依序亮起，記住順序後照樣點回去。每過一關會多加一個音，答錯就結束，看你能記到第幾關！</p>
+    <div class="stat">最高紀錄 <b id="bestTxt">0</b></div>
+    <button class="btn" id="btnStart">開始挑戰</button>
+  </div>
+
+  <div class="ov hidden" id="ovLose">
+    <h2>🎵 記錯順序了</h2>
+    <p class="sub" id="loseDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetry">再玩一次</button>
+      <button class="btn alt" id="btnMenu1">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+
+function mulberry32(seed){
+  return function(){
+    seed|=0; seed=(seed+0x6D2B79F5)|0;
+    var t=Math.imul(seed^seed>>>15,1|seed);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296;
+  };
+}
+var rng=mulberry32(Date.now()|0);
+
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__RR_AC=AC; }catch(e){} } return AC; }
+var PAD_FREQ=[329.63, 261.63, 220.00, 164.81];
+function playPadTone(idx,dur){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(PAD_FREQ[idx],c.currentTime);
+    g.gain.setValueAtTime(0.0001,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.22,c.currentTime+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+(dur||0.35));
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+(dur||0.35)+0.03);
+  }catch(e){}
+}
+function sfxWrong(){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type='sawtooth'; o.frequency.setValueAtTime(160,c.currentTime); o.frequency.exponentialRampToValueAtTime(50,c.currentTime+0.4);
+    g.gain.setValueAtTime(0.25,c.currentTime); g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+0.4);
+    o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+0.41);
+  }catch(e){}
+}
+
+var STEP_ON=0.42, STEP_GAP=0.2, INITIAL_PAUSE=0.5, ROUND_CLEAR_PAUSE=0.6;
+
+var S={
+  phase:'menu', sequence:[], round:0, best:0,
+  showIndex:-1, showSubPhase:'gap', showSubTimer:0,
+  inputIndex:0, activePad:-1, pauseTimer:0
+};
+try{ S.best=parseInt(localStorage.getItem('rr_best')||'0',10)||0; }catch(e){}
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+function renderHUD(){
+  $('roundTxt').textContent=S.round;
+  $('bestTxt').textContent=S.best;
+  $('bestTxt2').textContent=S.best;
+}
+function setLit(idx){
+  S.activePad=idx;
+  document.querySelectorAll('.pad').forEach(function(el){
+    el.classList.toggle('lit', parseInt(el.dataset.p,10)===idx);
+  });
+}
+
+function addRandomStep(){
+  S.sequence.push(Math.floor(rng()*4));
+}
+function startShowing(){
+  S.phase='showing';
+  $('padGrid').classList.add('disabled');
+  $('statusTxt').textContent='看仔細...';
+  S.showIndex=-1; S.showSubPhase='gap'; S.showSubTimer=INITIAL_PAUSE;
+  setLit(-1);
+}
+function startInput(){
+  S.phase='input'; S.inputIndex=0;
+  $('padGrid').classList.remove('disabled');
+  $('statusTxt').textContent='輪到你了';
+  setLit(-1);
+}
+function startGame(){
+  S.sequence=[]; S.round=0; S.phase='playing-init';
+  addRandomStep();
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  $('padGrid').classList.add('on');
+  $('statusTxt').classList.add('on');
+  renderHUD();
+  startShowing();
+}
+function roundClear(){
+  S.round++;
+  if(S.round>S.best){ S.best=S.round; try{localStorage.setItem('rr_best',String(S.best));}catch(e){} }
+  renderHUD();
+  addRandomStep();
+  S.phase='roundClear';
+  $('statusTxt').textContent='答對了！';
+  S.pauseTimer=ROUND_CLEAR_PAUSE;
+}
+function endGame(){
+  S.phase='lose';
+  sfxWrong();
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  $('padGrid').classList.remove('on');
+  $('statusTxt').classList.remove('on');
+  $('loseDetail').textContent='這次記到第 '+S.round+' 關，最高紀錄 '+S.best+' 關。';
+  show('ovLose');
+}
+function backToMenu(){
+  S.phase='menu';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  $('padGrid').classList.remove('on');
+  $('statusTxt').classList.remove('on');
+  show('ovMenu');
+}
+
+function tapPad(idx){
+  if(S.phase!=='input') return;
+  setLit(idx);
+  playPadTone(idx,0.18);
+  setTimeout(function(){ if(S.activePad===idx) setLit(-1); },140);
+  if(idx===S.sequence[S.inputIndex]){
+    S.inputIndex++;
+    if(S.inputIndex>=S.sequence.length){
+      roundClear();
+    }
+  }else{
+    endGame();
+  }
+}
+document.querySelectorAll('.pad').forEach(function(el){
+  el.addEventListener('click', function(){ tapPad(parseInt(el.dataset.p,10)); });
+});
+
+$('btnStart').addEventListener('click',function(){ hide('ovMenu'); startGame(); });
+$('btnRetry').addEventListener('click',function(){ hide('ovLose'); startGame(); });
+$('btnMenu1').addEventListener('click',function(){ hide('ovLose'); backToMenu(); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){ if(S.phase==='paused'){ hide('ovPause'); S.phase=S.prePausePhase; } });
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase==='menu' || S.phase==='lose' || S.phase==='paused') return;
+  S.prePausePhase=S.phase;
+  S.phase='paused';
+  show('ovPause');
+});
+
+function update(dt){
+  if(S.phase==='roundClear'){
+    S.pauseTimer -= dt;
+    if(S.pauseTimer<=0){ startShowing(); }
+    return;
+  }
+  if(S.phase!=='showing') return;
+  S.showSubTimer -= dt;
+  if(S.showSubTimer<=0){
+    if(S.showSubPhase==='gap'){
+      S.showIndex++;
+      if(S.showIndex>=S.sequence.length){
+        startInput();
+        return;
+      }
+      S.showSubPhase='on';
+      S.showSubTimer=STEP_ON;
+      var padIdx=S.sequence[S.showIndex];
+      setLit(padIdx);
+      playPadTone(padIdx,STEP_ON*0.85);
+    }else{
+      S.showSubPhase='gap';
+      S.showSubTimer=STEP_GAP;
+      setLit(-1);
+    }
+  }
+}
+var lastT=performance.now();
+function loop(ts){
+  var dt=Math.min((ts-lastT)/1000,0.05);
+  lastT=ts;
+  update(dt);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+renderHUD();
+
+window.__RR = {
+  state:S,
+  start:function(){ $('btnStart').click(); },
+  retry:function(){ if(!$('ovLose').classList.contains('hidden')) $('btnRetry').click(); },
+  tap:function(idx){ tapPad(idx); },
+  advance:function(seconds){
+    var steps=Math.ceil(seconds/0.016);
+    for(var i=0;i<steps;i++) update(0.016);
+  },
+  getSequence:function(){ return S.sequence.slice(); }
+};
+})();
+</script>
+</body>
+</html>
