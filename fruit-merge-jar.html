@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop',''); a.setAttribute('playsinline',''); a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__FM_AC && window.__FM_AC.state==='suspended'){ window.__FM_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>水果合成罐</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#2A1B12; --ink:#FFF6E9; --muted:#CBB49C; --gold:#FFC83D; --red:#FF5A6B; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{ display:flex; align-items:center; justify-content:center; font-family:'Noto Sans TC','Fredoka',sans-serif;
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #3a2518 0%, #2A1B12 65%); }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh; aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; width:100%; height:100%; touch-action:none; }
+
+  .flash{ position:absolute; inset:0; background:var(--red); opacity:0; pointer-events:none; z-index:5; transition:opacity .08s; }
+  .flash.on{ opacity:.3; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 56px 0 14px; font-family:'Fredoka',sans-serif; pointer-events:none; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; justify-content:space-between; }
+  .topbar .pill{ background:rgba(20,12,8,.6); border:1px solid rgba(255,255,255,.12); padding:5px 11px; border-radius:999px; font-size:13px; }
+  .topbar .pill b{ color:var(--gold); }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(20,12,8,.6); border:1px solid rgba(255,255,255,.12); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:28px; background:rgba(14,8,5,.76); backdrop-filter:blur(6px); z-index:10; gap:14px; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:29px; margin:0; letter-spacing:1px;
+    background:linear-gradient(90deg,#5CE68C,var(--gold)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:21px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13.5px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; color:#2a1b12;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:13px 32px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+  <div class="flash" id="flash"></div>
+
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill">分數 <b id="scTxt">0</b></div>
+      <div class="pill">最佳 <b id="bestTxt2">0</b></div>
+    </div>
+  </div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="ov" id="ovMenu">
+    <h1>水果合成罐</h1>
+    <p class="sub">左右移動決定掉落位置，鬆手讓水果掉下去。兩顆相同的水果碰在一起會合成下一種更大的水果，疊過紅線撐太久就結束。</p>
+    <div class="stat">最高紀錄 <b id="bestTxt">0</b></div>
+    <button class="btn" id="btnStart">開始合成</button>
+  </div>
+
+  <div class="ov hidden" id="ovLose">
+    <h2>🍉 罐子滿出來了</h2>
+    <p class="sub" id="loseDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetry">再玩一次</button>
+      <button class="btn alt" id="btnMenu1">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var $=function(id){return document.getElementById(id);};
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+
+function mulberry32(seed){
+  return function(){
+    seed|=0; seed=(seed+0x6D2B79F5)|0;
+    var t=Math.imul(seed^seed>>>15,1|seed);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296;
+  };
+}
+var rng=mulberry32(Date.now()|0);
+
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__FM_AC=AC; }catch(e){} } return AC; }
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.linearRampToValueAtTime(sweepTo, c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.18, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur+0.02);
+  }catch(e){}
+}
+function sfxMerge(tier){ playTone(380+tier*50,0.14,'sine',0.2,620+tier*50); }
+function sfxDrop(){ playTone(300,0.06,'sine',0.1,220); }
+function sfxLose(){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type='sawtooth'; o.frequency.setValueAtTime(130,c.currentTime); o.frequency.exponentialRampToValueAtTime(40,c.currentTime+0.5);
+    g.gain.setValueAtTime(0.25,c.currentTime); g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+0.5);
+    o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+0.51);
+  }catch(e){}
+}
+
+var TIERS=[
+  {r:13, color:'#8A4FD1', name:'葡萄', score:1},
+  {r:18, color:'#FF5A6B', name:'櫻桃', score:3},
+  {r:24, color:'#FF9A3D', name:'橘子', score:6},
+  {r:30, color:'#FFC83D', name:'檸檬', score:10},
+  {r:37, color:'#5CE68C', name:'蘋果', score:15},
+  {r:45, color:'#3DBE5C', name:'水梨', score:21},
+  {r:54, color:'#FF8FB3', name:'水蜜桃', score:28},
+  {r:64, color:'#F4E04D', name:'哈密瓜', score:36},
+  {r:76, color:'#3DBE5C', name:'西瓜', score:45}
+];
+var WALL_L=20, WALL_R=340, FLOOR_Y=610, DANGER_Y=110, GRAV=980;
+var DROP_COOLDOWN=0.45, OVERFLOW_LIMIT=1.6;
+
+var S={
+  phase:'menu', score:0, best:0,
+  fruits:[], nextId:1,
+  previewX:180, previewTier:0, dropCooldown:0,
+  overflowTimer:0, heldTier:0, holding:true
+};
+try{ S.best=parseInt(localStorage.getItem('fm_best')||'0',10)||0; }catch(e){}
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+function renderHUD(){
+  $('scTxt').textContent=S.score;
+  $('bestTxt').textContent=S.best;
+  $('bestTxt2').textContent=S.best;
+}
+function randomDropTier(){
+  // weighted toward small tiers
+  var r=rng();
+  if(r<0.45) return 0;
+  if(r<0.75) return 1;
+  if(r<0.92) return 2;
+  return 3;
+}
+
+function startGame(){
+  S.phase='playing'; S.score=0; S.fruits=[]; S.nextId=1;
+  S.previewX=180; S.previewTier=randomDropTier(); S.dropCooldown=0;
+  S.overflowTimer=0; S.holding=true;
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  renderHUD();
+}
+function endGame(){
+  S.phase='lose';
+  sfxLose();
+  $('flash').classList.add('on');
+  setTimeout(function(){ $('flash').classList.remove('on'); },200);
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  if(S.score>S.best){ S.best=S.score; try{localStorage.setItem('fm_best',String(S.best));}catch(e){} }
+  $('bestTxt').textContent=S.best;
+  $('loseDetail').textContent='得分 '+S.score+'，罐子裡裝了 '+S.fruits.length+' 顆水果。';
+  show('ovLose');
+}
+function backToMenu(){
+  S.phase='menu';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  show('ovMenu');
+}
+
+function spawnFruit(tier,x,y,vx,vy){
+  var f={id:S.nextId++, tier:tier, x:x, y:y, vx:vx||0, vy:vy||0, settleT:0};
+  S.fruits.push(f);
+  return f;
+}
+
+function doDrop(){
+  if(S.phase!=='playing' || !S.holding || S.dropCooldown>0) return;
+  var r=TIERS[S.previewTier].r;
+  var x=clamp(S.previewX, WALL_L+r, WALL_R-r);
+  spawnFruit(S.previewTier, x, DANGER_Y-20, 0, 40);
+  sfxDrop();
+  S.holding=false;
+  S.dropCooldown=DROP_COOLDOWN;
+  S.previewTier=randomDropTier();
+}
+function setPreviewX(x){
+  if(S.phase!=='playing') return;
+  S.previewX=clamp(x, WALL_L+TIERS[S.previewTier].r, WALL_R-TIERS[S.previewTier].r);
+}
+
+function localX(e){
+  var r=cv.getBoundingClientRect();
+  var t=(e.touches&&e.touches[0])||(e.changedTouches&&e.changedTouches[0])||e;
+  return (t.clientX-r.left)*(W/r.width);
+}
+cv.addEventListener('mousemove', function(e){ setPreviewX(localX(e)); });
+cv.addEventListener('mousedown', function(e){ setPreviewX(localX(e)); });
+cv.addEventListener('mouseup', function(){ doDrop(); S.holding=true; });
+cv.addEventListener('touchstart', function(e){ setPreviewX(localX(e)); if(e.preventDefault) e.preventDefault(); }, {passive:false});
+cv.addEventListener('touchmove', function(e){ setPreviewX(localX(e)); if(e.preventDefault) e.preventDefault(); }, {passive:false});
+cv.addEventListener('touchend', function(e){ doDrop(); S.holding=true; if(e.preventDefault) e.preventDefault(); }, {passive:false});
+
+$('btnStart').addEventListener('click',function(){ hide('ovMenu'); startGame(); });
+$('btnRetry').addEventListener('click',function(){ hide('ovLose'); startGame(); });
+$('btnMenu1').addEventListener('click',function(){ hide('ovLose'); backToMenu(); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){ if(S.phase==='paused'){ hide('ovPause'); S.phase='playing'; } });
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='playing') return;
+  S.phase='paused';
+  show('ovPause');
+});
+
+function physicsStep(dt){
+  var fr=S.fruits;
+  for(var i=0;i<fr.length;i++){
+    var f=fr[i];
+    f.vy += GRAV*dt;
+    f.x += f.vx*dt;
+    f.y += f.vy*dt;
+    var r=TIERS[f.tier].r;
+    if(f.x-r<WALL_L){ f.x=WALL_L+r; f.vx*=-0.3; }
+    if(f.x+r>WALL_R){ f.x=WALL_R-r; f.vx*=-0.3; }
+    if(f.y+r>FLOOR_Y){ f.y=FLOOR_Y-r; f.vy*=-0.2; if(Math.abs(f.vy)<30) f.vy=0; }
+    f.vx *= 0.98;
+  }
+  // collision resolution + merge detection (a couple passes for stability)
+  var merges=[];
+  var mergedIds={};
+  for(var pass=0; pass<2; pass++){
+    for(var a=0;a<fr.length;a++){
+      for(var b=a+1;b<fr.length;b++){
+        var fa=fr[a], fb=fr[b];
+        if(mergedIds[fa.id]||mergedIds[fb.id]) continue;
+        var ra=TIERS[fa.tier].r, rb=TIERS[fb.tier].r;
+        var dx=fb.x-fa.x, dy=fb.y-fa.y;
+        var dist=Math.hypot(dx,dy)||0.001;
+        var minDist=ra+rb;
+        if(dist<minDist){
+          if(fa.tier===fb.tier && pass===0 && fa.tier<TIERS.length-1){
+            merges.push([fa,fb]);
+            mergedIds[fa.id]=true; mergedIds[fb.id]=true;
+          }else if(fa.tier===fb.tier && pass===0 && fa.tier===TIERS.length-1){
+            // max tier merge: both vanish, bonus score, no new fruit
+            merges.push([fa,fb,true]);
+            mergedIds[fa.id]=true; mergedIds[fb.id]=true;
+          }else{
+            // push apart
+            var overlap=(minDist-dist)/2;
+            var nx=dx/dist, ny=dy/dist;
+            fa.x -= nx*overlap; fa.y -= ny*overlap;
+            fb.x += nx*overlap; fb.y += ny*overlap;
+          }
+        }
+      }
+    }
+  }
+  if(merges.length){
+    var toRemove={};
+    merges.forEach(function(pair){
+      var fa=pair[0], fb=pair[1], isMax=pair[2];
+      toRemove[fa.id]=true; toRemove[fb.id]=true;
+      var mx=(fa.x+fb.x)/2, my=(fa.y+fb.y)/2;
+      if(isMax){
+        S.score += TIERS[fa.tier].score*2;
+      }else{
+        var newTier=fa.tier+1;
+        spawnFruit(newTier, mx, my-6, 0, -60);
+        S.score += TIERS[newTier].score;
+      }
+      sfxMerge(fa.tier);
+    });
+    S.fruits = S.fruits.filter(function(f){ return !toRemove[f.id]; });
+    renderHUD();
+  }
+}
+
+function update(dt){
+  if(S.phase!=='playing') return;
+  if(S.dropCooldown>0) S.dropCooldown-=dt;
+  var sub=3;
+  for(var i=0;i<sub;i++) physicsStep(dt/sub);
+
+  var overflowing=false;
+  S.fruits.forEach(function(f){
+    var r=TIERS[f.tier].r;
+    if(f.y-r < DANGER_Y && Math.abs(f.vy)<220){ overflowing=true; }
+  });
+  if(overflowing){
+    S.overflowTimer += dt;
+    if(S.overflowTimer > OVERFLOW_LIMIT){ endGame(); return; }
+  }else{
+    S.overflowTimer = Math.max(0, S.overflowTimer-dt*2);
+  }
+}
+
+function drawFruit(f){
+  var t=TIERS[f.tier];
+  ctx.save();
+  ctx.translate(f.x,f.y);
+  ctx.beginPath(); ctx.arc(0,0,t.r,0,6.3);
+  ctx.fillStyle=t.color; ctx.fill();
+  ctx.beginPath(); ctx.arc(-t.r*0.3,-t.r*0.3,t.r*0.3,0,6.3);
+  ctx.fillStyle='rgba(255,255,255,.22)'; ctx.fill();
+  ctx.restore();
+}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  var grd=ctx.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0,'#3a2518'); grd.addColorStop(1,'#2A1B12');
+  ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+
+  // jar walls
+  ctx.strokeStyle='rgba(255,246,233,.35)'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(WALL_L,DANGER_Y-20); ctx.lineTo(WALL_L,FLOOR_Y); ctx.lineTo(WALL_R,FLOOR_Y); ctx.lineTo(WALL_R,DANGER_Y-20); ctx.stroke();
+
+  // danger line
+  ctx.strokeStyle = S.overflowTimer>0 ? 'rgba(255,90,107,.8)' : 'rgba(255,90,107,.35)';
+  ctx.lineWidth=2; ctx.setLineDash([6,6]);
+  ctx.beginPath(); ctx.moveTo(WALL_L,DANGER_Y); ctx.lineTo(WALL_R,DANGER_Y); ctx.stroke();
+  ctx.setLineDash([]);
+
+  S.fruits.forEach(drawFruit);
+
+  if(S.phase==='playing'){
+    // preview fruit + guide line
+    ctx.globalAlpha=0.85;
+    ctx.save();
+    ctx.translate(S.previewX, DANGER_Y-20);
+    var pt=TIERS[S.previewTier];
+    ctx.beginPath(); ctx.arc(0,0,pt.r,0,6.3);
+    ctx.fillStyle=pt.color; ctx.fill();
+    ctx.restore();
+    ctx.globalAlpha=1;
+    ctx.strokeStyle='rgba(255,255,255,.18)'; ctx.lineWidth=1.5; ctx.setLineDash([4,6]);
+    ctx.beginPath(); ctx.moveTo(S.previewX,DANGER_Y-20); ctx.lineTo(S.previewX,FLOOR_Y); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+var lastT=performance.now();
+function loop(ts){
+  var dt=Math.min((ts-lastT)/1000,0.033);
+  lastT=ts;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+renderHUD();
+
+window.__FM = {
+  state:S,
+  tiers:TIERS,
+  start:function(){ $('btnStart').click(); },
+  retry:function(){ if(!$('ovLose').classList.contains('hidden')) $('btnRetry').click(); },
+  dropAt:function(x,tier){
+    if(tier!==undefined) S.previewTier=tier;
+    S.previewX=clamp(x, WALL_L+TIERS[S.previewTier].r, WALL_R-TIERS[S.previewTier].r);
+    S.dropCooldown=0; S.holding=true;
+    doDrop();
+  },
+  spawnFruit:function(tier,x,y,vx,vy){ return spawnFruit(tier,x,y,vx,vy).id; },
+  advance:function(seconds){
+    var steps=Math.ceil(seconds/0.016);
+    for(var i=0;i<steps;i++) update(0.016);
+  }
+};
+})();
+</script>
+</body>
+</html>
