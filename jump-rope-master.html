@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop',''); a.setAttribute('playsinline',''); a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__JR_AC && window.__JR_AC.state==='suspended'){ window.__JR_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>跳繩高手</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#182840; --ink:#F5F8FF; --muted:#9FB0CF; --gold:#FFC83D; --red:#FF5A6B; --blue:#4DD0FF; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{ display:flex; align-items:center; justify-content:center; font-family:'Noto Sans TC','Fredoka',sans-serif;
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #223457 0%, #182840 65%); }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh; aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; width:100%; height:100%; touch-action:none; }
+
+  .flash{ position:absolute; inset:0; background:var(--red); opacity:0; pointer-events:none; z-index:5; transition:opacity .08s; }
+  .flash.on{ opacity:.35; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 56px 0 14px; font-family:'Fredoka',sans-serif; pointer-events:none; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; justify-content:space-between; }
+  .topbar .pill{ background:rgba(10,16,28,.6); border:1px solid rgba(255,255,255,.12); padding:5px 11px; border-radius:999px; font-size:13px; }
+  .topbar .pill b{ color:var(--gold); }
+  .combo{ position:absolute; top:84px; left:0; right:0; text-align:center; z-index:4; pointer-events:none;
+    font-family:'Fredoka',sans-serif; font-weight:700; font-size:22px; color:var(--gold);
+    text-shadow:0 2px 10px rgba(0,0,0,.6); opacity:0; transform:scale(.8); transition:opacity .12s, transform .12s; }
+  .combo.on{ opacity:1; transform:scale(1); }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(10,16,28,.6); border:1px solid rgba(255,255,255,.12); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:28px; background:rgba(5,9,18,.76); backdrop-filter:blur(6px); z-index:10; gap:14px; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:29px; margin:0; letter-spacing:1px;
+    background:linear-gradient(90deg,var(--blue),var(--gold)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:21px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13.5px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; color:#0c1626;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:13px 32px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  .tapHint{ position:absolute; bottom:28px; left:0; right:0; text-align:center; color:var(--muted);
+    font-size:12.5px; z-index:4; pointer-events:none; display:none; }
+  .tapHint.on{ display:block; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+  <div class="flash" id="flash"></div>
+  <div class="combo" id="comboTxt"></div>
+  <div class="tapHint" id="tapHint">點擊畫面起跳</div>
+
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill" id="livesWrap">❤️❤️❤️</div>
+      <div class="pill">分數 <b id="scTxt">0</b></div>
+    </div>
+  </div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="ov" id="ovMenu">
+    <h1>跳繩高手</h1>
+    <p class="sub">繩子繞一圈掃過腳邊時，提前點擊畫面跳起來閃過它！連續成功會有連擊加分，越跳越快，被繩子打到會扣一條命。</p>
+    <div class="stat">最高紀錄 <b id="bestTxt">0</b></div>
+    <button class="btn" id="btnStart">開始跳繩</button>
+  </div>
+
+  <div class="ov hidden" id="ovLose">
+    <h2>🪢 被繩子絆倒了</h2>
+    <p class="sub" id="loseDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetry">再玩一次</button>
+      <button class="btn alt" id="btnMenu1">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var $=function(id){return document.getElementById(id);};
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__JR_AC=AC; }catch(e){} } return AC; }
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.linearRampToValueAtTime(sweepTo, c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.18, c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur+0.02);
+  }catch(e){}
+}
+function sfxJump(){ playTone(420,0.08,'sine',0.14,620); }
+function sfxGood(combo){ playTone(680+Math.min(combo,10)*18,0.1,'sine',0.17,920+Math.min(combo,10)*18); }
+function sfxHit(){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type='sawtooth'; o.frequency.setValueAtTime(140,c.currentTime); o.frequency.exponentialRampToValueAtTime(40,c.currentTime+0.3);
+    g.gain.setValueAtTime(0.28,c.currentTime); g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+0.3);
+    o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+0.31);
+  }catch(e){}
+}
+
+var GROUND_Y=470, HEAD_Y=300, FOOT_Y=468;
+var JUMP_RISE=46;
+
+var S={
+  phase:'menu', score:0, best:0, lives:3, combo:0,
+  elapsed:0, period:1.05, ropeT:0, dangerResolved:false, cycleCount:0,
+  jumpActive:false, jumpTimer:0, jumpDur:0.3,
+  hitFlashT:0
+};
+try{ S.best=parseInt(localStorage.getItem('jr_best')||'0',10)||0; }catch(e){}
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+function renderHUD(){
+  $('scTxt').textContent=S.score;
+  $('bestTxt').textContent=S.best;
+  var hearts=''; for(var i=0;i<3;i++) hearts += i<S.lives?'❤️':'🖤';
+  $('livesWrap').textContent=hearts;
+}
+
+function startGame(){
+  S.phase='playing'; S.score=0; S.lives=3; S.combo=0;
+  S.elapsed=0; S.period=1.05; S.ropeT=0; S.dangerResolved=false; S.cycleCount=0;
+  S.jumpActive=false; S.jumpTimer=0;
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  $('tapHint').classList.add('on');
+  renderHUD();
+}
+function endGame(){
+  S.phase='lose';
+  sfxHit();
+  $('flash').classList.add('on');
+  setTimeout(function(){ $('flash').classList.remove('on'); },160);
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  $('tapHint').classList.remove('on');
+  if(S.score>S.best){ S.best=S.score; try{localStorage.setItem('jr_best',String(S.best));}catch(e){} }
+  $('bestTxt').textContent=S.best;
+  $('loseDetail').textContent='得分 '+S.score+'，最高連擊 '+S.bestCombo+' 下。';
+  show('ovLose');
+}
+function backToMenu(){
+  S.phase='menu';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  $('tapHint').classList.remove('on');
+  show('ovMenu');
+}
+
+function doTap(){
+  if(S.phase!=='playing') return;
+  if(!S.jumpActive){
+    S.jumpActive=true;
+    S.jumpDur = S.period*0.30;
+    S.jumpTimer = S.jumpDur;
+    sfxJump();
+  }
+}
+cv.addEventListener('mousedown', doTap);
+cv.addEventListener('touchstart', function(e){ doTap(); if(e.preventDefault) e.preventDefault(); }, {passive:false});
+window.addEventListener('keydown', function(e){ if(e.code==='Space') doTap(); });
+
+$('btnStart').addEventListener('click',function(){ hide('ovMenu'); startGame(); });
+$('btnRetry').addEventListener('click',function(){ hide('ovLose'); startGame(); });
+$('btnMenu1').addEventListener('click',function(){ hide('ovLose'); backToMenu(); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){ if(S.phase==='paused'){ hide('ovPause'); S.phase='playing'; } });
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='playing') return;
+  S.phase='paused';
+  show('ovPause');
+});
+
+S.bestCombo=0;
+
+function update(dt){
+  if(S.phase!=='playing') return;
+  S.elapsed += dt;
+  S.period = Math.max(0.52, 1.05 - S.elapsed*0.014);
+
+  S.ropeT += dt;
+  if(S.ropeT >= S.period){
+    S.ropeT -= S.period;
+    S.dangerResolved=false;
+    S.cycleCount++;
+  }
+  var DANGER_FRAC=0.16;
+  var frac = S.ropeT/S.period;
+  if(!S.dangerResolved && frac >= 1-DANGER_FRAC){
+    S.dangerResolved=true;
+    if(S.jumpActive){
+      S.score += 10;
+      S.combo++;
+      if(S.combo>S.bestCombo) S.bestCombo=S.combo;
+      if(S.combo>0 && S.combo%5===0){
+        var bonus=20;
+        S.score+=bonus;
+        var ct=$('comboTxt');
+        ct.textContent='連擊 x'+S.combo+'！ +'+bonus;
+        ct.classList.add('on');
+        clearTimeout(ct._t);
+        ct._t=setTimeout(function(){ ct.classList.remove('on'); },550);
+      }
+      sfxGood(S.combo);
+      renderHUD();
+    }else{
+      S.lives--; S.combo=0;
+      renderHUD();
+      S.hitFlashT=0.2;
+      if(S.lives<=0){ endGame(); return; }
+      sfxHit();
+    }
+  }
+  if(S.jumpActive){
+    S.jumpTimer -= dt;
+    if(S.jumpTimer<=0){ S.jumpActive=false; }
+  }
+  if(S.hitFlashT>0) S.hitFlashT-=dt;
+}
+
+var ROPE_TOP_Y=HEAD_Y-40, ROPE_BOTTOM_Y=FOOT_Y+6, ROPE_ANCHOR_Y=HEAD_Y+22;
+function drawRope(frac){
+  var ropeY = ROPE_TOP_Y + (ROPE_BOTTOM_Y-ROPE_TOP_Y)*(0.5+0.5*Math.cos(2*Math.PI*frac));
+  ctx.save();
+  ctx.strokeStyle = (frac>=1-0.16) ? '#FF5A6B' : '#4DD0FF';
+  ctx.lineWidth=4;
+  ctx.beginPath();
+  ctx.moveTo(60, ROPE_ANCHOR_Y);
+  ctx.quadraticCurveTo(180, ropeY, 300, ROPE_ANCHOR_Y);
+  ctx.stroke();
+  // handles
+  ctx.fillStyle='#8899bb';
+  ctx.beginPath(); ctx.arc(60,ROPE_ANCHOR_Y,6,0,6.3); ctx.fill();
+  ctx.beginPath(); ctx.arc(300,ROPE_ANCHOR_Y,6,0,6.3); ctx.fill();
+  ctx.restore();
+}
+function drawCharacter(){
+  var yOff=0;
+  if(S.jumpActive){
+    var t = 1 - clamp(S.jumpTimer/S.jumpDur,0,1);
+    yOff = -Math.sin(Math.PI*t)*JUMP_RISE;
+  }
+  var cx=180, cy=FOOT_Y+yOff;
+  ctx.save();
+  ctx.translate(cx,cy);
+  // legs
+  ctx.strokeStyle='#F5F8FF'; ctx.lineWidth=5; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-7,0); ctx.lineTo(-10,26); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(7,0); ctx.lineTo(10,26); ctx.stroke();
+  // body
+  ctx.fillStyle='#FFC83D';
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-13,-40,26,42,8) : ctx.rect(-13,-40,26,42);
+  ctx.fill();
+  // head
+  ctx.fillStyle='#FFE3A3';
+  ctx.beginPath(); ctx.arc(0,-52,13,0,6.3); ctx.fill();
+  // arms
+  ctx.strokeStyle='#FFC83D'; ctx.lineWidth=5;
+  ctx.beginPath(); ctx.moveTo(-12,-32); ctx.lineTo(-22,-14); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(12,-32); ctx.lineTo(22,-14); ctx.stroke();
+  ctx.restore();
+}
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  var grd=ctx.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0,'#223457'); grd.addColorStop(1,'#182840');
+  ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+  // ground
+  ctx.fillStyle='#0f1930';
+  ctx.fillRect(0,FOOT_Y+30,W,H-(FOOT_Y+30));
+  ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(0,FOOT_Y+30); ctx.lineTo(W,FOOT_Y+30); ctx.stroke();
+
+  if(S.phase==='playing' || S.phase==='paused'){
+    var frac = S.ropeT/S.period;
+    drawRope(frac);
+  }
+  drawCharacter();
+  if(S.hitFlashT>0){
+    ctx.fillStyle='rgba(255,90,107,'+clamp(S.hitFlashT/0.2,0,1)*0.3+')';
+    ctx.fillRect(0,0,W,H);
+  }
+}
+var lastT=performance.now();
+function loop(ts){
+  var dt=Math.min((ts-lastT)/1000,0.05);
+  lastT=ts;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+renderHUD();
+
+window.__JR = {
+  state:S,
+  start:function(){ $('btnStart').click(); },
+  retry:function(){ if(!$('ovLose').classList.contains('hidden')) $('btnRetry').click(); },
+  tap:function(){ doTap(); },
+  advance:function(seconds){
+    var steps=Math.ceil(seconds/0.016);
+    for(var i=0;i<steps;i++) update(0.016);
+  }
+};
+})();
+</script>
+</body>
+</html>
