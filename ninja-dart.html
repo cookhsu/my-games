@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop',''); a.setAttribute('playsinline',''); a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__ND_AC && window.__ND_AC.state==='suspended'){ window.__ND_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>忍者飛鏢場</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0e1420; --ink:#EAF0FF; --muted:#8C9AB8; --gold:#FFC83D; --red:#FF5A6B; --green:#5CE68C; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{ display:flex; align-items:center; justify-content:center; font-family:'Noto Sans TC','Fredoka',sans-serif;
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #1b2436 0%, #0e1420 65%); }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh; aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; position:absolute; touch-action:none; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 56px 0 14px; font-family:'Fredoka',sans-serif; pointer-events:none; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; justify-content:space-between; }
+  .topbar .pill{ background:rgba(10,14,24,.6); border:1px solid rgba(255,255,255,.12); padding:5px 11px; border-radius:999px; font-size:13px; }
+  .topbar .pill b{ color:var(--gold); }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(10,14,24,.6); border:1px solid rgba(255,255,255,.12); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .popTxt{ position:absolute; font-family:'Fredoka',sans-serif; font-weight:700; font-size:20px;
+    pointer-events:none; z-index:5; opacity:0; transform:translate(-50%,-50%); transition:opacity .2s, transform .2s;
+    text-shadow:0 2px 8px rgba(0,0,0,.6); }
+  .popTxt.show{ opacity:1; transform:translate(-50%,-80%); }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:28px; background:rgba(8,10,18,.76); backdrop-filter:blur(6px); z-index:10; gap:14px; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:28px; margin:0; letter-spacing:1px; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:21px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13.5px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; color:#0e1420;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:13px 32px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+  <div id="popLayer"></div>
+
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill">分數 <b id="scoreTxt">0</b>/<span id="targetTxt">70</span></div>
+      <div class="pill">飛鏢 <b id="throwsTxt">0</b>/<span id="throwsMaxTxt">12</span></div>
+      <div class="pill">最佳 <b id="bestTxt2">0</b></div>
+    </div>
+  </div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="ov" id="ovMenu">
+    <h1>🥷 忍者飛鏢場</h1>
+    <p class="sub">靶子會左右移動，外圍有一圈縮小中的瞄準環：環縮到越小再點擊靶心，分數越高！點在靶外或環還很大時點擊都不算分，共 12 鏢，拿到 70 分獲勝。</p>
+    <div class="stat">最佳分數 <b id="bestTxt">0</b></div>
+    <button class="btn" id="btnStart">開始擲鏢</button>
+  </div>
+
+  <div class="ov hidden" id="ovLose">
+    <h2>🎯 鏢用完了</h2>
+    <p class="sub" id="loseDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetry">再玩一次</button>
+      <button class="btn alt" id="btnMenu1">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovWin">
+    <h2>🏆 神射手！</h2>
+    <p class="sub" id="winDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetryWin">再玩一次</button>
+      <button class="btn alt" id="btnMenu3">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var $=function(id){return document.getElementById(id);};
+
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__ND_AC=AC; }catch(e){} } return AC; }
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.exponentialRampToValueAtTime(sweepTo,c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.15,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sfxBullseye(){ playTone(660,0.1,'triangle',0.16,990); setTimeout(function(){playTone(880,0.12,'triangle',0.14);},70); }
+function sfxGood(){ playTone(520,0.09,'sine',0.13,680); }
+function sfxOk(){ playTone(400,0.08,'sine',0.1,460); }
+function sfxMiss(){ playTone(160,0.16,'sawtooth',0.12,70); }
+function sfxWin(){ playTone(523,0.1,'triangle',0.14); setTimeout(function(){playTone(659,0.1,'triangle',0.14);},90); setTimeout(function(){playTone(784,0.16,'triangle',0.15);},180); }
+function sfxLose(){ playTone(220,0.3,'sawtooth',0.15,60); }
+
+var BULLSEYE_R=16, INNER_R=36, OUTER_R=58, BOARD_R=76;
+var TARGET_Y=230;
+var START_RING_R=100;
+var TOTAL_THROWS=12;
+var TARGET_SCORE=70;
+var BASE_DURATION=1.35, MIN_DURATION=0.72, DURATION_STEP=0.055;
+var BASE_AMP=60, MAX_AMP=112, AMP_STEP=4.2;
+var BASE_SPEED=1.5, MAX_SPEED=3.1, SPEED_STEP=0.13;
+
+function S0(){
+  var best=0;
+  try{ var v=localStorage.getItem('nd_best'); if(v) best=parseInt(v,10)||0; }catch(e){}
+  return {
+    phase:'menu',
+    prePausePhase:null,
+    time:0,
+    score:0,
+    throwsUsed:0,
+    round:0,
+    best:best,
+    curDuration:BASE_DURATION,
+    curAmp:BASE_AMP,
+    curSpeed:BASE_SPEED,
+    target:{x:W/2, y:TARGET_Y},
+    ring:{radius:START_RING_R, duration:BASE_DURATION, elapsed:0}
+  };
+}
+var S=S0();
+
+function resetState(){
+  var fresh=S0();
+  for(var k in S){ if(Object.prototype.hasOwnProperty.call(S,k)) delete S[k]; }
+  for(var k2 in fresh){ if(Object.prototype.hasOwnProperty.call(fresh,k2)) S[k2]=fresh[k2]; }
+}
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+
+function renderHUD(){
+  $('scoreTxt').textContent=String(S.score);
+  $('targetTxt').textContent=String(TARGET_SCORE);
+  $('throwsTxt').textContent=String(S.throwsUsed);
+  $('throwsMaxTxt').textContent=String(TOTAL_THROWS);
+  $('bestTxt2').textContent=String(S.best);
+  $('bestTxt').textContent=String(S.best);
+}
+
+function popup(text,x,y,color){
+  var el=document.createElement('div');
+  el.className='popTxt';
+  el.textContent=text;
+  el.style.left=x+'px';
+  el.style.top=y+'px';
+  el.style.color=color||'#fff';
+  $('popLayer').appendChild(el);
+  requestAnimationFrame(function(){ el.classList.add('show'); });
+  setTimeout(function(){ el.remove(); },650);
+}
+
+function nextThrow(){
+  S.round++;
+  S.curDuration=Math.max(MIN_DURATION, BASE_DURATION-S.round*DURATION_STEP);
+  S.curAmp=Math.min(MAX_AMP, BASE_AMP+S.round*AMP_STEP);
+  S.curSpeed=Math.min(MAX_SPEED, BASE_SPEED+S.round*SPEED_STEP);
+  S.ring.radius=START_RING_R;
+  S.ring.duration=S.curDuration;
+  S.ring.elapsed=0;
+}
+
+function registerThrow(score,label,x,y,color){
+  S.score+=score;
+  S.throwsUsed++;
+  popup(label,x,y,color);
+  renderHUD();
+  if(S.score>S.best){ S.best=S.score; try{localStorage.setItem('nd_best',String(S.best));}catch(e){} renderHUD(); }
+  if(S.score>=TARGET_SCORE){ winGame(); return; }
+  if(S.throwsUsed>=TOTAL_THROWS){ loseGame(); return; }
+  nextThrow();
+}
+
+function throwAt(x,y){
+  if(S.phase!=='playing') return;
+  var dx=x-S.target.x, dy=y-S.target.y;
+  var dist=Math.sqrt(dx*dx+dy*dy);
+  if(dist>BOARD_R){
+    sfxMiss();
+    registerThrow(0,'脫靶！',x,y,'#FF5A6B');
+    return;
+  }
+  var r=S.ring.radius;
+  if(r<=BULLSEYE_R){ sfxBullseye(); registerThrow(10,'靶心！+10',x,y,'#FFC83D'); }
+  else if(r<=INNER_R){ sfxGood(); registerThrow(5,'漂亮！+5',x,y,'#5CE68C'); }
+  else if(r<=OUTER_R){ sfxOk(); registerThrow(2,'命中 +2',x,y,'#4DD0FF'); }
+  else { sfxMiss(); registerThrow(0,'太早了',x,y,'#FF5A6B'); }
+}
+
+function update(dt){
+  if(S.phase!=='playing') return;
+  S.time+=dt;
+  S.target.x = W/2 + S.curAmp*Math.sin(S.time*S.curSpeed);
+  S.ring.elapsed+=dt;
+  if(S.ring.elapsed>=S.ring.duration){
+    sfxMiss();
+    registerThrow(0,'太慢了',S.target.x,S.target.y,'#FF5A6B');
+    return;
+  }
+  var pct=1-(S.ring.elapsed/S.ring.duration);
+  S.ring.radius=START_RING_R*pct;
+}
+
+function startGame(){
+  resetState();
+  S.phase='playing';
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  renderHUD();
+}
+
+function winGame(){
+  S.phase='win';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  sfxWin();
+  $('winDetail').textContent='用了 '+S.throwsUsed+' 鏢拿到 '+S.score+' 分，成為神射手！';
+  show('ovWin');
+}
+
+function loseGame(){
+  S.phase='lose';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  sfxLose();
+  $('loseDetail').textContent='12 鏢用完，總共 '+S.score+' 分（目標 '+TARGET_SCORE+' 分），最佳 '+S.best+' 分。';
+  show('ovLose');
+}
+
+function backToMenu(){
+  S.phase='menu';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  show('ovMenu');
+}
+
+$('btnStart').addEventListener('click',function(){ hide('ovMenu'); startGame(); });
+$('btnRetry').addEventListener('click',function(){ hide('ovLose'); startGame(); });
+$('btnRetryWin').addEventListener('click',function(){ hide('ovWin'); startGame(); });
+$('btnMenu1').addEventListener('click',function(){ hide('ovLose'); backToMenu(); });
+$('btnMenu3').addEventListener('click',function(){ hide('ovWin'); backToMenu(); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){
+  if(S.phase==='paused'){ hide('ovPause'); S.phase=S.prePausePhase||'playing'; }
+});
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='playing') return;
+  S.prePausePhase=S.phase;
+  S.phase='paused';
+  show('ovPause');
+});
+
+cv.addEventListener('pointerdown',function(e){
+  e.preventDefault();
+  if(S.phase!=='playing') return;
+  var rect=cv.getBoundingClientRect();
+  var scaleX=W/rect.width, scaleY=H/rect.height;
+  var x=(e.clientX-rect.left)*scaleX;
+  var y=(e.clientY-rect.top)*scaleY;
+  throwAt(x,y);
+},{passive:false});
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  var grd=ctx.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0,'#1b2436'); grd.addColorStop(1,'#0e1420');
+  ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+
+  if(S.phase==='playing' || S.phase==='paused'){
+    var tx=S.target.x, ty=S.target.y;
+    // board rings (outer to inner)
+    ctx.beginPath(); ctx.arc(tx,ty,BOARD_R,0,Math.PI*2); ctx.fillStyle='#2b3a52'; ctx.fill();
+    ctx.beginPath(); ctx.arc(tx,ty,OUTER_R,0,Math.PI*2); ctx.fillStyle='#4DD0FF'; ctx.fill();
+    ctx.beginPath(); ctx.arc(tx,ty,INNER_R,0,Math.PI*2); ctx.fillStyle='#5CE68C'; ctx.fill();
+    ctx.beginPath(); ctx.arc(tx,ty,BULLSEYE_R,0,Math.PI*2); ctx.fillStyle='#FFC83D'; ctx.fill();
+    ctx.beginPath(); ctx.arc(tx,ty,BULLSEYE_R*0.42,0,Math.PI*2); ctx.fillStyle='#FF5A6B'; ctx.fill();
+
+    // shrinking aim ring
+    if(S.ring.radius>2){
+      ctx.beginPath();
+      ctx.arc(tx,ty,S.ring.radius,0,Math.PI*2);
+      ctx.strokeStyle='rgba(255,255,255,.85)';
+      ctx.lineWidth=3;
+      ctx.stroke();
+    }
+  }
+}
+
+var lastT=null;
+function loop(ts){
+  if(lastT===null) lastT=ts;
+  var dt=Math.min(0.05,(ts-lastT)/1000);
+  lastT=ts;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+renderHUD();
+
+window.__ND = {
+  state:S,
+  start:function(){ $('btnStart').click(); },
+  retry:function(){ if(!$('ovLose').classList.contains('hidden')) $('btnRetry').click(); },
+  retryWin:function(){ if(!$('ovWin').classList.contains('hidden')) $('btnRetryWin').click(); },
+  throwAt:function(x,y){ throwAt(x,y); },
+  throwAtTarget:function(){ throwAt(S.target.x, S.target.y); },
+  setRingRadius:function(r){ S.ring.radius=r; },
+  advance:function(seconds){
+    var steps=Math.round(seconds/0.016);
+    for(var i=0;i<steps;i++) update(0.016);
+  }
+};
+})();
+</script>
+</body>
+</html>
