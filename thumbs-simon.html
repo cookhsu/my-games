@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop',''); a.setAttribute('playsinline',''); a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__TS_AC && window.__TS_AC.state==='suspended'){ window.__TS_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>比讚對決</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#1A1024; --ink:#F6EEFF; --muted:#BDA9D6; --gold:#FFC83D; --green:#5CE68C; --blue:#4FA8FF; --red:#FF5A6B; --purple:#B07CFF; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{ display:flex; align-items:center; justify-content:center; font-family:'Noto Sans TC','Fredoka',sans-serif;
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #2B1A3D 0%, #1A1024 65%); }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh; aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; position:absolute; touch-action:none; }
+  #c{ z-index:2; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 56px 0 14px; font-family:'Fredoka',sans-serif; pointer-events:none; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .topbar .pill{ background:rgba(26,16,36,.78); border:1px solid rgba(255,255,255,.14); padding:5px 10px; border-radius:999px; font-size:12.5px; pointer-events:auto; }
+  .topbar .pill b{ color:var(--gold); }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(26,16,36,.78); border:1px solid rgba(255,255,255,.14); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px; background:rgba(14,8,20,.88); backdrop-filter:blur(6px); z-index:10; gap:12px; overflow-y:auto; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:24px; margin:0; letter-spacing:1px; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:20px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:18px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:15px; font-weight:600; color:#201530;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:12px 28px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn.cam{ background:linear-gradient(135deg,#4FA8FF,#7fd2ff); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  .toastMsg{ font-size:12.5px; color:var(--red); max-width:260px; }
+  .gestureChips{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; font-size:22px; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill">關卡 <b id="levelTxt">1</b></div>
+      <div class="pill">分數 <b id="scoreTxt">0</b></div>
+    </div>
+  </div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="ov" id="ovMenu">
+    <h1>👍 比讚對決</h1>
+    <p class="sub">記住電腦比出的手勢順序，再對著鏡頭依序比出一模一樣的手勢！每過一關順序會多一個，看你能記到第幾關。</p>
+    <div class="gestureChips">✊ ✋ ✌️ 👍 👎</div>
+    <div class="stat">最高關卡 <b id="bestTxt">0</b></div>
+    <div class="btnrow">
+      <button class="btn cam" id="btnStartCam">📷 開啟鏡頭開始</button>
+      <button class="btn alt" id="btnStartDemo">🎬 示範模式</button>
+    </div>
+    <p class="toastMsg hidden" id="camErr"></p>
+  </div>
+
+  <div class="ov hidden" id="ovCleared">
+    <h2>💥 挑戰結束</h2>
+    <p class="sub" id="clearedDetail"></p>
+    <div class="stat">本局分數 <b id="finalScoreTxt">0</b></div>
+    <div class="btnrow">
+      <button class="btn" id="btnReplay">再玩一次</button>
+      <button class="btn alt" id="btnBackMenu1">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var $=function(id){return document.getElementById(id);};
+
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__TS_AC=AC; }catch(e){} } return AC; }
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.exponentialRampToValueAtTime(sweepTo,c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.15,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sfxShow(i){ playTone(440+i*60,0.14,'triangle',0.13); }
+function sfxCorrect(){ playTone(700,0.08,'triangle',0.1,1000); }
+function sfxWrong(){ playTone(150,0.22,'sawtooth',0.14,80); }
+function sfxLevelUp(){ playTone(523,0.08,'triangle',0.12); setTimeout(function(){playTone(659,0.08,'triangle',0.12);},80); setTimeout(function(){playTone(784,0.14,'triangle',0.13);},160); }
+
+function loadBest(){ try{ return parseInt(localStorage.getItem('ts_best')||'0',10)||0; }catch(e){ return 0; } }
+function saveBest(v){ try{ localStorage.setItem('ts_best', String(v)); }catch(e){} }
+
+var GESTURES=[
+  {id:'Closed_Fist', emoji:'✊', name:'拳頭'},
+  {id:'Open_Palm', emoji:'✋', name:'手掌'},
+  {id:'Victory', emoji:'✌️', name:'勝利'},
+  {id:'Thumb_Up', emoji:'👍', name:'讚'},
+  {id:'Thumb_Down', emoji:'👎', name:'倒讚'}
+];
+function randGesture(){ return GESTURES[Math.floor(Math.random()*GESTURES.length)]; }
+
+function S0(){
+  return {
+    phase:'menu', // menu | watch | recall | cleared | paused
+    prePausePhase:null,
+    demo:false,
+    stream:null,
+    level:1,
+    score:0,
+    best:loadBest(),
+    sequence:[],
+    watchIdx:0,
+    watchTimer:0,
+    recallIdx:0,
+    stepTimeLeft:0,
+    flashGesture:null,
+    flashUntil:0,
+    currentDetected:null,
+    holdGesture:null,
+    holdStart:0,
+    lastAcceptedAt:0,
+    shake:0,
+    t:0,
+    demoTimers:[]
+  };
+}
+var S=S0();
+
+function resetState(){
+  var fresh=S0();
+  fresh.best=S.best;
+  for(var k in S){ if(Object.prototype.hasOwnProperty.call(S,k)) delete S[k]; }
+  for(var k2 in fresh){ if(Object.prototype.hasOwnProperty.call(fresh,k2)) S[k2]=fresh[k2]; }
+}
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+
+function renderHUD(){
+  $('levelTxt').textContent=String(S.level);
+  $('scoreTxt').textContent=String(S.score);
+}
+
+var STEP_TIMEOUT=4.2;
+
+function startLevel(){
+  S.sequence.push(randGesture());
+  S.watchIdx=0;
+  S.recallIdx=0;
+  S.phase='watch';
+  S.watchTimer=0.5; // initial pause before first flash
+  S.flashGesture=null;
+  renderHUD();
+}
+
+function updateWatch(dt){
+  S.watchTimer-=dt;
+  if(S.watchTimer<=0){
+    if(S.flashGesture){
+      // currently showing a gesture -> hide it, move to gap
+      S.flashGesture=null;
+      S.watchTimer=0.25;
+      S.watchIdx++;
+      if(S.watchIdx>=S.sequence.length){
+        S.phase='recall';
+        S.recallIdx=0;
+        S.stepTimeLeft=STEP_TIMEOUT;
+        S.holdGesture=null;
+      }
+    } else if(S.phase==='watch'){
+      S.flashGesture=S.sequence[S.watchIdx];
+      S.watchTimer=0.62;
+      sfxShow(S.watchIdx);
+    }
+  }
+}
+
+function tryAcceptGesture(gid){
+  if(S.phase!=='recall') return;
+  var expected=S.sequence[S.recallIdx];
+  if(gid===expected.id){
+    sfxCorrect();
+    S.recallIdx++;
+    S.stepTimeLeft=STEP_TIMEOUT;
+    S.holdGesture=null;
+    if(S.recallIdx>=S.sequence.length){
+      S.score+=10*S.level;
+      S.level++;
+      sfxLevelUp();
+      startLevel();
+    }
+  } else {
+    sfxWrong();
+    S.shake=0.4;
+    endRound();
+  }
+}
+
+function updateRecall(dt){
+  S.stepTimeLeft-=dt;
+  if(S.stepTimeLeft<=0){
+    sfxWrong();
+    S.shake=0.4;
+    endRound();
+  }
+}
+
+function startCamera(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return Promise.reject({name:'NoMedia'});
+  return navigator.mediaDevices.getUserMedia({ video:{facingMode:'user', width:{ideal:480}, height:{ideal:640}}, audio:false })
+    .then(function(s){ S.stream=s; video.srcObject=s; return video.play().catch(function(){}); });
+}
+function stopCamera(){
+  if(S.stream){ S.stream.getTracks().forEach(function(t){t.stop();}); S.stream=null; }
+}
+
+var video=document.createElement('video');
+video.setAttribute('playsinline',''); video.muted=true;
+
+// ---- GestureRecognizer loading (mirrors proven rps-master.html pattern) ----
+var rec=null, rs='idle';
+function loadRec(){
+  if(rs==='ready'||rs==='loading') return Promise.resolve();
+  rs='loading';
+  var bases=['0.10.14','0.10.9'];
+  var at=function(i){
+    if(i>=bases.length){ rs='failed'; return Promise.resolve(); }
+    var base='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@'+bases[i];
+    return import(/* @vite-ignore */ base+'/vision_bundle.mjs').then(function(mod){
+      return mod.FilesetResolver.forVisionTasks(base+'/wasm').then(function(fs){
+        var mk=function(d){ return mod.GestureRecognizer.createFromOptions(fs,{
+          baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task',delegate:d},
+          runningMode:'VIDEO', numHands:1
+        }); };
+        return mk('GPU').catch(function(){ return mk('CPU'); });
+      }).then(function(r){ rec=r; rs='ready'; });
+    }).catch(function(){ return at(i+1); });
+  };
+  return at(0);
+}
+
+var lastVT=-1;
+function detectGesture(now){
+  if(S.demo || rs!=='ready' || !video.videoWidth) return;
+  if(video.currentTime===lastVT) return;
+  lastVT=video.currentTime;
+  try{
+    var r=rec.recognizeForVideo(video, now);
+    var g=r && r.gestures && r.gestures[0] && r.gestures[0][0];
+    S.currentDetected = g ? g.categoryName : null;
+  }catch(e){}
+}
+
+function updateHold(dt,nowMs){
+  if(S.demo) return;
+  if(S.phase!=='recall') return;
+  var det=S.currentDetected;
+  if(det && GESTURES.some(function(g){return g.id===det;})){
+    if(S.holdGesture===det){
+      if(nowMs-S.holdStart>350){
+        tryAcceptGesture(det);
+        S.holdGesture=null;
+      }
+    } else {
+      S.holdGesture=det;
+      S.holdStart=nowMs;
+    }
+  } else {
+    S.holdGesture=null;
+  }
+}
+
+function drawCameraFrame(){
+  if(!video.videoWidth) return false;
+  var vw=video.videoWidth, vh=video.videoHeight;
+  var scale=Math.max(W/vw, H/vh);
+  var dw=vw*scale, dh=vh*scale;
+  var dx=(W-dw)/2, dy=(H-dh)/2;
+  ctx.save();
+  ctx.globalAlpha=0.55;
+  ctx.translate(W,0); ctx.scale(-1,1);
+  ctx.drawImage(video, dx, dy, dw, dh);
+  ctx.restore();
+  return true;
+}
+
+function startPlaying(useDemo){
+  hide('ovMenu'); hide('ovCleared'); hide('ovPause');
+  $('camErr').classList.add('hidden');
+  resetState();
+  S.demo=!!useDemo;
+
+  if(S.demo){
+    beginPlayingPhase();
+    scheduleDemoAutopilot();
+  } else {
+    $('btnStartCam').textContent='開啟相機中…';
+    Promise.all([startCamera(), loadRec()]).then(function(){
+      beginPlayingPhase();
+    }).catch(function(err){
+      $('btnStartCam').textContent='📷 開啟鏡頭開始';
+      var m = (err&&err.name==='NotAllowedError') ? '沒有取得相機權限，請允許存取相機，或改用示範模式。' : '無法開啟相機，可改用示範模式體驗遊戲。';
+      $('camErr').textContent=m;
+      $('camErr').classList.remove('hidden');
+    });
+  }
+}
+
+function beginPlayingPhase(){
+  startLevel();
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  renderHUD();
+}
+
+function scheduleDemoAutopilot(){
+  function tick(){
+    if(S.phase!=='recall' && S.phase!=='watch'){ return; }
+    if(S.phase==='recall' && !S._demoStepScheduled){
+      S._demoStepScheduled=true;
+      var expected=S.sequence[S.recallIdx];
+      var id=setTimeout(function(){
+        if(S.phase==='recall'){ tryAcceptGesture(expected.id); }
+        S._demoStepScheduled=false;
+      }, 350+Math.random()*250);
+      S.demoTimers.push(id);
+    }
+    var id2=setTimeout(tick, 80);
+    S.demoTimers.push(id2);
+  }
+  tick();
+}
+
+function endRound(){
+  S.phase='cleared';
+  $('topbar').classList.remove('on'); $('menuBtn').classList.remove('on');
+  stopCamera();
+  S.demoTimers.forEach(function(id){ clearTimeout(id); });
+  S.demoTimers=[];
+  var reached=S.level;
+  var isNew=false;
+  if(reached>S.best){ S.best=reached; saveBest(S.best); isNew=true; }
+  $('finalScoreTxt').textContent=String(S.score);
+  $('clearedDetail').textContent='闖到第 '+reached+' 關！'+(isNew?' 🎉創下新紀錄！':'');
+  show('ovCleared');
+}
+
+function updateGame(dt,nowMs){
+  S.t+=dt;
+  if(S.shake>0) S.shake-=dt;
+  if(S.phase==='watch') updateWatch(dt);
+  else if(S.phase==='recall'){ updateRecall(dt); updateHold(dt,nowMs); }
+}
+
+function drawBG(){
+  var haveFrame=false;
+  if(!S.demo && (S.phase==='watch'||S.phase==='recall'||S.phase==='paused')) haveFrame=drawCameraFrame();
+  if(!haveFrame){
+    var bg=ctx.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'#2B1A3D'); bg.addColorStop(1,'#1A1024');
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+    if(S.demo && (S.phase==='watch'||S.phase==='recall'||S.phase==='paused')){
+      ctx.font='13px "Noto Sans TC",sans-serif';
+      ctx.fillStyle='rgba(255,255,255,.35)';
+      ctx.textAlign='center';
+      ctx.fillText('🎬 示範模式（未使用鏡頭）', W/2, 70);
+    }
+  } else {
+    ctx.save(); ctx.globalAlpha=0.25; ctx.fillStyle='#1A1024'; ctx.fillRect(0,0,W,H); ctx.restore();
+  }
+}
+
+function drawSequenceDots(){
+  var n=S.sequence.length;
+  var spacing=28, totalW=(n-1)*spacing;
+  var x0=W/2-totalW/2, y=140;
+  for(var i=0;i<n;i++){
+    var x=x0+i*spacing;
+    var state = S.phase==='watch' ? (i<S.watchIdx?'done':(i===S.watchIdx?'active':'idle'))
+              : (i<S.recallIdx?'done':(i===S.recallIdx?'active':'idle'));
+    ctx.beginPath();
+    ctx.arc(x,y,7,0,Math.PI*2);
+    ctx.fillStyle = state==='done' ? 'rgba(92,230,140,.9)' : state==='active' ? 'rgba(255,200,61,.95)' : 'rgba(255,255,255,.2)';
+    ctx.fill();
+  }
+}
+
+function drawCenterGesture(){
+  var shakeX = S.shake>0 ? Math.sin(S.t*60)*6*S.shake/0.4 : 0;
+  ctx.save();
+  ctx.translate(W/2+shakeX, 320);
+  if(S.phase==='watch'){
+    ctx.font='16px "Fredoka",sans-serif';
+    ctx.fillStyle='rgba(255,255,255,.7)';
+    ctx.textAlign='center';
+    ctx.fillText('請記住順序…', 0, -70);
+    if(S.flashGesture){
+      ctx.save();
+      var glow=ctx.createRadialGradient(0,0,10,0,0,90);
+      glow.addColorStop(0,'rgba(255,200,61,.35)');
+      glow.addColorStop(1,'rgba(255,200,61,0)');
+      ctx.fillStyle=glow;
+      ctx.beginPath(); ctx.arc(0,0,90,0,Math.PI*2); ctx.fill();
+      ctx.font='84px sans-serif';
+      ctx.textBaseline='middle';
+      ctx.fillText(S.flashGesture.emoji, 0, 6);
+      ctx.restore();
+    }
+  } else if(S.phase==='recall'){
+    ctx.font='16px "Fredoka",sans-serif';
+    ctx.fillStyle='rgba(255,255,255,.7)';
+    ctx.textAlign='center';
+    ctx.fillText('輪到你了！比出第 '+(S.recallIdx+1)+' 個手勢', 0, -90);
+
+    // countdown ring
+    var pct=Math.max(0,S.stepTimeLeft/STEP_TIMEOUT);
+    ctx.beginPath();
+    ctx.arc(0,0,70,-Math.PI/2,-Math.PI/2+Math.PI*2*pct);
+    ctx.strokeStyle = pct<0.3 ? 'rgba(255,90,107,.9)' : 'rgba(255,200,61,.8)';
+    ctx.lineWidth=5;
+    ctx.stroke();
+
+    ctx.font='60px sans-serif';
+    ctx.textBaseline='middle';
+    var hint = S.demo ? '🤔' : (S.holdGesture ? (GESTURES.find(function(g){return g.id===S.holdGesture;})||{emoji:'🤔'}).emoji : '🤔');
+    ctx.fillText(hint, 0, 6);
+
+    if(!S.demo){
+      ctx.font='12px "Noto Sans TC",sans-serif';
+      ctx.fillStyle='rgba(255,255,255,.55)';
+      ctx.fillText(S.currentDetected ? ('偵測到：'+(GESTURES.find(function(g){return g.id===S.currentDetected;})||{name:S.currentDetected}).name) : '請比出手勢', 0, 90);
+    }
+  }
+  ctx.restore();
+}
+
+function draw(){
+  drawBG();
+  if(!(S.phase==='watch' || S.phase==='recall' || S.phase==='paused')) return;
+  drawSequenceDots();
+  drawCenterGesture();
+}
+
+var lastTs=0;
+function loop(ts){
+  var dtRaw=(ts-lastTs)/1000;
+  lastTs=ts;
+  var dt=Math.min(0.05, isNaN(dtRaw)?0:dtRaw);
+
+  if(!S.demo && (S.phase==='recall')){
+    detectGesture(ts);
+  }
+
+  draw();
+
+  if(S.phase==='watch' || S.phase==='recall'){
+    updateGame(dt, ts);
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+$('btnStartCam').addEventListener('click',function(){ startPlaying(false); });
+$('btnStartDemo').addEventListener('click',function(){ startPlaying(true); });
+$('btnReplay').addEventListener('click',function(){ startPlaying(S.demo); });
+$('btnBackMenu1').addEventListener('click',function(){ backToMenu(); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){
+  if(S.phase==='paused'){ hide('ovPause'); S.phase=S.prePausePhase||'recall'; }
+});
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='watch' && S.phase!=='recall') return;
+  S.prePausePhase=S.phase;
+  S.phase='paused';
+  show('ovPause');
+});
+
+function backToMenu(){
+  hide('ovCleared'); hide('ovPause');
+  stopCamera();
+  S.demoTimers.forEach(function(id){ clearTimeout(id); });
+  S.demoTimers=[];
+  S.phase='menu';
+  $('topbar').classList.remove('on'); $('menuBtn').classList.remove('on');
+  $('bestTxt').textContent=String(S.best);
+  show('ovMenu');
+}
+$('bestTxt').textContent=String(S.best);
+
+window.__TS = {
+  state:S,
+  startCam:function(){ startPlaying(false); },
+  startDemo:function(){ startPlaying(true); },
+  acceptGesture:tryAcceptGesture,
+  isGameOver:function(){ return S.phase==='cleared'; },
+  forceEnd:function(){ if(S.phase==='watch'||S.phase==='recall'){ endRound(); } },
+  skipToRecall:function(){ S.phase='recall'; S.recallIdx=0; S.stepTimeLeft=STEP_TIMEOUT; },
+  advance:function(seconds){
+    var steps=Math.ceil(seconds/0.05);
+    for(var i=0;i<steps;i++){ if(S.phase==='watch'||S.phase==='recall'){ updateGame(0.05, S.t*1000); } }
+  }
+};
+</script>
+</body>
+</html>
