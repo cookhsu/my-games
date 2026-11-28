@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop',''); a.setAttribute('playsinline',''); a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__PT_AC && window.__PT_AC.state==='suspended'){ window.__PT_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>鋼琴階梯</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#10141F; --ink:#F2F4FF; --muted:#9AA3C0; --gold:#FFC83D; --red:#FF5A6B; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{ display:flex; align-items:center; justify-content:center; font-family:'Noto Sans TC','Fredoka',sans-serif;
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #1b2236 0%, #10141F 65%); }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh; aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; position:absolute; touch-action:none; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 56px 0 14px; font-family:'Fredoka',sans-serif; pointer-events:none; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; justify-content:space-between; }
+  .topbar .pill{ background:rgba(10,14,24,.6); border:1px solid rgba(255,255,255,.12); padding:5px 11px; border-radius:999px; font-size:13px; }
+  .topbar .pill b{ color:var(--gold); }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(10,14,24,.6); border:1px solid rgba(255,255,255,.12); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:28px; background:rgba(8,10,18,.76); backdrop-filter:blur(6px); z-index:10; gap:14px; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:29px; margin:0; letter-spacing:1px; color:var(--ink); }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:21px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13.5px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; color:#10141f;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:13px 32px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill">分數 <b id="scoreTxt">0</b></div>
+      <div class="pill">最佳 <b id="bestTxt2">0</b></div>
+    </div>
+  </div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="ov" id="ovMenu">
+    <h1>🎹 鋼琴階梯</h1>
+    <p class="sub">彩色音磚從上方落下，趁它還在畫面上時點擊所在的軌道。點錯沒有音磚的軌道，或讓音磚掉出畫面，遊戲就結束。速度會越來越快！</p>
+    <div class="stat">最佳紀錄 <b id="bestTxt">0</b> 分</div>
+    <button class="btn" id="btnStart">開始彈奏</button>
+  </div>
+
+  <div class="ov hidden" id="ovLose">
+    <h2>🎵 彈錯了</h2>
+    <p class="sub" id="loseDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetry">再玩一次</button>
+      <button class="btn alt" id="btnMenu1">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var $=function(id){return document.getElementById(id);};
+
+function mulberry32(seed){
+  return function(){
+    seed|=0; seed=(seed+0x6D2B79F5)|0;
+    var t=Math.imul(seed^seed>>>15,1|seed);
+    t=t+Math.imul(t^t>>>7,61|t)^t;
+    return ((t^t>>>14)>>>0)/4294967296;
+  };
+}
+var rng=mulberry32(Date.now()|0);
+
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__PT_AC=AC; }catch(e){} } return AC; }
+var NOTE_FREQS=[523.25,587.33,659.25,783.99]; // C5 D5 E5 G5, pentatonic-ish per lane
+function playTone(freq,dur,type,vol){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    g.gain.setValueAtTime(vol||0.16,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sfxNote(lane){ playTone(NOTE_FREQS[lane]||523,0.18,'sine',0.15); }
+function sfxFail(){ playTone(140,0.35,'sawtooth',0.18); }
+
+var LANES=4;
+var LANE_W=W/LANES;
+var LANE_COLORS=['#FF5A6B','#FFC83D','#5CE68C','#4DD0FF'];
+var TILE_H=130;
+var BASE_SPEED=230;
+var SPEED_PER_SCORE=2.6;
+var SPEED_CAP=620;
+
+function S0(){
+  var best=0;
+  try{ var v=localStorage.getItem('pt_best'); if(v) best=parseInt(v,10)||0; }catch(e){}
+  return {
+    phase:'menu',
+    prePausePhase:null,
+    score:0,
+    best:best,
+    tiles:[],
+    spawnTimer:0,
+    lastLane:-1,
+    flashLane:-1,
+    flashT:0
+  };
+}
+var S=S0();
+
+function resetState(){
+  var fresh=S0();
+  for(var k in S){ if(Object.prototype.hasOwnProperty.call(S,k)) delete S[k]; }
+  for(var k2 in fresh){ if(Object.prototype.hasOwnProperty.call(fresh,k2)) S[k2]=fresh[k2]; }
+}
+
+function speed(){ return Math.min(SPEED_CAP, BASE_SPEED + S.score*SPEED_PER_SCORE); }
+
+function pickLane(){
+  var lane;
+  do{ lane=Math.floor(rng()*LANES); }while(lane===S.lastLane && rng()<0.7);
+  S.lastLane=lane;
+  return lane;
+}
+
+function spawnTile(){
+  S.tiles.push({ lane:pickLane(), y:-TILE_H, hit:false });
+}
+
+function startGame(){
+  rng=mulberry32(Date.now()|0);
+  resetState();
+  S.phase='playing';
+  spawnTile();
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  renderHUD();
+}
+
+function renderHUD(){
+  $('scoreTxt').textContent=String(S.score);
+  $('bestTxt2').textContent=String(S.best);
+  $('bestTxt').textContent=String(S.best);
+}
+
+function update(dt){
+  if(S.flashT>0) S.flashT=Math.max(0,S.flashT-dt);
+  if(S.phase!=='playing') return;
+  var spd=speed();
+  S.spawnTimer-=dt;
+  if(S.spawnTimer<=0){
+    spawnTile();
+    S.spawnTimer = TILE_H/spd; // keep tiles edge-to-edge, continuous stream
+  }
+  for(var i=0;i<S.tiles.length;i++){
+    var t=S.tiles[i];
+    if(t.hit) continue;
+    t.y += spd*dt;
+    if(t.y > H){
+      // missed a tile completely -> fail
+      endGame('missed');
+      return;
+    }
+  }
+  // cleanup hit tiles once off-screen
+  S.tiles = S.tiles.filter(function(t){ return !(t.hit && t.y>H+40); });
+}
+
+function tapLane(lane){
+  if(S.phase!=='playing') return;
+  if(lane<0||lane>=LANES) return;
+  // find topmost (smallest y) un-hit tile in this lane that's still on screen
+  var found=null;
+  for(var i=0;i<S.tiles.length;i++){
+    var t=S.tiles[i];
+    if(!t.hit && t.lane===lane && t.y>-TILE_H && t.y<H){
+      if(!found || t.y<found.y) found=t;
+    }
+  }
+  if(found){
+    found.hit=true;
+    S.score++;
+    sfxNote(lane);
+    S.flashLane=lane; S.flashT=0.12;
+    renderHUD();
+  }else{
+    endGame('wrong');
+  }
+}
+
+function endGame(reason){
+  S.phase='lose';
+  sfxFail();
+  if(S.score>S.best){ S.best=S.score; try{localStorage.setItem('pt_best',String(S.best));}catch(e){} }
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  var msg = reason==='wrong' ? '點到沒有音磚的軌道了！' : '音磚掉出畫面了！';
+  $('loseDetail').textContent=msg+' 得分 '+S.score+' 分，最佳 '+S.best+' 分。';
+  show('ovLose');
+  renderHUD();
+}
+
+function backToMenu(){
+  S.phase='menu';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  show('ovMenu');
+}
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+
+$('btnStart').addEventListener('click',function(){ hide('ovMenu'); startGame(); });
+$('btnRetry').addEventListener('click',function(){ hide('ovLose'); startGame(); });
+$('btnMenu1').addEventListener('click',function(){ hide('ovLose'); backToMenu(); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){
+  if(S.phase==='paused'){ hide('ovPause'); S.phase=S.prePausePhase||'playing'; }
+});
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='playing') return;
+  S.prePausePhase=S.phase;
+  S.phase='paused';
+  show('ovPause');
+});
+
+function getPos(e){
+  var rect=cv.getBoundingClientRect();
+  var cx = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
+  var scaleX=W/rect.width;
+  return (cx-rect.left)*scaleX;
+}
+cv.addEventListener('pointerdown',function(e){
+  e.preventDefault();
+  if(S.phase!=='playing') return;
+  var x=getPos(e);
+  var lane=Math.floor(x/LANE_W);
+  tapLane(lane);
+},{passive:false});
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  var grd=ctx.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0,'#1b2236'); grd.addColorStop(1,'#10141F');
+  ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+
+  // lane dividers
+  ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=2;
+  for(var l=1;l<LANES;l++){
+    ctx.beginPath(); ctx.moveTo(l*LANE_W,0); ctx.lineTo(l*LANE_W,H); ctx.stroke();
+  }
+  // lane flash feedback
+  if(S.flashT>0 && S.flashLane>=0){
+    ctx.fillStyle='rgba(255,200,61,'+(S.flashT/0.12*0.18)+')';
+    ctx.fillRect(S.flashLane*LANE_W,0,LANE_W,H);
+  }
+
+  // hit line near bottom
+  var HIT_Y=H-90;
+  ctx.strokeStyle='rgba(255,255,255,.18)'; ctx.lineWidth=2;
+  ctx.setLineDash([6,5]);
+  ctx.beginPath(); ctx.moveTo(0,HIT_Y); ctx.lineTo(W,HIT_Y); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // tiles
+  for(var i=0;i<S.tiles.length;i++){
+    var t=S.tiles[i];
+    var x=t.lane*LANE_W;
+    var col=LANE_COLORS[t.lane];
+    if(t.hit){
+      ctx.globalAlpha=0.28;
+      ctx.fillStyle=col;
+      ctx.fillRect(x+3,t.y+3,LANE_W-6,TILE_H-6);
+      ctx.globalAlpha=1;
+    }else{
+      ctx.globalAlpha=0.85;
+      ctx.fillStyle=col;
+      ctx.fillRect(x+3,t.y+3,LANE_W-6,TILE_H-6);
+      ctx.globalAlpha=1;
+      ctx.fillStyle='rgba(16,20,31,.55)';
+      ctx.fillRect(x+9,t.y+9,LANE_W-18,TILE_H-18);
+    }
+    ctx.strokeStyle='rgba(255,255,255,.18)'; ctx.lineWidth=1.5;
+    ctx.strokeRect(x+3,t.y+3,LANE_W-6,TILE_H-6);
+  }
+
+  // lane bottom hit zones (subtle)
+  ctx.fillStyle='rgba(255,255,255,.03)';
+  ctx.fillRect(0,H-6,W,6);
+}
+
+var lastT=null;
+function loop(ts){
+  if(lastT===null) lastT=ts;
+  var dt=Math.min(0.05,(ts-lastT)/1000);
+  lastT=ts;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+renderHUD();
+
+window.__PT = {
+  state:S,
+  lanes:LANES,
+  start:function(){ $('btnStart').click(); },
+  retry:function(){ if(!$('ovLose').classList.contains('hidden')) $('btnRetry').click(); },
+  tapLane:function(lane){ tapLane(lane); },
+  advance:function(seconds){
+    var steps=Math.round(seconds/0.016);
+    for(var i=0;i<steps;i++) update(0.016);
+  }
+};
+})();
+</script>
+</body>
+</html>
