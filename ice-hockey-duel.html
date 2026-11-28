@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop',''); a.setAttribute('playsinline',''); a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__AH_AC && window.__AH_AC.state==='suspended'){ window.__AH_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>滑冰曲棍球對決</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#071226; --ink:#EAF4FF; --muted:#7E93B5; --gold:#FFC83D; --red:#FF5A6B; --blue:#4DD0FF; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{ display:flex; align-items:center; justify-content:center; font-family:'Noto Sans TC','Fredoka',sans-serif;
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #0c2340 0%, #071226 65%); }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh; aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; position:absolute; touch-action:none; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 56px 0 14px; font-family:'Fredoka',sans-serif; pointer-events:none; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; justify-content:space-between; }
+  .topbar .pill{ background:rgba(6,10,20,.6); border:1px solid rgba(255,255,255,.12); padding:5px 11px; border-radius:999px; font-size:13px; }
+  .topbar .pill b{ color:var(--gold); }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(6,10,20,.6); border:1px solid rgba(255,255,255,.12); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:28px; background:rgba(5,8,16,.8); backdrop-filter:blur(6px); z-index:10; gap:14px; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:26px; margin:0; letter-spacing:1px; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:21px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13.5px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; color:#0c1524;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:13px 32px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill">🔵 你 <b id="pScoreTxt">0</b></div>
+      <div class="pill">🔴 對手 <b id="aScoreTxt">0</b></div>
+      <div class="pill">目標 <b>7</b></div>
+    </div>
+  </div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="ov" id="ovMenu">
+    <h1>🏒 滑冰曲棍球對決</h1>
+    <p class="sub">用手指拖曳你的藍色球桿擊球，把冰球打進對手球門。先得 7 分獲勝，但要小心守住自己的球門！</p>
+    <div class="stat">戰績 <b id="bestTxt">0 勝</b></div>
+    <button class="btn" id="btnStart">開始對決</button>
+  </div>
+
+  <div class="ov hidden" id="ovLose">
+    <h2>😮 惜敗</h2>
+    <p class="sub" id="loseDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetry">再戰一場</button>
+      <button class="btn alt" id="btnMenu1">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovWin">
+    <h2>🏆 獲勝！</h2>
+    <p class="sub" id="winDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetryWin">再戰一場</button>
+      <button class="btn alt" id="btnMenu3">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var $=function(id){return document.getElementById(id);};
+
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__AH_AC=AC; }catch(e){} } return AC; }
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.exponentialRampToValueAtTime(sweepTo,c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.15,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sfxHit(){ playTone(360,0.06,'square',0.12,220); }
+function sfxWall(){ playTone(260,0.04,'sine',0.07,180); }
+function sfxGoalPlayer(){ playTone(523,0.1,'triangle',0.15); setTimeout(function(){playTone(659,0.12,'triangle',0.16);},90); setTimeout(function(){playTone(784,0.18,'triangle',0.17);},180); }
+function sfxGoalAi(){ playTone(300,0.14,'sawtooth',0.14,150); }
+function sfxWin(){ playTone(523,0.1,'triangle',0.14); setTimeout(function(){playTone(659,0.1,'triangle',0.14);},90); setTimeout(function(){playTone(880,0.2,'triangle',0.16);},180); }
+function sfxLose(){ playTone(220,0.32,'sawtooth',0.15,60); }
+
+var TABLE_LEFT=22, TABLE_RIGHT=338, TABLE_TOP=42, TABLE_BOTTOM=598;
+var MID_Y=(TABLE_TOP+TABLE_BOTTOM)/2;
+var GOAL_HALF_W=52;
+var PUCK_R=13, MALLET_R=22;
+var FRICTION=0.993;
+var MAX_SPEED=820;
+var MIN_HIT_SPEED=340;
+var AI_MAX_SPEED=235;
+var WIN_SCORE=7;
+var SERVE_DELAY=0.9;
+
+function mulberry32(seed){
+  return function(){
+    seed|=0; seed=(seed+0x6D2B79F5)|0;
+    var t=Math.imul(seed^(seed>>>15),1|seed);
+    t=(t+Math.imul(t^(t>>>7),61|t))^t;
+    return ((t^(t>>>14))>>>0)/4294967296;
+  };
+}
+var rng=mulberry32(Date.now()&0xffffffff);
+
+function clamp(v,lo,hi){ return Math.max(lo,Math.min(hi,v)); }
+
+function loadBest(){
+  try{ var v=localStorage.getItem('ah_wins'); return v?parseInt(v,10)||0:0; }catch(e){ return 0; }
+}
+function saveBest(n){ try{ localStorage.setItem('ah_wins',String(n)); }catch(e){} }
+
+function S0(){
+  return {
+    phase:'menu',
+    prePausePhase:null,
+    player:{x:W/2,y:TABLE_BOTTOM-70,prevX:W/2,prevY:TABLE_BOTTOM-70,vx:0,vy:0,dragging:false},
+    ai:{x:W/2,y:TABLE_TOP+70,vx:0,vy:0},
+    puck:{x:W/2,y:MID_Y,vx:0,vy:0},
+    pScore:0,
+    aScore:0,
+    serveTimer:0,
+    serveTo:null,
+    wins:loadBest()
+  };
+}
+var S=S0();
+
+function resetState(){
+  var fresh=S0();
+  for(var k in S){ if(Object.prototype.hasOwnProperty.call(S,k)) delete S[k]; }
+  for(var k2 in fresh){ if(Object.prototype.hasOwnProperty.call(fresh,k2)) S[k2]=fresh[k2]; }
+}
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+
+function renderHUD(){
+  $('pScoreTxt').textContent=String(S.pScore);
+  $('aScoreTxt').textContent=String(S.aScore);
+  $('bestTxt').textContent=S.wins+' 勝';
+}
+
+function serve(toward){
+  S.puck.x=W/2; S.puck.y=MID_Y;
+  var angle=(rng()*0.7-0.35); // slight random angle
+  var dir = toward==='player' ? 1 : -1;
+  var speed=260+rng()*80;
+  S.puck.vx=Math.sin(angle)*speed;
+  S.puck.vy=Math.cos(angle)*speed*dir;
+  S.serveTimer=0;
+  S.serveTo=null;
+}
+
+function startGame(){
+  resetState();
+  S.phase='playing';
+  serve(rng()<0.5?'player':'ai');
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  renderHUD();
+}
+
+function goalScored(who){
+  if(who==='player'){ S.pScore++; sfxGoalPlayer(); }
+  else { S.aScore++; sfxGoalAi(); }
+  renderHUD();
+  if(S.pScore>=WIN_SCORE){ winGame(); return; }
+  if(S.aScore>=WIN_SCORE){ loseGame(); return; }
+  S.puck.x=W/2; S.puck.y=MID_Y; S.puck.vx=0; S.puck.vy=0;
+  S.serveTo = who==='player' ? 'ai' : 'player';
+  S.serveTimer=SERVE_DELAY;
+}
+
+function winGame(){
+  S.phase='win';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  sfxWin();
+  S.wins++; saveBest(S.wins);
+  $('winDetail').textContent='比分 '+S.pScore+' : '+S.aScore+'，漂亮的勝利！';
+  show('ovWin');
+}
+
+function loseGame(){
+  S.phase='lose';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  sfxLose();
+  $('loseDetail').textContent='比分 '+S.pScore+' : '+S.aScore+'，再接再厲！';
+  show('ovLose');
+}
+
+function backToMenu(){
+  S.phase='menu';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  show('ovMenu');
+}
+
+$('btnStart').addEventListener('click',function(){ hide('ovMenu'); startGame(); });
+$('btnRetry').addEventListener('click',function(){ hide('ovLose'); startGame(); });
+$('btnRetryWin').addEventListener('click',function(){ hide('ovWin'); startGame(); });
+$('btnMenu1').addEventListener('click',function(){ hide('ovLose'); backToMenu(); });
+$('btnMenu3').addEventListener('click',function(){ hide('ovWin'); backToMenu(); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){
+  if(S.phase==='paused'){ hide('ovPause'); S.phase=S.prePausePhase||'playing'; }
+});
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='playing') return;
+  S.prePausePhase=S.phase;
+  S.phase='paused';
+  show('ovPause');
+});
+
+function setPlayerTarget(px,py){
+  if(S.phase!=='playing') return;
+  var x=clamp(px, TABLE_LEFT+MALLET_R, TABLE_RIGHT-MALLET_R);
+  var y=clamp(py, MID_Y+MALLET_R, TABLE_BOTTOM-MALLET_R);
+  S.player.x=x; S.player.y=y;
+}
+
+function toCanvasXY(e){
+  var rect=cv.getBoundingClientRect();
+  var scaleX=W/rect.width, scaleY=H/rect.height;
+  return { x:(e.clientX-rect.left)*scaleX, y:(e.clientY-rect.top)*scaleY };
+}
+
+cv.addEventListener('pointerdown',function(e){
+  e.preventDefault();
+  if(S.phase!=='playing') return;
+  S.player.dragging=true;
+  var p=toCanvasXY(e);
+  setPlayerTarget(p.x,p.y);
+},{passive:false});
+cv.addEventListener('pointermove',function(e){
+  e.preventDefault();
+  if(S.phase!=='playing' || !S.player.dragging) return;
+  var p=toCanvasXY(e);
+  setPlayerTarget(p.x,p.y);
+},{passive:false});
+window.addEventListener('pointerup',function(){ S.player.dragging=false; });
+window.addEventListener('pointercancel',function(){ S.player.dragging=false; });
+
+function updateAI(dt){
+  var ai=S.ai, puck=S.puck;
+  var targetX, targetY;
+  if(puck.vy < 0 || puck.y < MID_Y){
+    // puck moving toward AI or already in AI half: track it
+    targetX = puck.x;
+    targetY = clamp(puck.y, TABLE_TOP+MALLET_R, MID_Y-MALLET_R);
+  } else {
+    // defend near goal, drift toward center-ish x biased by puck x
+    targetX = W/2 + (puck.x-W/2)*0.35;
+    targetY = TABLE_TOP+70;
+  }
+  targetX=clamp(targetX, TABLE_LEFT+MALLET_R, TABLE_RIGHT-MALLET_R);
+  targetY=clamp(targetY, TABLE_TOP+MALLET_R, MID_Y-MALLET_R);
+  var dx=targetX-ai.x, dy=targetY-ai.y;
+  var dist=Math.sqrt(dx*dx+dy*dy);
+  var step=AI_MAX_SPEED*dt;
+  var oldX=ai.x, oldY=ai.y;
+  if(dist<=step || dist<0.0001){ ai.x=targetX; ai.y=targetY; }
+  else { ai.x+=dx/dist*step; ai.y+=dy/dist*step; }
+  ai.vx=(ai.x-oldX)/Math.max(dt,0.0001);
+  ai.vy=(ai.y-oldY)/Math.max(dt,0.0001);
+}
+
+function resolveMalletCollision(mallet){
+  var puck=S.puck;
+  var dx=puck.x-mallet.x, dy=puck.y-mallet.y;
+  var dist=Math.sqrt(dx*dx+dy*dy);
+  var minDist=PUCK_R+MALLET_R;
+  if(dist < minDist && dist>0.0001){
+    var nx=dx/dist, ny=dy/dist;
+    puck.x=mallet.x+nx*minDist;
+    puck.y=mallet.y+ny*minDist;
+    var puckSpeed=Math.sqrt(puck.vx*puck.vx+puck.vy*puck.vy);
+    var malletSpeed=Math.sqrt((mallet.vx||0)*(mallet.vx||0)+(mallet.vy||0)*(mallet.vy||0));
+    var outSpeed=Math.max(puckSpeed*0.6, MIN_HIT_SPEED, malletSpeed*0.9);
+    outSpeed=Math.min(outSpeed, MAX_SPEED);
+    puck.vx=nx*outSpeed + (mallet.vx||0)*0.35;
+    puck.vy=ny*outSpeed + (mallet.vy||0)*0.35;
+    var sp=Math.sqrt(puck.vx*puck.vx+puck.vy*puck.vy);
+    if(sp>MAX_SPEED){ puck.vx=puck.vx/sp*MAX_SPEED; puck.vy=puck.vy/sp*MAX_SPEED; }
+    sfxHit();
+  }
+}
+
+function updatePuck(dt){
+  var puck=S.puck;
+  puck.x+=puck.vx*dt;
+  puck.y+=puck.vy*dt;
+  var decay=Math.pow(FRICTION, dt*60);
+  puck.vx*=decay; puck.vy*=decay;
+
+  // side walls
+  if(puck.x < TABLE_LEFT+PUCK_R){ puck.x=TABLE_LEFT+PUCK_R; puck.vx=Math.abs(puck.vx); sfxWall(); }
+  else if(puck.x > TABLE_RIGHT-PUCK_R){ puck.x=TABLE_RIGHT-PUCK_R; puck.vx=-Math.abs(puck.vx); sfxWall(); }
+
+  // top wall / goal
+  if(puck.y < TABLE_TOP+PUCK_R){
+    if(puck.x > W/2-GOAL_HALF_W && puck.x < W/2+GOAL_HALF_W){
+      if(puck.y < TABLE_TOP-PUCK_R*0.5){ goalScored('player'); return; }
+    } else {
+      puck.y=TABLE_TOP+PUCK_R; puck.vy=Math.abs(puck.vy); sfxWall();
+    }
+  }
+  // bottom wall / goal
+  if(puck.y > TABLE_BOTTOM-PUCK_R){
+    if(puck.x > W/2-GOAL_HALF_W && puck.x < W/2+GOAL_HALF_W){
+      if(puck.y > TABLE_BOTTOM+PUCK_R*0.5){ goalScored('ai'); return; }
+    } else {
+      puck.y=TABLE_BOTTOM-PUCK_R; puck.vy=-Math.abs(puck.vy); sfxWall();
+    }
+  }
+
+  resolveMalletCollision(S.player);
+  resolveMalletCollision(S.ai);
+}
+
+function update(dt){
+  if(S.phase!=='playing') return;
+  if(S.serveTimer>0){
+    S.serveTimer-=dt;
+    if(S.serveTimer<=0 && S.serveTo){ serve(S.serveTo); }
+    updateAI(dt);
+    return;
+  }
+  // player velocity tracked via position delta
+  S.player.vx=(S.player.x-S.player.prevX)/Math.max(dt,0.0001);
+  S.player.vy=(S.player.y-S.player.prevY)/Math.max(dt,0.0001);
+  S.player.prevX=S.player.x; S.player.prevY=S.player.y;
+  updateAI(dt);
+  updatePuck(dt);
+}
+
+function drawMallet(m,color){
+  ctx.beginPath(); ctx.arc(m.x,m.y+4,MALLET_R*0.95,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,.25)'; ctx.fill();
+  var grd=ctx.createRadialGradient(m.x-6,m.y-6,4,m.x,m.y,MALLET_R);
+  grd.addColorStop(0,'rgba(255,255,255,.7)');
+  grd.addColorStop(0.35,color);
+  grd.addColorStop(1,color);
+  ctx.beginPath(); ctx.arc(m.x,m.y,MALLET_R,0,Math.PI*2);
+  ctx.fillStyle=grd; ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.4)'; ctx.lineWidth=2; ctx.stroke();
+  ctx.beginPath(); ctx.arc(m.x,m.y,MALLET_R*0.4,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,.35)'; ctx.fill();
+}
+
+function drawPuck(p){
+  ctx.beginPath(); ctx.arc(p.x,p.y+3,PUCK_R*0.9,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,.3)'; ctx.fill();
+  ctx.beginPath(); ctx.arc(p.x,p.y,PUCK_R,0,Math.PI*2);
+  ctx.fillStyle='#1a1f2b'; ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.25)'; ctx.lineWidth=1.5; ctx.stroke();
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  var bgGrd=ctx.createLinearGradient(0,0,0,H);
+  bgGrd.addColorStop(0,'#0c2340'); bgGrd.addColorStop(1,'#071226');
+  ctx.fillStyle=bgGrd; ctx.fillRect(0,0,W,H);
+
+  // ice table
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect ? ctx.roundRect(TABLE_LEFT,TABLE_TOP,TABLE_RIGHT-TABLE_LEFT,TABLE_BOTTOM-TABLE_TOP,16) : ctx.rect(TABLE_LEFT,TABLE_TOP,TABLE_RIGHT-TABLE_LEFT,TABLE_BOTTOM-TABLE_TOP);
+  var iceGrd=ctx.createLinearGradient(0,TABLE_TOP,0,TABLE_BOTTOM);
+  iceGrd.addColorStop(0,'#dff3ff'); iceGrd.addColorStop(0.5,'#c3e6ff'); iceGrd.addColorStop(1,'#dff3ff');
+  ctx.fillStyle=iceGrd; ctx.fill();
+  ctx.clip();
+
+  // center line + circle
+  ctx.strokeStyle='rgba(255,90,107,.55)';
+  ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(TABLE_LEFT,MID_Y); ctx.lineTo(TABLE_RIGHT,MID_Y); ctx.stroke();
+  ctx.beginPath(); ctx.arc(W/2,MID_Y,38,0,Math.PI*2); ctx.stroke();
+
+  // goal mouths
+  ctx.fillStyle='rgba(20,30,50,.18)';
+  ctx.fillRect(W/2-GOAL_HALF_W,TABLE_TOP-6,GOAL_HALF_W*2,10);
+  ctx.fillRect(W/2-GOAL_HALF_W,TABLE_BOTTOM-4,GOAL_HALF_W*2,10);
+  ctx.strokeStyle='rgba(255,200,61,.8)'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(W/2-GOAL_HALF_W,TABLE_TOP); ctx.lineTo(W/2+GOAL_HALF_W,TABLE_TOP); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W/2-GOAL_HALF_W,TABLE_BOTTOM); ctx.lineTo(W/2+GOAL_HALF_W,TABLE_BOTTOM); ctx.stroke();
+
+  ctx.restore();
+
+  ctx.strokeStyle='rgba(255,255,255,.5)'; ctx.lineWidth=3;
+  ctx.strokeRect(TABLE_LEFT,TABLE_TOP,TABLE_RIGHT-TABLE_LEFT,TABLE_BOTTOM-TABLE_TOP);
+
+  if(S.phase==='playing' || S.phase==='paused'){
+    drawMallet(S.ai,'#FF5A6B');
+    drawMallet(S.player,'#4DD0FF');
+    drawPuck(S.puck);
+  }
+}
+
+var lastT=null;
+function loop(ts){
+  if(lastT===null) lastT=ts;
+  var dt=Math.min(0.033,(ts-lastT)/1000);
+  lastT=ts;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+renderHUD();
+
+window.__AH = {
+  state:S,
+  start:function(){ $('btnStart').click(); },
+  retry:function(){ if(!$('ovLose').classList.contains('hidden')) $('btnRetry').click(); },
+  retryWin:function(){ if(!$('ovWin').classList.contains('hidden')) $('btnRetryWin').click(); },
+  movePlayerTo:function(x,y){ S.player.dragging=true; setPlayerTarget(x,y); },
+  setPuck:function(x,y,vx,vy){ S.puck.x=x; S.puck.y=y; S.puck.vx=vx; S.puck.vy=vy; S.serveTimer=0; S.serveTo=null; },
+  setAiPos:function(x,y){ S.ai.x=x; S.ai.y=y; },
+  forceGoal:function(who){ goalScored(who); },
+  table:{left:TABLE_LEFT,right:TABLE_RIGHT,top:TABLE_TOP,bottom:TABLE_BOTTOM,midY:MID_Y,goalHalfW:GOAL_HALF_W},
+  winScore:WIN_SCORE,
+  advance:function(seconds){
+    var steps=Math.round(seconds/0.016);
+    for(var i=0;i<steps;i++) update(0.016);
+  }
+};
+})();
+</script>
+</body>
+</html>
