@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop',''); a.setAttribute('playsinline',''); a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__KF_AC && window.__KF_AC.state==='suspended'){ window.__KF_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>功夫對決</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#1a1016; --ink:#FFF3E8; --muted:#C9A99A; --gold:#FFC83D; --red:#FF5A6B; --green:#5CE68C; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{ display:flex; align-items:center; justify-content:center; font-family:'Noto Sans TC','Fredoka',sans-serif;
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #2a1620 0%, #1a1016 65%); }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh; aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+
+  .stage{ position:absolute; inset:0; }
+  .bgband{ position:absolute; left:0; right:0; top:0; height:380px;
+    background:linear-gradient(180deg,#3a1f2c 0%, #241420 100%); }
+  .floor{ position:absolute; left:0; right:0; top:380px; bottom:0; background:#120b0f; }
+  .floor::before{ content:""; position:absolute; top:0; left:0; right:0; height:4px; background:rgba(255,200,61,.25); }
+
+  .hud{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:8px; padding:12px 14px 0 14px; z-index:4; }
+  .hud.on{ display:flex; }
+  .barrow{ display:flex; align-items:center; gap:8px; }
+  .barrow .lbl{ font-size:11px; color:var(--muted); width:34px; flex-shrink:0; }
+  .barwrap{ flex:1; height:12px; border-radius:999px; background:rgba(255,255,255,.08); overflow:hidden; border:1px solid rgba(255,255,255,.1); }
+  .barfill{ height:100%; border-radius:999px; transition:width .15s; }
+  .barfill.enemy{ background:linear-gradient(90deg,#FF5A6B,#FF8A3D); }
+  .barfill.player{ background:linear-gradient(90deg,#5CE68C,#4DD0FF); }
+  .scoreRow{ display:flex; justify-content:space-between; font-size:12px; color:var(--muted); }
+  .scoreRow b{ color:var(--gold); }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(10,14,24,.6); border:1px solid rgba(255,255,255,.12); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .fighters{ position:absolute; top:70px; left:0; right:0; height:260px; display:flex; align-items:flex-end; justify-content:space-around; padding:0 30px; }
+  .fchar{ width:64px; height:150px; position:relative; transition:transform .08s; }
+  .fchar .head{ width:30px; height:30px; border-radius:50%; margin:0 auto; }
+  .fchar .body{ width:40px; height:70px; border-radius:10px; margin:4px auto 0; }
+  .fchar .legs{ width:34px; height:40px; border-radius:0 0 8px 8px; margin:0 auto; }
+  .enemyChar .head{ background:#FF8A3D; } .enemyChar .body{ background:#FF5A6B; } .enemyChar .legs{ background:#8a3a3a; }
+  .playerChar .head{ background:#FFE08A; } .playerChar .body{ background:#4DD0FF; } .playerChar .legs{ background:#2c6b8a; }
+  .fchar.hit{ transform:translateX(-6px) rotate(-4deg); filter:brightness(1.6); }
+  .fchar.punch{ transform:scale(1.08); }
+
+  .telegraph{ position:absolute; left:50%; top:46px; transform:translateX(-50%); display:none; flex-direction:column; align-items:center; gap:4px; z-index:5; }
+  .telegraph.on{ display:flex; }
+  .tgIcon{ font-size:30px; filter:drop-shadow(0 2px 6px rgba(0,0,0,.5)); }
+  .tgBar{ width:70px; height:6px; border-radius:999px; background:rgba(255,255,255,.15); overflow:hidden; }
+  .tgBarFill{ height:100%; background:var(--gold); width:100%; }
+
+  .flashTxt{ position:absolute; left:0; right:0; top:200px; text-align:center; font-family:'Fredoka',sans-serif;
+    font-size:24px; font-weight:700; opacity:0; pointer-events:none; z-index:7; transition:opacity .12s; text-shadow:0 2px 10px rgba(0,0,0,.6); }
+  .flashTxt.show{ opacity:1; }
+  .flashTxt.parry{ color:var(--green); }
+  .flashTxt.wrong{ color:var(--red); }
+  .flashTxt.miss{ color:var(--red); }
+
+  .zones{ position:absolute; left:0; right:0; bottom:28px; display:flex; gap:10px; padding:0 16px; z-index:4; }
+  .zbtn{ flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:14px 0;
+    border-radius:16px; background:rgba(255,255,255,.06); border:2px solid rgba(255,255,255,.12);
+    color:var(--ink); cursor:pointer; transition:background .08s, border-color .08s, transform .08s; }
+  .zbtn .zi{ font-size:26px; }
+  .zbtn .zt{ font-size:12px; color:var(--muted); }
+  .zbtn.active{ border-color:var(--gold); background:rgba(255,200,61,.14); }
+  .zbtn:active{ transform:scale(.95); }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:28px; background:rgba(8,10,18,.8); backdrop-filter:blur(6px); z-index:10; gap:14px; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:28px; margin:0; letter-spacing:1px; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:21px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13.5px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; color:#1a1016;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:13px 32px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <div class="stage">
+    <div class="bgband"></div>
+    <div class="floor"></div>
+
+    <div class="fighters">
+      <div class="fchar playerChar" id="playerChar"><div class="head"></div><div class="body"></div><div class="legs"></div></div>
+      <div class="fchar enemyChar" id="enemyChar"><div class="head"></div><div class="body"></div><div class="legs"></div></div>
+    </div>
+
+    <div class="telegraph" id="telegraph">
+      <div class="tgIcon" id="tgIcon">🥊</div>
+      <div class="tgBar"><div class="tgBarFill" id="tgBarFill"></div></div>
+    </div>
+
+    <div class="flashTxt" id="flashTxt">完美格擋！</div>
+  </div>
+
+  <div class="hud" id="hud">
+    <div class="barrow"><span class="lbl">敵方</span><div class="barwrap"><div class="barfill enemy" id="enemyBar" style="width:100%"></div></div></div>
+    <div class="barrow"><span class="lbl">你</span><div class="barwrap"><div class="barfill player" id="playerBar" style="width:100%"></div></div></div>
+    <div class="scoreRow"><span>連續格擋 <b id="comboTxt">0</b></span><span>最佳 <b id="bestTxt2">0</b></span></div>
+  </div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="zones" id="zones">
+    <div class="zbtn" data-zone="high"><div class="zi">🥊</div><div class="zt">上段</div></div>
+    <div class="zbtn" data-zone="mid"><div class="zi">✋</div><div class="zt">中段</div></div>
+    <div class="zbtn" data-zone="low"><div class="zi">🦵</div><div class="zt">下段</div></div>
+  </div>
+
+  <div class="ov" id="ovMenu">
+    <h1>🥋 功夫對決</h1>
+    <p class="sub">敵人出招前會先亮招式圖示：上段、中段或下段，時間到前點對應按鈕格擋並自動反擊！擋錯或太慢都會受傷，擋滿敵人血條就獲勝，速度會越來越快。</p>
+    <div class="stat">最佳連續格擋 <b id="bestTxt">0</b></div>
+    <button class="btn" id="btnStart">開始對決</button>
+  </div>
+
+  <div class="ov hidden" id="ovLose">
+    <h2>💢 落敗了</h2>
+    <p class="sub" id="loseDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetry">再戰一次</button>
+      <button class="btn alt" id="btnMenu1">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovWin">
+    <h2>🏆 擊敗對手！</h2>
+    <p class="sub" id="winDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetryWin">再戰一次</button>
+      <button class="btn alt" id="btnMenu3">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__KF_AC=AC; }catch(e){} } return AC; }
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.exponentialRampToValueAtTime(sweepTo,c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.15,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sfxParry(){ playTone(520,0.09,'triangle',0.16,760); setTimeout(function(){playTone(880,0.08,'triangle',0.1);},50); }
+function sfxHit(){ playTone(160,0.14,'sawtooth',0.17,70); }
+function sfxWin(){ playTone(523,0.1,'triangle',0.14); setTimeout(function(){playTone(659,0.1,'triangle',0.14);},90); setTimeout(function(){playTone(784,0.16,'triangle',0.15);},180); }
+function sfxLose(){ playTone(220,0.3,'sawtooth',0.15,80); }
+
+var ZONES=['high','mid','low'];
+var ZONE_ICON={high:'🥊', mid:'✋', low:'🦵'};
+var ENEMY_MAX_HP=10;
+var PLAYER_MAX_HP=5;
+var START_DURATION=1150;
+var MIN_DURATION=440;
+var DURATION_STEP=28;
+
+function mulberry32(seed){
+  return function(){
+    seed|=0; seed=(seed+0x6D2B79F5)|0;
+    var t=Math.imul(seed^(seed>>>15),1|seed);
+    t=(t+Math.imul(t^(t>>>7),61|t))^t;
+    return ((t^(t>>>14))>>>0)/4294967296;
+  };
+}
+var rng=mulberry32(Date.now()&0xffffffff);
+
+function S0(){
+  var best=0;
+  try{ var v=localStorage.getItem('kf_best'); if(v) best=parseInt(v,10)||0; }catch(e){}
+  return {
+    phase:'menu',
+    prePausePhase:null,
+    round:0,
+    combo:0,
+    best:best,
+    enemyHP:ENEMY_MAX_HP,
+    playerHP:PLAYER_MAX_HP,
+    mode:null,           // 'prep' | 'active' | null
+    prepTimer:0,
+    active:null,         // {zone, duration, elapsed}
+    curDuration:START_DURATION
+  };
+}
+var S=S0();
+
+function resetState(){
+  var fresh=S0();
+  for(var k in S){ if(Object.prototype.hasOwnProperty.call(S,k)) delete S[k]; }
+  for(var k2 in fresh){ if(Object.prototype.hasOwnProperty.call(fresh,k2)) S[k2]=fresh[k2]; }
+}
+
+function renderHUD(){
+  $('enemyBar').style.width=Math.max(0,(S.enemyHP/ENEMY_MAX_HP*100))+'%';
+  $('playerBar').style.width=Math.max(0,(S.playerHP/PLAYER_MAX_HP*100))+'%';
+  $('comboTxt').textContent=String(S.combo);
+  $('bestTxt2').textContent=String(S.best);
+  $('bestTxt').textContent=String(S.best);
+}
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+
+function flash(kind,text){
+  var el=$('flashTxt');
+  el.className='flashTxt show '+kind;
+  el.textContent=text;
+  clearTimeout(flash._t);
+  flash._t=setTimeout(function(){ el.classList.remove('show'); },360);
+}
+
+function startGame(){
+  resetState();
+  S.phase='playing';
+  $('hud').classList.add('on');
+  $('menuBtn').classList.add('on');
+  scheduleNextRound(500);
+  renderHUD();
+}
+
+function scheduleNextRound(delayMs){
+  S.mode='prep';
+  S.prepTimer=delayMs!==undefined ? delayMs : (350+rng()*450);
+  $('telegraph').classList.remove('on');
+}
+
+function beginActive(){
+  var zone=ZONES[Math.floor(rng()*ZONES.length)];
+  S.active={zone:zone, duration:S.curDuration, elapsed:0};
+  S.mode='active';
+  $('telegraph').classList.add('on');
+  $('tgIcon').textContent=ZONE_ICON[zone];
+  $('tgBarFill').style.width='100%';
+  $('enemyChar').classList.add('punch');
+}
+
+function endActiveVisual(){
+  $('telegraph').classList.remove('on');
+  $('enemyChar').classList.remove('punch');
+}
+
+function resolveSuccess(){
+  sfxParry();
+  S.enemyHP--; S.combo++; S.round++;
+  if(S.combo>S.best){ S.best=S.combo; try{localStorage.setItem('kf_best',String(S.best));}catch(e){} }
+  flash('parry','完美格擋！');
+  $('playerChar').classList.add('punch');
+  setTimeout(function(){ $('playerChar').classList.remove('punch'); },140);
+  endActiveVisual();
+  renderHUD();
+  if(S.enemyHP<=0){ winGame(); return; }
+  S.curDuration=Math.max(MIN_DURATION, S.curDuration-DURATION_STEP);
+  scheduleNextRound();
+}
+
+function resolveFail(kind){
+  if(kind==='wrong') sfxHit(); else sfxHit();
+  S.playerHP--; S.combo=0;
+  flash('wrong', kind==='wrong' ? '擋錯方向！' : '來不及了！');
+  $('playerChar').classList.add('hit');
+  setTimeout(function(){ $('playerChar').classList.remove('hit'); },160);
+  endActiveVisual();
+  renderHUD();
+  if(S.playerHP<=0){ loseGame(); return; }
+  S.round++;
+  scheduleNextRound();
+}
+
+function tapZone(zone){
+  if(S.phase!=='playing' || S.mode!=='active' || !S.active) return;
+  if(zone===S.active.zone){ resolveSuccess(); }
+  else { resolveFail('wrong'); }
+  S.active=null;
+}
+
+function winGame(){
+  S.phase='win';
+  $('hud').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  sfxWin();
+  $('winDetail').textContent='擊敗對手！最佳連續格擋 '+S.best+' 次。';
+  show('ovWin');
+}
+
+function loseGame(){
+  S.phase='lose';
+  $('hud').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  sfxLose();
+  $('loseDetail').textContent='被擊倒了，最佳連續格擋 '+S.best+' 次。';
+  show('ovLose');
+}
+
+function backToMenu(){
+  S.phase='menu';
+  $('hud').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  endActiveVisual();
+  show('ovMenu');
+}
+
+function update(dt){
+  if(S.phase!=='playing') return;
+  if(S.mode==='prep'){
+    S.prepTimer-=dt*1000;
+    if(S.prepTimer<=0){ beginActive(); }
+  } else if(S.mode==='active' && S.active){
+    S.active.elapsed+=dt*1000;
+    var pct=Math.max(0,1-(S.active.elapsed/S.active.duration));
+    $('tgBarFill').style.width=(pct*100)+'%';
+    if(S.active.elapsed>=S.active.duration){
+      S.active=null;
+      resolveFail('timeout');
+    }
+  }
+}
+
+$('btnStart').addEventListener('click',function(){ hide('ovMenu'); startGame(); });
+$('btnRetry').addEventListener('click',function(){ hide('ovLose'); startGame(); });
+$('btnRetryWin').addEventListener('click',function(){ hide('ovWin'); startGame(); });
+$('btnMenu1').addEventListener('click',function(){ hide('ovLose'); backToMenu(); });
+$('btnMenu3').addEventListener('click',function(){ hide('ovWin'); backToMenu(); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){
+  if(S.phase==='paused'){ hide('ovPause'); S.phase=S.prePausePhase||'playing'; }
+});
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='playing') return;
+  S.prePausePhase=S.phase;
+  S.phase='paused';
+  show('ovPause');
+});
+
+var zoneBtns=document.querySelectorAll('.zbtn');
+zoneBtns.forEach(function(btn){
+  btn.addEventListener('pointerdown',function(e){
+    e.preventDefault();
+    var zone=btn.getAttribute('data-zone');
+    btn.classList.add('active');
+    setTimeout(function(){ btn.classList.remove('active'); },120);
+    tapZone(zone);
+  },{passive:false});
+});
+
+var lastT=null;
+function loop(ts){
+  if(lastT===null) lastT=ts;
+  var dt=Math.min(0.05,(ts-lastT)/1000);
+  lastT=ts;
+  update(dt);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+renderHUD();
+
+window.__KF = {
+  state:S,
+  start:function(){ $('btnStart').click(); },
+  retry:function(){
+    if(!$('ovLose').classList.contains('hidden')) $('btnRetry').click();
+  },
+  retryWin:function(){
+    if(!$('ovWin').classList.contains('hidden')) $('btnRetryWin').click();
+  },
+  tapZone:function(zone){ tapZone(zone); },
+  advance:function(seconds){
+    var steps=Math.round(seconds/0.016);
+    for(var i=0;i<steps;i++) update(0.016);
+  }
+};
+})();
+</script>
+</body>
+</html>
