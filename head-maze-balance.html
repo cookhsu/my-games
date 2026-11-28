@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop',''); a.setAttribute('playsinline',''); a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__HM_AC && window.__HM_AC.state==='suspended'){ window.__HM_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>頭控迷宮</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0D1220; --ink:#F0F4FF; --muted:#9FADC9; --gold:#FFC83D; --green:#5CE68C; --blue:#4FA8FF; --red:#FF5A6B; --purple:#B07CFF; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{ display:flex; align-items:center; justify-content:center; font-family:'Noto Sans TC','Fredoka',sans-serif;
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #1A2240 0%, #0D1220 65%); }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh; aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; position:absolute; touch-action:none; }
+  #c{ z-index:2; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 56px 0 14px; font-family:'Fredoka',sans-serif; pointer-events:none; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .topbar .pill{ background:rgba(13,18,32,.78); border:1px solid rgba(255,255,255,.14); padding:5px 10px; border-radius:999px; font-size:12.5px; pointer-events:auto; }
+  .topbar .pill b{ color:var(--gold); }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(13,18,32,.78); border:1px solid rgba(255,255,255,.14); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px; background:rgba(7,10,17,.9); backdrop-filter:blur(6px); z-index:10; gap:12px; overflow-y:auto; }
+  .ov.hidden{ display:none; }
+  .ov.light{ background:rgba(7,10,17,.55); pointer-events:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:24px; margin:0; letter-spacing:1px; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:22px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:18px; }
+  .stars{ font-size:34px; letter-spacing:4px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:15px; font-weight:600; color:#161B2C;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:12px 28px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn.cam{ background:linear-gradient(135deg,#4FA8FF,#7fd2ff); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  .toastMsg{ font-size:12.5px; color:var(--red); max-width:260px; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill">關卡 <b id="levelTxt">1</b>/3</div>
+      <div class="pill">⏱ <b id="timeTxt">0.0</b>s</div>
+      <div class="pill">🕳 <b id="fallsTxt">0</b></div>
+    </div>
+  </div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="ov" id="ovMenu">
+    <h1>🌀 頭控迷宮</h1>
+    <p class="sub">把頭往想要的方向傾斜，讓小球在迷宮裡滾動前進，閃過陷阱滾到終點！共 3 關，越後面越刁鑽。</p>
+    <div class="stat">最佳總時間 <b id="bestTxt">-</b>s</div>
+    <div class="btnrow">
+      <button class="btn cam" id="btnStartCam">📷 開啟鏡頭開始</button>
+      <button class="btn alt" id="btnStartDemo">🎬 示範模式</button>
+    </div>
+    <p class="toastMsg hidden" id="camErr"></p>
+  </div>
+
+  <div class="ov hidden light" id="ovLevelClear">
+    <h2>🎉 過關！</h2>
+    <div class="stars" id="starsTxt">⭐⭐⭐</div>
+    <p class="sub" id="levelClearDetail"></p>
+  </div>
+
+  <div class="ov hidden" id="ovCleared">
+    <h2>🏆 迷宮全破！</h2>
+    <p class="sub" id="clearedDetail"></p>
+    <div class="stat">總時間 <b id="finalTimeTxt">0</b>s</div>
+    <div class="btnrow">
+      <button class="btn" id="btnReplay">再玩一次</button>
+      <button class="btn alt" id="btnBackMenu1">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var PLAY_X0=30, PLAY_X1=330, PLAY_Y0=140, PLAY_Y1=580;
+var $=function(id){return document.getElementById(id);};
+
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__HM_AC=AC; }catch(e){} } return AC; }
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.exponentialRampToValueAtTime(sweepTo,c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.15,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sfxFall(){ playTone(200,0.2,'sawtooth',0.12,70); }
+function sfxBounce(){ playTone(400,0.04,'sine',0.05,300); }
+function sfxLevelClear(){ playTone(523,0.08,'triangle',0.13); setTimeout(function(){playTone(659,0.08,'triangle',0.13);},80); setTimeout(function(){playTone(784,0.14,'triangle',0.14);},160); }
+function sfxWin(){ playTone(523,0.1,'triangle',0.15); setTimeout(function(){playTone(659,0.1,'triangle',0.15);},110); setTimeout(function(){playTone(784,0.1,'triangle',0.15);},220); setTimeout(function(){playTone(1047,0.22,'triangle',0.17);},330); }
+
+function loadBest(){ try{ var v=localStorage.getItem('hm_best'); return v?parseFloat(v):null; }catch(e){ return null; } }
+function saveBest(v){ try{ localStorage.setItem('hm_best', String(v)); }catch(e){} }
+
+function buildLevel(li){
+  var numWalls=3+li;
+  var gapWidth=95-li*15;
+  var walls=[];
+  var top=PLAY_Y0+80, bottom=PLAY_Y1-80;
+  for(var i=0;i<numWalls;i++){
+    var y = numWalls>1 ? top+(bottom-top)*(i/(numWalls-1)) : (top+bottom)/2;
+    var gapRight=(i%2===0);
+    var rect, gapCx;
+    if(gapRight){
+      var wEnd=PLAY_X1-gapWidth;
+      rect={x:PLAY_X0,y:y-8,w:wEnd-PLAY_X0,h:16};
+      gapCx=(wEnd+PLAY_X1)/2;
+    } else {
+      var wStart=PLAY_X0+gapWidth;
+      rect={x:wStart,y:y-8,w:PLAY_X1-wStart,h:16};
+      gapCx=(PLAY_X0+wStart)/2;
+    }
+    rect.gapCx=gapCx; rect.gapY=y;
+    walls.push(rect);
+  }
+  var start={x:PLAY_X0+40,y:PLAY_Y0+30};
+  var lastGapCx = walls.length? walls[walls.length-1].gapCx : (PLAY_X0+PLAY_X1)/2;
+  var goal={x:lastGapCx, y:PLAY_Y1-30, r:22};
+  var waypoints=[{x:start.x,y:start.y}];
+  walls.forEach(function(w){ waypoints.push({x:w.gapCx,y:w.gapY}); });
+  waypoints.push({x:goal.x,y:goal.y});
+
+  // place holes well clear of EVERY zone's straight waypoint-to-waypoint path (not just
+  // the zone they're nominally offset from — a zigzag corridor can pass two legs close
+  // together), skipping the very first and last zones so start/goal approach stays clear.
+  function distPointToSeg(p,a,b){
+    var dx=b.x-a.x, dy=b.y-a.y;
+    var len2=dx*dx+dy*dy;
+    var t = len2>0 ? ((p.x-a.x)*dx+(p.y-a.y)*dy)/len2 : 0;
+    t=Math.max(0,Math.min(1,t));
+    var cx=a.x+dx*t, cy=a.y+dy*t;
+    var ddx=p.x-cx, ddy=p.y-cy;
+    return Math.sqrt(ddx*ddx+ddy*ddy);
+  }
+  var holes=[];
+  var numZones=waypoints.length-1;
+  var midZones=[];
+  for(var z=1; z<numZones-1; z++){ midZones.push(z); }
+  if(midZones.length===0){ for(var z2=0; z2<numZones; z2++){ midZones.push(z2); } }
+  var SAFE_CLEAR=42;
+  for(var h=0; h<li; h++){
+    var zoneIdx=midZones[h%midZones.length];
+    var A=waypoints[zoneIdx], B=waypoints[zoneIdx+1];
+    var dx0=B.x-A.x, dy0=B.y-A.y;
+    var len=Math.sqrt(dx0*dx0+dy0*dy0)||1;
+    var perp={x:-dy0/len, y:dx0/len};
+    var mid={x:(A.x+B.x)/2, y:(A.y+B.y)/2};
+    var best=null, bestClear=-1;
+    [1,-1].forEach(function(side){
+      [55,70,85,100,115,130].forEach(function(offsetDist){
+        var hx=mid.x+perp.x*offsetDist*side;
+        var hy=mid.y+perp.y*offsetDist*side;
+        hx=Math.max(PLAY_X0+26, Math.min(PLAY_X1-26, hx));
+        hy=Math.max(PLAY_Y0+26, Math.min(PLAY_Y1-26, hy));
+        var cand={x:hx,y:hy};
+        var minClear=Infinity;
+        for(var zi=0; zi<numZones; zi++){
+          var d=distPointToSeg(cand, waypoints[zi], waypoints[zi+1]);
+          if(d<minClear) minClear=d;
+        }
+        if(minClear>bestClear){ bestClear=minClear; best=cand; }
+      });
+    });
+    if(bestClear>=SAFE_CLEAR || best){
+      holes.push({x:best.x,y:best.y,r:16});
+    }
+  }
+  return { walls:walls, holes:holes, start:start, goal:goal, waypoints:waypoints };
+}
+
+var TOTAL_LEVELS=3;
+
+function S0(){
+  return {
+    phase:'menu', // menu | playing | levelClear | paused | cleared
+    prePausePhase:null,
+    demo:false,
+    stream:null,
+    level:0,
+    levelTimes:[],
+    falls:0,
+    levelT:0,
+    best:loadBest(),
+    maze:null,
+    ball:{x:0,y:0,vx:0,vy:0},
+    waypointIdx:1,
+    noseOffset:{x:0,y:0},
+    t:0,
+    demoTimers:[],
+    levelClearUntil:0
+  };
+}
+var S=S0();
+
+function resetState(){
+  var fresh=S0();
+  fresh.best=S.best;
+  for(var k in S){ if(Object.prototype.hasOwnProperty.call(S,k)) delete S[k]; }
+  for(var k2 in fresh){ if(Object.prototype.hasOwnProperty.call(fresh,k2)) S[k2]=fresh[k2]; }
+}
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+
+function renderHUD(){
+  $('levelTxt').textContent=String(S.level+1);
+  $('timeTxt').textContent=S.levelT.toFixed(1);
+  $('fallsTxt').textContent=String(S.falls);
+}
+
+function startLevel(li){
+  S.level=li;
+  S.maze=buildLevel(li);
+  S.ball.x=S.maze.start.x; S.ball.y=S.maze.start.y; S.ball.vx=0; S.ball.vy=0;
+  S.waypointIdx=1;
+  S.levelT=0;
+  S.phase='playing';
+  renderHUD();
+}
+
+function resetBallToStart(){
+  S.ball.x=S.maze.start.x; S.ball.y=S.maze.start.y; S.ball.vx=0; S.ball.vy=0;
+  S.waypointIdx=1;
+  S.falls++;
+  sfxFall();
+  renderHUD();
+}
+
+function startCamera(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return Promise.reject({name:'NoMedia'});
+  return navigator.mediaDevices.getUserMedia({ video:{facingMode:'user', width:{ideal:480}, height:{ideal:640}}, audio:false })
+    .then(function(s){ S.stream=s; video.srcObject=s; return video.play().catch(function(){}); });
+}
+function stopCamera(){
+  if(S.stream){ S.stream.getTracks().forEach(function(t){t.stop();}); S.stream=null; }
+}
+
+var video=document.createElement('video');
+video.setAttribute('playsinline',''); video.muted=true;
+
+// ---- FaceLandmarker loading ----
+var landmarker=null, lmState='idle';
+function loadLandmarker(){
+  if(lmState==='ready'||lmState==='loading') return Promise.resolve();
+  lmState='loading';
+  var bases=['0.10.14','0.10.9'];
+  var attempt=function(i){
+    if(i>=bases.length){ lmState='failed'; return Promise.resolve(); }
+    var base='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@'+bases[i];
+    return import(/* @vite-ignore */ base+'/vision_bundle.mjs').then(function(mod){
+      return mod.FilesetResolver.forVisionTasks(base+'/wasm').then(function(fs){
+        var mk=function(del){ return mod.FaceLandmarker.createFromOptions(fs,{
+          baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',delegate:del},
+          runningMode:'VIDEO', numFaces:1, outputFaceBlendshapes:false
+        }); };
+        return mk('GPU').catch(function(){ return mk('CPU'); });
+      }).then(function(lm){ landmarker=lm; lmState='ready'; });
+    }).catch(function(){ return attempt(i+1); });
+  };
+  return attempt(0);
+}
+
+var lastVT=-1, faceOn=false, lastFaceT=0, rawNose={x:0.5,y:0.5};
+function detectFace(now){
+  if(S.demo || lmState!=='ready' || !video.videoWidth) return;
+  if(video.currentTime===lastVT) return;
+  lastVT=video.currentTime;
+  try{
+    var r=landmarker.detectForVideo(video, now);
+    var lms=r && r.faceLandmarks && r.faceLandmarks[0];
+    if(lms && lms[1]){
+      faceOn=true; lastFaceT=now;
+      rawNose={x:lms[1].x, y:lms[1].y};
+    } else if(now-lastFaceT>400){ faceOn=false; }
+  }catch(e){}
+}
+
+var calibBaseline={x:0.5,y:0.5}, calibSamples=[], calibDone=false, calibStartT=0;
+function updateSteering(now){
+  if(S.demo) return {x:0,y:0};
+  if(!calibDone){
+    if(calibStartT===0) calibStartT=now;
+    if(faceOn) calibSamples.push({x:rawNose.x,y:rawNose.y});
+    if(now-calibStartT>700){
+      calibDone=true;
+      var sx=0,sy=0;
+      calibSamples.forEach(function(p){sx+=p.x;sy+=p.y;});
+      if(calibSamples.length){ calibBaseline.x=sx/calibSamples.length; calibBaseline.y=sy/calibSamples.length; }
+    }
+    return {x:0,y:0};
+  }
+  S.noseOffset.x=rawNose.x-calibBaseline.x;
+  S.noseOffset.y=rawNose.y-calibBaseline.y;
+  return S.noseOffset;
+}
+
+function drawCameraFrame(){
+  if(!video.videoWidth) return false;
+  var vw=video.videoWidth, vh=video.videoHeight;
+  var scale=Math.max(W/vw, H/vh);
+  var dw=vw*scale, dh=vh*scale;
+  var dx=(W-dw)/2, dy=(H-dh)/2;
+  ctx.save();
+  ctx.globalAlpha=0.28;
+  ctx.translate(W,0); ctx.scale(-1,1);
+  ctx.drawImage(video, dx, dy, dw, dh);
+  ctx.restore();
+  return true;
+}
+
+function startPlaying(useDemo){
+  hide('ovMenu'); hide('ovCleared'); hide('ovPause'); hide('ovLevelClear');
+  $('camErr').classList.add('hidden');
+  resetState();
+  S.demo=!!useDemo;
+  calibSamples=[]; calibDone=false; calibStartT=0; faceOn=false; rawNose={x:0.5,y:0.5};
+
+  if(S.demo){
+    beginPlayingPhase();
+  } else {
+    $('btnStartCam').textContent='開啟相機中…';
+    Promise.all([startCamera(), loadLandmarker()]).then(function(){
+      beginPlayingPhase();
+    }).catch(function(err){
+      $('btnStartCam').textContent='📷 開啟鏡頭開始';
+      var m = (err&&err.name==='NotAllowedError') ? '沒有取得相機權限，請允許存取相機，或改用示範模式。' : '無法開啟相機，可改用示範模式體驗遊戲。';
+      $('camErr').textContent=m;
+      $('camErr').classList.remove('hidden');
+    });
+  }
+}
+
+function beginPlayingPhase(){
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  startLevel(0);
+}
+
+var ACCEL=900, FRICTION=2.4, BALL_R=12;
+
+var DEMO_SPEED=150;
+function applySteering(dt){
+  if(S.demo){
+    // demo autopilot: drive velocity directly toward the next waypoint (bypasses
+    // inertia so it tracks a precise path reliably, since this is a display/test mode).
+    var wp=S.maze.waypoints[S.waypointIdx];
+    if(wp){
+      var dx=wp.x-S.ball.x, dy=wp.y-S.ball.y;
+      var d=Math.sqrt(dx*dx+dy*dy)||1;
+      var spd=Math.min(DEMO_SPEED, d/dt*0.8);
+      S.ball.vx=dx/d*spd; S.ball.vy=dy/d*spd;
+      if(d<16){ S.waypointIdx=Math.min(S.waypointIdx+1, S.maze.waypoints.length-1); }
+    }
+    return;
+  }
+  var off=updateSteering(S.t*1000);
+  var ox=Math.max(-1,Math.min(1,off.x/0.06));
+  var oy=Math.max(-1,Math.min(1,off.y/0.06));
+  S.ball.vx+=ox*ACCEL*dt;
+  S.ball.vy+=oy*ACCEL*dt;
+}
+
+function resolveWallCollision(ball,w){
+  var cx=Math.max(w.x,Math.min(ball.x,w.x+w.w));
+  var cy=Math.max(w.y,Math.min(ball.y,w.y+w.h));
+  var dx=ball.x-cx, dy=ball.y-cy;
+  var distSq=dx*dx+dy*dy;
+  if(distSq < BALL_R*BALL_R){
+    var dist=Math.sqrt(distSq)||0.001;
+    var nx=dx/dist, ny=dy/dist;
+    var overlap=BALL_R-dist;
+    ball.x+=nx*overlap; ball.y+=ny*overlap;
+    var vn=ball.vx*nx+ball.vy*ny;
+    if(vn<0){
+      ball.vx-=vn*nx*1.2; ball.vy-=vn*ny*1.2;
+      sfxBounce();
+    }
+  }
+}
+
+function updatePhysics(dt){
+  applySteering(dt);
+  if(!S.demo){
+    var fric=Math.max(0, 1-FRICTION*dt);
+    S.ball.vx*=fric; S.ball.vy*=fric;
+  }
+  S.ball.x+=S.ball.vx*dt; S.ball.y+=S.ball.vy*dt;
+
+  // outer bounds
+  if(S.ball.x<PLAY_X0+BALL_R){ S.ball.x=PLAY_X0+BALL_R; S.ball.vx=Math.abs(S.ball.vx)*0.3; }
+  if(S.ball.x>PLAY_X1-BALL_R){ S.ball.x=PLAY_X1-BALL_R; S.ball.vx=-Math.abs(S.ball.vx)*0.3; }
+  if(S.ball.y<PLAY_Y0+BALL_R){ S.ball.y=PLAY_Y0+BALL_R; S.ball.vy=Math.abs(S.ball.vy)*0.3; }
+  if(S.ball.y>PLAY_Y1-BALL_R){ S.ball.y=PLAY_Y1-BALL_R; S.ball.vy=-Math.abs(S.ball.vy)*0.3; }
+
+  for(var i=0;i<S.maze.walls.length;i++){ resolveWallCollision(S.ball, S.maze.walls[i]); }
+
+  for(var h=0;h<S.maze.holes.length;h++){
+    var ho=S.maze.holes[h];
+    var dx=S.ball.x-ho.x, dy=S.ball.y-ho.y;
+    if(Math.sqrt(dx*dx+dy*dy) < ho.r){ resetBallToStart(); return; }
+  }
+
+  var g=S.maze.goal;
+  var gdx=S.ball.x-g.x, gdy=S.ball.y-g.y;
+  if(Math.sqrt(gdx*gdx+gdy*gdy) < g.r-6){
+    onLevelGoal();
+  }
+}
+
+function starsFor(time){
+  if(time<7) return 3;
+  if(time<13) return 2;
+  return 1;
+}
+
+function onLevelGoal(){
+  S.levelTimes.push(S.levelT);
+  var stars=starsFor(S.levelT);
+  sfxLevelClear();
+  $('starsTxt').textContent='⭐'.repeat(stars)+'☆'.repeat(3-stars);
+  $('levelClearDetail').textContent='第 '+(S.level+1)+' 關　用時 '+S.levelT.toFixed(1)+' 秒';
+  S.phase='levelClear';
+  S.levelClearUntil=S.t+1.4;
+  show('ovLevelClear');
+}
+
+function finishGame(){
+  S.phase='cleared';
+  $('topbar').classList.remove('on'); $('menuBtn').classList.remove('on');
+  stopCamera();
+  S.demoTimers.forEach(function(id){ clearTimeout(id); });
+  S.demoTimers=[];
+  var total=S.levelTimes.reduce(function(a,b){return a+b;},0);
+  var isNew=false;
+  if(S.best===null || total<S.best){ S.best=total; saveBest(total); isNew=true; }
+  sfxWin();
+  $('finalTimeTxt').textContent=total.toFixed(1);
+  $('clearedDetail').textContent='跌落 '+S.falls+' 次，三關全破！'+(isNew?' 🎉創下最佳紀錄！':'');
+  show('ovCleared');
+}
+
+function updateGame(dt){
+  S.t+=dt;
+  if(S.phase==='playing'){
+    S.levelT+=dt;
+    updatePhysics(dt);
+    renderHUD();
+  } else if(S.phase==='levelClear'){
+    if(S.t>=S.levelClearUntil){
+      hide('ovLevelClear');
+      if(S.level+1>=TOTAL_LEVELS){ finishGame(); }
+      else { startLevel(S.level+1); }
+    }
+  }
+}
+
+function drawBG(){
+  var haveFrame=false;
+  if(!S.demo && (S.phase==='playing'||S.phase==='levelClear'||S.phase==='paused')) haveFrame=drawCameraFrame();
+  if(!haveFrame){
+    var bg=ctx.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'#1A2240'); bg.addColorStop(1,'#0D1220');
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+  } else {
+    ctx.save(); ctx.globalAlpha=0.55; ctx.fillStyle='#0D1220'; ctx.fillRect(0,0,W,H); ctx.restore();
+  }
+  if(S.demo && (S.phase==='playing'||S.phase==='levelClear'||S.phase==='paused')){
+    ctx.font='13px "Noto Sans TC",sans-serif';
+    ctx.fillStyle='rgba(255,255,255,.3)';
+    ctx.textAlign='center';
+    ctx.fillText('🎬 示範模式（未使用鏡頭）', W/2, 60);
+  }
+}
+
+function drawMaze(){
+  var m=S.maze;
+  if(!m) return;
+  // play area border
+  ctx.strokeStyle='rgba(255,255,255,.25)';
+  ctx.lineWidth=2;
+  ctx.strokeRect(PLAY_X0,PLAY_Y0,PLAY_X1-PLAY_X0,PLAY_Y1-PLAY_Y0);
+
+  // start marker
+  ctx.save();
+  ctx.font='11px "Noto Sans TC",sans-serif';
+  ctx.fillStyle='rgba(255,255,255,.4)';
+  ctx.textAlign='center';
+  ctx.fillText('起點', m.start.x, m.start.y-18);
+  ctx.restore();
+
+  // goal
+  ctx.save();
+  var g=m.goal;
+  var glow=ctx.createRadialGradient(g.x,g.y,4,g.x,g.y,g.r+10);
+  glow.addColorStop(0,'rgba(92,230,140,.55)');
+  glow.addColorStop(1,'rgba(92,230,140,0)');
+  ctx.fillStyle=glow;
+  ctx.beginPath(); ctx.arc(g.x,g.y,g.r+10,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(g.x,g.y,g.r,0,Math.PI*2);
+  ctx.fillStyle='rgba(92,230,140,.3)';
+  ctx.fill();
+  ctx.strokeStyle='#5CE68C'; ctx.lineWidth=3; ctx.stroke();
+  ctx.font='20px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('🏁', g.x, g.y+1);
+  ctx.restore();
+
+  // walls
+  for(var i=0;i<m.walls.length;i++){
+    var w=m.walls[i];
+    var grad=ctx.createLinearGradient(w.x,w.y,w.x,w.y+w.h);
+    grad.addColorStop(0,'#5C6CFF'); grad.addColorStop(1,'#3A46B0');
+    ctx.fillStyle=grad;
+    ctx.fillRect(w.x,w.y,w.w,w.h);
+    ctx.strokeStyle='rgba(255,255,255,.25)'; ctx.lineWidth=1.5;
+    ctx.strokeRect(w.x,w.y,w.w,w.h);
+  }
+
+  // holes
+  for(var h=0;h<m.holes.length;h++){
+    var ho=m.holes[h];
+    var hg=ctx.createRadialGradient(ho.x,ho.y,0,ho.x,ho.y,ho.r);
+    hg.addColorStop(0,'#000'); hg.addColorStop(1,'#2A0E16');
+    ctx.fillStyle=hg;
+    ctx.beginPath(); ctx.arc(ho.x,ho.y,ho.r,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(255,90,107,.6)'; ctx.lineWidth=2; ctx.stroke();
+  }
+}
+
+function drawBall(){
+  var b=S.ball;
+  ctx.save();
+  ctx.save();
+  ctx.globalAlpha=0.3;
+  ctx.fillStyle='#000';
+  ctx.beginPath(); ctx.ellipse(b.x,b.y+BALL_R*0.6,BALL_R*0.9,BALL_R*0.35,0,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+  var grad=ctx.createRadialGradient(b.x-4,b.y-4,2,b.x,b.y,BALL_R);
+  grad.addColorStop(0,'#FFF4C9'); grad.addColorStop(1,'#FFC83D');
+  ctx.beginPath(); ctx.arc(b.x,b.y,BALL_R,0,Math.PI*2);
+  ctx.fillStyle=grad; ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.restore();
+}
+
+function draw(){
+  drawBG();
+  if(!(S.phase==='playing' || S.phase==='levelClear' || S.phase==='paused')) return;
+  drawMaze();
+  drawBall();
+}
+
+var lastTs=0;
+function loop(ts){
+  var dtRaw=(ts-lastTs)/1000;
+  lastTs=ts;
+  var dt=Math.min(0.05, isNaN(dtRaw)?0:dtRaw);
+
+  if(!S.demo && S.phase==='playing'){
+    detectFace(ts);
+  }
+
+  draw();
+
+  if(S.phase==='playing' || S.phase==='levelClear'){
+    updateGame(dt);
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+$('btnStartCam').addEventListener('click',function(){ startPlaying(false); });
+$('btnStartDemo').addEventListener('click',function(){ startPlaying(true); });
+$('btnReplay').addEventListener('click',function(){ startPlaying(S.demo); });
+$('btnBackMenu1').addEventListener('click',function(){ backToMenu(); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){
+  if(S.phase==='paused'){ hide('ovPause'); S.phase=S.prePausePhase||'playing'; }
+});
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='playing') return;
+  S.prePausePhase=S.phase;
+  S.phase='paused';
+  show('ovPause');
+});
+
+function backToMenu(){
+  hide('ovCleared'); hide('ovPause'); hide('ovLevelClear');
+  stopCamera();
+  S.demoTimers.forEach(function(id){ clearTimeout(id); });
+  S.demoTimers=[];
+  S.phase='menu';
+  $('topbar').classList.remove('on'); $('menuBtn').classList.remove('on');
+  $('bestTxt').textContent = S.best!==null ? S.best.toFixed(1) : '-';
+  show('ovMenu');
+}
+$('bestTxt').textContent = S.best!==null ? S.best.toFixed(1) : '-';
+
+window.__HM = {
+  state:S,
+  startCam:function(){ startPlaying(false); },
+  startDemo:function(){ startPlaying(true); },
+  isGameOver:function(){ return S.phase==='cleared'; },
+  forceEnd:function(){
+    while(S.level<TOTAL_LEVELS){
+      S.levelTimes[S.level]=S.levelT;
+      S.level++;
+    }
+    finishGame();
+  },
+  skipToGoal:function(){ S.ball.x=S.maze.goal.x; S.ball.y=S.maze.goal.y; onLevelGoal(); },
+  fallInHole:function(){ resetBallToStart(); },
+  advance:function(seconds){
+    var steps=Math.ceil(seconds/0.03);
+    for(var i=0;i<steps;i++){ if(S.phase==='playing'||S.phase==='levelClear'){ updateGame(0.03); } }
+  }
+};
+</script>
+</body>
+</html>
