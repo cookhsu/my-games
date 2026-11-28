@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop',''); a.setAttribute('playsinline',''); a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__LM_AC && window.__LM_AC.state==='suspended'){ window.__LM_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>雷射迷宮</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0a0f1c; --ink:#EAF4FF; --muted:#7E93B5; --gold:#FFC83D; --red:#FF5A6B; --green:#5CE68C; --laser:#FF3B5C; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{ display:flex; align-items:center; justify-content:center; font-family:'Noto Sans TC','Fredoka',sans-serif;
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #121b36 0%, #0a0f1c 65%); }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh; aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; position:absolute; touch-action:none; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 56px 0 14px; font-family:'Fredoka',sans-serif; pointer-events:none; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap; }
+  .topbar .pill{ background:rgba(10,14,28,.68); border:1px solid rgba(255,255,255,.12); padding:5px 10px; border-radius:999px; font-size:12.5px; pointer-events:auto; }
+  .topbar .pill b{ color:var(--gold); }
+  .topbar .actBtn{ pointer-events:auto; background:rgba(10,14,28,.68); border:1px solid rgba(255,255,255,.14); color:var(--ink);
+    padding:5px 12px; border-radius:999px; font-size:12.5px; font-family:'Noto Sans TC',sans-serif; cursor:pointer; }
+  .topbar .actBtn:active{ transform:scale(.95); }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(10,14,28,.68); border:1px solid rgba(255,255,255,.12); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px; background:rgba(5,8,16,.84); backdrop-filter:blur(6px); z-index:10; gap:12px; overflow-y:auto; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:24px; margin:0; letter-spacing:1px; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:20px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:15px; font-weight:600; color:#0a0f1c;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:12px 28px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+
+  .levelGrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; max-width:280px; margin:6px 0; }
+  .lvlCard{ position:relative; width:60px; height:60px; border-radius:14px; background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.14); display:flex; flex-direction:column; align-items:center; justify-content:center;
+    cursor:pointer; font-family:'Fredoka',sans-serif; }
+  .lvlCard.cleared{ background:rgba(106,219,140,.16); border-color:rgba(106,219,140,.5); }
+  .lvlCard .n{ font-size:18px; font-weight:600; }
+  .check{ position:absolute; top:3px; right:5px; font-size:11px; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill">第 <b id="lvNoTxt">1</b> 關</div>
+      <div class="pill">鏡片 <b id="mirrorTxt">0</b>/<b id="maxMirrorTxt">1</b></div>
+      <button class="actBtn" id="btnReset">↺ 清空</button>
+    </div>
+  </div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="ov" id="ovMenu">
+    <h1>🔦 雷射迷宮</h1>
+    <p class="sub">點擊格子放置鏡片，再點一下旋轉角度，將雷射光束導向水晶目標！鏡片數量有限，想清楚最佳路徑。</p>
+    <div class="stat">已通關 <b id="clearedCountTxt">0</b> / <b id="totalLevelsTxt">8</b></div>
+    <button class="btn" id="btnStart">選擇關卡</button>
+  </div>
+
+  <div class="ov hidden" id="ovLevelSelect">
+    <h2>選擇關卡</h2>
+    <div class="levelGrid" id="levelGrid"></div>
+    <button class="btn alt" id="btnBackMenu">返回選單</button>
+  </div>
+
+  <div class="ov hidden" id="ovCleared">
+    <h2>✨ 擊中目標！</h2>
+    <p class="sub" id="clearedDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnNextLevel">下一關</button>
+      <button class="btn alt" id="btnBackSelect1">關卡選擇</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovAllClear">
+    <h2>🏆 全部通關！</h2>
+    <p class="sub" id="allClearDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnReplay">重新挑戰</button>
+      <button class="btn alt" id="btnBackSelect2">關卡選擇</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnResetLevel">重設關卡</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var $=function(id){return document.getElementById(id);};
+
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__LM_AC=AC; }catch(e){} } return AC; }
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.exponentialRampToValueAtTime(sweepTo,c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.15,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sfxPlace(){ playTone(380,0.05,'sine',0.08,460); }
+function sfxRotate(){ playTone(300,0.04,'triangle',0.07,360); }
+function sfxRemove(){ playTone(200,0.05,'sawtooth',0.06); }
+function sfxHit(){ playTone(600,0.1,'triangle',0.14,900); }
+function sfxClear(){ playTone(523,0.1,'triangle',0.14); setTimeout(function(){playTone(659,0.1,'triangle',0.14);},90); setTimeout(function(){playTone(784,0.16,'triangle',0.15);},180); }
+function sfxAllClear(){ playTone(523,0.1,'triangle',0.14); setTimeout(function(){playTone(659,0.1,'triangle',0.14);},100); setTimeout(function(){playTone(784,0.1,'triangle',0.14);},200); setTimeout(function(){playTone(1047,0.22,'triangle',0.17);},300); }
+
+var DIRS={ U:[-1,0], D:[1,0], L:[0,-1], R:[0,1] };
+
+// Level defs: n = grid size, emitter{r,c,dir}, target{r,c}, walls:[[r,c]...], maxMirrors
+var LEVELS=[
+  {n:4, emitter:{r:0,c:0,dir:'R'}, target:{r:3,c:2}, walls:[], maxMirrors:1},
+  {n:4, emitter:{r:0,c:0,dir:'R'}, target:{r:3,c:0}, walls:[[2,0]], maxMirrors:2},
+  {n:4, emitter:{r:0,c:0,dir:'R'}, target:{r:3,c:3}, walls:[[1,3]], maxMirrors:2},
+  {n:5, emitter:{r:0,c:0,dir:'R'}, target:{r:4,c:4}, walls:[], maxMirrors:3},
+  {n:5, emitter:{r:4,c:0,dir:'R'}, target:{r:0,c:4}, walls:[[3,4]], maxMirrors:3},
+  {n:6, emitter:{r:0,c:0,dir:'R'}, target:{r:5,c:5}, walls:[[0,5],[5,0]], maxMirrors:4},
+  {n:6, emitter:{r:5,c:0,dir:'R'}, target:{r:0,c:5}, walls:[[0,0],[5,5]], maxMirrors:5},
+  {n:6, emitter:{r:0,c:0,dir:'R'}, target:{r:5,c:0}, walls:[[0,4],[3,0]], maxMirrors:6}
+];
+
+function key(r,c){ return r+','+c; }
+
+function loadProgress(){
+  try{ return JSON.parse(localStorage.getItem('lm_progress')||'{}'); }catch(e){ return {}; }
+}
+function saveProgress(p){ try{ localStorage.setItem('lm_progress', JSON.stringify(p)); }catch(e){} }
+
+function S0(){
+  return {
+    phase:'menu',
+    prePausePhase:null,
+    levelIndex:0,
+    n:4,
+    emitter:null,
+    target:null,
+    walls:{},
+    mirrors:{},
+    maxMirrors:1,
+    hit:false,
+    beamPath:[],
+    progress:loadProgress()
+  };
+}
+var S=S0();
+
+function resetState(){
+  var fresh=S0();
+  for(var k in S){ if(Object.prototype.hasOwnProperty.call(S,k)) delete S[k]; }
+  for(var k2 in fresh){ if(Object.prototype.hasOwnProperty.call(fresh,k2)) S[k2]=fresh[k2]; }
+}
+
+function loadLevel(idx){
+  var lv=LEVELS[idx];
+  S.levelIndex=idx;
+  S.n=lv.n;
+  S.emitter={r:lv.emitter.r,c:lv.emitter.c,dir:lv.emitter.dir};
+  S.target={r:lv.target.r,c:lv.target.c};
+  S.walls={};
+  lv.walls.forEach(function(p){ S.walls[key(p[0],p[1])]=true; });
+  S.mirrors={};
+  S.maxMirrors=lv.maxMirrors;
+  S.hit=false;
+  computeBeam();
+}
+
+function isSpecialCell(r,c){
+  if(r===S.emitter.r && c===S.emitter.c) return true;
+  if(r===S.target.r && c===S.target.c) return true;
+  if(S.walls[key(r,c)]) return true;
+  return false;
+}
+
+function reflect(dir,mirror){
+  if(mirror==='/'){
+    return {R:'U',L:'D',U:'R',D:'L'}[dir];
+  } else {
+    return {R:'D',L:'U',U:'L',D:'R'}[dir];
+  }
+}
+
+function computeBeam(){
+  var path=[{r:S.emitter.r,c:S.emitter.c}];
+  var r=S.emitter.r, c=S.emitter.c, dir=S.emitter.dir;
+  var visited={};
+  var hit=false;
+  var guard=0;
+  while(guard++<200){
+    var nr=r+DIRS[dir][0], nc=c+DIRS[dir][1];
+    if(nr<0||nc<0||nr>=S.n||nc>=S.n) break;
+    if(S.walls[key(nr,nc)]) break;
+    path.push({r:nr,c:nc});
+    r=nr; c=nc;
+    if(r===S.target.r && c===S.target.c){ hit=true; break; }
+    var m=S.mirrors[key(r,c)];
+    if(m){
+      var stateKey=r+','+c+','+dir;
+      if(visited[stateKey]) break;
+      visited[stateKey]=true;
+      dir=reflect(dir,m);
+    }
+  }
+  S.beamPath=path;
+  S.hit=hit;
+  return hit;
+}
+
+function mirrorCount(){ return Object.keys(S.mirrors).length; }
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+
+function renderHUD(){
+  $('lvNoTxt').textContent=String(S.levelIndex+1);
+  $('mirrorTxt').textContent=String(mirrorCount());
+  $('maxMirrorTxt').textContent=String(S.maxMirrors);
+}
+
+function tapCell(r,c){
+  if(S.phase!=='playing') return false;
+  if(r<0||c<0||r>=S.n||c>=S.n) return false;
+  if(isSpecialCell(r,c)) return false;
+  var k=key(r,c);
+  var cur=S.mirrors[k];
+  if(!cur){
+    if(mirrorCount()>=S.maxMirrors){ return false; }
+    S.mirrors[k]='/';
+    sfxPlace();
+  } else if(cur==='/'){
+    S.mirrors[k]='\\';
+    sfxRotate();
+  } else {
+    delete S.mirrors[k];
+    sfxRemove();
+  }
+  var wasHit=computeBeam();
+  renderHUD();
+  if(wasHit) checkWin();
+  return true;
+}
+
+function checkWin(){
+  if(!S.hit) return;
+  var idx=S.levelIndex;
+  if(!S.progress[idx]){ S.progress[idx]=true; saveProgress(S.progress); }
+  sfxHit();
+  if(idx>=LEVELS.length-1){
+    S.phase='allclear';
+    $('topbar').classList.remove('on'); $('menuBtn').classList.remove('on');
+    sfxAllClear();
+    $('allClearDetail').textContent='恭喜通過全部 '+LEVELS.length+' 關雷射迷宮！';
+    show('ovAllClear');
+  } else {
+    S.phase='cleared';
+    $('topbar').classList.remove('on'); $('menuBtn').classList.remove('on');
+    sfxClear();
+    $('clearedDetail').textContent='第 '+(idx+1)+' 關完成！使用了 '+mirrorCount()+' / '+S.maxMirrors+' 片鏡片。';
+    show('ovCleared');
+  }
+}
+
+function buildLevelGrid(){
+  var grid=$('levelGrid');
+  grid.innerHTML='';
+  for(var i=0;i<LEVELS.length;i++){
+    (function(i){
+      var card=document.createElement('div');
+      card.className='lvlCard'+(S.progress[i]?' cleared':'');
+      card.innerHTML='<span class="n">'+(i+1)+'</span>'+(S.progress[i]?'<span class="check">✅</span>':'');
+      card.addEventListener('click',function(){ startLevel(i); });
+      grid.appendChild(card);
+    })(i);
+  }
+  var clearedN=Object.keys(S.progress).length;
+  $('clearedCountTxt').textContent=String(clearedN);
+  $('totalLevelsTxt').textContent=String(LEVELS.length);
+}
+
+function startLevel(idx){
+  hide('ovMenu'); hide('ovLevelSelect'); hide('ovCleared'); hide('ovAllClear'); hide('ovPause');
+  loadLevel(idx);
+  S.phase='playing';
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  renderHUD();
+}
+
+function openLevelSelect(){
+  hide('ovMenu'); hide('ovCleared'); hide('ovAllClear'); hide('ovPause');
+  $('topbar').classList.remove('on'); $('menuBtn').classList.remove('on');
+  S.phase='levelselect';
+  buildLevelGrid();
+  show('ovLevelSelect');
+}
+
+function backToMenu(){
+  hide('ovLevelSelect'); hide('ovCleared'); hide('ovAllClear'); hide('ovPause');
+  S.phase='menu';
+  $('topbar').classList.remove('on'); $('menuBtn').classList.remove('on');
+  var clearedN=Object.keys(S.progress).length;
+  $('clearedCountTxt').textContent=String(clearedN);
+  $('totalLevelsTxt').textContent=String(LEVELS.length);
+  show('ovMenu');
+}
+
+$('btnStart').addEventListener('click',function(){ openLevelSelect(); });
+$('btnBackMenu').addEventListener('click',function(){ backToMenu(); });
+$('btnNextLevel').addEventListener('click',function(){
+  hide('ovCleared');
+  var next=S.levelIndex+1;
+  if(next<LEVELS.length) startLevel(next); else openLevelSelect();
+});
+$('btnBackSelect1').addEventListener('click',function(){ openLevelSelect(); });
+$('btnBackSelect2').addEventListener('click',function(){ openLevelSelect(); });
+$('btnReplay').addEventListener('click',function(){ startLevel(0); });
+$('btnReset').addEventListener('click',function(){ S.mirrors={}; computeBeam(); renderHUD(); });
+$('btnResetLevel').addEventListener('click',function(){ startLevel(S.levelIndex); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){
+  if(S.phase==='paused'){ hide('ovPause'); S.phase=S.prePausePhase||'playing'; }
+});
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='playing') return;
+  S.prePausePhase=S.phase;
+  S.phase='paused';
+  show('ovPause');
+});
+
+function cellSize(){
+  var maxW=320, maxH=380;
+  var cs=Math.floor(Math.min(maxW/S.n, maxH/S.n));
+  return Math.max(36, Math.min(76, cs));
+}
+
+function boardOrigin(){
+  var cs=cellSize();
+  var boardW=cs*S.n, boardH=cs*S.n;
+  return { ox:(W-boardW)/2, oy:96+(380-boardH)/2, cs:cs };
+}
+
+cv.addEventListener('pointerdown',function(e){
+  if(S.phase!=='playing') return;
+  var rect=cv.getBoundingClientRect();
+  var scaleX=W/rect.width, scaleY=H/rect.height;
+  var x=(e.clientX-rect.left)*scaleX, y=(e.clientY-rect.top)*scaleY;
+  var o=boardOrigin();
+  var c=Math.floor((x-o.ox)/o.cs);
+  var r=Math.floor((y-o.oy)/o.cs);
+  tapCell(r,c);
+});
+
+function drawBoard(){
+  var o=boardOrigin();
+  var cs=o.cs;
+  var now=performance.now();
+
+  for(var r=0;r<S.n;r++){
+    for(var c=0;c<S.n;c++){
+      var x=o.ox+c*cs, y=o.oy+r*cs;
+      ctx.fillStyle=((r+c)%2===0)?'rgba(255,255,255,.04)':'rgba(255,255,255,.02)';
+      ctx.fillRect(x+1,y+1,cs-2,cs-2);
+      if(S.walls[key(r,c)]){
+        ctx.fillStyle='#2a3350';
+        ctx.fillRect(x+3,y+3,cs-6,cs-6);
+      }
+    }
+  }
+
+  // beam path (glowing line)
+  if(S.beamPath.length>1){
+    ctx.save();
+    ctx.strokeStyle=S.hit?'#5CE68C':'#FF3B5C';
+    ctx.shadowColor=S.hit?'#5CE68C':'#FF3B5C';
+    ctx.shadowBlur=10;
+    ctx.lineWidth=4;
+    ctx.lineCap='round';
+    ctx.beginPath();
+    S.beamPath.forEach(function(p,i){
+      var px=o.ox+p.c*cs+cs/2, py=o.oy+p.r*cs+cs/2;
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    });
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // mirrors
+  Object.keys(S.mirrors).forEach(function(k){
+    var parts=k.split(','); var r2=parseInt(parts[0],10), c2=parseInt(parts[1],10);
+    var x=o.ox+c2*cs+cs/2, y=o.oy+r2*cs+cs/2;
+    var type=S.mirrors[k];
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.strokeStyle='#4DD0FF';
+    ctx.lineWidth=cs*0.1;
+    ctx.lineCap='round';
+    ctx.shadowColor='#4DD0FF'; ctx.shadowBlur=6;
+    var len=cs*0.32;
+    ctx.beginPath();
+    if(type==='/'){ ctx.moveTo(-len,len); ctx.lineTo(len,-len); }
+    else { ctx.moveTo(-len,-len); ctx.lineTo(len,len); }
+    ctx.stroke();
+    ctx.restore();
+  });
+
+  // emitter
+  var ex=o.ox+S.emitter.c*cs+cs/2, ey=o.oy+S.emitter.r*cs+cs/2;
+  ctx.beginPath(); ctx.arc(ex,ey,cs*0.22,0,Math.PI*2);
+  ctx.fillStyle='#FF3B5C'; ctx.shadowColor='#FF3B5C'; ctx.shadowBlur=8; ctx.fill();
+  ctx.shadowBlur=0;
+
+  // target (crystal)
+  var tx=o.ox+S.target.c*cs+cs/2, ty=o.oy+S.target.r*cs+cs/2;
+  var pulse=1+0.08*Math.sin(now/220);
+  ctx.save();
+  ctx.translate(tx,ty); ctx.scale(pulse,pulse);
+  ctx.beginPath();
+  var rr=cs*0.26;
+  ctx.moveTo(0,-rr); ctx.lineTo(rr*0.8,0); ctx.lineTo(0,rr); ctx.lineTo(-rr*0.8,0); ctx.closePath();
+  ctx.fillStyle=S.hit?'#5CE68C':'#FFC83D';
+  ctx.shadowColor=S.hit?'#5CE68C':'#FFC83D'; ctx.shadowBlur=10;
+  ctx.fill();
+  ctx.restore();
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  var bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#121b36'); bg.addColorStop(1,'#0a0f1c');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+  if(S.phase==='playing' || S.phase==='paused' || S.phase==='cleared' || S.phase==='allclear'){
+    drawBoard();
+  }
+}
+
+function loop(){
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+renderHUD();
+
+window.__LM = {
+  state:S,
+  start:function(){ $('btnStart').click(); },
+  startLevel:function(i){ startLevel(i); },
+  tapCell:tapCell,
+  isSolved:function(){ return S.hit; },
+  levelCount:LEVELS.length,
+  resetMirrors:function(){ S.mirrors={}; computeBeam(); renderHUD(); },
+  retry:function(){ startLevel(S.levelIndex); },
+  retryWin:function(){ startLevel(0); },
+  advance:function(seconds){ /* turn-based puzzle, no continuous physics */ }
+};
+})();
+</script>
+</body>
+</html>
