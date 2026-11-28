@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop',''); a.setAttribute('playsinline',''); a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__ED_AC && window.__ED_AC.state==='suspended'){ window.__ED_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>電梯調度大作戰</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#101722; --ink:#EAF0FF; --muted:#8C9AB8; --gold:#FFC83D; --red:#FF5A6B; --green:#5CE68C; --blue:#4DD0FF; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{ display:flex; align-items:center; justify-content:center; font-family:'Noto Sans TC','Fredoka',sans-serif;
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #182333 0%, #101722 65%); }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh; aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 56px 0 14px; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .topbar .pill{ background:rgba(10,14,24,.6); border:1px solid rgba(255,255,255,.12); padding:5px 10px; border-radius:999px; font-size:12px; white-space:nowrap; }
+  .topbar .pill b{ color:var(--gold); }
+  .topbar .pill.warn b{ color:var(--red); }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(10,14,24,.6); border:1px solid rgba(255,255,255,.12); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .building{ position:absolute; left:14px; right:14px; top:66px; bottom:20px; display:flex; flex-direction:column-reverse;
+    border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,.08); background:#0b1119; }
+  .floorRow{ position:relative; flex:1; display:flex; align-items:center; border-top:1px solid rgba(255,255,255,.06);
+    cursor:pointer; background:rgba(255,255,255,.015); }
+  .floorRow:first-child{ border-top:none; }
+  .floorRow.calling{ background:rgba(255,200,61,.08); }
+  .floorNum{ width:52px; flex-shrink:0; text-align:center; font-family:'Fredoka',sans-serif; font-size:15px; color:var(--muted); }
+  .floorShaft{ width:58px; flex-shrink:0; height:100%; position:relative; border-right:1px dashed rgba(255,255,255,.08); }
+  .floorWait{ flex:1; display:flex; align-items:center; gap:8px; padding-right:10px; }
+  .waitSlot{ display:flex; align-items:center; gap:6px; }
+  .waitIcon{ font-size:20px; }
+  .waitBar{ width:46px; height:6px; border-radius:999px; background:rgba(255,255,255,.1); overflow:hidden; }
+  .waitBarFill{ height:100%; background:var(--green); transition:background .2s; }
+  .waitDest{ font-size:11px; color:var(--muted); }
+
+  .elevCar{ position:absolute; left:4px; width:50px; height:52px; border-radius:8px;
+    background:linear-gradient(160deg,#3a4a66,#222d3f); border:2px solid rgba(255,255,255,.2);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px;
+    color:var(--ink); box-shadow:0 4px 14px rgba(0,0,0,.5); z-index:3; transition:none; }
+  .elevCar .riders{ font-family:'Fredoka',sans-serif; font-size:13px; font-weight:600; color:var(--blue); }
+  .elevCar .dests{ font-size:9px; color:var(--muted); max-width:46px; text-align:center; }
+  .elevCar.doorsOpen{ box-shadow:0 0 0 3px rgba(255,200,61,.5), 0 4px 14px rgba(0,0,0,.5); }
+
+  .flashTxt{ position:absolute; left:0; right:0; top:40%; text-align:center; font-family:'Fredoka',sans-serif;
+    font-size:20px; font-weight:700; opacity:0; pointer-events:none; z-index:7; transition:opacity .15s; text-shadow:0 2px 10px rgba(0,0,0,.6); }
+  .flashTxt.show{ opacity:1; }
+  .flashTxt.good{ color:var(--green); }
+  .flashTxt.bad{ color:var(--red); }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:28px; background:rgba(8,10,18,.8); backdrop-filter:blur(6px); z-index:10; gap:14px; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:26px; margin:0; letter-spacing:1px; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:21px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13.5px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; color:#101722;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:13px 32px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill">送達 <b id="deliverTxt">0</b>/<span id="targetTxt">15</span></div>
+      <div class="pill warn">錯過 <b id="missedTxt">0</b>/<span id="maxMissTxt">5</span></div>
+      <div class="pill">時間 <b id="timeTxt">90</b></div>
+    </div>
+  </div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="building" id="building"></div>
+  <div class="flashTxt" id="flashTxt"></div>
+
+  <div class="ov" id="ovMenu">
+    <h1>🛗 電梯調度大作戰</h1>
+    <p class="sub">點擊樓層呼叫電梯前往，載客後電梯經過乘客的目的樓層會自動讓他們下車。盡快送達 14 位乘客獲勝，耐心耗盡走掉的乘客太多就會被開除！</p>
+    <div class="stat">最佳送達數 <b id="bestTxt">0</b></div>
+    <button class="btn" id="btnStart">開始上班</button>
+  </div>
+
+  <div class="ov hidden" id="ovLose">
+    <h2>😫 被開除了</h2>
+    <p class="sub" id="loseDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetry">再試一次</button>
+      <button class="btn alt" id="btnMenu1">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovWin">
+    <h2>🎉 調度成功！</h2>
+    <p class="sub" id="winDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetryWin">再試一次</button>
+      <button class="btn alt" id="btnMenu3">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__ED_AC=AC; }catch(e){} } return AC; }
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.exponentialRampToValueAtTime(sweepTo,c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.15,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sfxBoard(){ playTone(440,0.08,'sine',0.12,520); }
+function sfxDeliver(){ playTone(660,0.09,'triangle',0.15,880); }
+function sfxMiss(){ playTone(180,0.22,'sawtooth',0.14,70); }
+function sfxWin(){ playTone(523,0.1,'triangle',0.14); setTimeout(function(){playTone(659,0.1,'triangle',0.14);},90); setTimeout(function(){playTone(784,0.16,'triangle',0.15);},180); }
+function sfxLose(){ playTone(220,0.3,'sawtooth',0.15,80); }
+
+var FLOORS=6;
+var CAP=4;
+var TIME_BUDGET=90;
+var TARGET_DELIVERIES=14;
+var MAX_MISSED=6;
+var FLOOR_SPEED=2.1;      // floors per second
+var DWELL_MS=260;
+var PATIENCE=21000;       // ms
+var SPAWN_MIN=2.6, SPAWN_MAX=4.4;
+
+function mulberry32(seed){
+  return function(){
+    seed|=0; seed=(seed+0x6D2B79F5)|0;
+    var t=Math.imul(seed^(seed>>>15),1|seed);
+    t=(t+Math.imul(t^(t>>>7),61|t))^t;
+    return ((t^(t>>>14))>>>0)/4294967296;
+  };
+}
+var rng=mulberry32(Date.now()&0xffffffff);
+
+function S0(){
+  var best=0;
+  try{ var v=localStorage.getItem('ed_best'); if(v) best=parseInt(v,10)||0; }catch(e){}
+  var floors=[];
+  for(var i=0;i<FLOORS;i++) floors.push(null); // null or {dest, patience}
+  return {
+    phase:'menu',
+    prePausePhase:null,
+    timeLeft:TIME_BUDGET,
+    delivered:0,
+    missed:0,
+    best:best,
+    floors:floors,
+    spawnTimer:2.0,
+    elev:{ floor:1, target:null, moving:false, dwell:0, riders:[] }
+  };
+}
+var S=S0();
+
+function resetState(){
+  var fresh=S0();
+  for(var k in S){ if(Object.prototype.hasOwnProperty.call(S,k)) delete S[k]; }
+  for(var k2 in fresh){ if(Object.prototype.hasOwnProperty.call(fresh,k2)) S[k2]=fresh[k2]; }
+}
+
+var buildingEl=$('building');
+var rowEls=[];
+function buildRows(){
+  buildingEl.innerHTML='';
+  rowEls=[];
+  for(var f=1; f<=FLOORS; f++){
+    var row=document.createElement('div');
+    row.className='floorRow';
+    row.setAttribute('data-floor', String(f));
+    row.innerHTML='<div class="floorNum">'+f+'樓</div><div class="floorShaft"></div><div class="floorWait"></div>';
+    row.addEventListener('pointerdown',(function(fl){ return function(e){ e.preventDefault(); tapFloor(fl); }; })(f));
+    buildingEl.appendChild(row); // column-reverse: appended order bottom->top visually
+    rowEls[f]=row;
+  }
+  // elevator car lives in floor1's shaft column, absolutely positioned relative to building
+  var car=document.createElement('div');
+  car.className='elevCar';
+  car.id='elevCar';
+  car.innerHTML='<div class="riders" id="ridersTxt">0/'+CAP+'</div><div class="dests" id="destsTxt"></div>';
+  buildingEl.appendChild(car);
+}
+buildRows();
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+
+function flash(kind,text){
+  var el=$('flashTxt');
+  el.className='flashTxt show '+kind;
+  el.textContent=text;
+  clearTimeout(flash._t);
+  flash._t=setTimeout(function(){ el.classList.remove('show'); },500);
+}
+
+function renderHUD(){
+  $('deliverTxt').textContent=String(S.delivered);
+  $('targetTxt').textContent=String(TARGET_DELIVERIES);
+  $('missedTxt').textContent=String(S.missed);
+  $('maxMissTxt').textContent=String(MAX_MISSED);
+  $('timeTxt').textContent=String(Math.max(0,Math.ceil(S.timeLeft)));
+  $('bestTxt').textContent=String(S.best);
+}
+
+function renderFloors(){
+  for(var f=1; f<=FLOORS; f++){
+    var row=rowEls[f];
+    var w=S.floors[f-1];
+    var waitEl=row.querySelector('.floorWait');
+    row.classList.toggle('calling', S.elev.target===f);
+    if(w){
+      var pct=Math.max(0, w.patience/PATIENCE);
+      var color = pct>0.5 ? 'var(--green)' : (pct>0.22 ? 'var(--gold)' : 'var(--red)');
+      waitEl.innerHTML='<div class="waitSlot"><span class="waitIcon">🧑</span>'+
+        '<div class="waitBar"><div class="waitBarFill" style="width:'+(pct*100)+'%;background:'+color+'"></div></div>'+
+        '<span class="waitDest">→'+w.dest+'樓</span></div>';
+    } else {
+      waitEl.innerHTML='';
+    }
+  }
+}
+
+function renderElevator(){
+  var car=$('elevCar');
+  var rowH=buildingEl.clientHeight/FLOORS;
+  // floor 1 is at bottom (visually highest y). topPx measured from top of building.
+  var topPx=(FLOORS - S.elev.floor)*rowH + (rowH-52)/2;
+  car.style.top=topPx+'px';
+  car.classList.toggle('doorsOpen', S.elev.dwell>0);
+  $('ridersTxt').textContent=S.elev.riders.length+'/'+CAP;
+  var dests=S.elev.riders.map(function(r){return r.dest;});
+  $('destsTxt').textContent = dests.length ? ('→'+dests.join(',')) : '';
+}
+
+function tapFloor(f){
+  if(S.phase!=='playing') return;
+  S.elev.target=f;
+  if(!S.elev.moving && Math.abs(S.elev.floor-f)<0.001){
+    // already there - trigger a fresh arrival handling (in case passenger just appeared)
+    handleArrival();
+  } else {
+    S.elev.moving=true;
+  }
+}
+
+function handleArrival(){
+  var f=Math.round(S.elev.floor);
+  S.elev.floor=f;
+  S.elev.moving=false;
+  S.elev.target=null;
+  S.elev.dwell=DWELL_MS;
+  // alight
+  var before=S.elev.riders.length;
+  S.elev.riders=S.elev.riders.filter(function(r){
+    if(r.dest===f){ S.delivered++; return false; }
+    return true;
+  });
+  if(S.elev.riders.length<before){
+    sfxDeliver();
+    flash('good','+'+(before-S.elev.riders.length)+' 送達！');
+    if(S.delivered>S.best){ S.best=S.delivered; try{localStorage.setItem('ed_best',String(S.best));}catch(e){} }
+    if(S.delivered>=TARGET_DELIVERIES){ winGame(); return; }
+  }
+  // board
+  var w=S.floors[f-1];
+  if(w && S.elev.riders.length<CAP){
+    S.floors[f-1]=null;
+    S.elev.riders.push({dest:w.dest});
+    sfxBoard();
+  }
+  renderHUD();
+  renderFloors();
+  renderElevator();
+}
+
+function spawnPassenger(){
+  var free=[];
+  for(var i=0;i<FLOORS;i++){ if(!S.floors[i]) free.push(i); }
+  if(free.length===0) return;
+  var idx=free[Math.floor(rng()*free.length)];
+  var originFloor=idx+1;
+  var dest;
+  do{ dest=1+Math.floor(rng()*FLOORS); }while(dest===originFloor);
+  S.floors[idx]={dest:dest, patience:PATIENCE};
+}
+
+function update(dt){
+  if(S.phase!=='playing') return;
+  S.timeLeft-=dt;
+  if(S.timeLeft<=0){
+    S.timeLeft=0;
+    if(S.delivered>=TARGET_DELIVERIES) winGame(); else loseGame('timeout');
+    return;
+  }
+  S.spawnTimer-=dt;
+  if(S.spawnTimer<=0){
+    spawnPassenger();
+    S.spawnTimer=SPAWN_MIN+rng()*(SPAWN_MAX-SPAWN_MIN);
+    // if the elevator is already idle at the floor that just got a new passenger, board immediately
+    var stationaryFloor=Math.round(S.elev.floor);
+    if(!S.elev.moving && S.elev.floor===stationaryFloor && S.floors[stationaryFloor-1] && S.elev.riders.length<CAP){
+      var w2=S.floors[stationaryFloor-1];
+      S.floors[stationaryFloor-1]=null;
+      S.elev.riders.push({dest:w2.dest});
+      S.elev.dwell=Math.max(S.elev.dwell,DWELL_MS);
+      sfxBoard();
+    }
+  }
+  // patience countdown for waiting (unboarded) passengers
+  for(var i=0;i<FLOORS;i++){
+    var w=S.floors[i];
+    if(w){
+      w.patience-=dt*1000;
+      if(w.patience<=0){
+        S.floors[i]=null;
+        S.missed++;
+        sfxMiss();
+        flash('bad','有人等不及走了！');
+        if(S.missed>=MAX_MISSED){ loseGame('missed'); return; }
+      }
+    }
+  }
+  // elevator dwell
+  if(S.elev.dwell>0){
+    S.elev.dwell-=dt*1000;
+    if(S.elev.dwell<0) S.elev.dwell=0;
+  }
+  // elevator movement
+  if(S.elev.moving && S.elev.target!=null){
+    var diff=S.elev.target-S.elev.floor;
+    var step=FLOOR_SPEED*dt;
+    if(Math.abs(diff)<=step){
+      S.elev.floor=S.elev.target;
+      handleArrival();
+    } else {
+      S.elev.floor += (diff>0?1:-1)*step;
+    }
+  }
+  renderHUD();
+  renderFloors();
+  renderElevator();
+}
+
+function startGame(){
+  resetState();
+  S.phase='playing';
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  renderHUD();
+  renderFloors();
+  renderElevator();
+}
+
+function winGame(){
+  S.phase='win';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  sfxWin();
+  $('winDetail').textContent='送達了 '+S.delivered+' 位乘客，剩餘時間 '+Math.ceil(S.timeLeft)+' 秒。';
+  show('ovWin');
+}
+
+function loseGame(reason){
+  S.phase='lose';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  sfxLose();
+  var msg = reason==='missed' ? ('太多乘客等不及離開了（錯過 '+S.missed+' 位）。') : ('時間到，只送達了 '+S.delivered+'/'+TARGET_DELIVERIES+' 位。');
+  $('loseDetail').textContent=msg;
+  show('ovLose');
+}
+
+function backToMenu(){
+  S.phase='menu';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  show('ovMenu');
+}
+
+$('btnStart').addEventListener('click',function(){ hide('ovMenu'); startGame(); });
+$('btnRetry').addEventListener('click',function(){ hide('ovLose'); startGame(); });
+$('btnRetryWin').addEventListener('click',function(){ hide('ovWin'); startGame(); });
+$('btnMenu1').addEventListener('click',function(){ hide('ovLose'); backToMenu(); });
+$('btnMenu3').addEventListener('click',function(){ hide('ovWin'); backToMenu(); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){
+  if(S.phase==='paused'){ hide('ovPause'); S.phase=S.prePausePhase||'playing'; }
+});
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='playing') return;
+  S.prePausePhase=S.phase;
+  S.phase='paused';
+  show('ovPause');
+});
+
+var lastT=null;
+function loop(ts){
+  if(lastT===null) lastT=ts;
+  var dt=Math.min(0.05,(ts-lastT)/1000);
+  lastT=ts;
+  update(dt);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+renderHUD();
+renderFloors();
+renderElevator();
+
+window.__ED = {
+  state:S,
+  start:function(){ $('btnStart').click(); },
+  retry:function(){ if(!$('ovLose').classList.contains('hidden')) $('btnRetry').click(); },
+  retryWin:function(){ if(!$('ovWin').classList.contains('hidden')) $('btnRetryWin').click(); },
+  tapFloor:function(f){ tapFloor(f); },
+  spawnAt:function(floorIdx1based, dest){ S.floors[floorIdx1based-1]={dest:dest, patience:PATIENCE}; renderFloors(); },
+  advance:function(seconds){
+    var steps=Math.round(seconds/0.016);
+    for(var i=0;i<steps;i++) update(0.016);
+  }
+};
+})();
+</script>
+</body>
+</html>
