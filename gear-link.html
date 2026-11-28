@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop',''); a.setAttribute('playsinline',''); a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__GL_AC && window.__GL_AC.state==='suspended'){ window.__GL_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>齒輪連動</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#14181F; --ink:#F0F3FA; --muted:#8C98AE; --gold:#FFC83D; --green:#5CE68C; --blue:#4FA8FF; --orange:#FF9A4F; --red:#FF5A6B; --purple:#B678FF; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{ display:flex; align-items:center; justify-content:center; font-family:'Noto Sans TC','Fredoka',sans-serif;
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #1E2531 0%, #14181F 65%); }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh; aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; position:absolute; touch-action:none; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 56px 0 14px; font-family:'Fredoka',sans-serif; pointer-events:none; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .topbar .pill{ background:rgba(20,24,31,.8); border:1px solid rgba(255,255,255,.12); padding:5px 10px; border-radius:999px; font-size:12.5px; pointer-events:auto; }
+  .topbar .pill b{ color:var(--gold); }
+  .topbar .actBtn{ pointer-events:auto; background:rgba(20,24,31,.8); border:1px solid rgba(255,255,255,.14); color:var(--ink);
+    padding:5px 12px; border-radius:999px; font-size:12.5px; font-family:'Noto Sans TC',sans-serif; cursor:pointer; }
+  .topbar .actBtn:active{ transform:scale(.95); }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(20,24,31,.8); border:1px solid rgba(255,255,255,.12); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px; background:rgba(10,12,16,.86); backdrop-filter:blur(6px); z-index:10; gap:12px; overflow-y:auto; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:24px; margin:0; letter-spacing:1px; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:20px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:15px; font-weight:600; color:#14181F;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:12px 28px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+
+  .levelGrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; max-width:280px; margin:6px 0; }
+  .lvlCard{ position:relative; width:60px; height:60px; border-radius:14px; background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.14); display:flex; flex-direction:column; align-items:center; justify-content:center;
+    cursor:pointer; font-family:'Fredoka',sans-serif; }
+  .lvlCard.cleared{ background:rgba(92,230,140,.16); border-color:rgba(92,230,140,.5); }
+  .lvlCard .n{ font-size:18px; font-weight:600; }
+  .check{ position:absolute; top:3px; right:5px; font-size:11px; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill">第 <b id="lvNoTxt">1</b> 關</div>
+      <div class="pill">齒輪 <b id="invUsedTxt">0</b> / <b id="invTotalTxt">9</b></div>
+      <button class="actBtn" id="btnClearAll">🧹 清除全部</button>
+    </div>
+  </div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="ov" id="ovMenu">
+    <h1>⚙️ 齒輪連動</h1>
+    <p class="sub">在格子上放置齒輪，把動力源與目標連接起來！小心別把齒輪接到方向不合的動力源，否則整組機關會卡死。</p>
+    <div class="stat">已通關 <b id="clearedCountTxt">0</b> / <b id="totalLevelsTxt">8</b></div>
+    <button class="btn" id="btnStart">選擇關卡</button>
+  </div>
+
+  <div class="ov hidden" id="ovLevelSelect">
+    <h2>選擇關卡</h2>
+    <div class="levelGrid" id="levelGrid"></div>
+    <button class="btn alt" id="btnBackMenu">返回選單</button>
+  </div>
+
+  <div class="ov hidden" id="ovCleared">
+    <h2>⚙️ 成功連動！</h2>
+    <p class="sub" id="clearedDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnNextLevel">下一關</button>
+      <button class="btn alt" id="btnBackSelect1">關卡選擇</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovAllClear">
+    <h2>🏆 全部通關！</h2>
+    <p class="sub" id="allClearDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnReplay">重新挑戰</button>
+      <button class="btn alt" id="btnBackSelect2">關卡選擇</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnResetLevel">重設關卡</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var $=function(id){return document.getElementById(id);};
+
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__GL_AC=AC; }catch(e){} } return AC; }
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.exponentialRampToValueAtTime(sweepTo,c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.15,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sfxPlace(){ playTone(480,0.05,'triangle',0.08); }
+function sfxRemove(){ playTone(300,0.05,'triangle',0.06); }
+function sfxJam(){ playTone(140,0.12,'sawtooth',0.09); }
+function sfxClear(){ playTone(523,0.1,'triangle',0.14); setTimeout(function(){playTone(659,0.1,'triangle',0.14);},90); setTimeout(function(){playTone(784,0.16,'triangle',0.15);},180); }
+function sfxAllClear(){ playTone(523,0.1,'triangle',0.14); setTimeout(function(){playTone(659,0.1,'triangle',0.14);},100); setTimeout(function(){playTone(784,0.1,'triangle',0.14);},200); setTimeout(function(){playTone(1047,0.22,'triangle',0.17);},300); }
+
+var ROWS=6, COLS=5;
+
+function parseGrid(rows){
+  var cells=[];
+  var S=null,T=null,X=null;
+  for(var r=0;r<rows.length;r++){
+    var rowArr=[];
+    for(var c=0;c<rows[r].length;c++){
+      var ch=rows[r][c];
+      var type='empty';
+      if(ch==='S'){ type='source'; S=[r,c]; }
+      else if(ch==='T'){ type='target'; T=[r,c]; }
+      else if(ch==='X'){ type='decoy'; X=[r,c]; }
+      else if(ch==='#'){ type='blocked'; }
+      rowArr.push(type);
+    }
+    cells.push(rowArr);
+  }
+  return {cells:cells, S:S, T:T, X:X};
+}
+
+var LEVELS=[
+  { title:'入門齒輪', inv:9, rows:['S....','.....','.....','.....','.....','....T'] },
+  { title:'小石牆', inv:9, rows:['S....','.....','..#..','..#..','.....','....T'] },
+  { title:'梳齒迷宮', inv:10, rows:['S....','.#.#.','.#.#.','.#.#.','.....','....T'] },
+  { title:'長牆繞道', inv:10, rows:['S.#..','..#..','..#..','..#..','..#..','....T'] },
+  { title:'密集障礙', inv:11, rows:['S..#.','.##..','..#.#','.#...','.#.#.','....T'] },
+  { title:'陌生動力源', inv:9, rows:['S....','.....','..X..','.....','.....','....T'], decoyDir:'ccw' },
+  { title:'小心繞行', inv:10, rows:['S....','.....','.#X..','.....','.....','....T'], decoyDir:'ccw' },
+  { title:'終極機關', inv:11, rows:['S..#.','.#...','.#X#.','.#...','...#.','....T'], decoyDir:'ccw' }
+];
+LEVELS.forEach(function(lv){
+  var parsed=parseGrid(lv.rows);
+  lv.cells=parsed.cells; lv.S=parsed.S; lv.T=parsed.T; lv.X=parsed.X;
+  lv.sourceDir='cw';
+});
+
+function loadProgress(){
+  try{ return JSON.parse(localStorage.getItem('gl_progress')||'{}'); }catch(e){ return {}; }
+}
+function saveProgress(p){ try{ localStorage.setItem('gl_progress', JSON.stringify(p)); }catch(e){} }
+
+function S0(){
+  return {
+    phase:'menu',
+    prePausePhase:null,
+    levelIndex:0,
+    placed:{}, // "r,c" -> true
+    t:0,
+    jamFlash:0,
+    progress:loadProgress()
+  };
+}
+var S=S0();
+
+function resetState(){
+  var fresh=S0();
+  for(var k in S){ if(Object.prototype.hasOwnProperty.call(S,k)) delete S[k]; }
+  for(var k2 in fresh){ if(Object.prototype.hasOwnProperty.call(fresh,k2)) S[k2]=fresh[k2]; }
+}
+
+function curLevel(){ return LEVELS[S.levelIndex]; }
+function key(r,c){ return r+','+c; }
+function cellType(lv,r,c){
+  if(r<0||r>=ROWS||c<0||c>=COLS) return 'oob';
+  return lv.cells[r][c];
+}
+function colorOf(r,c){ return (r+c)%2; }
+function oppositeDir(d){ return d==='cw' ? 'ccw' : 'cw'; }
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+
+function computeNetwork(){
+  var lv=curLevel();
+  // gather all "occupied" cells: source, decoy(if any), placed gears
+  var occupied={};
+  occupied[key(lv.S[0],lv.S[1])] = {anchor:true, dir:lv.sourceDir};
+  if(lv.X){ occupied[key(lv.X[0],lv.X[1])] = {anchor:true, dir:lv.decoyDir}; }
+  for(var k in S.placed){ if(S.placed[k]) occupied[k]={anchor:false}; }
+
+  var visited={};
+  var components=[]; // {cells:[...], jammed:bool, colorDir:{0:dir,1:dir}|null}
+  for(var k2 in occupied){
+    if(visited[k2]) continue;
+    var comp={cells:[], jammed:false, colorDir:null};
+    var queue=[k2]; visited[k2]=true;
+    while(queue.length){
+      var ck=queue.shift();
+      comp.cells.push(ck);
+      var parts=ck.split(','); var r=+parts[0], c=+parts[1];
+      var info=occupied[ck];
+      if(info.anchor){
+        var col=colorOf(r,c);
+        var impliedForThisColor = info.dir;
+        var impliedForOther = oppositeDir(info.dir);
+        if(!comp.colorDir){
+          comp.colorDir = {};
+          comp.colorDir[col]=impliedForThisColor;
+          comp.colorDir[1-col]=impliedForOther;
+        } else {
+          if(comp.colorDir[col] !== impliedForThisColor){ comp.jammed=true; }
+        }
+      }
+      var dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+      for(var di=0; di<dirs.length; di++){
+        var nr=r+dirs[di][0], nc=c+dirs[di][1];
+        var nk=key(nr,nc);
+        if(occupied[nk] && !visited[nk]){
+          visited[nk]=true;
+          queue.push(nk);
+        }
+      }
+    }
+    components.push(comp);
+  }
+  return components;
+}
+
+function cellState(r,c,components){
+  var k=key(r,c);
+  for(var i=0;i<components.length;i++){
+    var comp=components[i];
+    for(var j=0;j<comp.cells.length;j++){
+      if(comp.cells[j]===k){
+        if(comp.jammed) return {state:'jammed'};
+        if(!comp.colorDir) return {state:'idle'};
+        var col=colorOf(r,c);
+        return {state:'spin', dir:comp.colorDir[col]};
+      }
+    }
+  }
+  return {state:'none'};
+}
+
+function isSolved(){
+  if(S.phase==='cleared' || S.phase==='allclear') return true;
+  var lv=curLevel();
+  var tk=key(lv.T[0],lv.T[1]);
+  if(!S.placed[tk]) return false;
+  var components=computeNetwork();
+  var cs=cellState(lv.T[0],lv.T[1],components);
+  return cs.state==='spin';
+}
+
+function renderHUD(){
+  var lv=curLevel();
+  $('lvNoTxt').textContent=String(S.levelIndex+1);
+  var used=Object.keys(S.placed).filter(function(k){return S.placed[k];}).length;
+  $('invUsedTxt').textContent=String(used);
+  $('invTotalTxt').textContent=String(lv.inv);
+}
+
+function tapCell(r,c){
+  if(S.phase!=='playing') return false;
+  var lv=curLevel();
+  var t=cellType(lv,r,c);
+  if(t==='blocked' || t==='source' || t==='decoy' || t==='oob') return false;
+  var k=key(r,c);
+  if(S.placed[k]){
+    delete S.placed[k];
+    sfxRemove();
+    renderHUD();
+    return true;
+  }
+  var used=Object.keys(S.placed).filter(function(kk){return S.placed[kk];}).length;
+  if(used>=lv.inv) return false;
+  S.placed[k]=true;
+  sfxPlace();
+  renderHUD();
+  var components=computeNetwork();
+  var cs=cellState(r,c,components);
+  if(cs.state==='jammed'){ sfxJam(); S.jamFlash=0.6; }
+  checkWinIfSolved();
+  return true;
+}
+
+function clearAll(){
+  if(S.phase!=='playing') return;
+  S.placed={};
+  renderHUD();
+}
+
+function checkWinIfSolved(){
+  var lv=curLevel();
+  var tk=key(lv.T[0],lv.T[1]);
+  if(!S.placed[tk]) return;
+  var components=computeNetwork();
+  var cs=cellState(lv.T[0],lv.T[1],components);
+  if(cs.state==='spin'){
+    checkWin();
+  }
+}
+
+function checkWin(){
+  var idx=S.levelIndex;
+  if(!S.progress[idx]){ S.progress[idx]=true; saveProgress(S.progress); }
+  sfxClear();
+  $('topbar').classList.remove('on'); $('menuBtn').classList.remove('on');
+  if(idx>=LEVELS.length-1){
+    S.phase='allclear';
+    setTimeout(sfxAllClear,200);
+    $('allClearDetail').textContent='恭喜完成全部 '+LEVELS.length+' 道齒輪機關！';
+    show('ovAllClear');
+  } else {
+    S.phase='cleared';
+    $('clearedDetail').textContent='「'+LEVELS[idx].title+'」的齒輪成功連動到目標！';
+    show('ovCleared');
+  }
+}
+
+function buildLevelGrid(){
+  var grid=$('levelGrid');
+  grid.innerHTML='';
+  for(var i=0;i<LEVELS.length;i++){
+    (function(i){
+      var card=document.createElement('div');
+      card.className='lvlCard'+(S.progress[i]?' cleared':'');
+      card.innerHTML='<span class="n">'+(i+1)+'</span>'+(S.progress[i]?'<span class="check">✅</span>':'');
+      card.addEventListener('click',function(){ startLevel(i); });
+      grid.appendChild(card);
+    })(i);
+  }
+  var clearedN=Object.keys(S.progress).length;
+  $('clearedCountTxt').textContent=String(clearedN);
+  $('totalLevelsTxt').textContent=String(LEVELS.length);
+}
+
+function startLevel(idx){
+  hide('ovMenu'); hide('ovLevelSelect'); hide('ovCleared'); hide('ovAllClear'); hide('ovPause');
+  S.levelIndex=idx;
+  S.placed={};
+  S.jamFlash=0;
+  S.phase='playing';
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  renderHUD();
+}
+
+function openLevelSelect(){
+  hide('ovMenu'); hide('ovCleared'); hide('ovAllClear'); hide('ovPause');
+  $('topbar').classList.remove('on'); $('menuBtn').classList.remove('on');
+  S.phase='levelselect';
+  buildLevelGrid();
+  show('ovLevelSelect');
+}
+
+function backToMenu(){
+  hide('ovLevelSelect'); hide('ovCleared'); hide('ovAllClear'); hide('ovPause');
+  S.phase='menu';
+  $('topbar').classList.remove('on'); $('menuBtn').classList.remove('on');
+  var clearedN=Object.keys(S.progress).length;
+  $('clearedCountTxt').textContent=String(clearedN);
+  $('totalLevelsTxt').textContent=String(LEVELS.length);
+  show('ovMenu');
+}
+
+$('btnStart').addEventListener('click',function(){ openLevelSelect(); });
+$('btnBackMenu').addEventListener('click',function(){ backToMenu(); });
+$('btnNextLevel').addEventListener('click',function(){
+  hide('ovCleared');
+  var next=S.levelIndex+1;
+  if(next<LEVELS.length) startLevel(next); else openLevelSelect();
+});
+$('btnBackSelect1').addEventListener('click',function(){ openLevelSelect(); });
+$('btnBackSelect2').addEventListener('click',function(){ openLevelSelect(); });
+$('btnReplay').addEventListener('click',function(){ startLevel(0); });
+$('btnResetLevel').addEventListener('click',function(){ startLevel(S.levelIndex); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnClearAll').addEventListener('click',function(){ clearAll(); });
+$('btnResume').addEventListener('click',function(){
+  if(S.phase==='paused'){ hide('ovPause'); S.phase=S.prePausePhase||'playing'; }
+});
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='playing') return;
+  S.prePausePhase=S.phase;
+  S.phase='paused';
+  show('ovPause');
+});
+
+function layout(){
+  var cs=60;
+  var gw=cs*COLS, gh=cs*ROWS;
+  var ox=(W-gw)/2, oy=100;
+  return {cs:cs, ox:ox, oy:oy};
+}
+
+function cellFromXY(x,y){
+  var L=layout();
+  var c=Math.floor((x-L.ox)/L.cs);
+  var r=Math.floor((y-L.oy)/L.cs);
+  if(r<0||c<0||r>=ROWS||c>=COLS) return null;
+  return [r,c];
+}
+
+function pointerXY(e){
+  var rect=cv.getBoundingClientRect();
+  var scaleX=W/rect.width, scaleY=H/rect.height;
+  return { x:(e.clientX-rect.left)*scaleX, y:(e.clientY-rect.top)*scaleY };
+}
+var downPt=null;
+cv.addEventListener('pointerdown',function(e){ downPt=pointerXY(e); });
+cv.addEventListener('pointerup',function(e){
+  if(!downPt) return;
+  var p=pointerXY(e);
+  var dx=p.x-downPt.x, dy=p.y-downPt.y;
+  downPt=null;
+  if(Math.sqrt(dx*dx+dy*dy)>12) return;
+  if(S.phase!=='playing') return;
+  var rc=cellFromXY(p.x,p.y);
+  if(rc) tapCell(rc[0],rc[1]);
+});
+
+function drawGear(cx,cy,radius,angle,color){
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(angle);
+  var teeth=8;
+  ctx.fillStyle=color;
+  ctx.beginPath();
+  for(var i=0;i<teeth;i++){
+    var a0=(i/teeth)*Math.PI*2;
+    var a1=a0+(Math.PI*2/teeth)*0.5;
+    var a2=a0+(Math.PI*2/teeth);
+    ctx.lineTo(Math.cos(a0)*radius, Math.sin(a0)*radius);
+    ctx.lineTo(Math.cos((a0+a1)/2)*radius*1.22, Math.sin((a0+a1)/2)*radius*1.22);
+    ctx.lineTo(Math.cos(a1)*radius, Math.sin(a1)*radius);
+    ctx.lineTo(Math.cos(a2)*radius, Math.sin(a2)*radius);
+  }
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(0,0,radius*0.42,0,Math.PI*2);
+  ctx.fillStyle='rgba(20,24,31,.85)';
+  ctx.fill();
+  ctx.restore();
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  var bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#1E2531'); bg.addColorStop(1,'#14181F');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+  if(!(S.phase==='playing' || S.phase==='paused' || S.phase==='cleared' || S.phase==='allclear')) return;
+  var lv=curLevel();
+  var L=layout();
+  var components=computeNetwork();
+
+  for(var r=0;r<ROWS;r++){
+    for(var c=0;c<COLS;c++){
+      var x=L.ox+c*L.cs, y=L.oy+r*L.cs;
+      var t=lv.cells[r][c];
+      var cx=x+L.cs/2, cy=y+L.cs/2;
+
+      // cell background
+      ctx.fillStyle = (t==='blocked') ? 'rgba(0,0,0,.35)' : 'rgba(255,255,255,.035)';
+      ctx.fillRect(x+2,y+2,L.cs-4,L.cs-4);
+      ctx.strokeStyle='rgba(255,255,255,.07)';
+      ctx.lineWidth=1;
+      ctx.strokeRect(x+2,y+2,L.cs-4,L.cs-4);
+
+      if(t==='blocked'){
+        ctx.fillStyle='rgba(255,255,255,.12)';
+        ctx.font='18px sans-serif';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('✖', cx, cy);
+        continue;
+      }
+
+      if(t==='target' && !S.placed[key(r,c)]){
+        ctx.save();
+        ctx.strokeStyle='rgba(255,200,61,.55)';
+        ctx.lineWidth=2;
+        ctx.setLineDash([4,3]);
+        ctx.beginPath(); ctx.arc(cx,cy,L.cs*0.32,0,Math.PI*2); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.font='18px sans-serif';
+        ctx.fillStyle='rgba(255,200,61,.8)';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('🎯', cx, cy);
+        ctx.restore();
+        continue;
+      }
+
+      if(t==='source'){
+        drawGear(cx,cy,L.cs*0.34, S.t*1.6, '#FFC83D');
+        ctx.save();
+        ctx.strokeStyle='#FFC83D'; ctx.lineWidth=2.5;
+        ctx.beginPath(); ctx.arc(cx,cy,L.cs*0.42,0,Math.PI*2); ctx.stroke();
+        ctx.font='10px "Fredoka",sans-serif';
+        ctx.fillStyle='#FFC83D';
+        ctx.textAlign='center';
+        ctx.fillText('動力源', cx, y+L.cs-6);
+        ctx.restore();
+        continue;
+      }
+      if(t==='decoy'){
+        drawGear(cx,cy,L.cs*0.34, -S.t*1.6, '#B678FF');
+        ctx.save();
+        ctx.strokeStyle='#B678FF'; ctx.lineWidth=2.5;
+        ctx.setLineDash([3,3]);
+        ctx.beginPath(); ctx.arc(cx,cy,L.cs*0.42,0,Math.PI*2); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.font='13px sans-serif';
+        ctx.fillStyle='#fff';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('❓', cx, cy-L.cs*0.02);
+        ctx.font='10px "Fredoka",sans-serif';
+        ctx.fillStyle='#B678FF';
+        ctx.fillText('未知動力', cx, y+L.cs-6);
+        ctx.restore();
+        continue;
+      }
+
+      var pk=key(r,c);
+      if(S.placed[pk]){
+        var cs=cellState(r,c,components);
+        var color='#8C98AE', angle=0;
+        if(cs.state==='spin'){
+          color = cs.dir==='cw' ? '#4FA8FF' : '#FF9A4F';
+          angle = (cs.dir==='cw' ? 1 : -1) * S.t * 2.2;
+        } else if(cs.state==='jammed'){
+          color = '#FF5A6B';
+          angle = (Math.sin(S.t*30)*0.05);
+        } else {
+          color = '#5A6478';
+          angle = 0;
+        }
+        drawGear(cx,cy,L.cs*0.3, angle, color);
+        if(cs.state==='jammed'){
+          ctx.font='13px sans-serif';
+          ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.fillText('⚡', cx, y+10);
+        }
+      }
+    }
+  }
+}
+
+function loop(ts){
+  S.t = (ts||0)/1000;
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+renderHUD();
+
+window.__GL = {
+  state:S,
+  start:function(){ $('btnStart').click(); },
+  startLevel:function(i){ startLevel(i); },
+  tapCell:tapCell,
+  clearAll:clearAll,
+  isSolved:isSolved,
+  levelCount:LEVELS.length,
+  retry:function(){ startLevel(S.levelIndex); },
+  retryWin:function(){ startLevel(0); },
+  computeNetwork:computeNetwork,
+  cellState:function(r,c){ return cellState(r,c,computeNetwork()); },
+  solveInstant:function(){
+    var lv=curLevel();
+    S.placed={};
+    // safe path: down column 0 to last row, then across last row to target
+    var path=[];
+    for(var r=lv.S[0]+1;r<ROWS;r++) path.push([r,lv.S[1]]);
+    for(var c=lv.S[1]+1;c<=lv.T[1];c++) path.push([ROWS-1,c]);
+    for(var i=0;i<path.length;i++){
+      S.placed[key(path[i][0],path[i][1])]=true;
+    }
+    renderHUD();
+    checkWinIfSolved();
+  },
+  advance:function(seconds){ /* visual animation only, no physics state */ }
+};
+})();
+</script>
+</body>
+</html>
