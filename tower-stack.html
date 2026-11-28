@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop',''); a.setAttribute('playsinline',''); a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__TS_AC && window.__TS_AC.state==='suspended'){ window.__TS_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>疊疊高塔</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#10141F; --ink:#F2F4FF; --muted:#9AA3C0; --gold:#FFC83D; --red:#FF5A6B; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{ display:flex; align-items:center; justify-content:center; font-family:'Noto Sans TC','Fredoka',sans-serif;
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #1b2236 0%, #10141F 65%); }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh; aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; position:absolute; touch-action:none; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 56px 0 14px; font-family:'Fredoka',sans-serif; pointer-events:none; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; justify-content:space-between; }
+  .topbar .pill{ background:rgba(10,14,24,.6); border:1px solid rgba(255,255,255,.12); padding:5px 11px; border-radius:999px; font-size:13px; }
+  .topbar .pill b{ color:var(--gold); }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(10,14,24,.6); border:1px solid rgba(255,255,255,.12); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .perfectTxt{ position:absolute; left:0; right:0; top:46%; text-align:center; font-family:'Fredoka',sans-serif;
+    font-size:26px; font-weight:700; color:var(--gold); opacity:0; pointer-events:none; z-index:5;
+    text-shadow:0 2px 12px rgba(255,200,61,.6); transition:opacity .15s; }
+  .perfectTxt.show{ opacity:1; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:28px; background:rgba(8,10,18,.76); backdrop-filter:blur(6px); z-index:10; gap:14px; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:29px; margin:0; letter-spacing:1px; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:21px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13.5px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; color:#10141f;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:13px 32px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+  <div class="perfectTxt" id="perfectTxt">完美！</div>
+
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill">高度 <b id="scoreTxt">0</b></div>
+      <div class="pill">最佳 <b id="bestTxt2">0</b></div>
+    </div>
+  </div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="ov" id="ovMenu">
+    <h1>🗼 疊疊高塔</h1>
+    <p class="sub">方塊左右來回移動，點擊畫面讓它落下疊上去！疊歪的部分會被切掉，完全沒疊到就結束。對準中心疊出「完美」可以不縮小，看你能疊多高！</p>
+    <div class="stat">最佳高度 <b id="bestTxt">0</b></div>
+    <button class="btn" id="btnStart">開始疊塔</button>
+  </div>
+
+  <div class="ov hidden" id="ovLose">
+    <h2>💥 塔倒了</h2>
+    <p class="sub" id="loseDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetry">再玩一次</button>
+      <button class="btn alt" id="btnMenu1">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var $=function(id){return document.getElementById(id);};
+
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__TS_AC=AC; }catch(e){} } return AC; }
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.exponentialRampToValueAtTime(sweepTo,c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.15,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sfxPlace(){ playTone(420,0.08,'sine',0.12,520); }
+function sfxPerfect(){ playTone(660,0.1,'triangle',0.15,880); setTimeout(function(){playTone(990,0.12,'triangle',0.13);},70); }
+function sfxFall(){ playTone(150,0.35,'sawtooth',0.17,45); }
+
+var PALETTE=['#FF5A6B','#FFC83D','#5CE68C','#4DD0FF','#8A4FD1','#FF9A3D'];
+var BLOCK_H=30;
+var ANCHOR_Y=420;
+var GROUND_W=150;
+var BASE_SPEED=110;
+var SPEED_PER_SCORE=3.2;
+var SPEED_CAP=340;
+var PERFECT_TOL=4;
+
+function colorFor(i){ return PALETTE[i % PALETTE.length]; }
+
+function S0(){
+  var best=0;
+  try{ var v=localStorage.getItem('ts_best'); if(v) best=parseInt(v,10)||0; }catch(e){}
+  return {
+    phase:'menu',
+    prePausePhase:null,
+    score:0,
+    combo:0,
+    best:best,
+    stack:[],
+    moving:null,
+    debris:[]
+  };
+}
+var S=S0();
+
+function resetState(){
+  var fresh=S0();
+  for(var k in S){ if(Object.prototype.hasOwnProperty.call(S,k)) delete S[k]; }
+  for(var k2 in fresh){ if(Object.prototype.hasOwnProperty.call(fresh,k2)) S[k2]=fresh[k2]; }
+}
+
+function speedFor(score){ return Math.min(SPEED_CAP, BASE_SPEED + score*SPEED_PER_SCORE); }
+
+function spawnMoving(w){
+  var fromLeft = S.stack.length%2===0;
+  S.moving = {
+    x: fromLeft ? -w-10 : W+10,
+    w: w,
+    dir: fromLeft ? 1 : -1,
+    speed: speedFor(S.score)
+  };
+}
+
+function startGame(){
+  resetState();
+  S.phase='playing';
+  var groundX=(W-GROUND_W)/2;
+  S.stack=[{x:groundX,w:GROUND_W}];
+  spawnMoving(GROUND_W);
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  renderHUD();
+}
+
+function renderHUD(){
+  $('scoreTxt').textContent=String(S.score);
+  $('bestTxt2').textContent=String(S.best);
+  $('bestTxt').textContent=String(S.best);
+}
+
+function showPerfect(){
+  var el=$('perfectTxt');
+  el.classList.add('show');
+  setTimeout(function(){ el.classList.remove('show'); },420);
+}
+
+function update(dt){
+  if(S.phase!=='playing') return;
+  var m=S.moving;
+  if(m){
+    m.x += m.dir*m.speed*dt;
+    if(m.x<-m.w-20 || m.x>W+20){
+      // bounce at edges a bit beyond screen for natural swing
+    }
+    var leftBound=-m.w-15, rightBound=W+15;
+    if(m.x<=leftBound){ m.x=leftBound; m.dir=1; }
+    if(m.x>=rightBound){ m.x=rightBound; m.dir=-1; }
+  }
+  for(var i=S.debris.length-1;i>=0;i--){
+    var d=S.debris[i];
+    d.vy+=900*dt;
+    d.x+=d.vx*dt; d.y+=d.vy*dt;
+    d.alpha-=dt*1.2;
+    if(d.alpha<=0) S.debris.splice(i,1);
+  }
+}
+
+function drop(){
+  if(S.phase!=='playing' || !S.moving) return;
+  var m=S.moving;
+  var top=S.stack[S.stack.length-1];
+  var left=Math.max(m.x,top.x);
+  var right=Math.min(m.x+m.w,top.x+top.w);
+  var overlapW=right-left;
+  if(overlapW<=0){
+    // total miss -> topple
+    S.debris.push({x:m.x,y:ANCHOR_Y-BLOCK_H,w:m.w,h:BLOCK_H,vx:(m.x<top.x?-60:60),vy:-80,alpha:1,color:colorFor(S.stack.length)});
+    endGame();
+    return;
+  }
+  var isPerfect = Math.abs(m.x-top.x) < PERFECT_TOL;
+  var newBlock;
+  if(isPerfect){
+    newBlock={x:top.x, w:top.w};
+    S.combo++;
+    sfxPerfect();
+    showPerfect();
+  }else{
+    newBlock={x:left, w:overlapW};
+    S.combo=0;
+    sfxPlace();
+    // cut-off piece falls away
+    var cutLeft, cutW;
+    if(m.x<left){ cutLeft=m.x; cutW=left-m.x; }
+    else{ cutLeft=right; cutW=(m.x+m.w)-right; }
+    if(cutW>0.5){
+      S.debris.push({x:cutLeft,y:ANCHOR_Y-BLOCK_H,w:cutW,h:BLOCK_H,vx:(cutLeft<left?-70:70),vy:-60,alpha:1,color:colorFor(S.stack.length)});
+    }
+  }
+  S.stack.push(newBlock);
+  S.score++;
+  renderHUD();
+  spawnMoving(newBlock.w);
+}
+
+function endGame(){
+  S.phase='lose';
+  S.moving=null;
+  sfxFall();
+  if(S.score>S.best){ S.best=S.score; try{localStorage.setItem('ts_best',String(S.best));}catch(e){} }
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  $('loseDetail').textContent='疊了 '+S.score+' 層，最佳紀錄 '+S.best+' 層。';
+  show('ovLose');
+  renderHUD();
+}
+
+function backToMenu(){
+  S.phase='menu';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  show('ovMenu');
+}
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+
+$('btnStart').addEventListener('click',function(){ hide('ovMenu'); startGame(); });
+$('btnRetry').addEventListener('click',function(){ hide('ovLose'); startGame(); });
+$('btnMenu1').addEventListener('click',function(){ hide('ovLose'); backToMenu(); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){
+  if(S.phase==='paused'){ hide('ovPause'); S.phase=S.prePausePhase||'playing'; }
+});
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='playing') return;
+  S.prePausePhase=S.phase;
+  S.phase='paused';
+  show('ovPause');
+});
+
+cv.addEventListener('pointerdown',function(e){
+  e.preventDefault();
+  if(S.phase!=='playing') return;
+  drop();
+},{passive:false});
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  var grd=ctx.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0,'#1b2236'); grd.addColorStop(1,'#10141F');
+  ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+
+  // stacked blocks (newest at ANCHOR_Y, older below)
+  var n=S.stack.length;
+  for(var i=n-1;i>=0;i--){
+    var b=S.stack[i];
+    var y=ANCHOR_Y + (n-1-i)*BLOCK_H;
+    if(y>H+BLOCK_H) break;
+    ctx.fillStyle=colorFor(i);
+    ctx.globalAlpha=0.92;
+    ctx.fillRect(b.x,y,b.w,BLOCK_H-2);
+    ctx.globalAlpha=1;
+    ctx.strokeStyle='rgba(255,255,255,.18)'; ctx.lineWidth=1.5;
+    ctx.strokeRect(b.x,y,b.w,BLOCK_H-2);
+  }
+
+  // moving block
+  if(S.moving){
+    var m=S.moving;
+    ctx.fillStyle=colorFor(S.stack.length);
+    ctx.globalAlpha=0.92;
+    ctx.fillRect(m.x,ANCHOR_Y-BLOCK_H,m.w,BLOCK_H-2);
+    ctx.globalAlpha=1;
+    ctx.strokeStyle='rgba(255,255,255,.3)'; ctx.lineWidth=1.5;
+    ctx.strokeRect(m.x,ANCHOR_Y-BLOCK_H,m.w,BLOCK_H-2);
+  }
+
+  // debris
+  for(var d=0; d<S.debris.length; d++){
+    var p=S.debris[d];
+    ctx.globalAlpha=Math.max(0,p.alpha);
+    ctx.fillStyle=p.color;
+    ctx.fillRect(p.x,p.y,p.w,p.h);
+    ctx.globalAlpha=1;
+  }
+
+  // center guide line (subtle)
+  ctx.strokeStyle='rgba(255,255,255,.05)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(W/2,0); ctx.lineTo(W/2,H); ctx.stroke();
+}
+
+var lastT=null;
+function loop(ts){
+  if(lastT===null) lastT=ts;
+  var dt=Math.min(0.05,(ts-lastT)/1000);
+  lastT=ts;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+renderHUD();
+
+window.__TS = {
+  state:S,
+  start:function(){ $('btnStart').click(); },
+  retry:function(){ if(!$('ovLose').classList.contains('hidden')) $('btnRetry').click(); },
+  drop:function(){ drop(); },
+  advance:function(seconds){
+    var steps=Math.round(seconds/0.016);
+    for(var i=0;i<steps;i++) update(0.016);
+  }
+};
+})();
+</script>
+</body>
+</html>
