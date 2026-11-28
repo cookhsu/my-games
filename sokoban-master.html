@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop',''); a.setAttribute('playsinline',''); a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__SK_AC && window.__SK_AC.state==='suspended'){ window.__SK_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>推箱子大師</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#1b1410; --ink:#F6EEE2; --muted:#B4A596; --gold:#FFC83D; --red:#FF5A6B; --green:#6ADB8C; --wood:#8A5A34; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{ display:flex; align-items:center; justify-content:center; font-family:'Noto Sans TC','Fredoka',sans-serif;
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #2a1f18 0%, #1b1410 65%); }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh; aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; position:absolute; touch-action:none; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 56px 0 14px; font-family:'Fredoka',sans-serif; pointer-events:none; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap; }
+  .topbar .pill{ background:rgba(20,14,10,.68); border:1px solid rgba(255,255,255,.12); padding:5px 10px; border-radius:999px; font-size:12.5px; pointer-events:auto; }
+  .topbar .pill b{ color:var(--gold); }
+  .topbar .actBtn{ pointer-events:auto; background:rgba(20,14,10,.68); border:1px solid rgba(255,255,255,.14); color:var(--ink);
+    padding:5px 12px; border-radius:999px; font-size:12.5px; font-family:'Noto Sans TC',sans-serif; cursor:pointer; }
+  .topbar .actBtn:active{ transform:scale(.95); }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(20,14,10,.68); border:1px solid rgba(255,255,255,.12); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .dpad{ position:absolute; left:50%; bottom:22px; transform:translateX(-50%); display:none;
+    width:168px; height:168px; z-index:5; }
+  .dpad.on{ display:block; }
+  .dBtn{ position:absolute; width:54px; height:54px; border-radius:14px; background:rgba(255,255,255,.1);
+    border:1px solid rgba(255,255,255,.18); color:var(--ink); font-size:22px; display:flex; align-items:center;
+    justify-content:center; cursor:pointer; backdrop-filter:blur(2px); }
+  .dBtn:active{ background:rgba(255,200,61,.35); transform:scale(.94); }
+  .dUp{ left:57px; top:0; } .dDown{ left:57px; top:114px; } .dLeft{ left:0; top:57px; } .dRight{ left:114px; top:57px; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px; background:rgba(14,10,8,.82); backdrop-filter:blur(6px); z-index:10; gap:12px; overflow-y:auto; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:25px; margin:0; letter-spacing:1px; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:20px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:15px; font-weight:600; color:#1b1410;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:12px 28px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+
+  .levelGrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; max-width:280px; margin:6px 0; }
+  .lvlCard{ position:relative; width:60px; height:60px; border-radius:14px; background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.14); display:flex; flex-direction:column; align-items:center; justify-content:center;
+    cursor:pointer; font-family:'Fredoka',sans-serif; }
+  .lvlCard.cleared{ background:rgba(106,219,140,.16); border-color:rgba(106,219,140,.5); }
+  .lvlCard .n{ font-size:18px; font-weight:600; }
+  .lvlCard .best{ font-size:10px; color:var(--muted); }
+  .lvlCard.cleared .best{ color:var(--green); }
+  .lvlCard:active{ transform:scale(.94); }
+  .check{ position:absolute; top:3px; right:5px; font-size:11px; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill">第 <b id="lvNoTxt">1</b> 關</div>
+      <div class="pill">步數 <b id="moveTxt">0</b></div>
+      <div class="pill">推箱 <b id="pushTxt">0</b></div>
+      <button class="actBtn" id="btnUndo">↩ 復原</button>
+    </div>
+  </div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="dpad" id="dpad">
+    <div class="dBtn dUp" id="dUp">▲</div>
+    <div class="dBtn dDown" id="dDown">▼</div>
+    <div class="dBtn dLeft" id="dLeft">◀</div>
+    <div class="dBtn dRight" id="dRight">▶</div>
+  </div>
+
+  <div class="ov" id="ovMenu">
+    <h1>📦 推箱子大師</h1>
+    <p class="sub">把所有箱子推到目標點上就能過關！用方向鍵移動角色，箱子只能用「推」的，想清楚每一步再行動。</p>
+    <div class="stat">已通關 <b id="clearedCountTxt">0</b> / <b id="totalLevelsTxt">8</b></div>
+    <button class="btn" id="btnStart">選擇關卡</button>
+  </div>
+
+  <div class="ov hidden" id="ovLevelSelect">
+    <h2>選擇關卡</h2>
+    <div class="levelGrid" id="levelGrid"></div>
+    <button class="btn alt" id="btnBackMenu">返回選單</button>
+  </div>
+
+  <div class="ov hidden" id="ovCleared">
+    <h2>🎉 過關！</h2>
+    <p class="sub" id="clearedDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnNextLevel">下一關</button>
+      <button class="btn alt" id="btnBackSelect1">關卡選擇</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovAllClear">
+    <h2>🏆 全部通關！</h2>
+    <p class="sub" id="allClearDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnReplay">重新挑戰</button>
+      <button class="btn alt" id="btnBackSelect2">關卡選擇</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnResetLevel">重設關卡</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var $=function(id){return document.getElementById(id);};
+
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__SK_AC=AC; }catch(e){} } return AC; }
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.exponentialRampToValueAtTime(sweepTo,c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.15,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sfxStep(){ playTone(220,0.04,'sine',0.06); }
+function sfxPush(){ playTone(180,0.06,'square',0.1,140); }
+function sfxPlace(){ playTone(500,0.08,'triangle',0.13,620); }
+function sfxClear(){ playTone(523,0.1,'triangle',0.14); setTimeout(function(){playTone(659,0.1,'triangle',0.14);},90); setTimeout(function(){playTone(784,0.16,'triangle',0.15);},180); }
+function sfxAllClear(){ playTone(523,0.1,'triangle',0.14); setTimeout(function(){playTone(659,0.1,'triangle',0.14);},100); setTimeout(function(){playTone(784,0.1,'triangle',0.14);},200); setTimeout(function(){playTone(1047,0.22,'triangle',0.17);},300); }
+function sfxBlocked(){ playTone(140,0.05,'sawtooth',0.08); }
+
+// Level definitions: interior coordinates (1..w, 1..h), auto-bordered by walls.
+var LEVELS=[
+  {w:3,h:1, boxes:[[1,2]], targets:[[1,1]], player:[1,3]},
+  {w:5,h:1, boxes:[[1,4]], targets:[[1,1]], player:[1,5]},
+  {w:5,h:2, boxes:[[1,2],[1,4]], targets:[[1,1],[1,5]], player:[2,3]},
+  {w:4,h:3, boxes:[[2,2],[2,3]], targets:[[1,1],[1,4]], player:[3,3]},
+  {w:5,h:3, boxes:[[2,1],[2,3],[2,5]], targets:[[1,1],[1,3],[1,5]], player:[3,3]},
+  {w:6,h:3, boxes:[[2,2],[2,3],[2,4],[2,5]], targets:[[1,2],[1,3],[1,4],[1,5]], player:[3,3]},
+  {w:7,h:3, boxes:[[2,2],[2,3],[2,4],[2,5],[2,6]], targets:[[1,2],[1,3],[1,4],[1,5],[1,6]], player:[3,4]},
+  {w:6,h:4, boxes:[[2,2],[2,3],[2,4],[2,5]], targets:[[1,2],[1,3],[1,4],[1,5]], player:[3,3], walls:[[3,1],[3,6]]}
+];
+
+function loadProgress(){
+  try{ var v=JSON.parse(localStorage.getItem('sk_progress')||'{}'); return v; }catch(e){ return {}; }
+}
+function saveProgress(p){ try{ localStorage.setItem('sk_progress', JSON.stringify(p)); }catch(e){} }
+
+function S0(){
+  return {
+    phase:'menu',
+    prePausePhase:null,
+    levelIndex:0,
+    grid:null,
+    w:0,h:0,
+    walls:null,
+    targets:null,
+    boxes:null,
+    player:null,
+    moveCount:0,
+    pushCount:0,
+    history:[],
+    anim:{player:null, boxes:{}},
+    progress:loadProgress()
+  };
+}
+var S=S0();
+
+function resetState(){
+  var fresh=S0();
+  for(var k in S){ if(Object.prototype.hasOwnProperty.call(S,k)) delete S[k]; }
+  for(var k2 in fresh){ if(Object.prototype.hasOwnProperty.call(fresh,k2)) S[k2]=fresh[k2]; }
+}
+
+function key(r,c){ return r+','+c; }
+
+function loadLevel(idx){
+  var lv=LEVELS[idx];
+  S.levelIndex=idx;
+  S.w=lv.w; S.h=lv.h;
+  S.walls={};
+  (lv.walls||[]).forEach(function(p){ S.walls[key(p[0],p[1])]=true; });
+  S.targets={};
+  lv.targets.forEach(function(p){ S.targets[key(p[0],p[1])]=true; });
+  S.boxes={};
+  lv.boxes.forEach(function(p){ S.boxes[key(p[0],p[1])]=true; });
+  S.player={r:lv.player[0], c:lv.player[1]};
+  S.moveCount=0; S.pushCount=0;
+  S.history=[];
+  S.anim={player:null, boxes:{}};
+}
+
+function isWallAt(r,c){
+  if(r<0||c<0||r>S.h+1||c>S.w+1) return true;
+  if(r===0||c===0||r===S.h+1||c===S.w+1) return true;
+  return !!S.walls[key(r,c)];
+}
+function isBoxAt(r,c){ return !!S.boxes[key(r,c)]; }
+
+function snapshot(){
+  return {
+    player:{r:S.player.r,c:S.player.c},
+    boxes:Object.keys(S.boxes).slice(),
+    moveCount:S.moveCount, pushCount:S.pushCount
+  };
+}
+
+var DIRS={ Up:[-1,0], Down:[1,0], Left:[0,-1], Right:[0,1] };
+
+function move(dir){
+  if(S.phase!=='playing') return false;
+  var d=DIRS[dir];
+  if(!d) return false;
+  var nr=S.player.r+d[0], nc=S.player.c+d[1];
+  if(isWallAt(nr,nc)){ sfxBlocked(); return false; }
+  var pushed=false;
+  if(isBoxAt(nr,nc)){
+    var br=nr+d[0], bc=nc+d[1];
+    if(isWallAt(br,bc) || isBoxAt(br,bc)){ sfxBlocked(); return false; }
+    // valid push
+    S.history.push(snapshot());
+    delete S.boxes[key(nr,nc)];
+    S.boxes[key(br,bc)]=true;
+    S.pushCount++;
+    pushed=true;
+    S.anim.boxes[key(br,bc)]={fromR:nr,fromC:nc,t0:performance.now()};
+  } else {
+    S.history.push(snapshot());
+  }
+  S.anim.player={fromR:S.player.r,fromC:S.player.c,t0:performance.now()};
+  S.player.r=nr; S.player.c=nc;
+  S.moveCount++;
+  if(pushed){
+    sfxPush();
+    if(S.targets[key(nr+d[0],nc+d[1])]) sfxPlace();
+  } else sfxStep();
+  checkWin();
+  return true;
+}
+
+function undo(){
+  if(S.phase!=='playing' || S.history.length===0) return;
+  var snap=S.history.pop();
+  S.player.r=snap.player.r; S.player.c=snap.player.c;
+  S.boxes={};
+  snap.boxes.forEach(function(k){ S.boxes[k]=true; });
+  S.moveCount=snap.moveCount; S.pushCount=snap.pushCount;
+  S.anim={player:null, boxes:{}};
+}
+
+function isSolved(){
+  var tkeys=Object.keys(S.targets);
+  for(var i=0;i<tkeys.length;i++){ if(!S.boxes[tkeys[i]]) return false; }
+  return true;
+}
+
+function checkWin(){
+  if(!isSolved()) return;
+  var idx=S.levelIndex;
+  var prog=S.progress;
+  var rec=prog[idx];
+  if(!rec || S.moveCount<rec.moves){ prog[idx]={moves:S.moveCount, pushes:S.pushCount}; saveProgress(prog); }
+  if(idx>=LEVELS.length-1){
+    S.phase='allclear';
+    $('topbar').classList.remove('on'); $('menuBtn').classList.remove('on'); $('dpad').classList.remove('on');
+    sfxAllClear();
+    var totalMoves=0; Object.keys(prog).forEach(function(k){ totalMoves+=prog[k].moves; });
+    $('allClearDetail').textContent='恭喜通過全部 '+LEVELS.length+' 關！總步數 '+totalMoves+'。';
+    show('ovAllClear');
+  } else {
+    S.phase='cleared';
+    $('topbar').classList.remove('on'); $('menuBtn').classList.remove('on'); $('dpad').classList.remove('on');
+    sfxClear();
+    $('clearedDetail').textContent='第 '+(idx+1)+' 關完成！共 '+S.moveCount+' 步，推箱 '+S.pushCount+' 次。';
+    show('ovCleared');
+  }
+}
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+
+function renderHUD(){
+  $('lvNoTxt').textContent=String(S.levelIndex+1);
+  $('moveTxt').textContent=String(S.moveCount);
+  $('pushTxt').textContent=String(S.pushCount);
+}
+
+function buildLevelGrid(){
+  var grid=$('levelGrid');
+  grid.innerHTML='';
+  for(var i=0;i<LEVELS.length;i++){
+    (function(i){
+      var card=document.createElement('div');
+      card.className='lvlCard'+(S.progress[i]?' cleared':'');
+      card.innerHTML='<span class="n">'+(i+1)+'</span>'+(S.progress[i]?'<span class="best">'+S.progress[i].moves+' 步</span><span class="check">✅</span>':'<span class="best">未通關</span>');
+      card.addEventListener('click',function(){ hide('ovLevelSelect'); startLevel(i); });
+      grid.appendChild(card);
+    })(i);
+  }
+  var clearedN=Object.keys(S.progress).length;
+  $('clearedCountTxt').textContent=String(clearedN);
+  $('totalLevelsTxt').textContent=String(LEVELS.length);
+}
+
+function startLevel(idx){
+  hide('ovMenu'); hide('ovLevelSelect'); hide('ovCleared'); hide('ovAllClear'); hide('ovPause');
+  loadLevel(idx);
+  S.phase='playing';
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  $('dpad').classList.add('on');
+  renderHUD();
+}
+
+function openLevelSelect(){
+  hide('ovMenu'); hide('ovCleared'); hide('ovAllClear'); hide('ovPause');
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  $('dpad').classList.remove('on');
+  S.phase='levelselect';
+  buildLevelGrid();
+  show('ovLevelSelect');
+}
+
+function backToMenu(){
+  hide('ovLevelSelect'); hide('ovCleared'); hide('ovAllClear'); hide('ovPause');
+  S.phase='menu';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  $('dpad').classList.remove('on');
+  var clearedN=Object.keys(S.progress).length;
+  $('clearedCountTxt').textContent=String(clearedN);
+  $('totalLevelsTxt').textContent=String(LEVELS.length);
+  show('ovMenu');
+}
+
+$('btnStart').addEventListener('click',function(){ hide('ovMenu'); openLevelSelect(); });
+$('btnBackMenu').addEventListener('click',function(){ hide('ovLevelSelect'); backToMenu(); });
+$('btnNextLevel').addEventListener('click',function(){
+  hide('ovCleared');
+  var next=S.levelIndex+1;
+  if(next<LEVELS.length) startLevel(next); else openLevelSelect();
+});
+$('btnBackSelect1').addEventListener('click',function(){ hide('ovCleared'); openLevelSelect(); });
+$('btnBackSelect2').addEventListener('click',function(){ hide('ovAllClear'); openLevelSelect(); });
+$('btnReplay').addEventListener('click',function(){ hide('ovAllClear'); startLevel(0); });
+$('btnUndo').addEventListener('click',function(){ undo(); renderHUD(); });
+$('btnResetLevel').addEventListener('click',function(){ hide('ovPause'); startLevel(S.levelIndex); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){
+  if(S.phase==='paused'){ hide('ovPause'); S.phase=S.prePausePhase||'playing'; }
+});
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='playing') return;
+  S.prePausePhase=S.phase;
+  S.phase='paused';
+  show('ovPause');
+});
+
+function bindDpad(id,dir){
+  var el=$(id);
+  el.addEventListener('pointerdown',function(e){ e.preventDefault(); move(dir); renderHUD(); },{passive:false});
+}
+bindDpad('dUp','Up'); bindDpad('dDown','Down'); bindDpad('dLeft','Left'); bindDpad('dRight','Right');
+
+window.addEventListener('keydown',function(e){
+  if(S.phase!=='playing') return;
+  var map={ArrowUp:'Up',ArrowDown:'Down',ArrowLeft:'Left',ArrowRight:'Right',w:'Up',s:'Down',a:'Left',d:'Right'};
+  var dir=map[e.key];
+  if(dir){ e.preventDefault(); move(dir); renderHUD(); }
+});
+
+// swipe support on canvas
+var touchStart=null;
+cv.addEventListener('pointerdown',function(e){ touchStart={x:e.clientX,y:e.clientY}; },{passive:true});
+cv.addEventListener('pointerup',function(e){
+  if(!touchStart || S.phase!=='playing') return;
+  var dx=e.clientX-touchStart.x, dy=e.clientY-touchStart.y;
+  touchStart=null;
+  if(Math.abs(dx)<24 && Math.abs(dy)<24) return;
+  var dir;
+  if(Math.abs(dx)>Math.abs(dy)) dir = dx>0?'Right':'Left';
+  else dir = dy>0?'Down':'Up';
+  move(dir); renderHUD();
+},{passive:true});
+
+function cellSize(){
+  var maxW=320, maxH=380;
+  var cs=Math.floor(Math.min(maxW/(S.w+2), maxH/(S.h+2)));
+  return Math.max(28, Math.min(52, cs));
+}
+
+function drawBoard(){
+  var cs=cellSize();
+  var boardW=(S.w+2)*cs, boardH=(S.h+2)*cs;
+  var ox=(W-boardW)/2, oy=96+(380-boardH)/2;
+  var now=performance.now();
+  var ANIM=130;
+
+  for(var r=0;r<=S.h+1;r++){
+    for(var c=0;c<=S.w+1;c++){
+      var x=ox+c*cs, y=oy+r*cs;
+      if(isWallAt(r,c)){
+        ctx.fillStyle='#5a4230';
+        ctx.fillRect(x,y,cs,cs);
+        ctx.strokeStyle='rgba(0,0,0,.25)'; ctx.lineWidth=1;
+        ctx.strokeRect(x+1,y+1,cs-2,cs-2);
+      } else {
+        ctx.fillStyle=((r+c)%2===0)?'#e9dcc4':'#dfd0b2';
+        ctx.fillRect(x,y,cs,cs);
+        if(S.targets[key(r,c)]){
+          ctx.fillStyle='rgba(255,90,107,.55)';
+          ctx.beginPath(); ctx.arc(x+cs/2,y+cs/2,cs*0.16,0,Math.PI*2); ctx.fill();
+        }
+      }
+    }
+  }
+
+  // boxes
+  Object.keys(S.boxes).forEach(function(k){
+    var parts=k.split(','); var r=parseInt(parts[0],10), c=parseInt(parts[1],10);
+    var drawR=r, drawC=c;
+    var a=S.anim.boxes[k];
+    if(a){
+      var t=Math.min(1,(now-a.t0)/ANIM);
+      drawR=a.fromR+(r-a.fromR)*t; drawC=a.fromC+(c-a.fromC)*t;
+      if(t>=1) delete S.anim.boxes[k];
+    }
+    var x=ox+drawC*cs, y=oy+drawR*cs;
+    var onTarget=S.targets[key(r,c)];
+    ctx.fillStyle=onTarget?'#6ADB8C':'#C98A42';
+    ctx.strokeStyle=onTarget?'#3f9e5e':'#8a5a2a';
+    ctx.lineWidth=2;
+    var pad=cs*0.1;
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(x+pad,y+pad,cs-pad*2,cs-pad*2,6) : ctx.rect(x+pad,y+pad,cs-pad*2,cs-pad*2);
+    ctx.fill(); ctx.stroke();
+    if(onTarget){
+      ctx.fillStyle='#fff'; ctx.font=(cs*0.4)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('✓', x+cs/2, y+cs/2+1);
+    }
+  });
+
+  // player
+  var pr=S.player.r, pc=S.player.c;
+  var pa=S.anim.player;
+  if(pa){
+    var pt=Math.min(1,(now-pa.t0)/ANIM);
+    pr=pa.fromR+(S.player.r-pa.fromR)*pt; pc=pa.fromC+(S.player.c-pa.fromC)*pt;
+    if(pt>=1) S.anim.player=null;
+  }
+  var px=ox+pc*cs+cs/2, py=oy+pr*cs+cs/2;
+  ctx.beginPath(); ctx.arc(px,py+cs*0.08,cs*0.33,0,Math.PI*2);
+  ctx.fillStyle='#2b3a5c'; ctx.fill();
+  ctx.beginPath(); ctx.arc(px,py-cs*0.06,cs*0.22,0,Math.PI*2);
+  ctx.fillStyle='#FFC83D'; ctx.fill();
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  var bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#2a1f18'); bg.addColorStop(1,'#1b1410');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+  if(S.phase==='playing' || S.phase==='paused' || S.phase==='cleared' || S.phase==='allclear'){
+    drawBoard();
+  }
+}
+
+function loop(){
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+renderHUD();
+
+window.__SK = {
+  state:S,
+  start:function(){ $('btnStart').click(); },
+  startLevel:function(i){ startLevel(i); },
+  move:move,
+  undo:undo,
+  resetLevel:function(){ startLevel(S.levelIndex); },
+  retry:function(){ startLevel(S.levelIndex); },
+  retryWin:function(){ startLevel(0); },
+  isSolved:isSolved,
+  levelCount:LEVELS.length,
+  openLevelSelect:openLevelSelect,
+  advance:function(seconds){ /* no continuous physics; no-op kept for interface consistency */ }
+};
+})();
+</script>
+</body>
+</html>
