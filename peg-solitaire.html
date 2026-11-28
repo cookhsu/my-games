@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop',''); a.setAttribute('playsinline',''); a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__PG_AC && window.__PG_AC.state==='suspended'){ window.__PG_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>跳棋拔子</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#2B1B12; --ink:#F7EEE2; --muted:#B99A7D; --gold:#FFC83D; --peg:#D64545; --slot:#5A3B26; --green:#5CE68C; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{ display:flex; align-items:center; justify-content:center; font-family:'Noto Sans TC','Fredoka',sans-serif;
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #3A2518 0%, #2B1B12 65%); }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh; aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; position:absolute; touch-action:none; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 56px 0 14px; font-family:'Fredoka',sans-serif; pointer-events:none; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap; }
+  .topbar .pill{ background:rgba(43,27,18,.75); border:1px solid rgba(255,255,255,.12); padding:5px 10px; border-radius:999px; font-size:12.5px; pointer-events:auto; }
+  .topbar .pill b{ color:var(--gold); }
+  .topbar .actBtn{ pointer-events:auto; background:rgba(43,27,18,.75); border:1px solid rgba(255,255,255,.14); color:var(--ink);
+    padding:5px 12px; border-radius:999px; font-size:12.5px; font-family:'Noto Sans TC',sans-serif; cursor:pointer; }
+  .topbar .actBtn:active{ transform:scale(.95); }
+  .hint{ position:absolute; left:0; right:0; bottom:18px; text-align:center; font-size:12.5px; color:var(--muted);
+    pointer-events:none; z-index:4; display:none; }
+  .hint.on{ display:block; }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(43,27,18,.75); border:1px solid rgba(255,255,255,.12); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px; background:rgba(20,12,8,.85); backdrop-filter:blur(6px); z-index:10; gap:12px; overflow-y:auto; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:24px; margin:0; letter-spacing:1px; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:20px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:15px; font-weight:600; color:#2B1B12;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:12px 28px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+
+  .levelGrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; max-width:280px; margin:6px 0; }
+  .lvlCard{ position:relative; width:60px; height:60px; border-radius:14px; background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.14); display:flex; flex-direction:column; align-items:center; justify-content:center;
+    cursor:pointer; font-family:'Fredoka',sans-serif; }
+  .lvlCard.cleared{ background:rgba(92,230,140,.16); border-color:rgba(92,230,140,.5); }
+  .lvlCard .n{ font-size:18px; font-weight:600; }
+  .check{ position:absolute; top:3px; right:5px; font-size:11px; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill">第 <b id="lvNoTxt">1</b> 關</div>
+      <div class="pill">剩餘 <b id="pegCountTxt">8</b> / 目標 <b id="targetTxt">1</b></div>
+      <button class="actBtn" id="btnUndo">↩ 復原</button>
+      <button class="actBtn" id="btnResetLv">↺ 重設</button>
+    </div>
+  </div>
+  <div class="hint" id="hintStuck">⚠️ 已經沒有可跳的棋子了，試試復原或重設關卡</div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="ov" id="ovMenu">
+    <h1>⚪ 跳棋拔子</h1>
+    <p class="sub">點選一顆棋子，再點兩格外的空格跳過去，被跳過的棋子會被移除。盡量拔到只剩目標數量的棋子！</p>
+    <div class="stat">已通關 <b id="clearedCountTxt">0</b> / <b id="totalLevelsTxt">8</b></div>
+    <button class="btn" id="btnStart">選擇關卡</button>
+  </div>
+
+  <div class="ov hidden" id="ovLevelSelect">
+    <h2>選擇關卡</h2>
+    <div class="levelGrid" id="levelGrid"></div>
+    <button class="btn alt" id="btnBackMenu">返回選單</button>
+  </div>
+
+  <div class="ov hidden" id="ovCleared">
+    <h2>🎉 過關！</h2>
+    <p class="sub" id="clearedDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnNextLevel">下一關</button>
+      <button class="btn alt" id="btnBackSelect1">關卡選擇</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovAllClear">
+    <h2>🏆 全部通關！</h2>
+    <p class="sub" id="allClearDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnReplay">重新挑戰</button>
+      <button class="btn alt" id="btnBackSelect2">關卡選擇</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnResetLevel">重設關卡</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var $=function(id){return document.getElementById(id);};
+
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__PG_AC=AC; }catch(e){} } return AC; }
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.exponentialRampToValueAtTime(sweepTo,c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.15,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sfxSelect(){ playTone(440,0.04,'triangle',0.07); }
+function sfxJump(){ playTone(300,0.07,'square',0.08,520); }
+function sfxInvalid(){ playTone(150,0.06,'sawtooth',0.05); }
+function sfxClear(){ playTone(523,0.1,'triangle',0.14); setTimeout(function(){playTone(659,0.1,'triangle',0.14);},90); setTimeout(function(){playTone(784,0.16,'triangle',0.15);},180); }
+function sfxAllClear(){ playTone(523,0.1,'triangle',0.14); setTimeout(function(){playTone(659,0.1,'triangle',0.14);},100); setTimeout(function(){playTone(784,0.1,'triangle',0.14);},200); setTimeout(function(){playTone(1047,0.22,'triangle',0.17);},300); }
+
+var DIRS=[[-1,0],[1,0],[0,-1],[0,1]];
+
+// Levels: shape rows ('X' valid cell), initial empty cell, target peg count to win
+var LEVELS=[
+  { rows:['XXX','XXX','XXX'], empty:[0,0], target:4, label:'3×3 入門' },
+  { rows:['..X..','.XXX.','XXXXX','.XXX.','..X..'], empty:[1,1], target:5, label:'菱形小試' },
+  { rows:['XXXXX','XXXXX','XXXXX'], empty:[0,2], target:1, label:'長方挑戰' },
+  { rows:['..XXX..','..XXX..','XXXXXXX','..XXX..','..XXX..'], empty:[2,2], target:1, label:'十字棋盤' },
+  { rows:['.XXX.','XXXXX','XXXXX','XXXXX','.XXX.'], empty:[0,1], target:3, label:'圓角方陣' },
+  { rows:['XXXXX','XXXXX','XXXXX','XXXXX','XXXXX'], empty:[0,2], target:1, label:'五方格陣' },
+  { rows:['..XXX..','..XXX..','XXXXXXX','XXXXXXX','XXXXXXX','..XXX..','..XXX..'], empty:[3,3], target:1, label:'經典棋盤' },
+  { rows:['XXXXXXX','XXXXXXX','XXXXXXX','XXXXXXX','XXXXXXX'], empty:[0,6], target:1, label:'終極挑戰' }
+];
+
+function buildBoard(rows, emptyCell){
+  var cells=[]; var idxOf={};
+  for(var r=0;r<rows.length;r++){
+    for(var c=0;c<rows[r].length;c++){
+      if(rows[r][c]==='X'){
+        idxOf[r+','+c]=cells.length;
+        cells.push({r:r,c:c});
+      }
+    }
+  }
+  var n=cells.length;
+  var jumps=[];
+  for(var i=0;i<n;i++){
+    jumps.push([]);
+    var cell=cells[i];
+    for(var d=0;d<DIRS.length;d++){
+      var dr=DIRS[d][0], dc=DIRS[d][1];
+      var midKey=(cell.r+dr)+','+(cell.c+dc);
+      var destKey=(cell.r+2*dr)+','+(cell.c+2*dc);
+      if(idxOf[midKey]!==undefined && idxOf[destKey]!==undefined){
+        jumps[i].push({mid:idxOf[midKey], dest:idxOf[destKey]});
+      }
+    }
+  }
+  var emptyIdx=idxOf[emptyCell[0]+','+emptyCell[1]];
+  return {cells:cells, jumps:jumps, n:n, idxOf:idxOf, emptyIdx:emptyIdx, rows:rows.length,
+    cols: rows.reduce(function(m,s){return Math.max(m,s.length);},0)};
+}
+
+function loadProgress(){
+  try{ return JSON.parse(localStorage.getItem('pg_progress')||'{}'); }catch(e){ return {}; }
+}
+function saveProgress(p){ try{ localStorage.setItem('pg_progress', JSON.stringify(p)); }catch(e){} }
+
+function S0(){
+  return {
+    phase:'menu',
+    prePausePhase:null,
+    levelIndex:0,
+    board:null,
+    pegs:[],
+    selected:-1,
+    moveCount:0,
+    history:[],
+    progress:loadProgress(),
+    stuck:false
+  };
+}
+var S=S0();
+
+function resetState(){
+  var fresh=S0();
+  for(var k in S){ if(Object.prototype.hasOwnProperty.call(S,k)) delete S[k]; }
+  for(var k2 in fresh){ if(Object.prototype.hasOwnProperty.call(fresh,k2)) S[k2]=fresh[k2]; }
+}
+
+function pegCount(){
+  var n=0;
+  for(var i=0;i<S.pegs.length;i++){ if(S.pegs[i]) n++; }
+  return n;
+}
+
+function legalMovesFrom(idx){
+  var out=[];
+  if(!S.pegs[idx]) return out;
+  var jl=S.board.jumps[idx];
+  for(var i=0;i<jl.length;i++){
+    var m=jl[i];
+    if(S.pegs[m.mid] && !S.pegs[m.dest]) out.push(m.dest);
+  }
+  return out;
+}
+
+function hasAnyMove(){
+  for(var i=0;i<S.board.n;i++){
+    if(S.pegs[i] && legalMovesFrom(i).length>0) return true;
+  }
+  return false;
+}
+
+function isSolved(){
+  return pegCount() <= LEVELS[S.levelIndex].target;
+}
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+
+function renderHUD(){
+  $('lvNoTxt').textContent=String(S.levelIndex+1);
+  $('pegCountTxt').textContent=String(pegCount());
+  $('targetTxt').textContent=String(LEVELS[S.levelIndex].target);
+}
+
+function tapCell(r,c){
+  if(S.phase!=='playing') return false;
+  var idx=S.board.idxOf[r+','+c];
+  if(idx===undefined) return false;
+
+  if(S.selected<0){
+    if(S.pegs[idx]){ S.selected=idx; sfxSelect(); return true; }
+    return false;
+  }
+
+  if(idx===S.selected){ S.selected=-1; return true; }
+
+  if(S.pegs[idx]){ S.selected=idx; sfxSelect(); return true; }
+
+  // tapped an empty cell: check if it's a legal destination from selected
+  var dests=legalMovesFrom(S.selected);
+  if(dests.indexOf(idx)>=0){
+    // find the mid cell for this jump
+    var jl=S.board.jumps[S.selected];
+    var midIdx=-1;
+    for(var i=0;i<jl.length;i++){ if(jl[i].dest===idx){ midIdx=jl[i].mid; break; } }
+    S.history.push({ pegs:S.pegs.slice(), moveCount:S.moveCount });
+    S.pegs[S.selected]=false;
+    S.pegs[midIdx]=false;
+    S.pegs[idx]=true;
+    S.selected=-1;
+    S.moveCount++;
+    sfxJump();
+    renderHUD();
+    if(isSolved()){ checkWin(); return true; }
+    S.stuck = !hasAnyMove();
+    $('hintStuck').classList.toggle('on', S.stuck);
+    return true;
+  }
+
+  sfxInvalid();
+  return false;
+}
+
+function undo(){
+  if(S.phase!=='playing') return false;
+  if(!S.history.length) return false;
+  var snap=S.history.pop();
+  S.pegs=snap.pegs;
+  S.moveCount=snap.moveCount;
+  S.selected=-1;
+  S.stuck=false;
+  $('hintStuck').classList.remove('on');
+  renderHUD();
+  return true;
+}
+
+function checkWin(){
+  var idx=S.levelIndex;
+  if(!S.progress[idx]){ S.progress[idx]=true; saveProgress(S.progress); }
+  sfxClear();
+  if(idx>=LEVELS.length-1){
+    S.phase='allclear';
+    $('topbar').classList.remove('on'); $('menuBtn').classList.remove('on'); $('hintStuck').classList.remove('on');
+    setTimeout(sfxAllClear,200);
+    $('allClearDetail').textContent='恭喜完成全部 '+LEVELS.length+' 關跳棋拔子！';
+    show('ovAllClear');
+  } else {
+    S.phase='cleared';
+    $('topbar').classList.remove('on'); $('menuBtn').classList.remove('on'); $('hintStuck').classList.remove('on');
+    $('clearedDetail').textContent='第 '+(idx+1)+' 關成功拔到剩 '+pegCount()+' 顆棋子！';
+    show('ovCleared');
+  }
+}
+
+function buildLevelGrid(){
+  var grid=$('levelGrid');
+  grid.innerHTML='';
+  for(var i=0;i<LEVELS.length;i++){
+    (function(i){
+      var card=document.createElement('div');
+      card.className='lvlCard'+(S.progress[i]?' cleared':'');
+      card.innerHTML='<span class="n">'+(i+1)+'</span>'+(S.progress[i]?'<span class="check">✅</span>':'');
+      card.addEventListener('click',function(){ startLevel(i); });
+      grid.appendChild(card);
+    })(i);
+  }
+  var clearedN=Object.keys(S.progress).length;
+  $('clearedCountTxt').textContent=String(clearedN);
+  $('totalLevelsTxt').textContent=String(LEVELS.length);
+}
+
+function startLevel(idx){
+  hide('ovMenu'); hide('ovLevelSelect'); hide('ovCleared'); hide('ovAllClear'); hide('ovPause');
+  $('hintStuck').classList.remove('on');
+  var lv=LEVELS[idx];
+  S.levelIndex=idx;
+  S.board=buildBoard(lv.rows, lv.empty);
+  S.pegs=new Array(S.board.n).fill(true);
+  S.pegs[S.board.emptyIdx]=false;
+  S.selected=-1;
+  S.moveCount=0;
+  S.history=[];
+  S.stuck=false;
+  S.phase='playing';
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  renderHUD();
+}
+
+function openLevelSelect(){
+  hide('ovMenu'); hide('ovCleared'); hide('ovAllClear'); hide('ovPause');
+  $('topbar').classList.remove('on'); $('menuBtn').classList.remove('on'); $('hintStuck').classList.remove('on');
+  S.phase='levelselect';
+  buildLevelGrid();
+  show('ovLevelSelect');
+}
+
+function backToMenu(){
+  hide('ovLevelSelect'); hide('ovCleared'); hide('ovAllClear'); hide('ovPause');
+  S.phase='menu';
+  $('topbar').classList.remove('on'); $('menuBtn').classList.remove('on'); $('hintStuck').classList.remove('on');
+  var clearedN=Object.keys(S.progress).length;
+  $('clearedCountTxt').textContent=String(clearedN);
+  $('totalLevelsTxt').textContent=String(LEVELS.length);
+  show('ovMenu');
+}
+
+$('btnStart').addEventListener('click',function(){ openLevelSelect(); });
+$('btnBackMenu').addEventListener('click',function(){ backToMenu(); });
+$('btnNextLevel').addEventListener('click',function(){
+  hide('ovCleared');
+  var next=S.levelIndex+1;
+  if(next<LEVELS.length) startLevel(next); else openLevelSelect();
+});
+$('btnBackSelect1').addEventListener('click',function(){ openLevelSelect(); });
+$('btnBackSelect2').addEventListener('click',function(){ openLevelSelect(); });
+$('btnReplay').addEventListener('click',function(){ startLevel(0); });
+$('btnUndo').addEventListener('click',function(){ undo(); });
+$('btnResetLv').addEventListener('click',function(){ startLevel(S.levelIndex); });
+$('btnResetLevel').addEventListener('click',function(){ startLevel(S.levelIndex); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){
+  if(S.phase==='paused'){ hide('ovPause'); S.phase=S.prePausePhase||'playing'; }
+});
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='playing') return;
+  S.prePausePhase=S.phase;
+  S.phase='paused';
+  show('ovPause');
+});
+
+function layout(){
+  var b=S.board;
+  var cs=Math.floor(Math.min(320/b.cols, 400/b.rows));
+  cs=Math.max(22, Math.min(64, cs));
+  var boardW=cs*b.cols, boardH=cs*b.rows;
+  var ox=(W-boardW)/2, oy=90+(420-boardH)/2;
+  return {cs:cs, ox:ox, oy:oy};
+}
+
+cv.addEventListener('pointerdown',function(e){
+  if(S.phase!=='playing') return;
+  var rect=cv.getBoundingClientRect();
+  var scaleX=W/rect.width, scaleY=H/rect.height;
+  var x=(e.clientX-rect.left)*scaleX, y=(e.clientY-rect.top)*scaleY;
+  var L=layout();
+  var c=Math.floor((x-L.ox)/L.cs);
+  var r=Math.floor((y-L.oy)/L.cs);
+  tapCell(r,c);
+});
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  var bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#3A2518'); bg.addColorStop(1,'#2B1B12');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+  if(!(S.phase==='playing' || S.phase==='paused' || S.phase==='cleared' || S.phase==='allclear')) return;
+  if(!S.board) return;
+
+  var L=layout(), cs=L.cs;
+  var dests = S.selected>=0 ? legalMovesFrom(S.selected) : [];
+
+  for(var i=0;i<S.board.n;i++){
+    var cell=S.board.cells[i];
+    var x=L.ox+cell.c*cs, y=L.oy+cell.r*cs;
+    var cx=x+cs/2, cy=y+cs/2;
+
+    // slot background
+    ctx.beginPath();
+    ctx.arc(cx,cy,cs*0.42,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,0,0,.28)';
+    ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.08)';
+    ctx.lineWidth=1.5;
+    ctx.stroke();
+
+    if(S.pegs[i]){
+      var isSel = (i===S.selected);
+      ctx.beginPath();
+      ctx.arc(cx,cy,cs*0.34,0,Math.PI*2);
+      var grad=ctx.createRadialGradient(cx-cs*0.1,cy-cs*0.1,cs*0.05,cx,cy,cs*0.36);
+      if(isSel){ grad.addColorStop(0,'#FFE08A'); grad.addColorStop(1,'#FFC83D'); }
+      else { grad.addColorStop(0,'#F08A7E'); grad.addColorStop(1,'#D64545'); }
+      ctx.fillStyle=grad;
+      ctx.fill();
+      if(isSel){
+        ctx.strokeStyle='rgba(255,255,255,.9)';
+        ctx.lineWidth=2.5;
+        ctx.stroke();
+      }
+    } else if(dests.indexOf(i)>=0){
+      ctx.beginPath();
+      ctx.arc(cx,cy,cs*0.22,0,Math.PI*2);
+      ctx.fillStyle='rgba(92,230,140,.55)';
+      ctx.fill();
+      ctx.strokeStyle='rgba(92,230,140,.9)';
+      ctx.lineWidth=2;
+      ctx.stroke();
+    }
+  }
+}
+
+function loop(){
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+renderHUD();
+
+window.__PG = {
+  state:S,
+  start:function(){ $('btnStart').click(); },
+  startLevel:function(i){ startLevel(i); },
+  tapCell:tapCell,
+  undo:undo,
+  isSolved:isSolved,
+  pegCount:pegCount,
+  levelCount:LEVELS.length,
+  hasAnyMove:hasAnyMove,
+  retry:function(){ startLevel(S.levelIndex); },
+  retryWin:function(){ startLevel(0); },
+  advance:function(seconds){ /* turn-based puzzle, no continuous physics */ }
+};
+})();
+</script>
+</body>
+</html>
