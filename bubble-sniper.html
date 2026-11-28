@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop',''); a.setAttribute('playsinline',''); a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__BS_AC && window.__BS_AC.state==='suspended'){ window.__BS_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>泡泡龍狙擊手</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#0c1524; --ink:#EAF0FF; --muted:#8C9AB8; --gold:#FFC83D; --red:#FF5A6B; --green:#5CE68C; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{ display:flex; align-items:center; justify-content:center; font-family:'Noto Sans TC','Fredoka',sans-serif;
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #182540 0%, #0c1524 65%); }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh; aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; position:absolute; touch-action:none; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 56px 0 14px; font-family:'Fredoka',sans-serif; pointer-events:none; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; justify-content:space-between; }
+  .topbar .pill{ background:rgba(10,14,24,.6); border:1px solid rgba(255,255,255,.12); padding:5px 11px; border-radius:999px; font-size:13px; }
+  .topbar .pill b{ color:var(--gold); }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(10,14,24,.6); border:1px solid rgba(255,255,255,.12); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:28px; background:rgba(8,10,18,.78); backdrop-filter:blur(6px); z-index:10; gap:14px; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:27px; margin:0; letter-spacing:1px; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:21px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13.5px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13.5px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; color:#0c1524;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:13px 32px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill">分數 <b id="scoreTxt">0</b></div>
+      <div class="pill">剩餘 <b id="remainTxt">0</b></div>
+      <div class="pill">最佳 <b id="bestTxt2">0</b></div>
+    </div>
+  </div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="ov" id="ovMenu">
+    <h1>🎈 泡泡龍狙擊手</h1>
+    <p class="sub">點擊畫面瞄準方向發射泡泡，湊齊 3 顆以上同色就會消除，失去支撐的泡泡也會一起掉落！清空畫面獲勝，泡泡堆到警戒線就結束。</p>
+    <div class="stat">最佳分數 <b id="bestTxt">0</b></div>
+    <button class="btn" id="btnStart">開始狙擊</button>
+  </div>
+
+  <div class="ov hidden" id="ovLose">
+    <h2>💥 泡泡滿出來了</h2>
+    <p class="sub" id="loseDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetry">再玩一次</button>
+      <button class="btn alt" id="btnMenu1">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovWin">
+    <h2>🎉 畫面清空！</h2>
+    <p class="sub" id="winDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnRetryWin">再玩一次</button>
+      <button class="btn alt" id="btnMenu3">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var $=function(id){return document.getElementById(id);};
+
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__BS_AC=AC; }catch(e){} } return AC; }
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.exponentialRampToValueAtTime(sweepTo,c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.15,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sfxShoot(){ playTone(420,0.06,'sine',0.1,540); }
+function sfxPop(n){ playTone(500+n*60,0.1,'triangle',0.14,700+n*60); }
+function sfxBounce(){ playTone(300,0.04,'sine',0.06,340); }
+function sfxWin(){ playTone(523,0.1,'triangle',0.14); setTimeout(function(){playTone(659,0.1,'triangle',0.14);},90); setTimeout(function(){playTone(784,0.16,'triangle',0.15);},180); }
+function sfxLose(){ playTone(220,0.32,'sawtooth',0.15,60); }
+
+var COLORS=['#FF5A6B','#FFC83D','#5CE68C','#4DD0FF','#8A4FD1'];
+var BR=17;
+var COLS=8;
+var ROW_H=BR*Math.sqrt(3);
+var TOP_MARGIN=38;
+var MARGIN_X=(W-COLS*2*BR)/2;
+var ROWS_VISIBLE=13;
+var INITIAL_ROWS=6;
+var DANGER_ROW=11;
+var SHOOTER_X=W/2, SHOOTER_Y=H-54;
+var SPEED=620;
+
+function mulberry32(seed){
+  return function(){
+    seed|=0; seed=(seed+0x6D2B79F5)|0;
+    var t=Math.imul(seed^(seed>>>15),1|seed);
+    t=(t+Math.imul(t^(t>>>7),61|t))^t;
+    return ((t^(t>>>14))>>>0)/4294967296;
+  };
+}
+var rng=mulberry32(Date.now()&0xffffffff);
+
+function rowCols(r){ return (r%2===0) ? COLS : COLS-1; }
+function cellX(r,c){ return (r%2===0) ? MARGIN_X+BR+c*2*BR : MARGIN_X+2*BR+c*2*BR; }
+function cellY(r){ return TOP_MARGIN+BR+r*ROW_H; }
+
+function neighbors(r,c){
+  var even=(r%2===0);
+  var list = even
+    ? [[r,c-1],[r,c+1],[r-1,c-1],[r-1,c],[r+1,c-1],[r+1,c]]
+    : [[r,c-1],[r,c+1],[r-1,c],[r-1,c+1],[r+1,c],[r+1,c+1]];
+  return list.filter(function(p){ return p[0]>=0 && p[0]<ROWS_VISIBLE && p[1]>=0 && p[1]<rowCols(p[0]); });
+}
+
+function emptyGrid(){
+  var g=[];
+  for(var r=0;r<ROWS_VISIBLE;r++){
+    var row=[];
+    for(var c=0;c<rowCols(r);c++) row.push(null);
+    g.push(row);
+  }
+  return g;
+}
+
+function S0(){
+  var best=0;
+  try{ var v=localStorage.getItem('bs_best'); if(v) best=parseInt(v,10)||0; }catch(e){}
+  return {
+    phase:'menu',
+    prePausePhase:null,
+    grid:emptyGrid(),
+    current:COLORS[0],
+    next:COLORS[1],
+    flying:null,
+    score:0,
+    shotsUsed:0,
+    best:best
+  };
+}
+var S=S0();
+
+function resetState(){
+  var fresh=S0();
+  for(var k in S){ if(Object.prototype.hasOwnProperty.call(S,k)) delete S[k]; }
+  for(var k2 in fresh){ if(Object.prototype.hasOwnProperty.call(fresh,k2)) S[k2]=fresh[k2]; }
+}
+
+function boardColors(){
+  var set={};
+  for(var r=0;r<ROWS_VISIBLE;r++) for(var c=0;c<rowCols(r);c++){ if(S.grid[r][c]) set[S.grid[r][c]]=true; }
+  var arr=Object.keys(set);
+  return arr.length ? arr : COLORS.slice();
+}
+function pickColor(){
+  var pool=boardColors();
+  return pool[Math.floor(rng()*pool.length)];
+}
+
+function fillInitialGrid(){
+  S.grid=emptyGrid();
+  for(var r=0;r<INITIAL_ROWS;r++){
+    for(var c=0;c<rowCols(r);c++){
+      S.grid[r][c]=COLORS[Math.floor(rng()*COLORS.length)];
+    }
+  }
+}
+
+function remainingCount(){
+  var n=0;
+  for(var r=0;r<ROWS_VISIBLE;r++) for(var c=0;c<rowCols(r);c++){ if(S.grid[r][c]) n++; }
+  return n;
+}
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+
+function renderHUD(){
+  $('scoreTxt').textContent=String(S.score);
+  $('remainTxt').textContent=String(remainingCount());
+  $('bestTxt2').textContent=String(S.best);
+  $('bestTxt').textContent=String(S.best);
+}
+
+function findMatchGroup(r,c){
+  var color=S.grid[r][c];
+  if(!color) return [];
+  var visited={}; var stack=[[r,c]]; var group=[];
+  visited[r+'_'+c]=true;
+  while(stack.length){
+    var cur=stack.pop();
+    group.push(cur);
+    neighbors(cur[0],cur[1]).forEach(function(n){
+      var key=n[0]+'_'+n[1];
+      if(!visited[key] && S.grid[n[0]][n[1]]===color){ visited[key]=true; stack.push(n); }
+    });
+  }
+  return group;
+}
+
+function findFloating(){
+  var connected={};
+  var stack=[];
+  for(var c=0;c<rowCols(0);c++){ if(S.grid[0][c]){ stack.push([0,c]); connected['0_'+c]=true; } }
+  while(stack.length){
+    var cur=stack.pop();
+    neighbors(cur[0],cur[1]).forEach(function(n){
+      var key=n[0]+'_'+n[1];
+      if(!connected[key] && S.grid[n[0]][n[1]]){ connected[key]=true; stack.push(n); }
+    });
+  }
+  var floating=[];
+  for(var r=0;r<ROWS_VISIBLE;r++) for(var cc=0;cc<rowCols(r);cc++){
+    if(S.grid[r][cc] && !connected[r+'_'+cc]) floating.push([r,cc]);
+  }
+  return floating;
+}
+
+function resolveAt(r,c){
+  var group=findMatchGroup(r,c);
+  var popped=0;
+  if(group.length>=3){
+    group.forEach(function(p){ S.grid[p[0]][p[1]]=null; });
+    popped+=group.length;
+    var floating=findFloating();
+    floating.forEach(function(p){ S.grid[p[0]][p[1]]=null; });
+    popped+=floating.length;
+    S.score += group.length*10 + floating.length*20;
+    if(popped>0) sfxPop(Math.min(popped,8));
+  }
+  return popped;
+}
+
+function nearestEmptyCell(x,y){
+  var approxRow=Math.round((y-TOP_MARGIN-BR)/ROW_H);
+  var best=null, bestDist=Infinity;
+  for(var dr=-1; dr<=1; dr++){
+    var r=approxRow+dr;
+    if(r<0||r>=ROWS_VISIBLE) continue;
+    for(var c=0;c<rowCols(r);c++){
+      if(S.grid[r][c]) continue;
+      var ex=cellX(r,c), ey=cellY(r);
+      var d=(ex-x)*(ex-x)+(ey-y)*(ey-y);
+      if(d<bestDist){ bestDist=d; best=[r,c]; }
+    }
+  }
+  return best;
+}
+
+function fireAt(px,py){
+  if(S.phase!=='playing' || S.flying) return;
+  var dx=px-SHOOTER_X, dy=py-SHOOTER_Y;
+  if(dy>-40) dy=-40; // force upward
+  var len=Math.sqrt(dx*dx+dy*dy);
+  if(len<1) len=1;
+  var ux=dx/len, uy=dy/len;
+  // clamp angle from vertical to avoid near-horizontal grazing shots
+  var maxSide=Math.sin(75*Math.PI/180);
+  if(Math.abs(ux)>maxSide){ ux=maxSide*(ux<0?-1:1); uy=-Math.sqrt(Math.max(0,1-ux*ux)); }
+  S.flying={x:SHOOTER_X,y:SHOOTER_Y,vx:ux*SPEED,vy:uy*SPEED,color:S.current};
+  sfxShoot();
+}
+
+function finishFlight(){
+  var f=S.flying;
+  var cell=nearestEmptyCell(f.x,f.y);
+  if(!cell){
+    // fallback: shouldn't normally happen; drop the shot silently
+    S.flying=null;
+    advanceShotQueue();
+    return;
+  }
+  S.grid[cell[0]][cell[1]]=f.color;
+  S.flying=null;
+  resolveAt(cell[0],cell[1]);
+  renderHUD();
+  checkEndConditions();
+  if(S.phase==='playing') advanceShotQueue();
+}
+
+function advanceShotQueue(){
+  S.shotsUsed++;
+  S.current=S.next;
+  S.next=pickColor();
+  renderHUD();
+}
+
+function checkEndConditions(){
+  if(remainingCount()===0){ winGame(); return; }
+  for(var c=0;c<rowCols(DANGER_ROW);c++){ if(S.grid[DANGER_ROW][c]){ loseGame(); return; } }
+  for(var r=DANGER_ROW+1; r<ROWS_VISIBLE; r++){
+    for(var c2=0;c2<rowCols(r);c2++){ if(S.grid[r][c2]){ loseGame(); return; } }
+  }
+}
+
+function updateFlight(dt){
+  var f=S.flying;
+  if(!f) return;
+  var dist=SPEED*dt;
+  var steps=Math.max(1,Math.ceil(dist/(BR*0.5)));
+  var stepDist=dist/steps;
+  for(var i=0;i<steps;i++){
+    var moveLen=Math.sqrt(f.vx*f.vx+f.vy*f.vy);
+    if(moveLen<1e-6) break;
+    var nx=f.x+(f.vx/moveLen)*stepDist;
+    var ny=f.y+(f.vy/moveLen)*stepDist;
+    if(nx<=BR){ nx=BR; f.vx=-f.vx; sfxBounce(); }
+    else if(nx>=W-BR){ nx=W-BR; f.vx=-f.vx; sfxBounce(); }
+    f.x=nx; f.y=ny;
+    if(f.y<=TOP_MARGIN+BR){
+      f.y=TOP_MARGIN+BR;
+      finishFlight();
+      return;
+    }
+    var hit=false;
+    for(var r=0;r<ROWS_VISIBLE && !hit;r++){
+      for(var c=0;c<rowCols(r);c++){
+        if(!S.grid[r][c]) continue;
+        var ex=cellX(r,c), ey=cellY(r);
+        var dx2=ex-f.x, dy2=ey-f.y;
+        if(dx2*dx2+dy2*dy2 <= (2*BR*0.92)*(2*BR*0.92)){ hit=true; break; }
+      }
+    }
+    if(hit){ finishFlight(); return; }
+  }
+}
+
+function update(dt){
+  if(S.phase!=='playing') return;
+  if(S.flying) updateFlight(dt);
+}
+
+function startGame(){
+  resetState();
+  fillInitialGrid();
+  S.current=pickColor();
+  S.next=pickColor();
+  S.phase='playing';
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  renderHUD();
+}
+
+function winGame(){
+  S.phase='win';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  sfxWin();
+  if(S.score>S.best){ S.best=S.score; try{localStorage.setItem('bs_best',String(S.best));}catch(e){} }
+  $('winDetail').textContent='用了 '+S.shotsUsed+' 發清空畫面，總分 '+S.score+' 分！';
+  show('ovWin');
+}
+
+function loseGame(){
+  S.phase='lose';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  sfxLose();
+  if(S.score>S.best){ S.best=S.score; try{localStorage.setItem('bs_best',String(S.best));}catch(e){} }
+  $('loseDetail').textContent='泡泡堆到警戒線了，總分 '+S.score+' 分，最佳 '+S.best+' 分。';
+  show('ovLose');
+}
+
+function backToMenu(){
+  S.phase='menu';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  show('ovMenu');
+}
+
+$('btnStart').addEventListener('click',function(){ hide('ovMenu'); startGame(); });
+$('btnRetry').addEventListener('click',function(){ hide('ovLose'); startGame(); });
+$('btnRetryWin').addEventListener('click',function(){ hide('ovWin'); startGame(); });
+$('btnMenu1').addEventListener('click',function(){ hide('ovLose'); backToMenu(); });
+$('btnMenu3').addEventListener('click',function(){ hide('ovWin'); backToMenu(); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){
+  if(S.phase==='paused'){ hide('ovPause'); S.phase=S.prePausePhase||'playing'; }
+});
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='playing') return;
+  S.prePausePhase=S.phase;
+  S.phase='paused';
+  show('ovPause');
+});
+
+cv.addEventListener('pointerdown',function(e){
+  e.preventDefault();
+  if(S.phase!=='playing') return;
+  var rect=cv.getBoundingClientRect();
+  var scaleX=W/rect.width, scaleY=H/rect.height;
+  var x=(e.clientX-rect.left)*scaleX;
+  var y=(e.clientY-rect.top)*scaleY;
+  fireAt(x,y);
+},{passive:false});
+
+function drawBubble(x,y,color){
+  var grd=ctx.createRadialGradient(x-BR*0.3,y-BR*0.3,BR*0.1,x,y,BR);
+  grd.addColorStop(0,'rgba(255,255,255,.55)');
+  grd.addColorStop(0.3,color);
+  grd.addColorStop(1,color);
+  ctx.beginPath();
+  ctx.arc(x,y,BR*0.92,0,Math.PI*2);
+  ctx.fillStyle=grd;
+  ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.25)';
+  ctx.lineWidth=1.5;
+  ctx.stroke();
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  var grd=ctx.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0,'#182540'); grd.addColorStop(1,'#0c1524');
+  ctx.fillStyle=grd; ctx.fillRect(0,0,W,H);
+
+  // danger line
+  var dangerY=cellY(DANGER_ROW)-BR;
+  ctx.strokeStyle='rgba(255,90,107,.45)';
+  ctx.setLineDash([6,6]);
+  ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(0,dangerY); ctx.lineTo(W,dangerY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  if(S.phase==='playing' || S.phase==='paused'){
+    for(var r=0;r<ROWS_VISIBLE;r++){
+      for(var c=0;c<rowCols(r);c++){
+        if(S.grid[r][c]) drawBubble(cellX(r,c),cellY(r),S.grid[r][c]);
+      }
+    }
+    if(S.flying) drawBubble(S.flying.x,S.flying.y,S.flying.color);
+    // shooter
+    ctx.beginPath(); ctx.arc(SHOOTER_X,SHOOTER_Y,BR+4,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,.08)'; ctx.fill();
+    drawBubble(SHOOTER_X,SHOOTER_Y,S.current);
+    drawBubble(SHOOTER_X+44,SHOOTER_Y+6,S.next);
+    ctx.save();
+    ctx.scale(0.62,0.62);
+    ctx.restore();
+  }
+}
+
+var lastT=null;
+function loop(ts){
+  if(lastT===null) lastT=ts;
+  var dt=Math.min(0.05,(ts-lastT)/1000);
+  lastT=ts;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+renderHUD();
+
+window.__BS = {
+  state:S,
+  start:function(){ $('btnStart').click(); },
+  retry:function(){ if(!$('ovLose').classList.contains('hidden')) $('btnRetry').click(); },
+  retryWin:function(){ if(!$('ovWin').classList.contains('hidden')) $('btnRetryWin').click(); },
+  fireAt:function(x,y){ fireAt(x,y); },
+  forcePlace:function(r,c,color){
+    S.grid[r][c]=color;
+    resolveAt(r,c);
+    renderHUD();
+    checkEndConditions();
+  },
+  cellXY:function(r,c){ return {x:cellX(r,c), y:cellY(r)}; },
+  dangerRow:DANGER_ROW,
+  rowsVisible:ROWS_VISIBLE,
+  rowCols:rowCols,
+  remainingCount:remainingCount,
+  advance:function(seconds){
+    var steps=Math.round(seconds/0.016);
+    for(var i=0;i<steps;i++) update(0.016);
+  }
+};
+})();
+</script>
+</body>
+</html>
