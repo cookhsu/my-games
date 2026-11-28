@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop',''); a.setAttribute('playsinline',''); a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__NP_AC && window.__NP_AC.state==='suspended'){ window.__NP_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>數字華容道</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#101423; --ink:#EAF0FF; --muted:#8C9AB8; --gold:#FFC83D; --red:#FF5A6B; --green:#5CE68C; --blue:#4DD0FF; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{ display:flex; align-items:center; justify-content:center; font-family:'Noto Sans TC','Fredoka',sans-serif;
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #1a2240 0%, #101423 65%); }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh; aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; position:absolute; touch-action:none; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 56px 0 14px; font-family:'Fredoka',sans-serif; pointer-events:none; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap; }
+  .topbar .pill{ background:rgba(10,14,28,.68); border:1px solid rgba(255,255,255,.12); padding:5px 10px; border-radius:999px; font-size:12.5px; pointer-events:auto; }
+  .topbar .pill b{ color:var(--gold); }
+  .topbar .actBtn{ pointer-events:auto; background:rgba(10,14,28,.68); border:1px solid rgba(255,255,255,.14); color:var(--ink);
+    padding:5px 12px; border-radius:999px; font-size:12.5px; font-family:'Noto Sans TC',sans-serif; cursor:pointer; }
+  .topbar .actBtn:active{ transform:scale(.95); }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(10,14,28,.68); border:1px solid rgba(255,255,255,.12); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px; background:rgba(8,10,20,.82); backdrop-filter:blur(6px); z-index:10; gap:12px; overflow-y:auto; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:25px; margin:0; letter-spacing:1px; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:20px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:16px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:15px; font-weight:600; color:#101423;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:12px 28px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+
+  .diffGrid{ display:flex; flex-direction:column; gap:10px; width:100%; max-width:280px; margin:6px 0; }
+  .diffCard{ display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-radius:16px;
+    background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14); cursor:pointer; }
+  .diffCard:active{ transform:scale(.97); }
+  .diffCard .name{ font-family:'Fredoka',sans-serif; font-size:16px; font-weight:600; }
+  .diffCard .rec{ font-size:11.5px; color:var(--muted); }
+  .diffCard .rec b{ color:var(--green); }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill" id="diffPill">3x3</div>
+      <div class="pill">步數 <b id="moveTxt">0</b></div>
+      <div class="pill">時間 <b id="timeTxt">00:00</b></div>
+      <button class="actBtn" id="btnShuffle">🔀 打亂</button>
+    </div>
+  </div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="ov" id="ovMenu">
+    <h1>🔢 數字華容道</h1>
+    <p class="sub">點擊與空格同一行或同一列的數字方塊，就能把整排滑過去！依序排好 1 到最大數字即可過關。</p>
+    <div class="diffGrid" id="diffGrid"></div>
+  </div>
+
+  <div class="ov hidden" id="ovWin">
+    <h2>🎉 完成！</h2>
+    <p class="sub" id="winDetail"></p>
+    <div class="btnrow">
+      <button class="btn" id="btnPlayAgain">再玩一次</button>
+      <button class="btn alt" id="btnBackMenu1">選擇難度</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var $=function(id){return document.getElementById(id);};
+
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__NP_AC=AC; }catch(e){} } return AC; }
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.exponentialRampToValueAtTime(sweepTo,c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.15,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sfxSlide(){ playTone(320,0.05,'sine',0.09,420); }
+function sfxBlocked(){ playTone(140,0.05,'sawtooth',0.07); }
+function sfxWin(){ playTone(523,0.1,'triangle',0.14); setTimeout(function(){playTone(659,0.1,'triangle',0.14);},90); setTimeout(function(){playTone(784,0.16,'triangle',0.15);},180); }
+
+var DIFFS=[{n:3,label:'簡單 3×3'},{n:4,label:'中等 4×4'},{n:5,label:'困難 5×5'}];
+
+function mulberry32(seed){
+  return function(){
+    seed|=0; seed=(seed+0x6D2B79F5)|0;
+    var t=Math.imul(seed^(seed>>>15),1|seed);
+    t=(t+Math.imul(t^(t>>>7),61|t))^t;
+    return ((t^(t>>>14))>>>0)/4294967296;
+  };
+}
+var rng=mulberry32(Date.now()&0xffffffff);
+
+function loadRecords(){
+  try{ return JSON.parse(localStorage.getItem('np_records')||'{}'); }catch(e){ return {}; }
+}
+function saveRecords(r){ try{ localStorage.setItem('np_records', JSON.stringify(r)); }catch(e){} }
+
+function S0(){
+  return {
+    phase:'menu',
+    prePausePhase:null,
+    n:3,
+    tiles:[],
+    blankR:0, blankC:0,
+    moveCount:0,
+    startTime:0,
+    pausedAccum:0,
+    pauseStartedAt:0,
+    anim:{},
+    records:loadRecords()
+  };
+}
+var S=S0();
+
+function resetState(){
+  var fresh=S0();
+  for(var k in S){ if(Object.prototype.hasOwnProperty.call(S,k)) delete S[k]; }
+  for(var k2 in fresh){ if(Object.prototype.hasOwnProperty.call(fresh,k2)) S[k2]=fresh[k2]; }
+}
+
+function idx(r,c){ return r*S.n+c; }
+
+function solvedTiles(n){
+  var arr=[];
+  for(var i=1;i<n*n;i++) arr.push(i);
+  arr.push(0);
+  return arr;
+}
+
+function isSolved(){
+  var solved=solvedTiles(S.n);
+  for(var i=0;i<solved.length;i++){ if(S.tiles[i]!==solved[i]) return false; }
+  return true;
+}
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+
+function fmtTime(ms){
+  var s=Math.floor(ms/1000);
+  var m=Math.floor(s/60); s=s%60;
+  return (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+}
+
+function elapsedMs(){
+  if(S.phase==='paused') return S.pauseStartedAt - S.startTime - S.pausedAccum;
+  return performance.now() - S.startTime - S.pausedAccum;
+}
+
+function renderHUD(){
+  $('diffPill').textContent=S.n+'x'+S.n;
+  $('moveTxt').textContent=String(S.moveCount);
+  $('timeTxt').textContent=fmtTime(Math.max(0,elapsedMs()));
+}
+
+function shuffle(n){
+  S.n=n;
+  S.tiles=solvedTiles(n);
+  S.blankR=n-1; S.blankC=n-1;
+  var steps = n*n*30;
+  var lastDir=null;
+  for(var i=0;i<steps;i++){
+    var dirs=[];
+    if(S.blankR>0) dirs.push('Up');
+    if(S.blankR<n-1) dirs.push('Down');
+    if(S.blankC>0) dirs.push('Left');
+    if(S.blankC<n-1) dirs.push('Right');
+    // avoid immediately reversing previous move for a more thorough shuffle
+    var opp={Up:'Down',Down:'Up',Left:'Right',Right:'Left'};
+    if(lastDir && dirs.length>1){ dirs=dirs.filter(function(d){return d!==opp[lastDir];}); }
+    var dir=dirs[Math.floor(rng()*dirs.length)];
+    var tr=S.blankR, tc=S.blankC;
+    if(dir==='Up') tr--; else if(dir==='Down') tr++; else if(dir==='Left') tc--; else tc++;
+    // swap tile at (tr,tc) with blank directly (silent, no animation/sound during shuffle)
+    S.tiles[idx(S.blankR,S.blankC)]=S.tiles[idx(tr,tc)];
+    S.tiles[idx(tr,tc)]=0;
+    S.blankR=tr; S.blankC=tc;
+    lastDir=dir;
+  }
+  S.moveCount=0;
+  S.startTime=performance.now();
+  S.pausedAccum=0;
+  S.anim={};
+}
+
+function tapRC(r,c){
+  if(S.phase!=='playing') return false;
+  if(r<0||c<0||r>=S.n||c>=S.n) return false;
+  if(r===S.blankR && c===S.blankC) return false;
+  if(r!==S.blankR && c!==S.blankC){ sfxBlocked(); return false; }
+  var now=performance.now();
+  if(r===S.blankR){
+    var step=c>S.blankC?1:-1;
+    for(var cc=S.blankC; cc!==c; cc+=step){
+      var val=S.tiles[idx(r,cc+step)];
+      S.tiles[idx(r,cc)]=val;
+      S.anim[val]={fromR:r,fromC:cc+step,t0:now};
+    }
+    S.tiles[idx(r,c)]=0;
+    S.blankC=c;
+  } else {
+    var step2=r>S.blankR?1:-1;
+    for(var rr=S.blankR; rr!==r; rr+=step2){
+      var val2=S.tiles[idx(rr+step2,c)];
+      S.tiles[idx(rr,c)]=val2;
+      S.anim[val2]={fromR:rr+step2,fromC:c,t0:now};
+    }
+    S.tiles[idx(r,c)]=0;
+    S.blankR=r;
+  }
+  S.moveCount++;
+  sfxSlide();
+  checkWin();
+  return true;
+}
+
+function checkWin(){
+  if(!isSolved()) return;
+  S.phase='win';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  sfxWin();
+  var ms=elapsedMs();
+  var rec=S.records[S.n];
+  var isNewRecord=false;
+  if(!rec || S.moveCount<rec.moves){ S.records[S.n]={moves:S.moveCount, timeMs:ms}; saveRecords(S.records); isNewRecord=true; }
+  $('winDetail').textContent=S.n+'x'+S.n+' 完成！步數 '+S.moveCount+'，時間 '+fmtTime(ms)+(isNewRecord?'（新紀錄！）':'');
+  show('ovWin');
+}
+
+function buildDiffGrid(){
+  var grid=$('diffGrid');
+  grid.innerHTML='';
+  DIFFS.forEach(function(d){
+    var rec=S.records[d.n];
+    var card=document.createElement('div');
+    card.className='diffCard';
+    card.innerHTML='<span class="name">'+d.label+'</span><span class="rec">'+(rec?('最佳 <b>'+rec.moves+' 步</b> / '+fmtTime(rec.timeMs)):'尚無紀錄')+'</span>';
+    card.addEventListener('click',function(){ startGame(d.n); });
+    grid.appendChild(card);
+  });
+}
+
+function startGame(n){
+  hide('ovMenu'); hide('ovWin'); hide('ovPause');
+  shuffle(n);
+  S.phase='playing';
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  renderHUD();
+}
+
+function backToMenu(){
+  hide('ovWin'); hide('ovPause');
+  S.phase='menu';
+  $('topbar').classList.remove('on');
+  $('menuBtn').classList.remove('on');
+  buildDiffGrid();
+  show('ovMenu');
+}
+
+buildDiffGrid();
+
+$('btnPlayAgain').addEventListener('click',function(){ startGame(S.n); });
+$('btnBackMenu1').addEventListener('click',function(){ backToMenu(); });
+$('btnShuffle').addEventListener('click',function(){ if(S.phase==='playing') startGame(S.n); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){
+  if(S.phase==='paused'){
+    hide('ovPause');
+    S.pausedAccum += (performance.now()-S.pauseStartedAt);
+    S.phase=S.prePausePhase||'playing';
+  }
+});
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase!=='playing') return;
+  S.prePausePhase=S.phase;
+  S.pauseStartedAt=performance.now();
+  S.phase='paused';
+  show('ovPause');
+});
+
+function cellSize(){
+  var maxW=320, maxH=360;
+  return Math.floor(Math.min(maxW/S.n, maxH/S.n));
+}
+
+function boardOrigin(){
+  var cs=cellSize();
+  var boardW=cs*S.n, boardH=cs*S.n;
+  return { ox:(W-boardW)/2, oy:120+(360-boardH)/2, cs:cs };
+}
+
+function canvasToRC(x,y){
+  var o=boardOrigin();
+  var c=Math.floor((x-o.ox)/o.cs);
+  var r=Math.floor((y-o.oy)/o.cs);
+  return {r:r,c:c};
+}
+
+cv.addEventListener('pointerdown',function(e){
+  if(S.phase!=='playing') return;
+  var rect=cv.getBoundingClientRect();
+  var scaleX=W/rect.width, scaleY=H/rect.height;
+  var x=(e.clientX-rect.left)*scaleX, y=(e.clientY-rect.top)*scaleY;
+  var rc=canvasToRC(x,y);
+  tapRC(rc.r,rc.c);
+  renderHUD();
+});
+
+window.addEventListener('keydown',function(e){
+  if(S.phase!=='playing') return;
+  var map={ArrowUp:'Up',ArrowDown:'Down',ArrowLeft:'Left',ArrowRight:'Right'};
+  var dir=map[e.key];
+  if(!dir) return;
+  // keyboard moves the tile ADJACENT to blank in the direction pressed (slides into blank)
+  var tr=S.blankR, tc=S.blankC;
+  if(dir==='Up') tr++; else if(dir==='Down') tr--; else if(dir==='Left') tc++; else tc--;
+  if(tr>=0&&tr<S.n&&tc>=0&&tc<S.n){ tapRC(tr,tc); renderHUD(); }
+});
+
+function tileColor(v,n){
+  var hue=(v*47)%360;
+  return 'hsl('+hue+',55%,52%)';
+}
+
+function drawBoard(){
+  var o=boardOrigin();
+  var cs=o.cs;
+  var now=performance.now();
+  var ANIM=120;
+
+  ctx.fillStyle='rgba(0,0,0,.25)';
+  ctx.fillRect(o.ox-6,o.oy-6,cs*S.n+12,cs*S.n+12);
+
+  for(var r=0;r<S.n;r++){
+    for(var c=0;c<S.n;c++){
+      var x=o.ox+c*cs, y=o.oy+r*cs;
+      ctx.fillStyle='rgba(255,255,255,.04)';
+      ctx.fillRect(x+2,y+2,cs-4,cs-4);
+    }
+  }
+
+  for(var v=1; v<S.n*S.n; v++){
+    var pos=S.tiles.indexOf(v);
+    var r2=Math.floor(pos/S.n), c2=pos%S.n;
+    var drawR=r2, drawC=c2;
+    var a=S.anim[v];
+    if(a){
+      var t=Math.min(1,(now-a.t0)/ANIM);
+      drawR=a.fromR+(r2-a.fromR)*t; drawC=a.fromC+(c2-a.fromC)*t;
+      if(t>=1) delete S.anim[v];
+    }
+    var x2=o.ox+drawC*cs, y2=o.oy+drawR*cs;
+    var pad=cs*0.06;
+    ctx.fillStyle=tileColor(v,S.n);
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(x2+pad,y2+pad,cs-pad*2,cs-pad*2,8) : ctx.rect(x2+pad,y2+pad,cs-pad*2,cs-pad*2);
+    ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.25)'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.fillStyle='#fff';
+    ctx.font='600 '+(cs*0.36)+'px Fredoka, sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(String(v), x2+cs/2, y2+cs/2+1);
+  }
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  var bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#1a2240'); bg.addColorStop(1,'#101423');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+  if(S.phase==='playing' || S.phase==='paused' || S.phase==='win'){
+    drawBoard();
+  }
+  if(S.phase==='playing'){
+    renderHUD();
+  }
+}
+
+function loop(){
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+window.__NP = {
+  state:S,
+  start:function(){ startGame(3); },
+  setDifficulty:function(n){ startGame(n); },
+  shuffle:function(){ startGame(S.n); },
+  tapTile:function(r,c){ return tapRC(r,c); },
+  isSolved:isSolved,
+  retry:function(){ startGame(S.n); },
+  retryWin:function(){ startGame(S.n); },
+  solveInstant:function(){ S.tiles=solvedTiles(S.n); S.blankR=S.n-1; S.blankC=S.n-1; checkWin(); },
+  advance:function(seconds){ /* turn-based puzzle, no continuous physics */ }
+};
+})();
+</script>
+</body>
+</html>
