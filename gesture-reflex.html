@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<script>
+(function(){
+  try{
+    var a=document.createElement('audio');
+    a.setAttribute('loop',''); a.setAttribute('playsinline',''); a.volume=0;
+    a.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    document.addEventListener('DOMContentLoaded',function(){document.body.appendChild(a);});
+    var unlocked=false;
+    function unlock(){
+      if(unlocked) return; unlocked=true;
+      a.play().catch(function(){});
+      if(window.__GR_AC && window.__GR_AC.state==='suspended'){ window.__GR_AC.resume().catch(function(){}); }
+    }
+    ['touchstart','mousedown','keydown'].forEach(function(ev){ window.addEventListener(ev, unlock, {once:false, passive:true}); });
+  }catch(e){}
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>手勢反應王</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#101826; --ink:#EEF6FF; --muted:#9FB4CC; --gold:#FFC83D; --green:#5CE68C; --blue:#4FA8FF; --red:#FF5A6B; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; background:#000; height:100%; overflow:hidden; overscroll-behavior:none;}
+  body{ display:flex; align-items:center; justify-content:center; font-family:'Noto Sans TC','Fredoka',sans-serif;
+    color:var(--ink); min-height:100vh; min-height:100dvh;
+    background:radial-gradient(ellipse at 50% 0%, #182847 0%, #101826 65%); }
+  .wrap{ position:relative; width:360px; height:640px; max-width:100vw; max-height:100vh; aspect-ratio:360/640; background:var(--bg); overflow:hidden; }
+  @media (max-width:360px), (max-height:640px){ .wrap{ width:100vw; height:100vh; height:100dvh; } }
+  canvas{ display:block; position:absolute; touch-action:none; }
+  #c{ z-index:2; }
+
+  .topbar{ position:absolute; top:0; left:0; right:0; display:none; flex-direction:column; gap:6px;
+    padding:10px 56px 0 14px; font-family:'Fredoka',sans-serif; pointer-events:none; z-index:4; }
+  .topbar.on{ display:flex; }
+  .topbar .row{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .topbar .pill{ background:rgba(16,24,38,.78); border:1px solid rgba(255,255,255,.14); padding:5px 10px; border-radius:999px; font-size:12.5px; pointer-events:auto; }
+  .topbar .pill b{ color:var(--gold); }
+
+  .menuBtn{ position:absolute; top:10px; right:14px; width:32px; height:32px; border-radius:50%;
+    background:rgba(16,24,38,.78); border:1px solid rgba(255,255,255,.14); color:var(--ink);
+    font-size:15px; display:none; align-items:center; justify-content:center; cursor:pointer; z-index:6; }
+  .menuBtn.on{ display:flex; }
+
+  .ov{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px; background:rgba(8,12,20,.88); backdrop-filter:blur(6px); z-index:10; gap:12px; overflow-y:auto; }
+  .ov.hidden{ display:none; }
+  .ov h1{ font-family:'Fredoka',sans-serif; font-size:24px; margin:0; letter-spacing:1px; }
+  .ov h2{ font-family:'Fredoka',sans-serif; font-size:20px; margin:0; }
+  .ov p.sub{ margin:0; color:var(--muted); font-size:13px; line-height:1.7; max-width:280px; }
+  .ov .stat{ font-size:13px; color:var(--muted); display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .ov .stat b{ color:var(--gold); font-size:18px; }
+  .btn{ font-family:'Fredoka',sans-serif; font-size:15px; font-weight:600; color:#101826;
+    background:linear-gradient(135deg,var(--gold),#ffe08a); border:none; padding:12px 28px; border-radius:999px;
+    cursor:pointer; box-shadow:0 6px 18px rgba(255,200,61,.3); letter-spacing:.5px; }
+  .btn.alt{ background:rgba(255,255,255,.08); color:var(--ink); box-shadow:none; border:1px solid rgba(255,255,255,.18); }
+  .btn.cam{ background:linear-gradient(135deg,#4FA8FF,#7fd2ff); }
+  .btn:active{ transform:scale(.96); }
+  .btnrow{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+  .toastMsg{ font-size:12.5px; color:var(--red); max-width:260px; }
+  .gestureChips{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; font-size:22px; }
+  .roundList{ font-size:12.5px; color:var(--muted); line-height:1.8; }
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap">
+  <canvas id="c" width="360" height="640"></canvas>
+
+  <div class="topbar" id="topbar">
+    <div class="row">
+      <div class="pill">回合 <b id="roundTxt">1</b>/5</div>
+      <div class="pill">上次 <b id="lastTxt">-</b>ms</div>
+    </div>
+  </div>
+  <div class="menuBtn" id="menuBtn">☰</div>
+
+  <div class="ov" id="ovMenu">
+    <h1>⚡ 手勢反應王</h1>
+    <p class="sub">看到手勢圖示立刻比出一樣的手勢，測測你的反應速度！共 5 回合，看看平均反應時間。</p>
+    <div class="gestureChips">✊ ✋ ✌️ 👍</div>
+    <div class="stat">最佳平均 <b id="bestTxt">-</b>ms</div>
+    <div class="btnrow">
+      <button class="btn cam" id="btnStartCam">📷 開啟鏡頭開始</button>
+      <button class="btn alt" id="btnStartDemo">🎬 示範模式</button>
+    </div>
+    <p class="toastMsg hidden" id="camErr"></p>
+  </div>
+
+  <div class="ov hidden" id="ovCleared">
+    <h2>🏁 測驗完成！</h2>
+    <p class="sub" id="clearedDetail"></p>
+    <div class="stat">平均反應時間 <b id="finalAvgTxt">0</b>ms</div>
+    <div class="roundList" id="roundListTxt"></div>
+    <div class="btnrow">
+      <button class="btn" id="btnReplay">再玩一次</button>
+      <button class="btn alt" id="btnBackMenu1">返回選單</button>
+    </div>
+  </div>
+
+  <div class="ov hidden" id="ovPause">
+    <h2>已暫停</h2>
+    <div class="btnrow">
+      <button class="btn" id="btnResume">繼續遊戲</button>
+      <button class="btn alt" id="btnMenu2">返回選單</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+"use strict";
+var cv=document.getElementById('c'), ctx=cv.getContext('2d');
+var W=360,H=640;
+var $=function(id){return document.getElementById(id);};
+
+var AC=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); window.__GR_AC=AC; }catch(e){} } return AC; }
+function playTone(freq,dur,type,vol,sweepTo){
+  var c=ac(); if(!c) return;
+  try{
+    var o=c.createOscillator(), g=c.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(freq,c.currentTime);
+    if(sweepTo) o.frequency.exponentialRampToValueAtTime(sweepTo,c.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.15,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(); o.stop(c.currentTime+dur);
+  }catch(e){}
+}
+function sfxCue(){ playTone(880,0.1,'triangle',0.14,1300); }
+function sfxHit(){ playTone(700,0.08,'triangle',0.1,1000); }
+function sfxEnd(){ playTone(523,0.1,'triangle',0.14); setTimeout(function(){playTone(659,0.1,'triangle',0.14);},100); setTimeout(function(){playTone(784,0.18,'triangle',0.15);},200); }
+
+function loadBest(){ try{ var v=localStorage.getItem('gr_best'); return v?parseFloat(v):null; }catch(e){ return null; } }
+function saveBest(v){ try{ localStorage.setItem('gr_best', String(v)); }catch(e){} }
+
+var TOTAL_ROUNDS=5;
+var GESTURES=[
+  {id:'Closed_Fist', emoji:'✊', name:'拳頭'},
+  {id:'Open_Palm', emoji:'✋', name:'手掌'},
+  {id:'Victory', emoji:'✌️', name:'勝利'},
+  {id:'Thumb_Up', emoji:'👍', name:'讚'}
+];
+function randGesture(){ return GESTURES[Math.floor(Math.random()*GESTURES.length)]; }
+
+function S0(){
+  return {
+    phase:'menu', // menu | waiting | cue | roundDone | cleared | paused
+    prePausePhase:null,
+    demo:false,
+    stream:null,
+    round:0,
+    times:[],
+    best:loadBest(),
+    target:null,
+    waitUntilT:0,
+    cueShownAt:0,
+    lastDetected:null,
+    prevDetected:null,
+    lastResult:null,
+    t:0,
+    demoTimers:[]
+  };
+}
+var S=S0();
+
+function resetState(){
+  var fresh=S0();
+  fresh.best=S.best;
+  for(var k in S){ if(Object.prototype.hasOwnProperty.call(S,k)) delete S[k]; }
+  for(var k2 in fresh){ if(Object.prototype.hasOwnProperty.call(fresh,k2)) S[k2]=fresh[k2]; }
+}
+
+function show(id){ $(id).classList.remove('hidden'); }
+function hide(id){ $(id).classList.add('hidden'); }
+
+function renderHUD(){
+  $('roundTxt').textContent=String(Math.min(S.round+1,TOTAL_ROUNDS));
+  $('lastTxt').textContent = S.lastResult!==null ? String(S.lastResult) : '-';
+}
+
+function startRound(){
+  S.target=randGesture();
+  S.phase='waiting';
+  S.waitUntilT=S.t+1.2+Math.random()*1.8;
+  S.prevDetected=null;
+  S.lastDetected=null;
+}
+
+function showCue(){
+  S.phase='cue';
+  S.cueShownAt=S.t;
+  sfxCue();
+}
+
+function reactTo(id){
+  if(S.phase!=='cue' || !S.target) return;
+  if(id!==S.target.id) return;
+  var reactionMs=Math.round((S.t-S.cueShownAt)*1000);
+  S.times.push(reactionMs);
+  S.lastResult=reactionMs;
+  sfxHit();
+  renderHUD();
+  S.round++;
+  if(S.round>=TOTAL_ROUNDS){
+    endRound();
+  } else {
+    S.phase='roundDone';
+    S.roundDoneUntil=S.t+0.6;
+  }
+}
+
+function startCamera(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return Promise.reject({name:'NoMedia'});
+  return navigator.mediaDevices.getUserMedia({ video:{facingMode:'user', width:{ideal:480}, height:{ideal:640}}, audio:false })
+    .then(function(s){ S.stream=s; video.srcObject=s; return video.play().catch(function(){}); });
+}
+function stopCamera(){
+  if(S.stream){ S.stream.getTracks().forEach(function(t){t.stop();}); S.stream=null; }
+}
+
+var video=document.createElement('video');
+video.setAttribute('playsinline',''); video.muted=true;
+
+// ---- GestureRecognizer loading ----
+var rec=null, rs='idle';
+function loadRec(){
+  if(rs==='ready'||rs==='loading') return Promise.resolve();
+  rs='loading';
+  var bases=['0.10.14','0.10.9'];
+  var at=function(i){
+    if(i>=bases.length){ rs='failed'; return Promise.resolve(); }
+    var base='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@'+bases[i];
+    return import(/* @vite-ignore */ base+'/vision_bundle.mjs').then(function(mod){
+      return mod.FilesetResolver.forVisionTasks(base+'/wasm').then(function(fs){
+        var mk=function(d){ return mod.GestureRecognizer.createFromOptions(fs,{
+          baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task',delegate:d},
+          runningMode:'VIDEO', numHands:1
+        }); };
+        return mk('GPU').catch(function(){ return mk('CPU'); });
+      }).then(function(r){ rec=r; rs='ready'; });
+    }).catch(function(){ return at(i+1); });
+  };
+  return at(0);
+}
+
+var lastVT=-1;
+function detectGesture(now){
+  if(S.demo || rs!=='ready' || !video.videoWidth) return;
+  if(video.currentTime===lastVT) return;
+  lastVT=video.currentTime;
+  try{
+    var r=rec.recognizeForVideo(video, now);
+    var g=r && r.gestures && r.gestures[0] && r.gestures[0][0];
+    var id = g ? g.categoryName : null;
+    S.prevDetected=S.lastDetected;
+    S.lastDetected=id;
+    if(S.phase==='cue' && id===S.target.id && S.prevDetected===id){
+      reactTo(id);
+    }
+  }catch(e){}
+}
+
+function drawCameraFrame(){
+  if(!video.videoWidth) return false;
+  var vw=video.videoWidth, vh=video.videoHeight;
+  var scale=Math.max(W/vw, H/vh);
+  var dw=vw*scale, dh=vh*scale;
+  var dx=(W-dw)/2, dy=(H-dh)/2;
+  ctx.save();
+  ctx.globalAlpha=0.55;
+  ctx.translate(W,0); ctx.scale(-1,1);
+  ctx.drawImage(video, dx, dy, dw, dh);
+  ctx.restore();
+  return true;
+}
+
+function startPlaying(useDemo){
+  hide('ovMenu'); hide('ovCleared'); hide('ovPause');
+  $('camErr').classList.add('hidden');
+  resetState();
+  S.demo=!!useDemo;
+
+  if(S.demo){
+    beginPlayingPhase();
+  } else {
+    $('btnStartCam').textContent='開啟相機中…';
+    Promise.all([startCamera(), loadRec()]).then(function(){
+      beginPlayingPhase();
+    }).catch(function(err){
+      $('btnStartCam').textContent='📷 開啟鏡頭開始';
+      var m = (err&&err.name==='NotAllowedError') ? '沒有取得相機權限，請允許存取相機，或改用示範模式。' : '無法開啟相機，可改用示範模式體驗遊戲。';
+      $('camErr').textContent=m;
+      $('camErr').classList.remove('hidden');
+    });
+  }
+}
+
+function beginPlayingPhase(){
+  $('topbar').classList.add('on');
+  $('menuBtn').classList.add('on');
+  startRound();
+  renderHUD();
+}
+
+function scheduleDemoReaction(){
+  var id=setTimeout(function(){
+    if(S.phase==='cue' && S.target){ reactTo(S.target.id); }
+  }, 280+Math.random()*420);
+  S.demoTimers.push(id);
+}
+
+function endRound(){
+  S.phase='cleared';
+  $('topbar').classList.remove('on'); $('menuBtn').classList.remove('on');
+  stopCamera();
+  S.demoTimers.forEach(function(id){ clearTimeout(id); });
+  S.demoTimers=[];
+  var sum=0; for(var i=0;i<S.times.length;i++) sum+=S.times[i];
+  var avg=S.times.length?Math.round(sum/S.times.length):0;
+  var isNew=false;
+  if(S.best===null || avg<S.best){ S.best=avg; saveBest(avg); isNew=true; }
+  sfxEnd();
+  $('finalAvgTxt').textContent=String(avg);
+  $('clearedDetail').textContent=isNew?'🎉創下最佳平均紀錄！':'再挑戰看看能不能更快！';
+  $('roundListTxt').textContent=S.times.map(function(t,i){ return '第'+(i+1)+'回合: '+t+'ms'; }).join('　');
+  show('ovCleared');
+}
+
+function updateGame(dt){
+  S.t+=dt;
+  if(S.phase==='waiting'){
+    if(S.t>=S.waitUntilT){
+      showCue();
+      if(S.demo) scheduleDemoReaction();
+    }
+  } else if(S.phase==='roundDone'){
+    if(S.t>=S.roundDoneUntil){
+      startRound();
+    }
+  }
+}
+
+function drawBG(){
+  var haveFrame=false;
+  if(!S.demo && (S.phase==='waiting'||S.phase==='cue'||S.phase==='roundDone'||S.phase==='paused')) haveFrame=drawCameraFrame();
+  if(!haveFrame){
+    var bg=ctx.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'#182847'); bg.addColorStop(1,'#101826');
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+    if(S.demo && (S.phase==='waiting'||S.phase==='cue'||S.phase==='roundDone'||S.phase==='paused')){
+      ctx.font='13px "Noto Sans TC",sans-serif';
+      ctx.fillStyle='rgba(255,255,255,.35)';
+      ctx.textAlign='center';
+      ctx.fillText('🎬 示範模式（未使用鏡頭）', W/2, 70);
+    }
+  } else {
+    ctx.save(); ctx.globalAlpha=0.25; ctx.fillStyle='#101826'; ctx.fillRect(0,0,W,H); ctx.restore();
+  }
+}
+
+function drawCenter(){
+  ctx.save();
+  ctx.translate(W/2,300);
+  if(S.phase==='waiting'){
+    ctx.font='16px "Fredoka",sans-serif';
+    ctx.fillStyle='rgba(255,255,255,.65)';
+    ctx.textAlign='center';
+    ctx.fillText('準備…', 0, -40);
+    var pulse=0.5+0.5*Math.sin(S.t*6);
+    ctx.beginPath();
+    ctx.arc(0,20,14+pulse*4,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,90,107,.7)';
+    ctx.fill();
+  } else if(S.phase==='cue' && S.target){
+    var glow=ctx.createRadialGradient(0,0,10,0,0,100);
+    glow.addColorStop(0,'rgba(92,230,140,.4)');
+    glow.addColorStop(1,'rgba(92,230,140,0)');
+    ctx.fillStyle=glow;
+    ctx.beginPath(); ctx.arc(0,0,100,0,Math.PI*2); ctx.fill();
+    ctx.font='90px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(S.target.emoji, 0, 0);
+    ctx.font='16px "Fredoka",sans-serif';
+    ctx.fillStyle='#5CE68C';
+    ctx.fillText('快比出一樣的手勢！', 0, 130);
+  } else if(S.phase==='roundDone'){
+    ctx.font='26px "Fredoka",sans-serif';
+    ctx.fillStyle='#FFC83D';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(S.lastResult+' ms', 0, 0);
+  }
+  ctx.restore();
+}
+
+function draw(){
+  drawBG();
+  if(S.phase==='menu' || S.phase==='cleared') return;
+  drawCenter();
+}
+
+var lastTs=0;
+function loop(ts){
+  var dtRaw=(ts-lastTs)/1000;
+  lastTs=ts;
+  var dt=Math.min(0.05, isNaN(dtRaw)?0:dtRaw);
+
+  if(!S.demo && (S.phase==='cue')){
+    detectGesture(ts);
+  }
+
+  draw();
+
+  if(S.phase==='waiting' || S.phase==='roundDone'){
+    updateGame(dt);
+  } else if(S.phase==='cue'){
+    S.t+=dt;
+  }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+$('btnStartCam').addEventListener('click',function(){ startPlaying(false); });
+$('btnStartDemo').addEventListener('click',function(){ startPlaying(true); });
+$('btnReplay').addEventListener('click',function(){ startPlaying(S.demo); });
+$('btnBackMenu1').addEventListener('click',function(){ backToMenu(); });
+$('btnMenu2').addEventListener('click',function(){ hide('ovPause'); backToMenu(); });
+$('btnResume').addEventListener('click',function(){
+  if(S.phase==='paused'){ hide('ovPause'); S.phase=S.prePausePhase||'waiting'; }
+});
+$('menuBtn').addEventListener('click',function(){
+  if(S.phase==='menu'||S.phase==='cleared'||S.phase==='paused') return;
+  S.prePausePhase=S.phase;
+  S.phase='paused';
+  show('ovPause');
+});
+
+function backToMenu(){
+  hide('ovCleared'); hide('ovPause');
+  stopCamera();
+  S.demoTimers.forEach(function(id){ clearTimeout(id); });
+  S.demoTimers=[];
+  S.phase='menu';
+  $('topbar').classList.remove('on'); $('menuBtn').classList.remove('on');
+  $('bestTxt').textContent = S.best!==null ? String(S.best) : '-';
+  show('ovMenu');
+}
+$('bestTxt').textContent = S.best!==null ? String(S.best) : '-';
+
+window.__GR = {
+  state:S,
+  startCam:function(){ startPlaying(false); },
+  startDemo:function(){ startPlaying(true); },
+  reactTo:reactTo,
+  isGameOver:function(){ return S.phase==='cleared'; },
+  forceEnd:function(){ S.round=TOTAL_ROUNDS; if(S.phase!=='cleared'){ endRound(); } },
+  skipToCue:function(){ S.phase='cue'; S.cueShownAt=S.t; if(!S.target) S.target=randGesture(); },
+  advance:function(seconds){
+    var steps=Math.ceil(seconds/0.03);
+    for(var i=0;i<steps;i++){ updateGame(0.03); }
+  }
+};
+</script>
+</body>
+</html>
